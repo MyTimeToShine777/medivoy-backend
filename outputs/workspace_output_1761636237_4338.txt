@@ -1,0 +1,30 @@
+{
+  "name": "medivoy-backend",
+  "version": "1.0.0",
+  "description": "Complete Healthcare Management System Backend - Production Ready",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "migrate": "node scripts/run-migrations.js",
+    "seed": "node scripts/seed-database.js",
+    "lint": "eslint src/**/*.js",
+    "format": "prettier --write src/**/*.js",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop": "pm2 stop medivoy-backend",
+    "pm2:restart": "pm2 restart medivoy-backend",
+    "pm2:logs": "pm2 logs medivoy-backend"
+  },
+  "keywords": [
+    "healthcare",
+    "medical",
+    "hospital",
+    "appointment",
+    "telemedicine",
+    "insurance",
+    "medical-tourism"
+  ],

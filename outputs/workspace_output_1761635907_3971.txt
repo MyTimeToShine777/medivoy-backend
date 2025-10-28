@@ -1,0 +1,19 @@
+Checking for missing or incomplete files...
+
+=== Checking Models ===
+32
+
+=== Checking Services ===
+27
+
+=== Checking Controllers ===
+26
+
+=== Checking Routes ===
+27
+
+=== Checking Validators ===
+21
+
+=== Checking Jobs ===
+12

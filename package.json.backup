@@ -90,8 +90,6 @@
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.29.1",
     "prettier": "^3.1.1",
-    "@types/jest": "^29.5.11",
-       "@faker-js/faker": "^8.3.1",
-       "sequelize-cli": "^6.6.2"
+    "@types/jest": "^29.5.11"
   }
 }

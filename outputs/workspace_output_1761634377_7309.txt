@@ -1,0 +1,5 @@
+From https://github.com/MyTimeToShine777/medivoy-backend
+ * branch            main       -> FETCH_HEAD
+Auto-merging README.md
+CONFLICT (add/add): Merge conflict in README.md
+Automatic merge failed; fix conflicts and then commit the result.

@@ -1,0 +1,13 @@
+src/controllers/auth.controller.js:      // TODO: Send email with reset link
+src/services/notification.service.js:    // TODO: Implement Twilio SMS sending
+src/services/notification.service.js:    // TODO: Implement Firebase push notification
+src/services/payment.service.js:      // TODO: Implement Stripe payment processing
+src/services/payment.service.js:      // TODO: Implement Razorpay payment processing
+src/services/payment.service.js:    // TODO: Implement actual refund logic with payment gateway
+src/services/prescription.service.js:    // TODO: Implement PDF generation
+src/services/insurance.service.js:    // TODO: Implement actual coverage checking logic
+src/services/invoice.service.js:    // TODO: Implement PDF generation using puppeteer or similar
+src/services/invoice.service.js:    // TODO: Implement email sending
+src/jobs/sms.job.js:  // TODO: Implement actual Twilio SMS sending
+src/jobs/notification.job.js:  // TODO: Implement actual Firebase push notification
+src/jobs/translation.job.js:  // TODO: Implement actual translation API (Google Translate, DeepL, etc.)
