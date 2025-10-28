@@ -1,0 +1,21 @@
+🚀 MEDIVOY COMPLETE BACKEND GENERATOR
+
+⏳ Generating 150+ files...
+
+📦 Generating Models...
+   ✓ Appointment.model.js
+   ✓ Booking.model.js
+   ✓ Package.model.js
+   ✓ Insurance.model.js
+   ✓ MedicalRecord.model.js
+   ✓ Prescription.model.js
+   ✓ Laboratory.model.js
+   ✓ LabTest.model.js
+
+✅ Generated 8 model files
+
+
+🎉 Total files generated: 8
+
+📝 Continue running this script to generate more files...
+

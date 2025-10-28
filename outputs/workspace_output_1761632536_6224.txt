@@ -1,0 +1,136 @@
+src
+├── app.js
+├── server.js
+├── config
+│   ├── database.js
+│   ├── index.js
+│   ├── mongodb.js
+│   ├── redis.js
+│   └── swagger.js
+├── constants
+│   ├── error-codes.js
+│   ├── file-types.js
+│   ├── locales.js
+│   ├── status-codes.js
+│   └── user-roles.js
+├── controllers
+│   ├── appointment.controller.js
+│   ├── auth.controller.js
+│   ├── booking.controller.js
+│   ├── coupon.controller.js
+│   ├── doctor.controller.js
+│   ├── faq.controller.js
+│   ├── hospital.controller.js
+│   ├── insurance.controller.js
+│   ├── invoice.controller.js
+│   ├── labTest.controller.js
+│   ├── laboratory.controller.js
+│   ├── medicalRecord.controller.js
+│   ├── notification.controller.js
+│   ├── package.controller.js
+│   ├── patient.controller.js
+│   ├── payment.controller.js
+│   ├── prescription.controller.js
+│   ├── review.controller.js
+│   ├── subscription.controller.js
+│   ├── support.controller.js
+│   ├── translation.controller.js
+│   ├── treatment.controller.js
+│   ├── treatmentCategory.controller.js
+│   ├── upload.controller.js
+│   ├── user.controller.js
+│   └── websiteContent.controller.js
+├── jobs
+├── middleware
+│   ├── audit.middleware.js
+│   ├── auth.middleware.js
+│   ├── authorize.middleware.js
+│   ├── cache.middleware.js
+│   ├── error.middleware.js
+│   ├── locale.middleware.js
+│   ├── logger.middleware.js
+│   ├── rate-limit.middleware.js
+│   ├── upload.middleware.js
+│   └── validate.middleware.js
+├── models
+│   ├── Appointment.model.js
+│   ├── Booking.model.js
+│   ├── Coupon.model.js
+│   ├── Doctor.model.js
+│   ├── FAQ.model.js
+│   ├── Hospital.model.js
+│   ├── HospitalDoctor.model.js
+│   ├── HospitalTreatment.model.js
+│   ├── Insurance.model.js
+│   ├── Invoice.model.js
+│   ├── LabTest.model.js
+│   ├── Laboratory.model.js
+│   ├── Media.model.js
+│   ├── MedicalRecord.model.js
+│   ├── Notification.model.js
+│   ├── Package.model.js
+│   ├── PasswordReset.model.js
+│   ├── Patient.model.js
+│   ├── Payment.model.js
+│   ├── Prescription.model.js
+│   ├── RefreshToken.model.js
+│   ├── Review.model.js
+│   ├── Subscription.model.js
+│   ├── SubscriptionPlan.model.js
+│   ├── SupportTicket.model.js
+│   ├── Translation.model.js
+│   ├── Treatment.model.js
+│   ├── TreatmentCategory.model.js
+│   ├── TreatmentSubcategory.model.js
+│   ├── User.model.js
+│   ├── WebsiteContent.model.js
+│   └── index.js
+├── routes
+│   ├── index.js
+│   ├── v1
+│   └── webhooks
+├── services
+│   ├── appointment.service.js
+│   ├── booking.service.js
+│   ├── cache.service.js
+│   ├── coupon.service.js
+│   ├── doctor.service.js
+│   ├── email.service.js
+│   ├── faq.service.js
+│   ├── hospital.service.js
+│   ├── insurance.service.js
+│   ├── invoice.service.js
+│   ├── labTest.service.js
+│   ├── laboratory.service.js
+│   ├── medicalRecord.service.js
+│   ├── notification.service.js
+│   ├── package.service.js
+│   ├── patient.service.js
+│   ├── payment.service.js
+│   ├── prescription.service.js
+│   ├── review.service.js
+│   ├── subscription.service.js
+│   ├── support.service.js
+│   ├── translation.service.js
+│   ├── treatment.service.js
+│   ├── treatmentCategory.service.js
+│   ├── upload.service.js
+│   ├── user.service.js
+│   └── websiteContent.service.js
+├── utils
+│   ├── error-handler.js
+│   ├── helpers.js
+│   ├── jwt.js
+│   ├── logger.js
+│   └── response.js
+└── validators
+    ├── appointment.validator.js
+    ├── auth.validator.js
+    ├── booking.validator.js
+    ├── coupon.validator.js
+    ├── hospital.validator.js
+    ├── payment.validator.js
+    ├── review.validator.js
+    └── user.validator.js
+
+13 directories, 121 files

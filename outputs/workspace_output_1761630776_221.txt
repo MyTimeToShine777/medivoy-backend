@@ -1,0 +1,9 @@
+✓ Created user.controller.js
+✓ Created hospital.controller.js
+✓ Created doctor.controller.js
+✓ Created patient.controller.js
+✓ Created treatment.controller.js
+✓ Created booking.controller.js
+✓ Created appointment.controller.js
+
+✓ Successfully generated 7 controller files!

@@ -1,0 +1,14 @@
+✓ Created laboratory.controller.js
+✓ Created labTest.controller.js
+✓ Created invoice.controller.js
+✓ Created package.controller.js
+✓ Created medicalRecord.controller.js
+✓ Created support.controller.js
+✓ Created subscription.controller.js
+✓ Created translation.controller.js
+✓ Created coupon.controller.js
+✓ Created faq.controller.js
+✓ Created websiteContent.controller.js
+✓ Created treatmentCategory.controller.js
+
+✓ Successfully generated 12 controller files!

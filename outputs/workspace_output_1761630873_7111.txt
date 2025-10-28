@@ -1,0 +1,10 @@
+✓ Created auth.routes.js
+✓ Created users.routes.js
+✓ Created hospitals.routes.js
+✓ Created doctors.routes.js
+✓ Created patients.routes.js
+✓ Created treatments.routes.js
+✓ Created bookings.routes.js
+✓ Created appointments.routes.js
+
+✓ Successfully generated 8 route files!

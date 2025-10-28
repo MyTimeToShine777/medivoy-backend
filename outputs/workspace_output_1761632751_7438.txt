@@ -1,0 +1,11 @@
+total 40
+drwxr-xr-x  2 root root 4096 Oct 28 06:22 .
+drwxr-xr-x 12 root root 4096 Oct 28 05:38 ..
+-rw-r--r--  1 root root 1412 Oct 28 06:22 appointment.validator.js
+-rw-r--r--  1 root root 1316 Oct 28 06:22 auth.validator.js
+-rw-r--r--  1 root root 1076 Oct 28 06:22 booking.validator.js
+-rw-r--r--  1 root root 1224 Oct 28 06:22 coupon.validator.js
+-rw-r--r--  1 root root 1785 Oct 28 06:22 hospital.validator.js
+-rw-r--r--  1 root root 1076 Oct 28 06:22 payment.validator.js
+-rw-r--r--  1 root root  676 Oct 28 06:22 review.validator.js
+-rw-r--r--  1 root root  987 Oct 28 06:22 user.validator.js

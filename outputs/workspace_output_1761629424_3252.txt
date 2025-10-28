@@ -1,0 +1,11 @@
+🏗️  Generating all Sequelize models...
+
+   ✓ Created User.model.js
+   ✓ Created Patient.model.js
+   ✓ Created Doctor.model.js
+   ✓ Created Hospital.model.js
+
+✅ Generated 4 model files!
+
+📝 Next: Continue generating remaining models...
+

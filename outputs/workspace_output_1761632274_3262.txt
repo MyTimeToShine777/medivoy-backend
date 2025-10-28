@@ -1,0 +1,8 @@
+✓ Created laboratory.service.js
+✓ Created labTest.service.js
+✓ Created invoice.service.js
+✓ Created package.service.js
+✓ Created medicalRecord.service.js
+✓ Created support.service.js
+
+✓ Successfully generated 6 service files!

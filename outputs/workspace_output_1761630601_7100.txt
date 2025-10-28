@@ -1,0 +1,9 @@
+✓ Created user.service.js
+✓ Created hospital.service.js
+✓ Created doctor.service.js
+✓ Created patient.service.js
+✓ Created treatment.service.js
+✓ Created booking.service.js
+✓ Created appointment.service.js
+
+✓ Successfully generated 7 service files!

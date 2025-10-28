@@ -1,0 +1,9 @@
+✓ Created payments.routes.js
+✓ Created prescriptions.routes.js
+✓ Created reviews.routes.js
+✓ Created notifications.routes.js
+✓ Created uploads.routes.js
+✓ Created insurance.routes.js
+✓ Created health.routes.js
+
+✓ Successfully generated 7 additional route files!
