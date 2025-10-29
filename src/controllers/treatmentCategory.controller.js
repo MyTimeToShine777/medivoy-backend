@@ -9,7 +9,7 @@ class TreatmentCategoryController {
    */
   async createTreatmentCategory(req, res) {
     try {
-      const { name, description, icon, sortOrder, isActive } = req.body;
+      const { name, description, icon, sort_order, isActive } = req.body;
       
       // Generate slug from name
       const slug = generateSlug(name);
@@ -20,7 +20,7 @@ class TreatmentCategoryController {
         description,
         icon,
         slug,
-        sortOrder,
+        sort_order,
         isActive,
       });
       
@@ -72,7 +72,7 @@ class TreatmentCategoryController {
   async updateTreatmentCategory(req, res) {
     try {
       const { id } = req.params;
-      const { name, description, icon, sortOrder, isActive } = req.body;
+      const { name, description, icon, sort_order, isActive } = req.body;
       
       // Find treatment category
       const treatmentCategory = await TreatmentCategory.findByPk(id);
@@ -84,7 +84,7 @@ class TreatmentCategoryController {
       }
       
       // Generate slug from name if name is provided
-      const updateData = { name, description, icon, sortOrder, isActive };
+      const updateData = { name, description, icon, sort_order, isActive };
       if (name) {
         updateData.slug = generateSlug(name);
       }
@@ -152,7 +152,7 @@ class TreatmentCategoryController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['sortOrder', 'ASC'], ['name', 'ASC']],
+        order: [['sort_order', 'ASC'], ['name', 'ASC']],
       });
       
       return successResponse(res, {
