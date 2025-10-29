@@ -11,7 +11,7 @@ const sequelize = new Sequelize(
     host: config.postgres.host,
     port: config.postgres.port,
     dialect: config.postgres.dialect,
-    logging: config.postgres.logging ? logger.debug : false,
+    logging: config.postgres.logging ? (msg) => logger.debug(msg) : false,
     pool: {
       max: config.postgres.pool.max,
       min: config.postgres.pool.min,

@@ -8,14 +8,14 @@ class FAQController {
    */
   async createFAQ(req, res) {
     try {
-      const { question, answer, category, sortOrder } = req.body;
+      const { question, answer, category, display_order } = req.body;
       
       // Create FAQ
       const faq = await FAQ.create({
         question,
         answer,
         category,
-        sortOrder,
+        display_order,
       });
       
       return successResponse(res, {
@@ -76,7 +76,7 @@ class FAQController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['sortOrder', 'ASC'], ['createdAt', 'DESC']],
+        order: [['display_order', 'ASC'], ['createdAt', 'DESC']],
       });
       
       return successResponse(res, {
@@ -110,7 +110,7 @@ class FAQController {
         where: { category },
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['sortOrder', 'ASC'], ['createdAt', 'DESC']],
+        order: [['display_order', 'ASC'], ['createdAt', 'DESC']],
       });
       
       return successResponse(res, {
@@ -137,7 +137,7 @@ class FAQController {
   async updateFAQ(req, res) {
     try {
       const { id } = req.params;
-      const { question, answer, category, sortOrder } = req.body;
+      const { question, answer, category, display_order } = req.body;
       
       // Find FAQ
       const faq = await FAQ.findByPk(id);
@@ -153,7 +153,7 @@ class FAQController {
         question,
         answer,
         category,
-        sortOrder,
+        display_order,
       });
       
       return successResponse(res, {
@@ -209,7 +209,7 @@ class FAQController {
       
       // Update sort order for each FAQ
       const updates = faqOrder.map((faqId, index) => 
-        FAQ.update({ sortOrder: index + 1 }, { where: { id: faqId } })
+        FAQ.update({ display_order: index + 1 }, { where: { id: faqId } })
       );
       
       await Promise.all(updates);
