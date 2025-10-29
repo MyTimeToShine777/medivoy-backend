@@ -1,5 +1,0 @@
-[main 19eeaa8] Add production ready summary documentation
- 1 file changed, 363 insertions(+)
- create mode 100644 PRODUCTION_READY_SUMMARY.md
-To https://github.com/MyTimeToShine777/medivoy-backend.git
-   9422fb0..19eeaa8  main -> main

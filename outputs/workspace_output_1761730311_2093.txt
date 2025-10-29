@@ -1,5 +1,0 @@
-[main bf421c8] 🎯 Add immediate fix guide for VS Code authentication error
- 1 file changed, 195 insertions(+)
- create mode 100644 FIX_YOUR_ERROR_NOW.md
-To https://github.com/MyTimeToShine777/medivoy-backend.git
-   4a13dce..bf421c8  main -> main

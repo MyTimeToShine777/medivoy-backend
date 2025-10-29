@@ -1,8 +1,0 @@
-total 32
-drwxr-xr-x  2 root root  117 Oct 28 05:39 .
-drwxr-xr-x 14 root root 4096 Oct 28 07:20 ..
--rw-r--r--  1 root root  864 Oct 28 05:20 database.js
--rw-r--r--  1 root root 4278 Oct 28 05:20 index.js
--rw-r--r--  1 root root  733 Oct 28 05:20 mongodb.js
--rw-r--r--  1 root root  715 Oct 28 05:20 redis.js
--rw-r--r--  1 root root 4650 Oct 28 05:39 swagger.js

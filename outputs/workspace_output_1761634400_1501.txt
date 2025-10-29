@@ -1,3 +1,0 @@
-To https://github.com/MyTimeToShine777/medivoy-backend.git
-   c135c10..c06a4b0  main -> main
-branch 'main' set up to track 'origin/main'.

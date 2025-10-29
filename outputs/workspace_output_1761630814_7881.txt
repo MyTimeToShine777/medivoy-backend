@@ -1,8 +1,0 @@
-✓ Created payment.controller.js
-✓ Created prescription.controller.js
-✓ Created review.controller.js
-✓ Created notification.controller.js
-✓ Created upload.controller.js
-✓ Created insurance.controller.js
-
-✓ Successfully generated 6 additional controller files!

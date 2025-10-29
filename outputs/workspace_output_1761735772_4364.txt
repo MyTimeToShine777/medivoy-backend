@@ -1,5 +1,0 @@
-[main 5f36b1a] Add quick reference guide
- 1 file changed, 100 insertions(+)
- create mode 100644 QUICK_REFERENCE.md
-To https://github.com/MyTimeToShine777/medivoy-backend.git
-   19eeaa8..5f36b1a  main -> main

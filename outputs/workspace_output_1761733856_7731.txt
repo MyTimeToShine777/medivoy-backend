@@ -1,8 +1,0 @@
-  async register(req, res) {
-  async login(req, res) {
-  async refresh(req, res) {
-  async logout(req, res) {
-  async getProfile(req, res) {
-  async updateProfile(req, res) {
-  async forgotPassword(req, res) {
-  async resetPassword(req, res) {

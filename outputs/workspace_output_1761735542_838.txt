@@ -1,1 +1,0 @@
-163:      if (search) where.name = { [Sequelize.Op.iLike]: `%${search}%` };

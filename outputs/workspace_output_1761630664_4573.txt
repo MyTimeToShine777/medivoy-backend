@@ -1,8 +1,0 @@
-✓ Created email.service.js
-✓ Created notification.service.js
-✓ Created payment.service.js
-✓ Created prescription.service.js
-✓ Created review.service.js
-✓ Created upload.service.js
-
-✓ Successfully generated 6 additional service files!

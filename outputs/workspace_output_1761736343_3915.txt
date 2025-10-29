@@ -1,5 +1,0 @@
-2:const { errorResponse } = require('../utils/response');
-111:  return errorResponse(
-126:const notFoundHandler = (req, res) => {
-127:  return errorResponse(
-136:  notFoundHandler

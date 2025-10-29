@@ -1,8 +1,0 @@
-25:  async register(req, res) {
-134:  async login(req, res) {
-210:  async refresh(req, res) {
-271:  async logout(req, res) {
-296:  async getProfile(req, res) {
-329:  async updateProfile(req, res) {
-377:  async forgotPassword(req, res) {
-419:  async resetPassword(req, res) {

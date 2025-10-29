@@ -1,9 +1,0 @@
-    req[property] = value;
-    next();
-  };
-};
-
-module.exports = {
-  validate,
-  validateJoi
-};

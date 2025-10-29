@@ -1,8 +1,0 @@
-✓ Created subscription.service.js
-✓ Created translation.service.js
-✓ Created coupon.service.js
-✓ Created faq.service.js
-✓ Created websiteContent.service.js
-✓ Created treatmentCategory.service.js
-
-✓ Successfully generated 6 service files!

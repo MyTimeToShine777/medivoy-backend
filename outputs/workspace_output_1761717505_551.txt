@@ -1,2 +1,0 @@
-To https://github.com/MyTimeToShine777/medivoy-backend.git
-   10baae8..801035d  main -> main
