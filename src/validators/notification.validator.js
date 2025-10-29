@@ -8,7 +8,7 @@ const createNotificationSchema = Joi.object({
   channel: Joi.string().valid('in_app', 'email', 'sms', 'push').default('in_app'),
   priority: Joi.string().valid('low', 'medium', 'high').default('medium'),
   data: Joi.object().default({}),
-  action_url: Joi.string().uri().allow('', null)
+  action_url: Joi.string().uri().allow('', null),
 });
 
 const sendBulkNotificationSchema = Joi.object({
@@ -19,15 +19,15 @@ const sendBulkNotificationSchema = Joi.object({
   channel: Joi.string().valid('in_app', 'email', 'sms', 'push').default('in_app'),
   priority: Joi.string().valid('low', 'medium', 'high').default('medium'),
   data: Joi.object().default({}),
-  action_url: Joi.string().uri().allow('', null)
+  action_url: Joi.string().uri().allow('', null),
 });
 
 const markAsReadSchema = Joi.object({
-  notification_ids: Joi.array().items(Joi.number().integer()).min(1).required()
+  notification_ids: Joi.array().items(Joi.number().integer()).min(1).required(),
 });
 
 module.exports = {
   createNotificationSchema,
   sendBulkNotificationSchema,
-  markAsReadSchema
+  markAsReadSchema,
 };

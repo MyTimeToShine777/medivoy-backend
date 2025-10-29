@@ -1,4 +1,3 @@
-'use strict';
 const bcrypt = require('bcryptjs');
 
 module.exports = {
@@ -18,8 +17,8 @@ module.exports = {
         is_active: true,
         is_verified: true,
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     ], {});
 
     console.log('✅ Admin user created successfully');
@@ -30,7 +29,7 @@ module.exports = {
 
   down: async (queryInterface, Sequelize) => {
     await queryInterface.bulkDelete('users', {
-      email: 'admin@medivoy.com'
+      email: 'admin@medivoy.com',
     }, {});
-  }
+  },
 };

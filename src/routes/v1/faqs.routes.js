@@ -1,15 +1,15 @@
 const express = require('express');
 const faqController = require('../../controllers/faq.controller');
-const authMiddleware = require('../../middleware/auth.middleware');
-const authorizeMiddleware = require('../../middleware/authorize.middleware');
+const auth = require('../../middleware/auth.middleware');
+const authorize = require('../../middleware/authorize.middleware');
 
 const router = express.Router();
 
 // Create FAQ (admin only)
 router.post(
   '/',
-  authMiddleware,
-  authorizeMiddleware(['admin']),
+  auth,
+  authorize(['admin']),
   faqController.createFAQ,
 );
 
@@ -34,16 +34,16 @@ router.get(
 // Update FAQ (admin only)
 router.put(
   '/:id',
-  authMiddleware,
-  authorizeMiddleware(['admin']),
+  auth,
+  authorize(['admin']),
   faqController.updateFAQ,
 );
 
 // Delete FAQ (admin only)
 router.delete(
   '/:id',
-  authMiddleware,
-  authorizeMiddleware(['admin']),
+  auth,
+  authorize(['admin']),
   faqController.deleteFAQ,
 );
 

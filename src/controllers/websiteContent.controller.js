@@ -8,8 +8,10 @@ class WebsiteContentController {
    */
   async createContent(req, res) {
     try {
-      const { title, slug, content, contentType, isActive, metaTitle, metaDescription } = req.body;
-      
+      const {
+        title, slug, content, contentType, isActive, metaTitle, metaDescription,
+      } = req.body;
+
       // Create website content
       const websiteContent = await WebsiteContent.create({
         title,
@@ -20,7 +22,7 @@ class WebsiteContentController {
         metaTitle,
         metaDescription,
       });
-      
+
       return successResponse(res, {
         message: 'Website content created successfully',
         data: websiteContent,
@@ -40,16 +42,16 @@ class WebsiteContentController {
   async getContent(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find website content
       const websiteContent = await WebsiteContent.findByPk(id);
-      
+
       if (!websiteContent) {
         return errorResponse(res, {
           message: 'Website content not found',
         }, 404);
       }
-      
+
       return successResponse(res, {
         message: 'Website content retrieved successfully',
         data: websiteContent,
@@ -69,17 +71,19 @@ class WebsiteContentController {
   async updateContent(req, res) {
     try {
       const { id } = req.params;
-      const { title, slug, content, contentType, isActive, metaTitle, metaDescription } = req.body;
-      
+      const {
+        title, slug, content, contentType, isActive, metaTitle, metaDescription,
+      } = req.body;
+
       // Find website content
       const websiteContent = await WebsiteContent.findByPk(id);
-      
+
       if (!websiteContent) {
         return errorResponse(res, {
           message: 'Website content not found',
         }, 404);
       }
-      
+
       // Update website content
       await websiteContent.update({
         title,
@@ -90,7 +94,7 @@ class WebsiteContentController {
         metaTitle,
         metaDescription,
       });
-      
+
       return successResponse(res, {
         message: 'Website content updated successfully',
         data: websiteContent,
@@ -110,19 +114,19 @@ class WebsiteContentController {
   async deleteContent(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find website content
       const websiteContent = await WebsiteContent.findByPk(id);
-      
+
       if (!websiteContent) {
         return errorResponse(res, {
           message: 'Website content not found',
         }, 404);
       }
-      
+
       // Delete website content
       await websiteContent.destroy();
-      
+
       return successResponse(res, {
         message: 'Website content deleted successfully',
       });
@@ -140,13 +144,15 @@ class WebsiteContentController {
    */
   async getAllContent(req, res) {
     try {
-      const { page = 1, limit = 10, contentType, isActive } = req.query;
-      
+      const {
+        page = 1, limit = 10, contentType, isActive,
+      } = req.query;
+
       // Build where clause
       const where = {};
       if (contentType) where.contentType = contentType;
       if (isActive !== undefined) where.isActive = isActive === 'true';
-      
+
       // Get website content with pagination
       const contents = await WebsiteContent.findAndCountAll({
         where,
@@ -154,7 +160,7 @@ class WebsiteContentController {
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return successResponse(res, {
         message: 'Website content retrieved successfully',
         data: contents.rows,
@@ -179,18 +185,18 @@ class WebsiteContentController {
   async getContentBySlug(req, res) {
     try {
       const { slug } = req.params;
-      
+
       // Find website content by slug
       const websiteContent = await WebsiteContent.findOne({
         where: { slug },
       });
-      
+
       if (!websiteContent) {
         return errorResponse(res, {
           message: 'Website content not found',
         }, 404);
       }
-      
+
       return successResponse(res, {
         message: 'Website content retrieved successfully',
         data: websiteContent,

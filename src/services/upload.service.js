@@ -37,7 +37,7 @@ class UploadService {
       if (!media) {
         throw new Error('Media not found');
       }
-      
+
       await media.update(data);
       return media;
     } catch (error) {
@@ -55,7 +55,7 @@ class UploadService {
       if (!media) {
         throw new Error('Media not found');
       }
-      
+
       await media.destroy();
       return true;
     } catch (error) {
@@ -70,7 +70,7 @@ class UploadService {
   async getEntityMedia(entityType, entityId, filters = {}) {
     try {
       const { page = 1, limit = 10 } = filters;
-      
+
       const media = await Media.findAndCountAll({
         where: {
           entity_type: entityType,
@@ -80,7 +80,7 @@ class UploadService {
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return media;
     } catch (error) {
       logger.error('Get entity media service error:', error);

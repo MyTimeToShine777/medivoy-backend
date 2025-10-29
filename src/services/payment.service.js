@@ -37,7 +37,7 @@ class PaymentService {
       if (!payment) {
         throw new Error('Payment not found');
       }
-      
+
       await payment.update(data);
       return payment;
     } catch (error) {
@@ -55,7 +55,7 @@ class PaymentService {
       if (!payment) {
         throw new Error('Payment not found');
       }
-      
+
       await payment.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class PaymentService {
   async getAllPayments(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const payments = await Payment.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return payments;
     } catch (error) {
       logger.error('Get all payments service error:', error);

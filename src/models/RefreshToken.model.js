@@ -5,29 +5,29 @@ const RefreshToken = sequelize.define('RefreshToken', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
   user_id: {
     type: DataTypes.INTEGER,
-    references: { model: 'users', key: 'id' }
+    references: { model: 'users', key: 'id' },
   },
   token: {
     type: DataTypes.TEXT,
     allowNull: false,
-    unique: true
+    unique: true,
   },
   expires_at: {
-    type: DataTypes.DATE
+    type: DataTypes.DATE,
   },
   is_revoked: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false
-  }
+    defaultValue: false,
+  },
 }, {
   tableName: 'refresh_tokens',
   timestamps: true,
   underscored: true,
-  updatedAt: false
+  updatedAt: false,
 });
 
 module.exports = RefreshToken;

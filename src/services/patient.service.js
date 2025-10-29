@@ -37,7 +37,7 @@ class PatientService {
       if (!patient) {
         throw new Error('Patient not found');
       }
-      
+
       await patient.update(data);
       return patient;
     } catch (error) {
@@ -55,7 +55,7 @@ class PatientService {
       if (!patient) {
         throw new Error('Patient not found');
       }
-      
+
       await patient.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class PatientService {
   async getAllPatients(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const patients = await Patient.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return patients;
     } catch (error) {
       logger.error('Get all patients service error:', error);

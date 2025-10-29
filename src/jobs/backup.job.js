@@ -52,9 +52,9 @@ const backupDatabase = async (data) => {
 
     // Create database backup using pg_dump
     const command = `pg_dump -h ${config.database.host} -U ${config.database.username} -d ${config.database.database} -F c -f ${backupFile}`;
-    
+
     await execAsync(command, {
-      env: { ...process.env, PGPASSWORD: config.database.password }
+      env: { ...process.env, PGPASSWORD: config.database.password },
     });
 
     logger.info('Database backup created', { backupFile });
@@ -106,7 +106,7 @@ const backupFiles = async (data) => {
 const fullBackup = async (data) => {
   const results = {
     database: null,
-    files: null
+    files: null,
   };
 
   try {
@@ -150,9 +150,9 @@ const scheduleDailyBackup = () => {
     { type: 'full', data: {} },
     {
       repeat: {
-        cron: '0 2 * * *' // 2 AM every day
-      }
-    }
+        cron: '0 2 * * *', // 2 AM every day
+      },
+    },
   );
 
   logger.info('Daily backup scheduled');
@@ -165,8 +165,8 @@ const addBackupJob = async (type, data = {}, options = {}) => {
       { type, data },
       {
         priority: options.priority || 1,
-        ...options
-      }
+        ...options,
+      },
     );
 
     logger.info('Backup job added to queue', { type, jobId: job.id });
@@ -179,5 +179,5 @@ const addBackupJob = async (type, data = {}, options = {}) => {
 
 module.exports = {
   addBackupJob,
-  scheduleDailyBackup
+  scheduleDailyBackup,
 };

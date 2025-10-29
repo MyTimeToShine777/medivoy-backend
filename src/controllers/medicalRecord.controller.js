@@ -8,8 +8,10 @@ class MedicalRecordController {
    */
   async createMedicalRecord(req, res) {
     try {
-      const { patientId, doctorId, hospitalId, recordType, recordDate, notes, fileUrl } = req.body;
-      
+      const {
+        patientId, doctorId, hospitalId, recordType, recordDate, notes, fileUrl,
+      } = req.body;
+
       // Create medical record
       const medicalRecord = await MedicalRecord.create({
         patientId,
@@ -20,7 +22,7 @@ class MedicalRecordController {
         notes,
         fileUrl,
       });
-      
+
       return successResponse(res, {
         message: 'Medical record created successfully',
         data: medicalRecord,
@@ -40,16 +42,16 @@ class MedicalRecordController {
   async getMedicalRecord(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find medical record
       const medicalRecord = await MedicalRecord.findByPk(id);
-      
+
       if (!medicalRecord) {
         return errorResponse(res, {
           message: 'Medical record not found',
         }, 404);
       }
-      
+
       return successResponse(res, {
         message: 'Medical record retrieved successfully',
         data: medicalRecord,
@@ -69,17 +71,19 @@ class MedicalRecordController {
   async updateMedicalRecord(req, res) {
     try {
       const { id } = req.params;
-      const { recordType, recordDate, notes, fileUrl } = req.body;
-      
+      const {
+        recordType, recordDate, notes, fileUrl,
+      } = req.body;
+
       // Find medical record
       const medicalRecord = await MedicalRecord.findByPk(id);
-      
+
       if (!medicalRecord) {
         return errorResponse(res, {
           message: 'Medical record not found',
         }, 404);
       }
-      
+
       // Update medical record
       await medicalRecord.update({
         recordType,
@@ -87,7 +91,7 @@ class MedicalRecordController {
         notes,
         fileUrl,
       });
-      
+
       return successResponse(res, {
         message: 'Medical record updated successfully',
         data: medicalRecord,
@@ -107,19 +111,19 @@ class MedicalRecordController {
   async deleteMedicalRecord(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find medical record
       const medicalRecord = await MedicalRecord.findByPk(id);
-      
+
       if (!medicalRecord) {
         return errorResponse(res, {
           message: 'Medical record not found',
         }, 404);
       }
-      
+
       // Delete medical record
       await medicalRecord.destroy();
-      
+
       return successResponse(res, {
         message: 'Medical record deleted successfully',
       });
@@ -139,11 +143,11 @@ class MedicalRecordController {
     try {
       const { patientId } = req.params;
       const { page = 1, limit = 10, recordType } = req.query;
-      
+
       // Build where clause
       const where = { patientId };
       if (recordType) where.recordType = recordType;
-      
+
       // Get medical records with pagination
       const medicalRecords = await MedicalRecord.findAndCountAll({
         where,
@@ -151,7 +155,7 @@ class MedicalRecordController {
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['recordDate', 'DESC']],
       });
-      
+
       return successResponse(res, {
         message: 'Medical records retrieved successfully',
         data: medicalRecords.rows,

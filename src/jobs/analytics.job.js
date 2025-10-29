@@ -1,8 +1,10 @@
-const { analyticsQueue } = require('./queue');
 const mongoose = require('mongoose');
-const logger = require('../utils/logger');
-const { Booking, Appointment, Payment, User, Hospital, Doctor } = require('../models');
 const { Op } = require('sequelize');
+const { analyticsQueue } = require('./queue');
+const logger = require('../utils/logger');
+const {
+  Booking, Appointment, Payment, User, Hospital, Doctor,
+} = require('../models');
 
 // Process analytics jobs
 analyticsQueue.process(async (job) => {
@@ -57,18 +59,18 @@ const generateDailyStats = async (data) => {
     const newUsers = await User.count({
       where: {
         created_at: {
-          [Op.between]: [startOfDay, endOfDay]
-        }
-      }
+          [Op.between]: [startOfDay, endOfDay],
+        },
+      },
     });
 
     // Count new bookings
     const newBookings = await Booking.count({
       where: {
         created_at: {
-          [Op.between]: [startOfDay, endOfDay]
-        }
-      }
+          [Op.between]: [startOfDay, endOfDay],
+        },
+      },
     });
 
     // Count completed appointments
@@ -76,9 +78,9 @@ const generateDailyStats = async (data) => {
       where: {
         status: 'completed',
         updated_at: {
-          [Op.between]: [startOfDay, endOfDay]
-        }
-      }
+          [Op.between]: [startOfDay, endOfDay],
+        },
+      },
     });
 
     // Calculate daily revenue
@@ -86,9 +88,9 @@ const generateDailyStats = async (data) => {
       where: {
         status: 'completed',
         created_at: {
-          [Op.between]: [startOfDay, endOfDay]
-        }
-      }
+          [Op.between]: [startOfDay, endOfDay],
+        },
+      },
     });
 
     // Save analytics data
@@ -99,8 +101,8 @@ const generateDailyStats = async (data) => {
         newUsers,
         newBookings,
         completedAppointments,
-        dailyRevenue: dailyRevenue || 0
-      }
+        dailyRevenue: dailyRevenue || 0,
+      },
     });
 
     logger.info('Daily stats generated', {
@@ -108,10 +110,15 @@ const generateDailyStats = async (data) => {
       newUsers,
       newBookings,
       completedAppointments,
-      dailyRevenue
+      dailyRevenue,
     });
 
-    return { success: true, stats: { newUsers, newBookings, completedAppointments, dailyRevenue } };
+    return {
+      success: true,
+      stats: {
+        newUsers, newBookings, completedAppointments, dailyRevenue,
+      },
+    };
   } catch (error) {
     logger.error('Failed to generate daily stats', { error: error.message });
     throw error;
@@ -133,46 +140,46 @@ const generateMonthlyReport = async (data) => {
       newUsers: await User.count({
         where: {
           created_at: {
-            [Op.between]: [startOfMonth, endOfMonth]
-          }
-        }
+            [Op.between]: [startOfMonth, endOfMonth],
+          },
+        },
       }),
       totalBookings: await Booking.count({
         where: {
           created_at: {
-            [Op.between]: [startOfMonth, endOfMonth]
-          }
-        }
+            [Op.between]: [startOfMonth, endOfMonth],
+          },
+        },
       }),
       completedBookings: await Booking.count({
         where: {
           status: 'completed',
           updated_at: {
-            [Op.between]: [startOfMonth, endOfMonth]
-          }
-        }
+            [Op.between]: [startOfMonth, endOfMonth],
+          },
+        },
       }),
       totalRevenue: await Payment.sum('amount', {
         where: {
           status: 'completed',
           created_at: {
-            [Op.between]: [startOfMonth, endOfMonth]
-          }
-        }
+            [Op.between]: [startOfMonth, endOfMonth],
+          },
+        },
       }) || 0,
       activeHospitals: await Hospital.count({
-        where: { is_active: true }
+        where: { is_active: true },
       }),
       activeDoctors: await Doctor.count({
-        where: { is_verified: true }
-      })
+        where: { is_verified: true },
+      }),
     };
 
     // Save monthly report
     await Analytics.create({
       date: startOfMonth,
       type: 'monthly_report',
-      data: stats
+      data: stats,
     });
 
     logger.info('Monthly report generated', { month: startOfMonth, stats });
@@ -197,8 +204,8 @@ const trackUserActivity = async (data) => {
       data: {
         action,
         metadata,
-        timestamp: new Date()
-      }
+        timestamp: new Date(),
+      },
     });
 
     logger.info('User activity tracked', { userId, action });
@@ -215,7 +222,8 @@ const analyzeRevenue = async (data) => {
   const date = data.date || new Date();
 
   try {
-    let startDate, endDate;
+    let startDate; let
+      endDate;
 
     switch (period) {
       case 'day':
@@ -240,18 +248,18 @@ const analyzeRevenue = async (data) => {
       where: {
         status: 'completed',
         created_at: {
-          [Op.between]: [startDate, endDate]
-        }
-      }
+          [Op.between]: [startDate, endDate],
+        },
+      },
     });
 
     const transactionCount = await Payment.count({
       where: {
         status: 'completed',
         created_at: {
-          [Op.between]: [startDate, endDate]
-        }
-      }
+          [Op.between]: [startDate, endDate],
+        },
+      },
     });
 
     const averageTransaction = transactionCount > 0 ? revenue / transactionCount : 0;
@@ -260,7 +268,7 @@ const analyzeRevenue = async (data) => {
       period,
       revenue,
       transactionCount,
-      averageTransaction
+      averageTransaction,
     });
 
     return {
@@ -271,8 +279,8 @@ const analyzeRevenue = async (data) => {
         endDate,
         revenue: revenue || 0,
         transactionCount,
-        averageTransaction
-      }
+        averageTransaction,
+      },
     };
   } catch (error) {
     logger.error('Failed to analyze revenue', { error: error.message });
@@ -291,11 +299,11 @@ const calculatePerformanceMetrics = async (data) => {
     // Average appointment duration
     const appointments = await Appointment.findAll({
       where: { status: 'completed' },
-      attributes: ['start_time', 'end_time']
+      attributes: ['start_time', 'end_time'],
     });
 
     let totalDuration = 0;
-    appointments.forEach(apt => {
+    appointments.forEach((apt) => {
       const duration = new Date(apt.end_time) - new Date(apt.start_time);
       totalDuration += duration;
     });
@@ -305,13 +313,13 @@ const calculatePerformanceMetrics = async (data) => {
     // Customer satisfaction (based on reviews)
     const { Review } = require('../models');
     const averageRating = await Review.findOne({
-      attributes: [[require('sequelize').fn('AVG', require('sequelize').col('rating')), 'avgRating']]
+      attributes: [[require('sequelize').fn('AVG', require('sequelize').col('rating')), 'avgRating']],
     });
 
     logger.info('Performance metrics calculated', {
       conversionRate,
       averageDuration,
-      averageRating: averageRating?.dataValues?.avgRating || 0
+      averageRating: averageRating?.dataValues?.avgRating || 0,
     });
 
     return {
@@ -319,8 +327,8 @@ const calculatePerformanceMetrics = async (data) => {
       metrics: {
         conversionRate,
         averageDuration: averageDuration / (1000 * 60), // Convert to minutes
-        averageRating: parseFloat(averageRating?.dataValues?.avgRating || 0)
-      }
+        averageRating: parseFloat(averageRating?.dataValues?.avgRating || 0),
+      },
     };
   } catch (error) {
     logger.error('Failed to calculate performance metrics', { error: error.message });
@@ -335,9 +343,9 @@ const scheduleAnalyticsJobs = () => {
     { type: 'daily_stats', data: {} },
     {
       repeat: {
-        cron: '0 0 * * *' // Midnight every day
-      }
-    }
+        cron: '0 0 * * *', // Midnight every day
+      },
+    },
   );
 
   // Generate monthly report on the 1st of each month
@@ -345,9 +353,9 @@ const scheduleAnalyticsJobs = () => {
     { type: 'monthly_report', data: {} },
     {
       repeat: {
-        cron: '0 1 1 * *' // 1 AM on the 1st of each month
-      }
-    }
+        cron: '0 1 1 * *', // 1 AM on the 1st of each month
+      },
+    },
   );
 
   logger.info('Analytics jobs scheduled');
@@ -360,8 +368,8 @@ const addAnalyticsJob = async (type, data = {}, options = {}) => {
       { type, data },
       {
         priority: options.priority || 3,
-        ...options
-      }
+        ...options,
+      },
     );
 
     logger.info('Analytics job added to queue', { type, jobId: job.id });
@@ -374,5 +382,5 @@ const addAnalyticsJob = async (type, data = {}, options = {}) => {
 
 module.exports = {
   addAnalyticsJob,
-  scheduleAnalyticsJobs
+  scheduleAnalyticsJobs,
 };

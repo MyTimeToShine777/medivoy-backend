@@ -6,7 +6,7 @@ const { SUPPORTED_LOCALES, DEFAULT_LOCALE } = require('../constants/locales');
 const localeMiddleware = (req, res, next) => {
   // Check query parameter
   let locale = req.query.lang || req.query.locale;
-  
+
   // Check header
   if (!locale) {
     const acceptLanguage = req.headers['accept-language'];
@@ -16,15 +16,15 @@ const localeMiddleware = (req, res, next) => {
       locale = primaryLang;
     }
   }
-  
+
   // Check if locale is supported
   if (!Object.values(SUPPORTED_LOCALES).includes(locale)) {
     locale = DEFAULT_LOCALE;
   }
-  
+
   // Attach locale to request
   req.locale = locale;
-  
+
   next();
 };
 

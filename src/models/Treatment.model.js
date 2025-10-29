@@ -5,47 +5,47 @@ const Treatment = sequelize.define('Treatment', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
   name: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: false,
   },
   category_id: {
     type: DataTypes.INTEGER,
     references: {
       model: 'treatment_categories',
-      key: 'id'
-    }
+      key: 'id',
+    },
   },
   subcategory_id: {
     type: DataTypes.INTEGER,
     references: {
       model: 'treatment_subcategories',
-      key: 'id'
-    }
+      key: 'id',
+    },
   },
   description: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
   },
   duration_days: {
-    type: DataTypes.INTEGER
+    type: DataTypes.INTEGER,
   },
   is_global: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
+    defaultValue: true,
   },
   image: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
   },
   is_active: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
-  }
+    defaultValue: true,
+  },
 }, {
   tableName: 'treatments',
   timestamps: true,
-  underscored: true
+  underscored: true,
 });
 
 module.exports = Treatment;

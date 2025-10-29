@@ -1,8 +1,8 @@
+const { Op } = require('sequelize');
 const { notificationQueue } = require('./queue');
 const { Subscription, SubscriptionPlan, User } = require('../models');
 const { addEmailJob } = require('./email.job');
 const logger = require('../utils/logger');
-const { Op } = require('sequelize');
 
 // Process subscription renewals
 const processSubscriptionRenewals = async () => {
@@ -16,23 +16,23 @@ const processSubscriptionRenewals = async () => {
     const expiringSubscriptions = await Subscription.findAll({
       where: {
         end_date: {
-          [Op.between]: [today, endOfDay]
+          [Op.between]: [today, endOfDay],
         },
         status: 'active',
-        auto_renew: true
+        auto_renew: true,
       },
       include: [
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'email', 'first_name', 'last_name']
+          attributes: ['id', 'email', 'first_name', 'last_name'],
         },
         {
           model: SubscriptionPlan,
           as: 'plan',
-          attributes: ['id', 'name', 'price', 'plan_type']
-        }
-      ]
+          attributes: ['id', 'name', 'price', 'plan_type'],
+        },
+      ],
     });
 
     logger.info(`Found ${expiringSubscriptions.length} subscriptions to renew`);
@@ -59,7 +59,7 @@ const processSubscriptionRenewals = async () => {
         await subscription.update({
           start_date: newStartDate,
           end_date: newEndDate,
-          renewed_at: new Date()
+          renewed_at: new Date(),
         });
 
         // Send renewal confirmation email
@@ -71,8 +71,8 @@ const processSubscriptionRenewals = async () => {
             amount: subscription.plan.price,
             startDate: newStartDate,
             endDate: newEndDate,
-            userName: `${subscription.user.first_name} ${subscription.user.last_name}`
-          }
+            userName: `${subscription.user.first_name} ${subscription.user.last_name}`,
+          },
         });
 
         // Send in-app notification
@@ -88,19 +88,19 @@ const processSubscriptionRenewals = async () => {
             data: {
               subscription_id: subscription.id,
               plan_name: subscription.plan.name,
-              end_date: newEndDate
-            }
-          }
+              end_date: newEndDate,
+            },
+          },
         });
 
         logger.info('Subscription renewed', {
           subscriptionId: subscription.id,
-          userId: subscription.user_id
+          userId: subscription.user_id,
         });
       } catch (error) {
         logger.error('Failed to renew subscription', {
           subscriptionId: subscription.id,
-          error: error.message
+          error: error.message,
         });
 
         // Send renewal failure notification
@@ -109,8 +109,8 @@ const processSubscriptionRenewals = async () => {
           subscription: {
             id: subscription.id,
             planName: subscription.plan.name,
-            userName: `${subscription.user.first_name} ${subscription.user.last_name}`
-          }
+            userName: `${subscription.user.first_name} ${subscription.user.last_name}`,
+          },
         });
       }
     }
@@ -135,22 +135,22 @@ const sendRenewalReminders = async () => {
     const expiringSubscriptions = await Subscription.findAll({
       where: {
         end_date: {
-          [Op.between]: [sevenDaysFromNow, endOfDay]
+          [Op.between]: [sevenDaysFromNow, endOfDay],
         },
-        status: 'active'
+        status: 'active',
       },
       include: [
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'email', 'first_name', 'last_name']
+          attributes: ['id', 'email', 'first_name', 'last_name'],
         },
         {
           model: SubscriptionPlan,
           as: 'plan',
-          attributes: ['id', 'name', 'price', 'plan_type']
-        }
-      ]
+          attributes: ['id', 'name', 'price', 'plan_type'],
+        },
+      ],
     });
 
     logger.info(`Found ${expiringSubscriptions.length} subscriptions expiring in 7 days`);
@@ -165,8 +165,8 @@ const sendRenewalReminders = async () => {
             planName: subscription.plan.name,
             endDate: subscription.end_date,
             autoRenew: subscription.auto_renew,
-            userName: `${subscription.user.first_name} ${subscription.user.last_name}`
-          }
+            userName: `${subscription.user.first_name} ${subscription.user.last_name}`,
+          },
         });
 
         // Send in-app notification
@@ -183,20 +183,20 @@ const sendRenewalReminders = async () => {
               subscription_id: subscription.id,
               plan_name: subscription.plan.name,
               end_date: subscription.end_date,
-              auto_renew: subscription.auto_renew
+              auto_renew: subscription.auto_renew,
             },
-            action_url: `/subscriptions/${subscription.id}`
-          }
+            action_url: `/subscriptions/${subscription.id}`,
+          },
         });
 
         logger.info('Renewal reminder sent', {
           subscriptionId: subscription.id,
-          userId: subscription.user_id
+          userId: subscription.user_id,
         });
       } catch (error) {
         logger.error('Failed to send renewal reminder', {
           subscriptionId: subscription.id,
-          error: error.message
+          error: error.message,
         });
       }
     }
@@ -217,22 +217,22 @@ const handleExpiredSubscriptions = async () => {
     const expiredSubscriptions = await Subscription.findAll({
       where: {
         end_date: {
-          [Op.lt]: today
+          [Op.lt]: today,
         },
-        status: 'active'
+        status: 'active',
       },
       include: [
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'email', 'first_name', 'last_name']
+          attributes: ['id', 'email', 'first_name', 'last_name'],
         },
         {
           model: SubscriptionPlan,
           as: 'plan',
-          attributes: ['id', 'name']
-        }
-      ]
+          attributes: ['id', 'name'],
+        },
+      ],
     });
 
     logger.info(`Found ${expiredSubscriptions.length} expired subscriptions`);
@@ -241,7 +241,7 @@ const handleExpiredSubscriptions = async () => {
       try {
         // Update subscription status
         await subscription.update({
-          status: 'expired'
+          status: 'expired',
         });
 
         // Send expiration notification
@@ -250,8 +250,8 @@ const handleExpiredSubscriptions = async () => {
           subscription: {
             id: subscription.id,
             planName: subscription.plan.name,
-            userName: `${subscription.user.first_name} ${subscription.user.last_name}`
-          }
+            userName: `${subscription.user.first_name} ${subscription.user.last_name}`,
+          },
         });
 
         // Send in-app notification
@@ -266,20 +266,20 @@ const handleExpiredSubscriptions = async () => {
             priority: 'high',
             data: {
               subscription_id: subscription.id,
-              plan_name: subscription.plan.name
+              plan_name: subscription.plan.name,
             },
-            action_url: '/subscriptions/plans'
-          }
+            action_url: '/subscriptions/plans',
+          },
         });
 
         logger.info('Expired subscription handled', {
           subscriptionId: subscription.id,
-          userId: subscription.user_id
+          userId: subscription.user_id,
         });
       } catch (error) {
         logger.error('Failed to handle expired subscription', {
           subscriptionId: subscription.id,
-          error: error.message
+          error: error.message,
         });
       }
     }
@@ -300,8 +300,8 @@ const scheduleSubscriptionRenewalJobs = () => {
     redis: {
       host: config.redis.host,
       port: config.redis.port,
-      password: config.redis.password
-    }
+      password: config.redis.password,
+    },
   });
 
   // Process renewals daily at midnight
@@ -310,9 +310,9 @@ const scheduleSubscriptionRenewalJobs = () => {
     {},
     {
       repeat: {
-        cron: '0 0 * * *' // Midnight every day
-      }
-    }
+        cron: '0 0 * * *', // Midnight every day
+      },
+    },
   );
 
   // Send renewal reminders daily at 9 AM
@@ -321,9 +321,9 @@ const scheduleSubscriptionRenewalJobs = () => {
     {},
     {
       repeat: {
-        cron: '0 9 * * *' // 9 AM every day
-      }
-    }
+        cron: '0 9 * * *', // 9 AM every day
+      },
+    },
   );
 
   // Handle expired subscriptions daily at 1 AM
@@ -332,23 +332,17 @@ const scheduleSubscriptionRenewalJobs = () => {
     {},
     {
       repeat: {
-        cron: '0 1 * * *' // 1 AM every day
-      }
-    }
+        cron: '0 1 * * *', // 1 AM every day
+      },
+    },
   );
 
   // Process renewal jobs
-  renewalQueue.process('process-renewals', async (job) => {
-    return await processSubscriptionRenewals();
-  });
+  renewalQueue.process('process-renewals', async (job) => await processSubscriptionRenewals());
 
-  renewalQueue.process('renewal-reminders', async (job) => {
-    return await sendRenewalReminders();
-  });
+  renewalQueue.process('renewal-reminders', async (job) => await sendRenewalReminders());
 
-  renewalQueue.process('handle-expired', async (job) => {
-    return await handleExpiredSubscriptions();
-  });
+  renewalQueue.process('handle-expired', async (job) => await handleExpiredSubscriptions());
 
   logger.info('Subscription renewal jobs scheduled');
 };
@@ -357,5 +351,5 @@ module.exports = {
   processSubscriptionRenewals,
   sendRenewalReminders,
   handleExpiredSubscriptions,
-  scheduleSubscriptionRenewalJobs
+  scheduleSubscriptionRenewalJobs,
 };

@@ -1,9 +1,9 @@
+const { Op } = require('sequelize');
 const { notificationQueue } = require('./queue');
 const { Booking, Payment, User } = require('../models');
 const { addEmailJob } = require('./email.job');
 const { addSMSJob } = require('./sms.job');
 const logger = require('../utils/logger');
-const { Op } = require('sequelize');
 
 // Send payment reminders for pending bookings
 const sendPaymentReminders = async () => {
@@ -15,29 +15,29 @@ const sendPaymentReminders = async () => {
     const bookings = await Booking.findAll({
       where: {
         status: {
-          [Op.in]: ['confirmed', 'quotation_sent']
+          [Op.in]: ['confirmed', 'quotation_sent'],
         },
         created_at: {
-          [Op.lt]: yesterday
-        }
+          [Op.lt]: yesterday,
+        },
       },
       include: [
         {
           model: User,
           as: 'patient',
-          attributes: ['id', 'email', 'phone', 'first_name', 'last_name']
+          attributes: ['id', 'email', 'phone', 'first_name', 'last_name'],
         },
         {
           model: Payment,
           as: 'payments',
           where: {
             status: {
-              [Op.in]: ['pending', 'failed']
-            }
+              [Op.in]: ['pending', 'failed'],
+            },
           },
-          required: false
-        }
-      ]
+          required: false,
+        },
+      ],
     });
 
     logger.info(`Found ${bookings.length} bookings with pending payments`);
@@ -54,8 +54,8 @@ const sendPaymentReminders = async () => {
             booking_number: booking.booking_number,
             amount: booking.total_cost,
             currency: booking.currency,
-            patientName
-          }
+            patientName,
+          },
         });
 
         // Send SMS reminder if phone number exists
@@ -64,7 +64,7 @@ const sendPaymentReminders = async () => {
             phone: booking.patient.phone,
             bookingNumber: booking.booking_number,
             amount: booking.total_cost,
-            currency: booking.currency
+            currency: booking.currency,
           });
         }
 
@@ -81,20 +81,20 @@ const sendPaymentReminders = async () => {
             data: {
               booking_id: booking.id,
               amount: booking.total_cost,
-              currency: booking.currency
+              currency: booking.currency,
             },
-            action_url: `/bookings/${booking.id}/payment`
-          }
+            action_url: `/bookings/${booking.id}/payment`,
+          },
         });
 
         logger.info('Payment reminder sent', {
           bookingId: booking.id,
-          patientId: booking.patient_id
+          patientId: booking.patient_id,
         });
       } catch (error) {
         logger.error('Failed to send payment reminder', {
           bookingId: booking.id,
-          error: error.message
+          error: error.message,
         });
       }
     }
@@ -116,29 +116,29 @@ const sendOverduePaymentNotifications = async () => {
     const bookings = await Booking.findAll({
       where: {
         status: {
-          [Op.in]: ['confirmed', 'quotation_sent']
+          [Op.in]: ['confirmed', 'quotation_sent'],
         },
         created_at: {
-          [Op.lt]: weekAgo
-        }
+          [Op.lt]: weekAgo,
+        },
       },
       include: [
         {
           model: User,
           as: 'patient',
-          attributes: ['id', 'email', 'phone', 'first_name', 'last_name']
+          attributes: ['id', 'email', 'phone', 'first_name', 'last_name'],
         },
         {
           model: Payment,
           as: 'payments',
           where: {
             status: {
-              [Op.in]: ['pending', 'failed']
-            }
+              [Op.in]: ['pending', 'failed'],
+            },
           },
-          required: false
-        }
-      ]
+          required: false,
+        },
+      ],
     });
 
     logger.info(`Found ${bookings.length} bookings with overdue payments`);
@@ -156,8 +156,8 @@ const sendOverduePaymentNotifications = async () => {
             amount: booking.total_cost,
             currency: booking.currency,
             patientName,
-            daysOverdue: Math.floor((new Date() - booking.created_at) / (1000 * 60 * 60 * 24))
-          }
+            daysOverdue: Math.floor((new Date() - booking.created_at) / (1000 * 60 * 60 * 24)),
+          },
         });
 
         // Send urgent notification
@@ -173,20 +173,20 @@ const sendOverduePaymentNotifications = async () => {
             data: {
               booking_id: booking.id,
               amount: booking.total_cost,
-              currency: booking.currency
+              currency: booking.currency,
             },
-            action_url: `/bookings/${booking.id}/payment`
-          }
+            action_url: `/bookings/${booking.id}/payment`,
+          },
         });
 
         logger.info('Overdue payment notification sent', {
           bookingId: booking.id,
-          patientId: booking.patient_id
+          patientId: booking.patient_id,
         });
       } catch (error) {
         logger.error('Failed to send overdue payment notification', {
           bookingId: booking.id,
-          error: error.message
+          error: error.message,
         });
       }
     }
@@ -207,8 +207,8 @@ const schedulePaymentReminders = () => {
     redis: {
       host: config.redis.host,
       port: config.redis.port,
-      password: config.redis.password
-    }
+      password: config.redis.password,
+    },
   });
 
   // Send payment reminders daily at 10 AM
@@ -217,9 +217,9 @@ const schedulePaymentReminders = () => {
     {},
     {
       repeat: {
-        cron: '0 10 * * *' // 10 AM every day
-      }
-    }
+        cron: '0 10 * * *', // 10 AM every day
+      },
+    },
   );
 
   // Check for overdue payments daily at 11 AM
@@ -228,19 +228,15 @@ const schedulePaymentReminders = () => {
     {},
     {
       repeat: {
-        cron: '0 11 * * *' // 11 AM every day
-      }
-    }
+        cron: '0 11 * * *', // 11 AM every day
+      },
+    },
   );
 
   // Process reminder jobs
-  paymentReminderQueue.process('daily-reminders', async (job) => {
-    return await sendPaymentReminders();
-  });
+  paymentReminderQueue.process('daily-reminders', async (job) => await sendPaymentReminders());
 
-  paymentReminderQueue.process('overdue-notifications', async (job) => {
-    return await sendOverduePaymentNotifications();
-  });
+  paymentReminderQueue.process('overdue-notifications', async (job) => await sendOverduePaymentNotifications());
 
   logger.info('Payment reminder jobs scheduled');
 };
@@ -248,5 +244,5 @@ const schedulePaymentReminders = () => {
 module.exports = {
   sendPaymentReminders,
   sendOverduePaymentNotifications,
-  schedulePaymentReminders
+  schedulePaymentReminders,
 };

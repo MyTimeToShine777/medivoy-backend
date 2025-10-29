@@ -6,9 +6,7 @@ const slugify = require('slugify');
  * @param {Number} length - Length of string
  * @returns {String} Random string
  */
-const generateRandomString = (length = 32) => {
-  return crypto.randomBytes(length).toString('hex');
-};
+const generateRandomString = (length = 32) => crypto.randomBytes(length).toString('hex');
 
 /**
  * Generate booking number
@@ -67,13 +65,11 @@ const generateTicketNumber = () => {
  * @param {String} text - Text to slugify
  * @returns {String} Slug
  */
-const generateSlug = (text) => {
-  return slugify(text, {
-    lower: true,
-    strict: true,
-    remove: /[*+~.()'"!:@]/g
-  });
-};
+const generateSlug = (text) => slugify(text, {
+  lower: true,
+  strict: true,
+  remove: /[*+~.()'"!:@]/g,
+});
 
 /**
  * Generate unique slug with counter
@@ -84,12 +80,12 @@ const generateSlug = (text) => {
 const generateUniqueSlug = async (text, checkExists) => {
   let slug = generateSlug(text);
   let counter = 1;
-  
+
   while (await checkExists(slug)) {
     slug = `${generateSlug(text)}-${counter}`;
     counter++;
   }
-  
+
   return slug;
 };
 
@@ -103,11 +99,11 @@ const getPagination = (page = 1, limit = 10) => {
   const pageNum = parseInt(page, 10) || 1;
   const limitNum = parseInt(limit, 10) || 10;
   const offset = (pageNum - 1) * limitNum;
-  
+
   return {
     page: pageNum,
     limit: limitNum,
-    offset
+    offset,
   };
 };
 
@@ -120,14 +116,14 @@ const getPagination = (page = 1, limit = 10) => {
  */
 const formatPaginationResponse = (total, page, limit) => {
   const totalPages = Math.ceil(total / limit);
-  
+
   return {
     total,
     page,
     limit,
     totalPages,
     hasNextPage: page < totalPages,
-    hasPrevPage: page > 1
+    hasPrevPage: page > 1,
   };
 };
 
@@ -138,7 +134,7 @@ const formatPaginationResponse = (total, page, limit) => {
  */
 const sanitizeInput = (input) => {
   if (typeof input !== 'string') return input;
-  
+
   return input
     .replace(/[<>]/g, '') // Remove < and >
     .trim();
@@ -150,12 +146,10 @@ const sanitizeInput = (input) => {
  * @param {String} currency - Currency code
  * @returns {String} Formatted currency
  */
-const formatCurrency = (amount, currency = 'USD') => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency
-  }).format(amount);
-};
+const formatCurrency = (amount, currency = 'USD') => new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency,
+}).format(amount);
 
 /**
  * Calculate age from date of birth
@@ -167,11 +161,11 @@ const calculateAge = (dateOfBirth) => {
   const birthDate = new Date(dateOfBirth);
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
-  
+
   if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
     age--;
   }
-  
+
   return age;
 };
 
@@ -183,10 +177,10 @@ const calculateAge = (dateOfBirth) => {
  */
 const maskSensitiveData = (data, visibleChars = 4) => {
   if (!data || data.length <= visibleChars) return data;
-  
+
   const visible = data.slice(-visibleChars);
   const masked = '*'.repeat(data.length - visibleChars);
-  
+
   return masked + visible;
 };
 
@@ -198,11 +192,11 @@ const maskSensitiveData = (data, visibleChars = 4) => {
 const generateOTP = (length = 6) => {
   const digits = '0123456789';
   let otp = '';
-  
+
   for (let i = 0; i < length; i++) {
     otp += digits[Math.floor(Math.random() * digits.length)];
   }
-  
+
   return otp;
 };
 
@@ -211,18 +205,14 @@ const generateOTP = (length = 6) => {
  * @param {Date} date - Date to check
  * @returns {Boolean} True if date is in past
  */
-const isDateInPast = (date) => {
-  return new Date(date) < new Date();
-};
+const isDateInPast = (date) => new Date(date) < new Date();
 
 /**
  * Check if date is in future
  * @param {Date} date - Date to check
  * @returns {Boolean} True if date is in future
  */
-const isDateInFuture = (date) => {
-  return new Date(date) > new Date();
-};
+const isDateInFuture = (date) => new Date(date) > new Date();
 
 /**
  * Add days to date
@@ -253,5 +243,5 @@ module.exports = {
   generateOTP,
   isDateInPast,
   isDateInFuture,
-  addDays
+  addDays,
 };

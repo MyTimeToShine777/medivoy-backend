@@ -1,11 +1,11 @@
 const googleTranslateService = require('../services/googleTranslate.service');
-const { 
-  addTranslationJob, 
-  getJobStatus, 
-  removeJob, 
+const {
+  addTranslationJob,
+  getJobStatus,
+  removeJob,
   getQueueStats,
   cleanCompletedJobs,
-  cleanFailedJobs 
+  cleanFailedJobs,
 } = require('../workers/translation.worker');
 const logger = require('../utils/logger');
 
@@ -19,26 +19,26 @@ exports.translateText = async (req, res) => {
     if (!text) {
       return res.status(400).json({
         success: false,
-        message: 'Text is required'
+        message: 'Text is required',
       });
     }
 
     const result = await googleTranslateService.translateText(
       text,
       targetLanguage || 'en',
-      sourceLanguage
+      sourceLanguage,
     );
 
     res.status(200).json({
       success: true,
-      data: result
+      data: result,
     });
   } catch (error) {
     logger.error('Translate text controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to translate text',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -53,26 +53,26 @@ exports.translateBatch = async (req, res) => {
     if (!texts || !Array.isArray(texts) || texts.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Texts array is required'
+        message: 'Texts array is required',
       });
     }
 
     const results = await googleTranslateService.translateBatch(
       texts,
       targetLanguage || 'en',
-      sourceLanguage
+      sourceLanguage,
     );
 
     res.status(200).json({
       success: true,
-      data: results
+      data: results,
     });
   } catch (error) {
     logger.error('Translate batch controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to translate batch',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -87,7 +87,7 @@ exports.detectLanguage = async (req, res) => {
     if (!text) {
       return res.status(400).json({
         success: false,
-        message: 'Text is required'
+        message: 'Text is required',
       });
     }
 
@@ -95,14 +95,14 @@ exports.detectLanguage = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: { language }
+      data: { language },
     });
   } catch (error) {
     logger.error('Detect language controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to detect language',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -116,14 +116,14 @@ exports.getSupportedLanguages = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: languages
+      data: languages,
     });
   } catch (error) {
     logger.error('Get supported languages controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get supported languages',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -133,12 +133,14 @@ exports.getSupportedLanguages = async (req, res) => {
  */
 exports.queueTranslation = async (req, res) => {
   try {
-    const { modelName, recordId, fields, targetLanguage } = req.body;
+    const {
+      modelName, recordId, fields, targetLanguage,
+    } = req.body;
 
     if (!modelName || !recordId || !fields) {
       return res.status(400).json({
         success: false,
-        message: 'Model name, record ID, and fields are required'
+        message: 'Model name, record ID, and fields are required',
       });
     }
 
@@ -146,20 +148,20 @@ exports.queueTranslation = async (req, res) => {
       modelName,
       recordId,
       fields,
-      targetLanguage || 'en'
+      targetLanguage || 'en',
     );
 
     res.status(201).json({
       success: true,
       message: 'Translation job queued successfully',
-      data: job
+      data: job,
     });
   } catch (error) {
     logger.error('Queue translation controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to queue translation',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -174,7 +176,7 @@ exports.getJobStatus = async (req, res) => {
     if (!jobId) {
       return res.status(400).json({
         success: false,
-        message: 'Job ID is required'
+        message: 'Job ID is required',
       });
     }
 
@@ -183,20 +185,20 @@ exports.getJobStatus = async (req, res) => {
     if (!status) {
       return res.status(404).json({
         success: false,
-        message: 'Job not found'
+        message: 'Job not found',
       });
     }
 
     res.status(200).json({
       success: true,
-      data: status
+      data: status,
     });
   } catch (error) {
     logger.error('Get job status controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get job status',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -211,7 +213,7 @@ exports.cancelJob = async (req, res) => {
     if (!jobId) {
       return res.status(400).json({
         success: false,
-        message: 'Job ID is required'
+        message: 'Job ID is required',
       });
     }
 
@@ -220,20 +222,20 @@ exports.cancelJob = async (req, res) => {
     if (!removed) {
       return res.status(404).json({
         success: false,
-        message: 'Job not found'
+        message: 'Job not found',
       });
     }
 
     res.status(200).json({
       success: true,
-      message: 'Job cancelled successfully'
+      message: 'Job cancelled successfully',
     });
   } catch (error) {
     logger.error('Cancel job controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to cancel job',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -247,14 +249,14 @@ exports.getQueueStats = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: stats
+      data: stats,
     });
   } catch (error) {
     logger.error('Get queue stats controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get queue statistics',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -264,20 +266,20 @@ exports.getQueueStats = async (req, res) => {
  */
 exports.cleanCompletedJobs = async (req, res) => {
   try {
-    const grace = parseInt(req.query.grace) || 0;
+    const grace = parseInt(req.query.grace, 10) || 0;
     const jobs = await cleanCompletedJobs(grace);
 
     res.status(200).json({
       success: true,
       message: `${jobs.length} completed jobs cleaned`,
-      data: { count: jobs.length }
+      data: { count: jobs.length },
     });
   } catch (error) {
     logger.error('Clean completed jobs controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to clean completed jobs',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -287,20 +289,20 @@ exports.cleanCompletedJobs = async (req, res) => {
  */
 exports.cleanFailedJobs = async (req, res) => {
   try {
-    const grace = parseInt(req.query.grace) || 0;
+    const grace = parseInt(req.query.grace, 10) || 0;
     const jobs = await cleanFailedJobs(grace);
 
     res.status(200).json({
       success: true,
       message: `${jobs.length} failed jobs cleaned`,
-      data: { count: jobs.length }
+      data: { count: jobs.length },
     });
   } catch (error) {
     logger.error('Clean failed jobs controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to clean failed jobs',
-      error: error.message
+      error: error.message,
     });
   }
 };

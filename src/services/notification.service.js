@@ -37,7 +37,7 @@ class NotificationService {
       if (!notification) {
         throw new Error('Notification not found');
       }
-      
+
       await notification.update(data);
       return notification;
     } catch (error) {
@@ -55,7 +55,7 @@ class NotificationService {
       if (!notification) {
         throw new Error('Notification not found');
       }
-      
+
       await notification.destroy();
       return true;
     } catch (error) {
@@ -71,14 +71,14 @@ class NotificationService {
     try {
       const { page = 1, limit = 10, ...where } = filters;
       where.userId = userId;
-      
+
       const notifications = await Notification.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return notifications;
     } catch (error) {
       logger.error('Get user notifications service error:', error);
@@ -95,7 +95,7 @@ class NotificationService {
       if (!notification) {
         throw new Error('Notification not found');
       }
-      
+
       await notification.update({ isRead: true });
       return notification;
     } catch (error) {

@@ -37,7 +37,7 @@ class AppointmentService {
       if (!appointment) {
         throw new Error('Appointment not found');
       }
-      
+
       await appointment.update(data);
       return appointment;
     } catch (error) {
@@ -55,7 +55,7 @@ class AppointmentService {
       if (!appointment) {
         throw new Error('Appointment not found');
       }
-      
+
       await appointment.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class AppointmentService {
   async getAllAppointments(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const appointments = await Appointment.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return appointments;
     } catch (error) {
       logger.error('Get all appointments service error:', error);
@@ -94,7 +94,7 @@ class AppointmentService {
       if (!appointment) {
         throw new Error('Appointment not found');
       }
-      
+
       await appointment.update({ status });
       return appointment;
     } catch (error) {

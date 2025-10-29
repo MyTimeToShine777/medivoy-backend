@@ -1,23 +1,23 @@
 const express = require('express');
 const websiteContentController = require('../../controllers/websiteContent.controller');
-const authMiddleware = require('../../middleware/auth.middleware');
-const authorizeMiddleware = require('../../middleware/authorize.middleware');
+const auth = require('../../middleware/auth.middleware');
+const authorize = require('../../middleware/authorize.middleware');
 
 const router = express.Router();
 
 // Create website content (admin only)
 router.post(
   '/',
-  authMiddleware,
-  authorizeMiddleware(['admin']),
+  auth,
+  authorize(['admin']),
   websiteContentController.createContent,
 );
 
 // Get website content by ID (admin only)
 router.get(
   '/:id',
-  authMiddleware,
-  authorizeMiddleware(['admin']),
+  auth,
+  authorize(['admin']),
   websiteContentController.getContent,
 );
 
@@ -30,16 +30,16 @@ router.get(
 // Update website content (admin only)
 router.put(
   '/:id',
-  authMiddleware,
-  authorizeMiddleware(['admin']),
+  auth,
+  authorize(['admin']),
   websiteContentController.updateContent,
 );
 
 // Delete website content (admin only)
 router.delete(
   '/:id',
-  authMiddleware,
-  authorizeMiddleware(['admin']),
+  auth,
+  authorize(['admin']),
   websiteContentController.deleteContent,
 );
 

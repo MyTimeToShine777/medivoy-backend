@@ -5,51 +5,51 @@ const MedicalRecord = sequelize.define('MedicalRecord', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
   patient_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    references: { model: 'patients', key: 'id' }
+    references: { model: 'patients', key: 'id' },
   },
   appointment_id: {
     type: DataTypes.INTEGER,
-    references: { model: 'appointments', key: 'id' }
+    references: { model: 'appointments', key: 'id' },
   },
   record_type: {
-    type: DataTypes.STRING(50)
+    type: DataTypes.STRING(50),
   },
   title: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: false,
   },
   description: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
   },
   file_url: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
   },
   file_size: {
-    type: DataTypes.INTEGER
+    type: DataTypes.INTEGER,
   },
   file_type: {
-    type: DataTypes.STRING(50)
+    type: DataTypes.STRING(50),
   },
   uploaded_by_user_id: {
     type: DataTypes.INTEGER,
-    references: { model: 'users', key: 'id' }
+    references: { model: 'users', key: 'id' },
   },
   record_date: {
-    type: DataTypes.DATEONLY
+    type: DataTypes.DATEONLY,
   },
   is_shared_with_doctors: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
-  }
+    defaultValue: true,
+  },
 }, {
   tableName: 'medical_records',
   timestamps: true,
-  underscored: true
+  underscored: true,
 });
 
 module.exports = MedicalRecord;

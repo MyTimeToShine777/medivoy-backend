@@ -3,8 +3,14 @@
  * Handles doctor availability schedules and time slots
  */
 
-const { Op } = require('sequelize');
-const { DoctorSchedule, Doctor, Hospital, Appointment, User } = require('../models');
+const { Op } = require("sequelize");
+const {
+  DoctorSchedule,
+  Doctor,
+  Hospital,
+  Appointment,
+  User,
+} = require("../models");
 
 /**
  * Create a new doctor schedule
@@ -28,7 +34,7 @@ exports.createSchedule = async (req, res) => {
       break_start_time,
       break_end_time,
       location,
-      notes
+      notes,
     } = req.body;
 
     // Validate doctor exists
@@ -36,7 +42,7 @@ exports.createSchedule = async (req, res) => {
     if (!doctor) {
       return res.status(404).json({
         success: false,
-        message: 'Doctor not found'
+        message: "Doctor not found",
       });
     }
 
@@ -49,25 +55,25 @@ exports.createSchedule = async (req, res) => {
         is_active: true,
         [Op.or]: [
           {
-            start_time: { [Op.between]: [start_time, end_time] }
+            start_time: { [Op.between]: [start_time, end_time] },
           },
           {
-            end_time: { [Op.between]: [start_time, end_time] }
+            end_time: { [Op.between]: [start_time, end_time] },
           },
           {
             [Op.and]: [
               { start_time: { [Op.lte]: start_time } },
-              { end_time: { [Op.gte]: end_time } }
-            ]
-          }
-        ]
-      }
+              { end_time: { [Op.gte]: end_time } },
+            ],
+          },
+        ],
+      },
     });
 
     if (overlapping) {
       return res.status(400).json({
         success: false,
-        message: 'Schedule overlaps with existing schedule for this day'
+        message: "Schedule overlaps with existing schedule for this day",
       });
     }
 
@@ -79,9 +85,9 @@ exports.createSchedule = async (req, res) => {
       end_time,
       slot_duration: slot_duration || 30,
       max_patients_per_slot: max_patients_per_slot || 1,
-      consultation_type: consultation_type || 'both',
+      consultation_type: consultation_type || "both",
       consultation_fee,
-      currency: currency || 'USD',
+      currency: currency || "USD",
       is_recurring: is_recurring !== false,
       effective_from: effective_from || new Date(),
       effective_to,
@@ -89,20 +95,20 @@ exports.createSchedule = async (req, res) => {
       break_end_time,
       location,
       notes,
-      is_active: true
+      is_active: true,
     });
 
     res.status(201).json({
       success: true,
-      message: 'Doctor schedule created successfully',
-      data: schedule
+      message: "Doctor schedule created successfully",
+      data: schedule,
     });
   } catch (error) {
-    console.error('Error creating doctor schedule:', error);
+    console.error("Error creating doctor schedule:", error);
     res.status(500).json({
       success: false,
-      message: 'Error creating doctor schedule',
-      error: error.message
+      message: "Error creating doctor schedule",
+      error: error.message,
     });
   }
 };
@@ -117,38 +123,44 @@ exports.getDoctorSchedules = async (req, res) => {
 
     const whereClause = { doctor_id: doctorId };
     if (hospitalId) whereClause.hospital_id = hospitalId;
-    if (isActive !== undefined) whereClause.is_active = isActive === 'true';
+    if (isActive !== undefined) whereClause.is_active = isActive === "true";
 
     const schedules = await DoctorSchedule.findAll({
       where: whereClause,
       include: [
         {
           model: Doctor,
-          as: 'doctor',
-          include: [{ model: User, as: 'user', attributes: ['first_name', 'last_name', 'email'] }]
+          as: "doctor",
+          include: [
+            {
+              model: User,
+              as: "user",
+              attributes: ["first_name", "last_name", "email"],
+            },
+          ],
         },
         {
           model: Hospital,
-          as: 'hospital',
-          attributes: ['id', 'name', 'city', 'country']
-        }
+          as: "hospital",
+          attributes: ["id", "name", "city", "country"],
+        },
       ],
       order: [
-        ['day_of_week', 'ASC'],
-        ['start_time', 'ASC']
-      ]
+        ["day_of_week", "ASC"],
+        ["start_time", "ASC"],
+      ],
     });
 
     res.json({
       success: true,
-      data: schedules
+      data: schedules,
     });
   } catch (error) {
-    console.error('Error fetching doctor schedules:', error);
+    console.error("Error fetching doctor schedules:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching doctor schedules',
-      error: error.message
+      message: "Error fetching doctor schedules",
+      error: error.message,
     });
   }
 };
@@ -164,34 +176,40 @@ exports.getScheduleById = async (req, res) => {
       include: [
         {
           model: Doctor,
-          as: 'doctor',
-          include: [{ model: User, as: 'user', attributes: ['first_name', 'last_name', 'email'] }]
+          as: "doctor",
+          include: [
+            {
+              model: User,
+              as: "user",
+              attributes: ["first_name", "last_name", "email"],
+            },
+          ],
         },
         {
           model: Hospital,
-          as: 'hospital',
-          attributes: ['id', 'name', 'city', 'country']
-        }
-      ]
+          as: "hospital",
+          attributes: ["id", "name", "city", "country"],
+        },
+      ],
     });
 
     if (!schedule) {
       return res.status(404).json({
         success: false,
-        message: 'Schedule not found'
+        message: "Schedule not found",
       });
     }
 
     res.json({
       success: true,
-      data: schedule
+      data: schedule,
     });
   } catch (error) {
-    console.error('Error fetching schedule:', error);
+    console.error("Error fetching schedule:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching schedule',
-      error: error.message
+      message: "Error fetching schedule",
+      error: error.message,
     });
   }
 };
@@ -208,12 +226,16 @@ exports.updateSchedule = async (req, res) => {
     if (!schedule) {
       return res.status(404).json({
         success: false,
-        message: 'Schedule not found'
+        message: "Schedule not found",
       });
     }
 
     // Check for overlapping schedules if time is being updated
-    if (updateData.start_time || updateData.end_time || updateData.day_of_week) {
+    if (
+      updateData.start_time ||
+      updateData.end_time ||
+      updateData.day_of_week
+    ) {
       const overlapping = await DoctorSchedule.findOne({
         where: {
           id: { [Op.ne]: id },
@@ -226,26 +248,26 @@ exports.updateSchedule = async (req, res) => {
               start_time: {
                 [Op.between]: [
                   updateData.start_time || schedule.start_time,
-                  updateData.end_time || schedule.end_time
-                ]
-              }
+                  updateData.end_time || schedule.end_time,
+                ],
+              },
             },
             {
               end_time: {
                 [Op.between]: [
                   updateData.start_time || schedule.start_time,
-                  updateData.end_time || schedule.end_time
-                ]
-              }
-            }
-          ]
-        }
+                  updateData.end_time || schedule.end_time,
+                ],
+              },
+            },
+          ],
+        },
       });
 
       if (overlapping) {
         return res.status(400).json({
           success: false,
-          message: 'Updated schedule overlaps with existing schedule'
+          message: "Updated schedule overlaps with existing schedule",
         });
       }
     }
@@ -254,15 +276,15 @@ exports.updateSchedule = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Schedule updated successfully',
-      data: schedule
+      message: "Schedule updated successfully",
+      data: schedule,
     });
   } catch (error) {
-    console.error('Error updating schedule:', error);
+    console.error("Error updating schedule:", error);
     res.status(500).json({
       success: false,
-      message: 'Error updating schedule',
-      error: error.message
+      message: "Error updating schedule",
+      error: error.message,
     });
   }
 };
@@ -278,7 +300,7 @@ exports.deleteSchedule = async (req, res) => {
     if (!schedule) {
       return res.status(404).json({
         success: false,
-        message: 'Schedule not found'
+        message: "Schedule not found",
       });
     }
 
@@ -287,14 +309,14 @@ exports.deleteSchedule = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Schedule deleted successfully'
+      message: "Schedule deleted successfully",
     });
   } catch (error) {
-    console.error('Error deleting schedule:', error);
+    console.error("Error deleting schedule:", error);
     res.status(500).json({
       success: false,
-      message: 'Error deleting schedule',
-      error: error.message
+      message: "Error deleting schedule",
+      error: error.message,
     });
   }
 };
@@ -310,39 +332,48 @@ exports.getAvailableSlots = async (req, res) => {
     if (!date) {
       return res.status(400).json({
         success: false,
-        message: 'Date is required'
+        message: "Date is required",
       });
     }
 
     const requestedDate = new Date(date);
-    const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][requestedDate.getDay()];
+    const dayOfWeek = [
+      "sunday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+    ][requestedDate.getDay()];
 
     // Get doctor's schedule for the day
     const whereClause = {
       doctor_id: doctorId,
       day_of_week: dayOfWeek,
       is_active: true,
-      effective_from: { [Op.lte]: requestedDate }
+      effective_from: { [Op.lte]: requestedDate },
     };
 
     if (hospitalId) whereClause.hospital_id = hospitalId;
-    if (consultationType) whereClause.consultation_type = { [Op.in]: [consultationType, 'both'] };
+    if (consultationType)
+      whereClause.consultation_type = { [Op.in]: [consultationType, "both"] };
 
     const schedules = await DoctorSchedule.findAll({
       where: {
         ...whereClause,
         [Op.or]: [
           { effective_to: null },
-          { effective_to: { [Op.gte]: requestedDate } }
-        ]
-      }
+          { effective_to: { [Op.gte]: requestedDate } },
+        ],
+      },
     });
 
     if (schedules.length === 0) {
       return res.json({
         success: true,
-        message: 'No schedules found for this date',
-        data: []
+        message: "No schedules found for this date",
+        data: [],
       });
     }
 
@@ -351,9 +382,9 @@ exports.getAvailableSlots = async (req, res) => {
       where: {
         doctor_id: doctorId,
         appointment_date: date,
-        status: { [Op.notIn]: ['cancelled', 'rejected'] }
+        status: { [Op.notIn]: ["cancelled", "rejected"] },
       },
-      attributes: ['appointment_time', 'duration']
+      attributes: ["appointment_time", "duration"],
     });
 
     // Generate available slots
@@ -365,12 +396,14 @@ exports.getAvailableSlots = async (req, res) => {
         schedule.end_time,
         schedule.slot_duration,
         schedule.break_start_time,
-        schedule.break_end_time
+        schedule.break_end_time,
       );
 
       // Filter out booked slots
-      const bookedTimes = existingAppointments.map(apt => apt.appointment_time);
-      const available = slots.filter(slot => !bookedTimes.includes(slot));
+      const bookedTimes = existingAppointments.map(
+        (apt) => apt.appointment_time,
+      );
+      const available = slots.filter((slot) => !bookedTimes.includes(slot));
 
       availableSlots.push({
         schedule_id: schedule.id,
@@ -378,20 +411,20 @@ exports.getAvailableSlots = async (req, res) => {
         consultation_type: schedule.consultation_type,
         consultation_fee: schedule.consultation_fee,
         currency: schedule.currency,
-        slots: available
+        slots: available,
       });
     }
 
     res.json({
       success: true,
-      data: availableSlots
+      data: availableSlots,
     });
   } catch (error) {
-    console.error('Error fetching available slots:', error);
+    console.error("Error fetching available slots:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching available slots',
-      error: error.message
+      message: "Error fetching available slots",
+      error: error.message,
     });
   }
 };
@@ -408,7 +441,12 @@ function generateTimeSlots(startTime, endTime, duration, breakStart, breakEnd) {
 
   while (current + duration <= end) {
     // Skip break time
-    if (breakStartMin && breakEndMin && current >= breakStartMin && current < breakEndMin) {
+    if (
+      breakStartMin &&
+      breakEndMin &&
+      current >= breakStartMin &&
+      current < breakEndMin
+    ) {
       current = breakEndMin;
       continue;
     }
@@ -424,7 +462,7 @@ function generateTimeSlots(startTime, endTime, duration, breakStart, breakEnd) {
  * Convert time string to minutes
  */
 function timeToMinutes(timeStr) {
-  const [hours, minutes] = timeStr.split(':').map(Number);
+  const [hours, minutes] = timeStr.split(":").map(Number);
   return hours * 60 + minutes;
 }
 
@@ -434,7 +472,7 @@ function timeToMinutes(timeStr) {
 function minutesToTime(minutes) {
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
 }
 
 /**
@@ -447,25 +485,25 @@ exports.bulkCreateSchedules = async (req, res) => {
     if (!Array.isArray(schedules) || schedules.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Schedules array is required'
+        message: "Schedules array is required",
       });
     }
 
     const createdSchedules = await DoctorSchedule.bulkCreate(schedules, {
-      validate: true
+      validate: true,
     });
 
     res.status(201).json({
       success: true,
       message: `${createdSchedules.length} schedules created successfully`,
-      data: createdSchedules
+      data: createdSchedules,
     });
   } catch (error) {
-    console.error('Error bulk creating schedules:', error);
+    console.error("Error bulk creating schedules:", error);
     res.status(500).json({
       success: false,
-      message: 'Error bulk creating schedules',
-      error: error.message
+      message: "Error bulk creating schedules",
+      error: error.message,
     });
   }
 };

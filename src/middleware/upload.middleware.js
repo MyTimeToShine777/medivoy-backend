@@ -9,9 +9,9 @@ const storage = multer.diskStorage({
     cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
-  }
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+    cb(null, `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`);
+  },
 });
 
 // File filter
@@ -28,8 +28,8 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: MAX_FILE_SIZES.DOCUMENT
-  }
+    fileSize: MAX_FILE_SIZES.DOCUMENT,
+  },
 });
 
 // Upload single file
@@ -45,5 +45,5 @@ module.exports = {
   upload,
   uploadSingle,
   uploadMultiple,
-  uploadFields
+  uploadFields,
 };

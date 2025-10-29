@@ -2,36 +2,37 @@
 
 module.exports = {
   // Image file types
-  IMAGE_JPEG: 'image/jpeg',
-  IMAGE_PNG: 'image/png',
-  IMAGE_GIF: 'image/gif',
-  IMAGE_WEBP: 'image/webp',
+  IMAGE_JPEG: "image/jpeg",
+  IMAGE_PNG: "image/png",
+  IMAGE_GIF: "image/gif",
+  IMAGE_WEBP: "image/webp",
 
   // Document file types
-  DOCUMENT_PDF: 'application/pdf',
-  DOCUMENT_DOC: 'application/msword',
-  DOCUMENT_DOCX: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  DOCUMENT_PDF: "application/pdf",
+  DOCUMENT_DOC: "application/msword",
+  DOCUMENT_DOCX:
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 
   // Allowed file types for upload
   ALLOWED_FILE_TYPES: [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ],
 
   // Allowed MIME types (alias for ALLOWED_FILE_TYPES)
   ALLOWED_MIME_TYPES: [
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ],
 
   // Maximum file sizes (in bytes)

@@ -37,7 +37,7 @@ class TranslationService {
       if (!translation) {
         throw new Error('Translation not found');
       }
-      
+
       await translation.update(data);
       return translation;
     } catch (error) {
@@ -55,7 +55,7 @@ class TranslationService {
       if (!translation) {
         throw new Error('Translation not found');
       }
-      
+
       await translation.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class TranslationService {
   async getAllTranslations(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const translations = await Translation.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['key', 'ASC']],
       });
-      
+
       return translations;
     } catch (error) {
       logger.error('Get all translations service error:', error);

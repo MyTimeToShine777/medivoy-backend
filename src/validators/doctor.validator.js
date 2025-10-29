@@ -12,7 +12,7 @@ const createDoctorSchema = Joi.object({
   availability: Joi.object().default({}),
   is_verified: Joi.boolean().default(false),
   rating: Joi.number().min(0).max(5).default(0),
-  total_reviews: Joi.number().integer().min(0).default(0)
+  total_reviews: Joi.number().integer().min(0).default(0),
 });
 
 const updateDoctorSchema = Joi.object({
@@ -26,7 +26,7 @@ const updateDoctorSchema = Joi.object({
   availability: Joi.object(),
   is_verified: Joi.boolean(),
   rating: Joi.number().min(0).max(5),
-  total_reviews: Joi.number().integer().min(0)
+  total_reviews: Joi.number().integer().min(0),
 }).min(1);
 
 const availabilitySchema = Joi.object({
@@ -34,13 +34,13 @@ const availabilitySchema = Joi.object({
   slots: Joi.array().items(
     Joi.object({
       start_time: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).required(),
-      end_time: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).required()
-    })
-  ).required()
+      end_time: Joi.string().pattern(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/).required(),
+    }),
+  ).required(),
 });
 
 module.exports = {
   createDoctorSchema,
   updateDoctorSchema,
-  availabilitySchema
+  availabilitySchema,
 };

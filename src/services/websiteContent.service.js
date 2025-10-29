@@ -37,7 +37,7 @@ class WebsiteContentService {
       if (!websiteContent) {
         throw new Error('Website content not found');
       }
-      
+
       await websiteContent.update(data);
       return websiteContent;
     } catch (error) {
@@ -55,7 +55,7 @@ class WebsiteContentService {
       if (!websiteContent) {
         throw new Error('Website content not found');
       }
-      
+
       await websiteContent.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class WebsiteContentService {
   async getAllContent(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const websiteContent = await WebsiteContent.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return websiteContent;
     } catch (error) {
       logger.error('Get all website content service error:', error);

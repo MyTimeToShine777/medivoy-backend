@@ -37,7 +37,7 @@ class InsuranceService {
       if (!insurance) {
         throw new Error('Insurance provider not found');
       }
-      
+
       await insurance.update(data);
       return insurance;
     } catch (error) {
@@ -55,7 +55,7 @@ class InsuranceService {
       if (!insurance) {
         throw new Error('Insurance provider not found');
       }
-      
+
       await insurance.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class InsuranceService {
   async getAllInsurances(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const insurances = await Insurance.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return insurances;
     } catch (error) {
       logger.error('Get all insurances service error:', error);

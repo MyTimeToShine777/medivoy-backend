@@ -19,7 +19,7 @@ exports.getAllStaff = async (req, res) => {
       hospitalId,
       employmentStatus,
       sortBy = 'created_at',
-      sortOrder = 'DESC'
+      sortOrder = 'DESC',
     } = req.query;
 
     const offset = (page - 1) * limit;
@@ -29,7 +29,7 @@ exports.getAllStaff = async (req, res) => {
       whereClause[Op.or] = [
         { employee_id: { [Op.iLike]: `%${search}%` } },
         { department: { [Op.iLike]: `%${search}%` } },
-        { designation: { [Op.iLike]: `%${search}%` } }
+        { designation: { [Op.iLike]: `%${search}%` } },
       ];
     }
 
@@ -43,17 +43,17 @@ exports.getAllStaff = async (req, res) => {
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'first_name', 'last_name', 'email', 'phone', 'role']
+          attributes: ['id', 'first_name', 'last_name', 'email', 'phone', 'role'],
         },
         {
           model: Hospital,
           as: 'hospital',
-          attributes: ['id', 'name', 'city', 'country']
-        }
+          attributes: ['id', 'name', 'city', 'country'],
+        },
       ],
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-      order: [[sortBy, sortOrder]]
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10),
+      order: [[sortBy, sortOrder]],
     });
 
     res.json({
@@ -61,17 +61,17 @@ exports.getAllStaff = async (req, res) => {
       data: rows,
       pagination: {
         total: count,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(count / limit)
-      }
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+        totalPages: Math.ceil(count / limit),
+      },
     });
   } catch (error) {
     console.error('Error fetching staff:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching staff members',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -88,33 +88,33 @@ exports.getStaffById = async (req, res) => {
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'first_name', 'last_name', 'email', 'phone', 'role', 'is_active']
+          attributes: ['id', 'first_name', 'last_name', 'email', 'phone', 'role', 'is_active'],
         },
         {
           model: Hospital,
           as: 'hospital',
-          attributes: ['id', 'name', 'city', 'country', 'address']
-        }
-      ]
+          attributes: ['id', 'name', 'city', 'country', 'address'],
+        },
+      ],
     });
 
     if (!staff) {
       return res.status(404).json({
         success: false,
-        message: 'Staff member not found'
+        message: 'Staff member not found',
       });
     }
 
     res.json({
       success: true,
-      data: staff
+      data: staff,
     });
   } catch (error) {
     console.error('Error fetching staff member:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching staff member',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -148,7 +148,7 @@ exports.createStaff = async (req, res) => {
       commission_rate,
       permissions,
       notes,
-      profile_image
+      profile_image,
     } = req.body;
 
     // Validate user exists
@@ -156,7 +156,7 @@ exports.createStaff = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: 'User not found'
+        message: 'User not found',
       });
     }
 
@@ -165,7 +165,7 @@ exports.createStaff = async (req, res) => {
     if (existingStaff) {
       return res.status(400).json({
         success: false,
-        message: 'Staff profile already exists for this user'
+        message: 'Staff profile already exists for this user',
       });
     }
 
@@ -197,7 +197,7 @@ exports.createStaff = async (req, res) => {
       permissions,
       notes,
       profile_image,
-      is_active: true
+      is_active: true,
     });
 
     // Update user role if needed
@@ -208,21 +208,21 @@ exports.createStaff = async (req, res) => {
     const staffWithDetails = await Staff.findByPk(staff.id, {
       include: [
         { model: User, as: 'user', attributes: ['id', 'first_name', 'last_name', 'email', 'phone'] },
-        { model: Hospital, as: 'hospital', attributes: ['id', 'name', 'city', 'country'] }
-      ]
+        { model: Hospital, as: 'hospital', attributes: ['id', 'name', 'city', 'country'] },
+      ],
     });
 
     res.status(201).json({
       success: true,
       message: 'Staff member created successfully',
-      data: staffWithDetails
+      data: staffWithDetails,
     });
   } catch (error) {
     console.error('Error creating staff member:', error);
     res.status(500).json({
       success: false,
       message: 'Error creating staff member',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -239,7 +239,7 @@ exports.updateStaff = async (req, res) => {
     if (!staff) {
       return res.status(404).json({
         success: false,
-        message: 'Staff member not found'
+        message: 'Staff member not found',
       });
     }
 
@@ -248,21 +248,21 @@ exports.updateStaff = async (req, res) => {
     const updatedStaff = await Staff.findByPk(id, {
       include: [
         { model: User, as: 'user', attributes: ['id', 'first_name', 'last_name', 'email', 'phone'] },
-        { model: Hospital, as: 'hospital', attributes: ['id', 'name', 'city', 'country'] }
-      ]
+        { model: Hospital, as: 'hospital', attributes: ['id', 'name', 'city', 'country'] },
+      ],
     });
 
     res.json({
       success: true,
       message: 'Staff member updated successfully',
-      data: updatedStaff
+      data: updatedStaff,
     });
   } catch (error) {
     console.error('Error updating staff member:', error);
     res.status(500).json({
       success: false,
       message: 'Error updating staff member',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -278,7 +278,7 @@ exports.deleteStaff = async (req, res) => {
     if (!staff) {
       return res.status(404).json({
         success: false,
-        message: 'Staff member not found'
+        message: 'Staff member not found',
       });
     }
 
@@ -287,14 +287,14 @@ exports.deleteStaff = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Staff member deleted successfully'
+      message: 'Staff member deleted successfully',
     });
   } catch (error) {
     console.error('Error deleting staff member:', error);
     res.status(500).json({
       success: false,
       message: 'Error deleting staff member',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -309,14 +309,14 @@ exports.getStaffPerformance = async (req, res) => {
 
     const staff = await Staff.findByPk(id, {
       include: [
-        { model: User, as: 'user', attributes: ['first_name', 'last_name', 'email'] }
-      ]
+        { model: User, as: 'user', attributes: ['first_name', 'last_name', 'email'] },
+      ],
     });
 
     if (!staff) {
       return res.status(404).json({
         success: false,
-        message: 'Staff member not found'
+        message: 'Staff member not found',
       });
     }
 
@@ -328,19 +328,19 @@ exports.getStaffPerformance = async (req, res) => {
       total_bookings_handled: staff.total_bookings_handled,
       total_revenue_generated: staff.total_revenue_generated,
       performance_rating: staff.performance_rating,
-      employment_status: staff.employment_status
+      employment_status: staff.employment_status,
     };
 
     res.json({
       success: true,
-      data: metrics
+      data: metrics,
     });
   } catch (error) {
     console.error('Error fetching staff performance:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching staff performance',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -357,7 +357,7 @@ exports.updateStaffPermissions = async (req, res) => {
     if (!staff) {
       return res.status(404).json({
         success: false,
-        message: 'Staff member not found'
+        message: 'Staff member not found',
       });
     }
 
@@ -366,14 +366,14 @@ exports.updateStaffPermissions = async (req, res) => {
     res.json({
       success: true,
       message: 'Staff permissions updated successfully',
-      data: { permissions: staff.permissions }
+      data: { permissions: staff.permissions },
     });
   } catch (error) {
     console.error('Error updating staff permissions:', error);
     res.status(500).json({
       success: false,
       message: 'Error updating staff permissions',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -396,22 +396,22 @@ exports.getStaffByHospital = async (req, res) => {
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'first_name', 'last_name', 'email', 'phone']
-        }
+          attributes: ['id', 'first_name', 'last_name', 'email', 'phone'],
+        },
       ],
-      order: [['created_at', 'DESC']]
+      order: [['created_at', 'DESC']],
     });
 
     res.json({
       success: true,
-      data: staff
+      data: staff,
     });
   } catch (error) {
     console.error('Error fetching hospital staff:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching hospital staff',
-      error: error.message
+      error: error.message,
     });
   }
 };

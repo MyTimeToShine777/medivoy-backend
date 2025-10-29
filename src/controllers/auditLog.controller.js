@@ -3,8 +3,8 @@
  * Handles audit log retrieval and management
  */
 
-const { AuditLog, User } = require('../models');
-const { Op } = require('sequelize');
+const { Op } = require("sequelize");
+const { AuditLog, User } = require("../models");
 
 /**
  * Get all audit logs
@@ -23,8 +23,8 @@ exports.getAllAuditLogs = async (req, res) => {
       status,
       startDate,
       endDate,
-      sortBy = 'created_at',
-      sortOrder = 'DESC'
+      sortBy = "created_at",
+      sortOrder = "DESC",
     } = req.query;
 
     const offset = (page - 1) * limit;
@@ -40,7 +40,7 @@ exports.getAllAuditLogs = async (req, res) => {
 
     if (startDate && endDate) {
       whereClause.created_at = {
-        [Op.between]: [new Date(startDate), new Date(endDate)]
+        [Op.between]: [new Date(startDate), new Date(endDate)],
       };
     }
 
@@ -49,13 +49,13 @@ exports.getAllAuditLogs = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'user',
-          attributes: ['id', 'first_name', 'last_name', 'email']
-        }
+          as: "user",
+          attributes: ["id", "first_name", "last_name", "email"],
+        },
       ],
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-      order: [[sortBy, sortOrder]]
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10),
+      order: [[sortBy, sortOrder]],
     });
 
     res.json({
@@ -63,17 +63,17 @@ exports.getAllAuditLogs = async (req, res) => {
       data: rows,
       pagination: {
         total: count,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(count / limit)
-      }
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+        totalPages: Math.ceil(count / limit),
+      },
     });
   } catch (error) {
-    console.error('Error fetching audit logs:', error);
+    console.error("Error fetching audit logs:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching audit logs',
-      error: error.message
+      message: "Error fetching audit logs",
+      error: error.message,
     });
   }
 };
@@ -89,29 +89,29 @@ exports.getAuditLogById = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'user',
-          attributes: ['id', 'first_name', 'last_name', 'email', 'role']
-        }
-      ]
+          as: "user",
+          attributes: ["id", "first_name", "last_name", "email", "role"],
+        },
+      ],
     });
 
     if (!auditLog) {
       return res.status(404).json({
         success: false,
-        message: 'Audit log not found'
+        message: "Audit log not found",
       });
     }
 
     res.json({
       success: true,
-      data: auditLog
+      data: auditLog,
     });
   } catch (error) {
-    console.error('Error fetching audit log:', error);
+    console.error("Error fetching audit log:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching audit log',
-      error: error.message
+      message: "Error fetching audit log",
+      error: error.message,
     });
   }
 };
@@ -142,44 +142,44 @@ exports.createAuditLog = async (req, res) => {
       error_message,
       session_id,
       location,
-      metadata
+      metadata,
     } = req.body;
 
     const auditLog = await AuditLog.create({
       user_id,
       action,
-      action_type: action_type || 'other',
+      action_type: action_type || "other",
       entity_type,
       entity_id,
       description,
       old_values,
       new_values,
       ip_address: ip_address || req.ip,
-      user_agent: user_agent || req.get('user-agent'),
+      user_agent: user_agent || req.get("user-agent"),
       request_method,
       request_url,
       request_body,
       response_status,
       response_time_ms,
-      severity: severity || 'low',
-      status: status || 'success',
+      severity: severity || "low",
+      status: status || "success",
       error_message,
       session_id,
       location,
-      metadata
+      metadata,
     });
 
     res.status(201).json({
       success: true,
-      message: 'Audit log created successfully',
-      data: auditLog
+      message: "Audit log created successfully",
+      data: auditLog,
     });
   } catch (error) {
-    console.error('Error creating audit log:', error);
+    console.error("Error creating audit log:", error);
     res.status(500).json({
       success: false,
-      message: 'Error creating audit log',
-      error: error.message
+      message: "Error creating audit log",
+      error: error.message,
     });
   }
 };
@@ -198,15 +198,15 @@ exports.getUserActivityLogs = async (req, res) => {
     if (actionType) whereClause.action_type = actionType;
     if (startDate && endDate) {
       whereClause.created_at = {
-        [Op.between]: [new Date(startDate), new Date(endDate)]
+        [Op.between]: [new Date(startDate), new Date(endDate)],
       };
     }
 
     const { count, rows } = await AuditLog.findAndCountAll({
       where: whereClause,
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-      order: [['created_at', 'DESC']]
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10),
+      order: [["created_at", "DESC"]],
     });
 
     res.json({
@@ -214,17 +214,17 @@ exports.getUserActivityLogs = async (req, res) => {
       data: rows,
       pagination: {
         total: count,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(count / limit)
-      }
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+        totalPages: Math.ceil(count / limit),
+      },
     });
   } catch (error) {
-    console.error('Error fetching user activity logs:', error);
+    console.error("Error fetching user activity logs:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching user activity logs',
-      error: error.message
+      message: "Error fetching user activity logs",
+      error: error.message,
     });
   }
 };
@@ -239,28 +239,28 @@ exports.getEntityAuditTrail = async (req, res) => {
     const auditLogs = await AuditLog.findAll({
       where: {
         entity_type: entityType,
-        entity_id: entityId
+        entity_id: entityId,
       },
       include: [
         {
           model: User,
-          as: 'user',
-          attributes: ['id', 'first_name', 'last_name', 'email']
-        }
+          as: "user",
+          attributes: ["id", "first_name", "last_name", "email"],
+        },
       ],
-      order: [['created_at', 'DESC']]
+      order: [["created_at", "DESC"]],
     });
 
     res.json({
       success: true,
-      data: auditLogs
+      data: auditLogs,
     });
   } catch (error) {
-    console.error('Error fetching entity audit trail:', error);
+    console.error("Error fetching entity audit trail:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching entity audit trail',
-      error: error.message
+      message: "Error fetching entity audit trail",
+      error: error.message,
     });
   }
 };
@@ -275,7 +275,7 @@ exports.getAuditLogStatistics = async (req, res) => {
     const whereClause = {};
     if (startDate && endDate) {
       whereClause.created_at = {
-        [Op.between]: [new Date(startDate), new Date(endDate)]
+        [Op.between]: [new Date(startDate), new Date(endDate)],
       };
     }
 
@@ -284,50 +284,76 @@ exports.getAuditLogStatistics = async (req, res) => {
     const logsByActionType = await AuditLog.findAll({
       where: whereClause,
       attributes: [
-        'action_type',
-        [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count']
+        "action_type",
+        [
+          require("sequelize").fn("COUNT", require("sequelize").col("id")),
+          "count",
+        ],
       ],
-      group: ['action_type'],
-      raw: true
+      group: ["action_type"],
+      raw: true,
     });
 
     const logsBySeverity = await AuditLog.findAll({
       where: whereClause,
       attributes: [
-        'severity',
-        [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count']
+        "severity",
+        [
+          require("sequelize").fn("COUNT", require("sequelize").col("id")),
+          "count",
+        ],
       ],
-      group: ['severity'],
-      raw: true
+      group: ["severity"],
+      raw: true,
     });
 
     const logsByStatus = await AuditLog.findAll({
       where: whereClause,
       attributes: [
-        'status',
-        [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count']
+        "status",
+        [
+          require("sequelize").fn("COUNT", require("sequelize").col("id")),
+          "count",
+        ],
       ],
-      group: ['status'],
-      raw: true
+      group: ["status"],
+      raw: true,
     });
 
     const topUsers = await AuditLog.findAll({
       where: whereClause,
       attributes: [
-        'user_id',
-        [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count']
+        "user_id",
+        [
+          require("sequelize").fn("COUNT", require("sequelize").col("id")),
+          "count",
+        ],
       ],
       include: [
         {
           model: User,
-          as: 'user',
-          attributes: ['first_name', 'last_name', 'email']
-        }
+          as: "user",
+          attributes: ["first_name", "last_name", "email"],
+        },
       ],
-      group: ['user_id', 'user.id', 'user.first_name', 'user.last_name', 'user.email'],
-      order: [[require('sequelize').fn('COUNT', require('sequelize').col('AuditLog.id')), 'DESC']],
+      group: [
+        "user_id",
+        "user.id",
+        "user.first_name",
+        "user.last_name",
+        "user.email",
+      ],
+      order: [
+        [
+          require("sequelize").fn(
+            "COUNT",
+            require("sequelize").col("AuditLog.id"),
+          ),
+          "DESC",
+        ],
+      ],
       limit: 10,
-      subQuery: false
+      subQuery: false,
     });
 
     res.json({
@@ -337,15 +363,15 @@ exports.getAuditLogStatistics = async (req, res) => {
         logsByActionType,
         logsBySeverity,
         logsByStatus,
-        topUsers
-      }
+        topUsers,
+      },
     });
   } catch (error) {
-    console.error('Error fetching audit log statistics:', error);
+    console.error("Error fetching audit log statistics:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching audit log statistics',
-      error: error.message
+      message: "Error fetching audit log statistics",
+      error: error.message,
     });
   }
 };
@@ -360,16 +386,16 @@ exports.getSecurityEvents = async (req, res) => {
     const offset = (page - 1) * limit;
     const whereClause = {
       [Op.or]: [
-        { severity: 'critical' },
-        { severity: 'high' },
-        { status: 'failure' },
-        { action_type: 'login' }
-      ]
+        { severity: "critical" },
+        { severity: "high" },
+        { status: "failure" },
+        { action_type: "login" },
+      ],
     };
 
     if (startDate && endDate) {
       whereClause.created_at = {
-        [Op.between]: [new Date(startDate), new Date(endDate)]
+        [Op.between]: [new Date(startDate), new Date(endDate)],
       };
     }
 
@@ -378,13 +404,13 @@ exports.getSecurityEvents = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'user',
-          attributes: ['id', 'first_name', 'last_name', 'email']
-        }
+          as: "user",
+          attributes: ["id", "first_name", "last_name", "email"],
+        },
       ],
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-      order: [['created_at', 'DESC']]
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10),
+      order: [["created_at", "DESC"]],
     });
 
     res.json({
@@ -392,17 +418,17 @@ exports.getSecurityEvents = async (req, res) => {
       data: rows,
       pagination: {
         total: count,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(count / limit)
-      }
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+        totalPages: Math.ceil(count / limit),
+      },
     });
   } catch (error) {
-    console.error('Error fetching security events:', error);
+    console.error("Error fetching security events:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching security events',
-      error: error.message
+      message: "Error fetching security events",
+      error: error.message,
     });
   }
 };
@@ -412,12 +438,12 @@ exports.getSecurityEvents = async (req, res) => {
  */
 exports.exportAuditLogs = async (req, res) => {
   try {
-    const { startDate, endDate, format = 'json' } = req.query;
+    const { startDate, endDate, format = "json" } = req.query;
 
     const whereClause = {};
     if (startDate && endDate) {
       whereClause.created_at = {
-        [Op.between]: [new Date(startDate), new Date(endDate)]
+        [Op.between]: [new Date(startDate), new Date(endDate)],
       };
     }
 
@@ -426,31 +452,34 @@ exports.exportAuditLogs = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'user',
-          attributes: ['id', 'first_name', 'last_name', 'email']
-        }
+          as: "user",
+          attributes: ["id", "first_name", "last_name", "email"],
+        },
       ],
-      order: [['created_at', 'DESC']]
+      order: [["created_at", "DESC"]],
     });
 
-    if (format === 'csv') {
+    if (format === "csv") {
       // Convert to CSV format
       const csv = convertToCSV(auditLogs);
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename=audit-logs.csv');
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader(
+        "Content-Disposition",
+        "attachment; filename=audit-logs.csv",
+      );
       return res.send(csv);
     }
 
     res.json({
       success: true,
-      data: auditLogs
+      data: auditLogs,
     });
   } catch (error) {
-    console.error('Error exporting audit logs:', error);
+    console.error("Error exporting audit logs:", error);
     res.status(500).json({
       success: false,
-      message: 'Error exporting audit logs',
-      error: error.message
+      message: "Error exporting audit logs",
+      error: error.message,
     });
   }
 };
@@ -459,19 +488,28 @@ exports.exportAuditLogs = async (req, res) => {
  * Helper function to convert to CSV
  */
 function convertToCSV(data) {
-  if (!data || data.length === 0) return '';
+  if (!data || data.length === 0) return "";
 
-  const headers = ['ID', 'User', 'Action', 'Entity Type', 'Entity ID', 'Status', 'Severity', 'Created At'];
+  const headers = [
+    "ID",
+    "User",
+    "Action",
+    "Entity Type",
+    "Entity ID",
+    "Status",
+    "Severity",
+    "Created At",
+  ];
   const rows = data.map((log) => [
     log.id,
-    log.user ? `${log.user.first_name} ${log.user.last_name}` : 'System',
+    log.user ? `${log.user.first_name} ${log.user.last_name}` : "System",
     log.action,
-    log.entity_type || '',
-    log.entity_id || '',
+    log.entity_type || "",
+    log.entity_id || "",
     log.status,
     log.severity,
-    log.created_at
+    log.created_at,
   ]);
 
-  return [headers, ...rows].map((row) => row.join(',')).join('\n');
+  return [headers, ...rows].map((row) => row.join(",")).join("\n");
 }

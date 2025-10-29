@@ -314,5 +314,5 @@ module.exports = {
   BookingStatusHistory,
   TermsConditions,
   PrivacyPolicy,
-  UserAcceptance
+  UserAcceptance,
 };

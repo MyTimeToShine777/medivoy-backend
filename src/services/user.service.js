@@ -37,7 +37,7 @@ class UserService {
       if (!user) {
         throw new Error('User not found');
       }
-      
+
       await user.update(data);
       return user;
     } catch (error) {
@@ -55,7 +55,7 @@ class UserService {
       if (!user) {
         throw new Error('User not found');
       }
-      
+
       await user.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class UserService {
   async getAllUsers(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const users = await User.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return users;
     } catch (error) {
       logger.error('Get all users service error:', error);
@@ -107,7 +107,7 @@ class UserService {
       if (!user) {
         throw new Error('User not found');
       }
-      
+
       await user.update({ lastLogin: new Date() });
       return user;
     } catch (error) {

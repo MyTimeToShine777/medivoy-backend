@@ -8,8 +8,10 @@ class SupportController {
    */
   async createTicket(req, res) {
     try {
-      const { userId, subject, description, priority, category } = req.body;
-      
+      const {
+        userId, subject, description, priority, category,
+      } = req.body;
+
       // Create support ticket
       const ticket = await SupportTicket.create({
         userId,
@@ -18,7 +20,7 @@ class SupportController {
         priority,
         category,
       });
-      
+
       return successResponse(res, {
         message: 'Support ticket created successfully',
         data: ticket,
@@ -38,16 +40,16 @@ class SupportController {
   async getTicket(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find support ticket
       const ticket = await SupportTicket.findByPk(id);
-      
+
       if (!ticket) {
         return errorResponse(res, {
           message: 'Support ticket not found',
         }, 404);
       }
-      
+
       return successResponse(res, {
         message: 'Support ticket retrieved successfully',
         data: ticket,
@@ -67,17 +69,19 @@ class SupportController {
   async updateTicket(req, res) {
     try {
       const { id } = req.params;
-      const { subject, description, priority, category, status } = req.body;
-      
+      const {
+        subject, description, priority, category, status,
+      } = req.body;
+
       // Find support ticket
       const ticket = await SupportTicket.findByPk(id);
-      
+
       if (!ticket) {
         return errorResponse(res, {
           message: 'Support ticket not found',
         }, 404);
       }
-      
+
       // Update support ticket
       await ticket.update({
         subject,
@@ -86,7 +90,7 @@ class SupportController {
         category,
         status,
       });
-      
+
       return successResponse(res, {
         message: 'Support ticket updated successfully',
         data: ticket,
@@ -106,19 +110,19 @@ class SupportController {
   async deleteTicket(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find support ticket
       const ticket = await SupportTicket.findByPk(id);
-      
+
       if (!ticket) {
         return errorResponse(res, {
           message: 'Support ticket not found',
         }, 404);
       }
-      
+
       // Delete support ticket
       await ticket.destroy();
-      
+
       return successResponse(res, {
         message: 'Support ticket deleted successfully',
       });
@@ -136,15 +140,17 @@ class SupportController {
    */
   async getAllTickets(req, res) {
     try {
-      const { page = 1, limit = 10, status, priority, category, userId } = req.query;
-      
+      const {
+        page = 1, limit = 10, status, priority, category, userId,
+      } = req.query;
+
       // Build where clause
       const where = {};
       if (status) where.status = status;
       if (priority) where.priority = priority;
       if (category) where.category = category;
       if (userId) where.userId = userId;
-      
+
       // Get support tickets with pagination
       const tickets = await SupportTicket.findAndCountAll({
         where,
@@ -152,7 +158,7 @@ class SupportController {
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return successResponse(res, {
         message: 'Support tickets retrieved successfully',
         data: tickets.rows,
@@ -178,16 +184,16 @@ class SupportController {
     try {
       const { id } = req.params;
       const { responseText, responderId } = req.body;
-      
+
       // Find support ticket
       const ticket = await SupportTicket.findByPk(id);
-      
+
       if (!ticket) {
         return errorResponse(res, {
           message: 'Support ticket not found',
         }, 404);
       }
-      
+
       // Add response to ticket
       const responses = ticket.responses || [];
       responses.push({
@@ -195,10 +201,10 @@ class SupportController {
         responderId,
         createdAt: new Date(),
       });
-      
+
       // Update ticket with new response
       await ticket.update({ responses, status: 'in_progress' });
-      
+
       return successResponse(res, {
         message: 'Response added to support ticket successfully',
         data: ticket,
@@ -218,19 +224,19 @@ class SupportController {
   async closeTicket(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find support ticket
       const ticket = await SupportTicket.findByPk(id);
-      
+
       if (!ticket) {
         return errorResponse(res, {
           message: 'Support ticket not found',
         }, 404);
       }
-      
+
       // Close ticket
       await ticket.update({ status: 'closed', closedAt: new Date() });
-      
+
       return successResponse(res, {
         message: 'Support ticket closed successfully',
         data: ticket,

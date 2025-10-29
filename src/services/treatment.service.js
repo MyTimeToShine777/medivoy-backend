@@ -52,7 +52,7 @@ class TreatmentService {
       if (!treatment) {
         throw new Error('Treatment not found');
       }
-      
+
       await treatment.update(data);
       return treatment;
     } catch (error) {
@@ -70,7 +70,7 @@ class TreatmentService {
       if (!treatment) {
         throw new Error('Treatment not found');
       }
-      
+
       await treatment.destroy();
       return true;
     } catch (error) {
@@ -85,14 +85,14 @@ class TreatmentService {
   async getAllTreatments(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const treatments = await Treatment.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return treatments;
     } catch (error) {
       logger.error('Get all treatments service error:', error);

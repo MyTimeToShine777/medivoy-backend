@@ -37,7 +37,7 @@ class ReviewService {
       if (!review) {
         throw new Error('Review not found');
       }
-      
+
       await review.update(data);
       return review;
     } catch (error) {
@@ -55,7 +55,7 @@ class ReviewService {
       if (!review) {
         throw new Error('Review not found');
       }
-      
+
       await review.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class ReviewService {
   async getAllReviews(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const reviews = await Review.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return reviews;
     } catch (error) {
       logger.error('Get all reviews service error:', error);
@@ -94,7 +94,7 @@ class ReviewService {
       if (!review) {
         throw new Error('Review not found');
       }
-      
+
       await review.update({ isVerified: true });
       return review;
     } catch (error) {

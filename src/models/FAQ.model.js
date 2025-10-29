@@ -5,30 +5,30 @@ const FAQ = sequelize.define('FAQ', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
   question: {
     type: DataTypes.TEXT,
-    allowNull: false
+    allowNull: false,
   },
   answer: {
     type: DataTypes.TEXT,
-    allowNull: false
+    allowNull: false,
   },
   category: {
-    type: DataTypes.STRING(100)
+    type: DataTypes.STRING(100),
   },
   display_order: {
-    type: DataTypes.INTEGER
+    type: DataTypes.INTEGER,
   },
   is_published: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
-  }
+    defaultValue: true,
+  },
 }, {
   tableName: 'faqs',
   timestamps: true,
-  underscored: true
+  underscored: true,
 });
 
 module.exports = FAQ;

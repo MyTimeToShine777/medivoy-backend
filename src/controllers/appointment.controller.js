@@ -1,6 +1,6 @@
-const Appointment = require('../models/Appointment.model');
-const { successResponse, errorResponse } = require('../utils/response');
-const logger = require('../utils/logger');
+const Appointment = require("../models/Appointment.model");
+const { successResponse, errorResponse } = require("../utils/response");
+const logger = require("../utils/logger");
 
 class AppointmentController {
   /**
@@ -9,7 +9,7 @@ class AppointmentController {
   async createAppointment(req, res) {
     try {
       const { patientId, doctorId, hospitalId, scheduledAt, notes } = req.body;
-      
+
       // Create appointment
       const appointment = await Appointment.create({
         patientId,
@@ -18,17 +18,25 @@ class AppointmentController {
         scheduledAt,
         notes,
       });
-      
-      return successResponse(res, {
-        message: 'Appointment created successfully',
-        data: appointment,
-      }, 201);
+
+      return successResponse(
+        res,
+        {
+          message: "Appointment created successfully",
+          data: appointment,
+        },
+        201,
+      );
     } catch (error) {
-      logger.error('Create appointment error:', error);
-      return errorResponse(res, {
-        message: 'Failed to create appointment',
-        error: error.message,
-      }, 500);
+      logger.error("Create appointment error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to create appointment",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 
@@ -38,27 +46,35 @@ class AppointmentController {
   async getAppointment(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find appointment
       const appointment = await Appointment.findByPk(id);
-      
+
       if (!appointment) {
-        return errorResponse(res, {
-          message: 'Appointment not found',
-          code: 'APPOINTMENT_NOT_FOUND',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Appointment not found",
+            code: "APPOINTMENT_NOT_FOUND",
+          },
+          404,
+        );
       }
-      
+
       return successResponse(res, {
-        message: 'Appointment retrieved successfully',
+        message: "Appointment retrieved successfully",
         data: appointment,
       });
     } catch (error) {
-      logger.error('Get appointment error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve appointment',
-        error: error.message,
-      }, 500);
+      logger.error("Get appointment error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to retrieve appointment",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 
@@ -69,34 +85,42 @@ class AppointmentController {
     try {
       const { id } = req.params;
       const { scheduledAt, notes, status } = req.body;
-      
+
       // Find appointment
       const appointment = await Appointment.findByPk(id);
-      
+
       if (!appointment) {
-        return errorResponse(res, {
-          message: 'Appointment not found',
-          code: 'APPOINTMENT_NOT_FOUND',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Appointment not found",
+            code: "APPOINTMENT_NOT_FOUND",
+          },
+          404,
+        );
       }
-      
+
       // Update appointment
       await appointment.update({
         scheduledAt,
         notes,
         status,
       });
-      
+
       return successResponse(res, {
-        message: 'Appointment updated successfully',
+        message: "Appointment updated successfully",
         data: appointment,
       });
     } catch (error) {
-      logger.error('Update appointment error:', error);
-      return errorResponse(res, {
-        message: 'Failed to update appointment',
-        error: error.message,
-      }, 500);
+      logger.error("Update appointment error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to update appointment",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 
@@ -107,30 +131,38 @@ class AppointmentController {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      
+
       // Find appointment
       const appointment = await Appointment.findByPk(id);
-      
+
       if (!appointment) {
-        return errorResponse(res, {
-          message: 'Appointment not found',
-          code: 'APPOINTMENT_NOT_FOUND',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Appointment not found",
+            code: "APPOINTMENT_NOT_FOUND",
+          },
+          404,
+        );
       }
-      
+
       // Update appointment status
       await appointment.update({ status });
-      
+
       return successResponse(res, {
-        message: 'Appointment status updated successfully',
+        message: "Appointment status updated successfully",
         data: appointment,
       });
     } catch (error) {
-      logger.error('Update appointment status error:', error);
-      return errorResponse(res, {
-        message: 'Failed to update appointment status',
-        error: error.message,
-      }, 500);
+      logger.error("Update appointment status error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to update appointment status",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 
@@ -140,23 +172,23 @@ class AppointmentController {
   async getAllAppointments(req, res) {
     try {
       const { page = 1, limit = 10, status, patientId, doctorId } = req.query;
-      
+
       // Build where clause
       const where = {};
       if (status) where.status = status;
       if (patientId) where.patientId = patientId;
       if (doctorId) where.doctorId = doctorId;
-      
+
       // Get appointments with pagination
       const appointments = await Appointment.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
-      
+
       return successResponse(res, {
-        message: 'Appointments retrieved successfully',
+        message: "Appointments retrieved successfully",
         data: appointments.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -165,11 +197,15 @@ class AppointmentController {
         },
       });
     } catch (error) {
-      logger.error('Get all appointments error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve appointments',
-        error: error.message,
-      }, 500);
+      logger.error("Get all appointments error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to retrieve appointments",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 
@@ -179,30 +215,38 @@ class AppointmentController {
   async cancelAppointment(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find appointment
       const appointment = await Appointment.findByPk(id);
-      
+
       if (!appointment) {
-        return errorResponse(res, {
-          message: 'Appointment not found',
-          code: 'APPOINTMENT_NOT_FOUND',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Appointment not found",
+            code: "APPOINTMENT_NOT_FOUND",
+          },
+          404,
+        );
       }
-      
+
       // Update appointment status to cancelled
-      await appointment.update({ status: 'cancelled' });
-      
+      await appointment.update({ status: "cancelled" });
+
       return successResponse(res, {
-        message: 'Appointment cancelled successfully',
+        message: "Appointment cancelled successfully",
         data: appointment,
       });
     } catch (error) {
-      logger.error('Cancel appointment error:', error);
-      return errorResponse(res, {
-        message: 'Failed to cancel appointment',
-        error: error.message,
-      }, 500);
+      logger.error("Cancel appointment error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to cancel appointment",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 
@@ -213,30 +257,38 @@ class AppointmentController {
     try {
       const { id } = req.params;
       const { scheduledAt } = req.body;
-      
+
       // Find appointment
       const appointment = await Appointment.findByPk(id);
-      
+
       if (!appointment) {
-        return errorResponse(res, {
-          message: 'Appointment not found',
-          code: 'APPOINTMENT_NOT_FOUND',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Appointment not found",
+            code: "APPOINTMENT_NOT_FOUND",
+          },
+          404,
+        );
       }
-      
+
       // Update appointment scheduled time
       await appointment.update({ scheduledAt });
-      
+
       return successResponse(res, {
-        message: 'Appointment rescheduled successfully',
+        message: "Appointment rescheduled successfully",
         data: appointment,
       });
     } catch (error) {
-      logger.error('Reschedule appointment error:', error);
-      return errorResponse(res, {
-        message: 'Failed to reschedule appointment',
-        error: error.message,
-      }, 500);
+      logger.error("Reschedule appointment error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to reschedule appointment",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 
@@ -257,11 +309,11 @@ class AppointmentController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['created_at', 'DESC']],
+        order: [["created_at", "DESC"]],
       });
 
       return successResponse(res, {
-        message: 'Patient appointments retrieved successfully',
+        message: "Patient appointments retrieved successfully",
         data: appointments.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -270,11 +322,15 @@ class AppointmentController {
         },
       });
     } catch (error) {
-      logger.error('Get patient appointments error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve patient appointments',
-        error: error.message,
-      }, 500);
+      logger.error("Get patient appointments error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to retrieve patient appointments",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 
@@ -295,11 +351,11 @@ class AppointmentController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['created_at', 'DESC']],
+        order: [["created_at", "DESC"]],
       });
 
       return successResponse(res, {
-        message: 'Doctor appointments retrieved successfully',
+        message: "Doctor appointments retrieved successfully",
         data: appointments.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -308,11 +364,15 @@ class AppointmentController {
         },
       });
     } catch (error) {
-      logger.error('Get doctor appointments error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve doctor appointments',
-        error: error.message,
-      }, 500);
+      logger.error("Get doctor appointments error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to retrieve doctor appointments",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 }

@@ -8,11 +8,11 @@ class GoogleTranslateService {
     // If credentials are provided via environment variable
     if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
       this.translate = new Translate({
-        keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS
+        keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
       });
     } else if (process.env.GOOGLE_TRANSLATE_API_KEY) {
       this.translate = new Translate({
-        key: process.env.GOOGLE_TRANSLATE_API_KEY
+        key: process.env.GOOGLE_TRANSLATE_API_KEY,
       });
     } else {
       logger.warn('Google Translate credentials not configured. Translation service will not work.');
@@ -21,7 +21,7 @@ class GoogleTranslateService {
 
     this.defaultTargetLanguage = 'en';
     this.supportedLanguages = [
-      'en', 'hi', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh', 'ar'
+      'en', 'hi', 'es', 'fr', 'de', 'it', 'pt', 'ru', 'ja', 'ko', 'zh', 'ar',
     ];
   }
 
@@ -38,7 +38,7 @@ class GoogleTranslateService {
 
       // Use franc for quick language detection
       const detectedLang = franc(text, { minLength: 3 });
-      
+
       // If franc returns 'und' (undefined), try Google Translate
       if (detectedLang === 'und' && this.translate) {
         const [detection] = await this.translate.detect(text);
@@ -47,18 +47,18 @@ class GoogleTranslateService {
 
       // Convert franc's ISO 639-3 to ISO 639-1
       const langMap = {
-        'eng': 'en',
-        'hin': 'hi',
-        'spa': 'es',
-        'fra': 'fr',
-        'deu': 'de',
-        'ita': 'it',
-        'por': 'pt',
-        'rus': 'ru',
-        'jpn': 'ja',
-        'kor': 'ko',
-        'cmn': 'zh',
-        'ara': 'ar'
+        eng: 'en',
+        hin: 'hi',
+        spa: 'es',
+        fra: 'fr',
+        deu: 'de',
+        ita: 'it',
+        por: 'pt',
+        rus: 'ru',
+        jpn: 'ja',
+        kor: 'ko',
+        cmn: 'zh',
+        ara: 'ar',
       };
 
       return langMap[detectedLang] || this.defaultTargetLanguage;
@@ -86,8 +86,8 @@ class GoogleTranslateService {
           originalText: text,
           translatedText: text,
           sourceLanguage: this.defaultTargetLanguage,
-          targetLanguage: targetLanguage,
-          isTranslated: false
+          targetLanguage,
+          isTranslated: false,
         };
       }
 
@@ -101,24 +101,24 @@ class GoogleTranslateService {
         return {
           originalText: text,
           translatedText: text,
-          sourceLanguage: sourceLanguage,
-          targetLanguage: targetLanguage,
-          isTranslated: false
+          sourceLanguage,
+          targetLanguage,
+          isTranslated: false,
         };
       }
 
       // Perform translation
       const [translation] = await this.translate.translate(text, {
         from: sourceLanguage,
-        to: targetLanguage
+        to: targetLanguage,
       });
 
       return {
         originalText: text,
         translatedText: translation,
-        sourceLanguage: sourceLanguage,
-        targetLanguage: targetLanguage,
-        isTranslated: true
+        sourceLanguage,
+        targetLanguage,
+        isTranslated: true,
       };
     } catch (error) {
       logger.error('Translation error:', error);
@@ -126,9 +126,9 @@ class GoogleTranslateService {
         originalText: text,
         translatedText: text,
         sourceLanguage: sourceLanguage || this.defaultTargetLanguage,
-        targetLanguage: targetLanguage,
+        targetLanguage,
         isTranslated: false,
-        error: error.message
+        error: error.message,
       };
     }
   }
@@ -157,37 +157,37 @@ class GoogleTranslateService {
 
       // If source and target are the same, no translation needed
       if (sourceLanguage === targetLanguage) {
-        return texts.map(text => ({
+        return texts.map((text) => ({
           originalText: text,
           translatedText: text,
-          sourceLanguage: sourceLanguage,
-          targetLanguage: targetLanguage,
-          isTranslated: false
+          sourceLanguage,
+          targetLanguage,
+          isTranslated: false,
         }));
       }
 
       // Perform batch translation
       const [translations] = await this.translate.translate(texts, {
         from: sourceLanguage,
-        to: targetLanguage
+        to: targetLanguage,
       });
 
       return texts.map((text, index) => ({
         originalText: text,
         translatedText: translations[index],
-        sourceLanguage: sourceLanguage,
-        targetLanguage: targetLanguage,
-        isTranslated: true
+        sourceLanguage,
+        targetLanguage,
+        isTranslated: true,
       }));
     } catch (error) {
       logger.error('Batch translation error:', error);
-      return texts.map(text => ({
+      return texts.map((text) => ({
         originalText: text,
         translatedText: text,
         sourceLanguage: sourceLanguage || this.defaultTargetLanguage,
-        targetLanguage: targetLanguage,
+        targetLanguage,
         isTranslated: false,
-        error: error.message
+        error: error.message,
       }));
     }
   }
@@ -242,14 +242,14 @@ class GoogleTranslateService {
   async getSupportedLanguages() {
     try {
       if (!this.translate) {
-        return this.supportedLanguages.map(code => ({ code, name: code }));
+        return this.supportedLanguages.map((code) => ({ code, name: code }));
       }
 
       const [languages] = await this.translate.getLanguages();
       return languages;
     } catch (error) {
       logger.error('Get supported languages error:', error);
-      return this.supportedLanguages.map(code => ({ code, name: code }));
+      return this.supportedLanguages.map((code) => ({ code, name: code }));
     }
   }
 

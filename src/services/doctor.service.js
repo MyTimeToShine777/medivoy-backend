@@ -37,7 +37,7 @@ class DoctorService {
       if (!doctor) {
         throw new Error('Doctor not found');
       }
-      
+
       await doctor.update(data);
       return doctor;
     } catch (error) {
@@ -55,7 +55,7 @@ class DoctorService {
       if (!doctor) {
         throw new Error('Doctor not found');
       }
-      
+
       await doctor.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class DoctorService {
   async getAllDoctors(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const doctors = await Doctor.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return doctors;
     } catch (error) {
       logger.error('Get all doctors service error:', error);
@@ -94,7 +94,7 @@ class DoctorService {
       if (!doctor) {
         throw new Error('Doctor not found');
       }
-      
+
       await doctor.update({ isVerified: true });
       return doctor;
     } catch (error) {

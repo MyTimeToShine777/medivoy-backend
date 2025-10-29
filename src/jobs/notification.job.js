@@ -42,9 +42,11 @@ notificationQueue.process(async (job) => {
 const sendPushNotification = async (data) => {
   // TODO: Implement actual Firebase push notification
   logger.info('Sending push notification', data);
-  
-  const { userId, title, message, data: notificationData } = data;
-  
+
+  const {
+    userId, title, message, data: notificationData,
+  } = data;
+
   // Simulated push notification
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -55,29 +57,31 @@ const sendPushNotification = async (data) => {
 
 // Send bulk notifications
 const sendBulkNotifications = async (data) => {
-  const { userIds, title, message, type, channel } = data;
-  
-  const promises = userIds.map(userId => 
-    notificationService.create({
-      user_id: userId,
-      title,
-      message,
-      type,
-      channel
-    })
-  );
+  const {
+    userIds, title, message, type, channel,
+  } = data;
+
+  const promises = userIds.map((userId) => notificationService.create({
+    user_id: userId,
+    title,
+    message,
+    type,
+    channel,
+  }));
 
   return Promise.all(promises);
 };
 
 // Send scheduled notification
 const sendScheduledNotification = async (data) => {
-  const { userId, title, message, type, channel, scheduledAt } = data;
-  
+  const {
+    userId, title, message, type, channel, scheduledAt,
+  } = data;
+
   const delay = new Date(scheduledAt) - new Date();
-  
+
   if (delay > 0) {
-    await new Promise(resolve => setTimeout(resolve, delay));
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
 
   return notificationService.create({
@@ -85,7 +89,7 @@ const sendScheduledNotification = async (data) => {
     title,
     message,
     type,
-    channel
+    channel,
   });
 };
 
@@ -97,8 +101,8 @@ const addNotificationJob = async (type, data, options = {}) => {
       {
         priority: options.priority || 5,
         delay: options.delay || 0,
-        ...options
-      }
+        ...options,
+      },
     );
 
     logger.info('Notification job added to queue', { type, jobId: job.id });
@@ -110,5 +114,5 @@ const addNotificationJob = async (type, data, options = {}) => {
 };
 
 module.exports = {
-  addNotificationJob
+  addNotificationJob,
 };

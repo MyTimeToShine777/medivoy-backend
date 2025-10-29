@@ -13,7 +13,7 @@ class SubscriptionService {
       if (!plan) {
         throw new Error('Subscription plan not found');
       }
-      
+
       // Add plan details to subscription data
       const subscriptionData = {
         ...data,
@@ -21,7 +21,7 @@ class SubscriptionService {
         planPrice: plan.price,
         planFeatures: plan.features,
       };
-      
+
       const subscription = await Subscription.create(subscriptionData);
       return subscription;
     } catch (error) {
@@ -52,7 +52,7 @@ class SubscriptionService {
       if (!subscription) {
         throw new Error('Subscription not found');
       }
-      
+
       await subscription.update(data);
       return subscription;
     } catch (error) {
@@ -70,7 +70,7 @@ class SubscriptionService {
       if (!subscription) {
         throw new Error('Subscription not found');
       }
-      
+
       await subscription.destroy();
       return true;
     } catch (error) {
@@ -86,14 +86,14 @@ class SubscriptionService {
     try {
       const { page = 1, limit = 10, ...where } = filters;
       where.userId = userId;
-      
+
       const subscriptions = await Subscription.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return subscriptions;
     } catch (error) {
       logger.error('Get user subscriptions service error:', error);
@@ -110,12 +110,12 @@ class SubscriptionService {
       if (!subscription) {
         throw new Error('Subscription not found');
       }
-      
+
       await subscription.update({
         isActive: false,
         cancelledAt: new Date(),
       });
-      
+
       return subscription;
     } catch (error) {
       logger.error('Cancel subscription service error:', error);

@@ -7,107 +7,107 @@ const emailQueue = new Queue('email', {
   redis: {
     host: config.redis.host,
     port: config.redis.port,
-    password: config.redis.password
+    password: config.redis.password,
   },
   defaultJobOptions: {
     attempts: 3,
     backoff: {
       type: 'exponential',
-      delay: 2000
+      delay: 2000,
     },
     removeOnComplete: true,
-    removeOnFail: false
-  }
+    removeOnFail: false,
+  },
 });
 
 const smsQueue = new Queue('sms', {
   redis: {
     host: config.redis.host,
     port: config.redis.port,
-    password: config.redis.password
+    password: config.redis.password,
   },
   defaultJobOptions: {
     attempts: 3,
     backoff: {
       type: 'exponential',
-      delay: 2000
+      delay: 2000,
     },
     removeOnComplete: true,
-    removeOnFail: false
-  }
+    removeOnFail: false,
+  },
 });
 
 const notificationQueue = new Queue('notification', {
   redis: {
     host: config.redis.host,
     port: config.redis.port,
-    password: config.redis.password
+    password: config.redis.password,
   },
   defaultJobOptions: {
     attempts: 3,
     backoff: {
       type: 'exponential',
-      delay: 2000
+      delay: 2000,
     },
     removeOnComplete: true,
-    removeOnFail: false
-  }
+    removeOnFail: false,
+  },
 });
 
 const translationQueue = new Queue('translation', {
   redis: {
     host: config.redis.host,
     port: config.redis.port,
-    password: config.redis.password
+    password: config.redis.password,
   },
   defaultJobOptions: {
     attempts: 2,
     backoff: {
       type: 'fixed',
-      delay: 5000
+      delay: 5000,
     },
     removeOnComplete: true,
-    removeOnFail: false
-  }
+    removeOnFail: false,
+  },
 });
 
 const backupQueue = new Queue('backup', {
   redis: {
     host: config.redis.host,
     port: config.redis.port,
-    password: config.redis.password
+    password: config.redis.password,
   },
   defaultJobOptions: {
     attempts: 1,
     removeOnComplete: true,
-    removeOnFail: false
-  }
+    removeOnFail: false,
+  },
 });
 
 const cleanupQueue = new Queue('cleanup', {
   redis: {
     host: config.redis.host,
     port: config.redis.port,
-    password: config.redis.password
+    password: config.redis.password,
   },
   defaultJobOptions: {
     attempts: 1,
     removeOnComplete: true,
-    removeOnFail: false
-  }
+    removeOnFail: false,
+  },
 });
 
 const analyticsQueue = new Queue('analytics', {
   redis: {
     host: config.redis.host,
     port: config.redis.port,
-    password: config.redis.password
+    password: config.redis.password,
   },
   defaultJobOptions: {
     attempts: 2,
     removeOnComplete: true,
-    removeOnFail: false
-  }
+    removeOnFail: false,
+  },
 });
 
 // Queue event listeners
@@ -145,5 +145,5 @@ module.exports = {
   translationQueue,
   backupQueue,
   cleanupQueue,
-  analyticsQueue
+  analyticsQueue,
 };

@@ -14,7 +14,7 @@ const auditMiddleware = async (req, res, next) => {
       ip: req.ip,
       timestamp: new Date().toISOString(),
     });
-    
+
     next();
   } catch (error) {
     logger.error('Audit middleware error:', error);

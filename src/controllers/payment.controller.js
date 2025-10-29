@@ -8,8 +8,10 @@ class PaymentController {
    */
   async createPayment(req, res) {
     try {
-      const { bookingId, patientId, amount, currency, paymentMethod, transactionId } = req.body;
-      
+      const {
+        bookingId, patientId, amount, currency, paymentMethod, transactionId,
+      } = req.body;
+
       // Create payment
       const payment = await Payment.create({
         bookingId,
@@ -19,7 +21,7 @@ class PaymentController {
         paymentMethod,
         transactionId,
       });
-      
+
       return successResponse(res, {
         message: 'Payment created successfully',
         data: payment,
@@ -39,16 +41,16 @@ class PaymentController {
   async getPayment(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find payment
       const payment = await Payment.findByPk(id);
-      
+
       if (!payment) {
         return errorResponse(res, {
           message: 'Payment not found',
         }, 404);
       }
-      
+
       return successResponse(res, {
         message: 'Payment retrieved successfully',
         data: payment,
@@ -69,22 +71,22 @@ class PaymentController {
     try {
       const { id } = req.params;
       const { status, transactionId } = req.body;
-      
+
       // Find payment
       const payment = await Payment.findByPk(id);
-      
+
       if (!payment) {
         return errorResponse(res, {
           message: 'Payment not found',
         }, 404);
       }
-      
+
       // Update payment
       await payment.update({
         status,
         transactionId,
       });
-      
+
       return successResponse(res, {
         message: 'Payment updated successfully',
         data: payment,
@@ -104,19 +106,19 @@ class PaymentController {
   async deletePayment(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find payment
       const payment = await Payment.findByPk(id);
-      
+
       if (!payment) {
         return errorResponse(res, {
           message: 'Payment not found',
         }, 404);
       }
-      
+
       // Delete payment
       await payment.destroy();
-      
+
       return successResponse(res, {
         message: 'Payment deleted successfully',
       });
@@ -134,13 +136,15 @@ class PaymentController {
    */
   async getAllPayments(req, res) {
     try {
-      const { page = 1, limit = 10, status, patientId } = req.query;
-      
+      const {
+        page = 1, limit = 10, status, patientId,
+      } = req.query;
+
       // Build where clause
       const where = {};
       if (status) where.status = status;
       if (patientId) where.patientId = patientId;
-      
+
       // Get payments with pagination
       const payments = await Payment.findAndCountAll({
         where,
@@ -148,7 +152,7 @@ class PaymentController {
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return successResponse(res, {
         message: 'Payments retrieved successfully',
         data: payments.rows,
@@ -174,20 +178,20 @@ class PaymentController {
     try {
       const { id } = req.params;
       const { refundAmount, refundReason } = req.body;
-      
+
       // Find payment
       const payment = await Payment.findByPk(id);
-      
+
       if (!payment) {
         return errorResponse(res, {
           message: 'Payment not found',
         }, 404);
       }
-      
+
       // Process refund
       // Note: This would integrate with Stripe/Razorpay APIs
       const refundTransactionId = `refund_${Date.now()}`; // Placeholder
-      
+
       // Update payment with refund details
       await payment.update({
         refundAmount,
@@ -195,7 +199,7 @@ class PaymentController {
         refundTransactionId,
         status: 'refunded',
       });
-      
+
       return successResponse(res, {
         message: 'Payment refund processed successfully',
         data: payment,

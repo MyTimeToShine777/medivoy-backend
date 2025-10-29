@@ -4,6 +4,7 @@
  */
 
 const express = require('express');
+
 const router = express.Router();
 
 // Import v1 routes
@@ -88,7 +89,7 @@ router.use('/terms-privacy', termsPrivacyRoutes);
 router.use('/dna-kits', dnaKitsRoutes);
 router.use('/audit-logs', auditLogsRoutes);
 router.use('/integrations', integrationsRoutes);
-   router.use('/translation', translationRoutes);
+router.use('/translation', translationRoutes);
 
 // Root endpoint
 router.get('/', (req, res) => {
@@ -125,21 +126,21 @@ router.get('/', (req, res) => {
       websiteContent: '/api/v1/website-content',
       health: '/api/v1/health',
       docs: '/api-docs',
-         analytics: '/api/v1/analytics',
-         doctorSchedules: '/api/v1/doctor-schedules',
-         staff: '/api/v1/staff',
-         chat: '/api/v1/chat',
-         videoCalls: '/api/v1/video-calls',
-         bookingStatus: '/api/v1/booking-status',
-         media: '/api/v1/media',
-         systemSettings: '/api/v1/system-settings',
-         termsPrivacy: '/api/v1/terms-privacy',
-         dnaKits: '/api/v1/dna-kits',
-         auditLogs: '/api/v1/audit-logs',
-         integrations: '/api/v1/integrations',
-            translation: '/api/v1/translation'
+      analytics: '/api/v1/analytics',
+      doctorSchedules: '/api/v1/doctor-schedules',
+      staff: '/api/v1/staff',
+      chat: '/api/v1/chat',
+      videoCalls: '/api/v1/video-calls',
+      bookingStatus: '/api/v1/booking-status',
+      media: '/api/v1/media',
+      systemSettings: '/api/v1/system-settings',
+      termsPrivacy: '/api/v1/terms-privacy',
+      dnaKits: '/api/v1/dna-kits',
+      auditLogs: '/api/v1/audit-logs',
+      integrations: '/api/v1/integrations',
+      translation: '/api/v1/translation',
     },
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 

@@ -56,5 +56,5 @@ module.exports = {
   addCleanupJob,
 
   // Analytics jobs
-  addAnalyticsJob
+  addAnalyticsJob,
 };

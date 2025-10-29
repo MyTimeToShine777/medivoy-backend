@@ -14,7 +14,7 @@ const createLaboratorySchema = Joi.object({
   certifications: Joi.array().items(Joi.string()).default([]),
   services: Joi.array().items(Joi.string()).default([]),
   operating_hours: Joi.object().default({}),
-  is_active: Joi.boolean().default(true)
+  is_active: Joi.boolean().default(true),
 });
 
 const updateLaboratorySchema = Joi.object({
@@ -31,10 +31,10 @@ const updateLaboratorySchema = Joi.object({
   certifications: Joi.array().items(Joi.string()),
   services: Joi.array().items(Joi.string()),
   operating_hours: Joi.object(),
-  is_active: Joi.boolean()
+  is_active: Joi.boolean(),
 }).min(1);
 
 module.exports = {
   createLaboratorySchema,
-  updateLaboratorySchema
+  updateLaboratorySchema,
 };

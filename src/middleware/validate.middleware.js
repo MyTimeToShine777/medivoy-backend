@@ -6,17 +6,17 @@ const { ValidationError } = require('../utils/error-handler');
  */
 const validate = (req, res, next) => {
   const errors = validationResult(req);
-  
+
   if (!errors.isEmpty()) {
-    const formattedErrors = errors.array().map(error => ({
+    const formattedErrors = errors.array().map((error) => ({
       field: error.path || error.param,
       message: error.msg,
-      value: error.value
+      value: error.value,
     }));
-    
+
     throw new ValidationError('Validation failed', formattedErrors);
   }
-  
+
   next();
 };
 
@@ -25,33 +25,31 @@ const validate = (req, res, next) => {
  * @param {Object} schema - Joi schema
  * @param {String} property - Property to validate (body, query, params)
  */
-const validateJoi = (schema, property = 'body') => {
-  return (req, res, next) => {
-    const { error, value } = schema.validate(req[property], {
-      abortEarly: false,
-      stripUnknown: true
-    });
-    
-    if (error) {
-      const formattedErrors = error.details.map(detail => ({
-        field: detail.path.join('.'),
-        message: detail.message,
-        type: detail.type
-      }));
-      
-      const validationError = new ValidationError('Validation failed');
-      validationError.errors = formattedErrors;
-      
-      return next(validationError);
-    }
-    
-    // Replace request property with validated value
-    req[property] = value;
-    next();
-  };
+const validateJoi = (schema, property = 'body') => (req, res, next) => {
+  const { error, value } = schema.validate(req[property], {
+    abortEarly: false,
+    stripUnknown: true,
+  });
+
+  if (error) {
+    const formattedErrors = error.details.map((detail) => ({
+      field: detail.path.join('.'),
+      message: detail.message,
+      type: detail.type,
+    }));
+
+    const validationError = new ValidationError('Validation failed');
+    validationError.errors = formattedErrors;
+
+    return next(validationError);
+  }
+
+  // Replace request property with validated value
+  req[property] = value;
+  next();
 };
 
 module.exports = {
   validate,
-  validateJoi
+  validateJoi,
 };

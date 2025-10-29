@@ -55,7 +55,7 @@ const errorResponse = (res, options, statusCode = 500) => {
  */
 const paginatedResponse = (res, options, statusCode = 200) => {
   const { pagination } = options;
-  
+
   return res.status(statusCode).json({
     success: true,
     message: options.message || 'Success',

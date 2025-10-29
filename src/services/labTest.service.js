@@ -37,7 +37,7 @@ class LabTestService {
       if (!labTest) {
         throw new Error('Lab test not found');
       }
-      
+
       await labTest.update(data);
       return labTest;
     } catch (error) {
@@ -55,7 +55,7 @@ class LabTestService {
       if (!labTest) {
         throw new Error('Lab test not found');
       }
-      
+
       await labTest.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class LabTestService {
   async getAllLabTests(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const labTests = await LabTest.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return labTests;
     } catch (error) {
       logger.error('Get all lab tests service error:', error);

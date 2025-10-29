@@ -50,7 +50,7 @@ class CouponService {
       if (!coupon) {
         throw new Error('Coupon not found');
       }
-      
+
       await coupon.update(data);
       return coupon;
     } catch (error) {
@@ -68,7 +68,7 @@ class CouponService {
       if (!coupon) {
         throw new Error('Coupon not found');
       }
-      
+
       await coupon.destroy();
       return true;
     } catch (error) {
@@ -83,14 +83,14 @@ class CouponService {
   async getAllCoupons(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const coupons = await Coupon.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return coupons;
     } catch (error) {
       logger.error('Get all coupons service error:', error);
@@ -107,27 +107,27 @@ class CouponService {
       if (!coupon) {
         throw new Error('Coupon not found');
       }
-      
+
       // Check if coupon is active
       if (!coupon.isActive) {
         throw new Error('Coupon is not active');
       }
-      
+
       // Check if coupon is expired
       const now = new Date();
       if (new Date(coupon.validFrom) > now) {
         throw new Error('Coupon is not yet valid');
       }
-      
+
       if (new Date(coupon.validUntil) < now) {
         throw new Error('Coupon has expired');
       }
-      
+
       // Check if coupon has reached maximum uses
       if (coupon.maxUses > 0 && coupon.usedCount >= coupon.maxUses) {
         throw new Error('Coupon has reached maximum uses');
       }
-      
+
       return coupon;
     } catch (error) {
       logger.error('Validate coupon service error:', error);
@@ -141,10 +141,10 @@ class CouponService {
   async applyCoupon(code) {
     try {
       const coupon = await this.validateCoupon(code);
-      
+
       // Increment used count
       await coupon.increment('usedCount');
-      
+
       return coupon;
     } catch (error) {
       logger.error('Apply coupon service error:', error);

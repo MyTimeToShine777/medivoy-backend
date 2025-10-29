@@ -37,7 +37,7 @@ class SupportService {
       if (!ticket) {
         throw new Error('Support ticket not found');
       }
-      
+
       await ticket.update(data);
       return ticket;
     } catch (error) {
@@ -55,7 +55,7 @@ class SupportService {
       if (!ticket) {
         throw new Error('Support ticket not found');
       }
-      
+
       await ticket.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class SupportService {
   async getAllTickets(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const tickets = await SupportTicket.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return tickets;
     } catch (error) {
       logger.error('Get all tickets service error:', error);

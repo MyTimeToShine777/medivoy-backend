@@ -37,7 +37,7 @@ class BookingService {
       if (!booking) {
         throw new Error('Booking not found');
       }
-      
+
       await booking.update(data);
       return booking;
     } catch (error) {
@@ -55,7 +55,7 @@ class BookingService {
       if (!booking) {
         throw new Error('Booking not found');
       }
-      
+
       await booking.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class BookingService {
   async getAllBookings(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const bookings = await Booking.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return bookings;
     } catch (error) {
       logger.error('Get all bookings service error:', error);
@@ -94,7 +94,7 @@ class BookingService {
       if (!booking) {
         throw new Error('Booking not found');
       }
-      
+
       await booking.update({ status });
       return booking;
     } catch (error) {

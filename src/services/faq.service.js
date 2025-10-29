@@ -37,7 +37,7 @@ class FAQService {
       if (!faq) {
         throw new Error('FAQ not found');
       }
-      
+
       await faq.update(data);
       return faq;
     } catch (error) {
@@ -55,7 +55,7 @@ class FAQService {
       if (!faq) {
         throw new Error('FAQ not found');
       }
-      
+
       await faq.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class FAQService {
   async getAllFAQs(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const faqs = await FAQ.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['sortOrder', 'ASC'], ['createdAt', 'DESC']],
       });
-      
+
       return faqs;
     } catch (error) {
       logger.error('Get all FAQs service error:', error);
@@ -91,14 +91,14 @@ class FAQService {
   async getFAQsByCategory(category, filters = {}) {
     try {
       const { page = 1, limit = 10 } = filters;
-      
+
       const faqs = await FAQ.findAndCountAll({
         where: { category },
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['sortOrder', 'ASC'], ['createdAt', 'DESC']],
       });
-      
+
       return faqs;
     } catch (error) {
       logger.error('Get FAQs by category service error:', error);

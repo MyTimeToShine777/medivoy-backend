@@ -5,38 +5,38 @@ const TreatmentCategory = sequelize.define('TreatmentCategory', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
   name: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: false,
   },
   slug: {
     type: DataTypes.STRING(255),
     allowNull: false,
-    unique: true
+    unique: true,
   },
   description: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
   },
   icon: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
   },
   image: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
   },
   sort_order: {
     type: DataTypes.INTEGER,
-    defaultValue: 0
+    defaultValue: 0,
   },
   is_active: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
-  }
+    defaultValue: true,
+  },
 }, {
   tableName: 'treatment_categories',
   timestamps: true,
-  underscored: true
+  underscored: true,
 });
 
 module.exports = TreatmentCategory;

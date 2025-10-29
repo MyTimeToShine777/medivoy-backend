@@ -14,10 +14,12 @@ class UploadController {
           message: 'No file uploaded',
         }, 400);
       }
-      
-      const { originalname, mimetype, size, filename, path } = req.file;
+
+      const {
+        originalname, mimetype, size, filename, path,
+      } = req.file;
       const { entityType, entityId } = req.body;
-      
+
       // Create media record
       const media = await Media.create({
         fileName: originalname,
@@ -27,7 +29,7 @@ class UploadController {
         entity_type: entityType,
         entity_id: entityId,
       });
-      
+
       return successResponse(res, {
         message: 'File uploaded successfully',
         data: media,
@@ -47,16 +49,16 @@ class UploadController {
   async getMedia(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find media
       const media = await Media.findByPk(id);
-      
+
       if (!media) {
         return errorResponse(res, {
           message: 'Media not found',
         }, 404);
       }
-      
+
       return successResponse(res, {
         message: 'Media retrieved successfully',
         data: media,
@@ -77,23 +79,23 @@ class UploadController {
     try {
       const { id } = req.params;
       const { fileName, entityType, entityId } = req.body;
-      
+
       // Find media
       const media = await Media.findByPk(id);
-      
+
       if (!media) {
         return errorResponse(res, {
           message: 'Media not found',
         }, 404);
       }
-      
+
       // Update media
       await media.update({
         fileName,
         entity_type: entityType,
         entity_id: entityId,
       });
-      
+
       return successResponse(res, {
         message: 'Media updated successfully',
         data: media,
@@ -113,23 +115,23 @@ class UploadController {
   async deleteMedia(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find media
       const media = await Media.findByPk(id);
-      
+
       if (!media) {
         return errorResponse(res, {
           message: 'Media not found',
         }, 404);
       }
-      
+
       // Delete media file from storage
       // Note: This would require integrating with Cloudinary or file system
       // await deleteFile(media.filePath);
-      
+
       // Delete media record
       await media.destroy();
-      
+
       return successResponse(res, {
         message: 'Media deleted successfully',
       });
@@ -149,7 +151,7 @@ class UploadController {
     try {
       const { entityType, entityId } = req.params;
       const { page = 1, limit = 10 } = req.query;
-      
+
       // Get media with pagination
       const media = await Media.findAndCountAll({
         where: {
@@ -160,7 +162,7 @@ class UploadController {
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return successResponse(res, {
         message: 'Media retrieved successfully',
         data: media.rows,

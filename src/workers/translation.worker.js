@@ -3,7 +3,9 @@ const googleTranslateService = require('../services/googleTranslate.service');
 const logger = require('../utils/logger');
 
 // Import models that need translation
-const { Hospital, Treatment, Doctor, Package, FAQ } = require('../models');
+const {
+  Hospital, Treatment, Doctor, Package, FAQ,
+} = require('../models');
 
 // Create translation queue
 const translationQueue = new Queue('translation', {
@@ -27,7 +29,9 @@ const translationQueue = new Queue('translation', {
  * Process translation jobs
  */
 translationQueue.process(async (job) => {
-  const { modelName, recordId, fields, targetLanguage } = job.data;
+  const {
+    modelName, recordId, fields, targetLanguage,
+  } = job.data;
 
   try {
     logger.info(`Processing translation job for ${modelName} ID: ${recordId}`);
@@ -91,7 +95,7 @@ translationQueue.process(async (job) => {
     const translations = await googleTranslateService.translateBatch(
       textsToTranslate,
       targetLanguage,
-      sourceLanguage
+      sourceLanguage,
     );
 
     // Map translations back to fields
@@ -172,7 +176,7 @@ async function getJobStatus(jobId) {
 
     const state = await job.getState();
     const progress = job.progress();
-    const failedReason = job.failedReason;
+    const { failedReason } = job;
 
     return {
       jobId: job.id,

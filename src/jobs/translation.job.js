@@ -36,10 +36,12 @@ translationQueue.process(async (job) => {
 
 // Auto-translate content to all supported languages
 const autoTranslateContent = async (data) => {
-  const { entityType, entityId, content, sourceLanguage } = data;
-  
+  const {
+    entityType, entityId, content, sourceLanguage,
+  } = data;
+
   const targetLanguages = ['ar', 'hi', 'es', 'fr', 'de', 'zh', 'ja', 'ru', 'pt'];
-  
+
   for (const targetLang of targetLanguages) {
     if (targetLang !== sourceLanguage) {
       try {
@@ -47,7 +49,7 @@ const autoTranslateContent = async (data) => {
           entity_type: entityType,
           entity_id: entityId,
           language: targetLang,
-          content: await translateText(content, sourceLanguage, targetLang)
+          content: await translateText(content, sourceLanguage, targetLang),
         });
       } catch (error) {
         logger.error('Failed to translate to language', { targetLang, error: error.message });
@@ -59,7 +61,7 @@ const autoTranslateContent = async (data) => {
 // Bulk translate multiple content items
 const bulkTranslateContent = async (data) => {
   const { items, sourceLanguage, targetLanguages } = data;
-  
+
   for (const item of items) {
     for (const targetLang of targetLanguages) {
       if (targetLang !== sourceLanguage) {
@@ -68,13 +70,13 @@ const bulkTranslateContent = async (data) => {
             entity_type: item.entityType,
             entity_id: item.entityId,
             language: targetLang,
-            content: await translateText(item.content, sourceLanguage, targetLang)
+            content: await translateText(item.content, sourceLanguage, targetLang),
           });
         } catch (error) {
-          logger.error('Failed to bulk translate', { 
-            entityId: item.entityId, 
-            targetLang, 
-            error: error.message 
+          logger.error('Failed to bulk translate', {
+            entityId: item.entityId,
+            targetLang,
+            error: error.message,
           });
         }
       }
@@ -84,20 +86,22 @@ const bulkTranslateContent = async (data) => {
 
 // Update existing translations
 const updateTranslations = async (data) => {
-  const { entityType, entityId, content, sourceLanguage } = data;
-  
+  const {
+    entityType, entityId, content, sourceLanguage,
+  } = data;
+
   const existingTranslations = await translationService.getByEntity(entityType, entityId);
-  
+
   for (const translation of existingTranslations) {
     if (translation.language !== sourceLanguage) {
       try {
         await translationService.update(translation.id, {
-          content: await translateText(content, sourceLanguage, translation.language)
+          content: await translateText(content, sourceLanguage, translation.language),
         });
       } catch (error) {
-        logger.error('Failed to update translation', { 
-          translationId: translation.id, 
-          error: error.message 
+        logger.error('Failed to update translation', {
+          translationId: translation.id,
+          error: error.message,
         });
       }
     }
@@ -108,7 +112,7 @@ const updateTranslations = async (data) => {
 const translateText = async (text, sourceLang, targetLang) => {
   // TODO: Implement actual translation API (Google Translate, DeepL, etc.)
   logger.info('Translating text', { sourceLang, targetLang });
-  
+
   // Simulated translation
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -125,8 +129,8 @@ const addTranslationJob = async (type, data, options = {}) => {
       {
         priority: options.priority || 3,
         delay: options.delay || 0,
-        ...options
-      }
+        ...options,
+      },
     );
 
     logger.info('Translation job added to queue', { type, jobId: job.id });
@@ -138,5 +142,5 @@ const addTranslationJob = async (type, data, options = {}) => {
 };
 
 module.exports = {
-  addTranslationJob
+  addTranslationJob,
 };

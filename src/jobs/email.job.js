@@ -74,8 +74,8 @@ const addEmailJob = async (type, data, options = {}) => {
       {
         priority: options.priority || 5,
         delay: options.delay || 0,
-        ...options
-      }
+        ...options,
+      },
     );
 
     logger.info('Email job added to queue', { type, jobId: job.id });
@@ -87,5 +87,5 @@ const addEmailJob = async (type, data, options = {}) => {
 };
 
 module.exports = {
-  addEmailJob
+  addEmailJob,
 };

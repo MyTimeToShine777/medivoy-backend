@@ -8,8 +8,10 @@ class PatientController {
    */
   async createPatient(req, res) {
     try {
-      const { userId, dateOfBirth, gender, bloodType, emergencyContact, medicalHistory, allergies, insuranceId } = req.body;
-      
+      const {
+        userId, dateOfBirth, gender, bloodType, emergencyContact, medicalHistory, allergies, insuranceId,
+      } = req.body;
+
       // Create patient
       const patient = await Patient.create({
         userId,
@@ -21,7 +23,7 @@ class PatientController {
         allergies,
         insuranceId,
       });
-      
+
       return successResponse(res, {
         message: 'Patient created successfully',
         data: patient,
@@ -41,16 +43,16 @@ class PatientController {
   async getPatient(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find patient
       const patient = await Patient.findByPk(id);
-      
+
       if (!patient) {
         return errorResponse(res, {
           message: 'Patient not found',
         }, 404);
       }
-      
+
       return successResponse(res, {
         message: 'Patient retrieved successfully',
         data: patient,
@@ -70,17 +72,19 @@ class PatientController {
   async updatePatient(req, res) {
     try {
       const { id } = req.params;
-      const { dateOfBirth, gender, bloodType, emergencyContact, medicalHistory, allergies, insuranceId } = req.body;
-      
+      const {
+        dateOfBirth, gender, bloodType, emergencyContact, medicalHistory, allergies, insuranceId,
+      } = req.body;
+
       // Find patient
       const patient = await Patient.findByPk(id);
-      
+
       if (!patient) {
         return errorResponse(res, {
           message: 'Patient not found',
         }, 404);
       }
-      
+
       // Update patient
       await patient.update({
         dateOfBirth,
@@ -91,7 +95,7 @@ class PatientController {
         allergies,
         insuranceId,
       });
-      
+
       return successResponse(res, {
         message: 'Patient updated successfully',
         data: patient,
@@ -111,19 +115,19 @@ class PatientController {
   async deletePatient(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find patient
       const patient = await Patient.findByPk(id);
-      
+
       if (!patient) {
         return errorResponse(res, {
           message: 'Patient not found',
         }, 404);
       }
-      
+
       // Delete patient
       await patient.destroy();
-      
+
       return successResponse(res, {
         message: 'Patient deleted successfully',
       });
@@ -142,14 +146,14 @@ class PatientController {
   async getAllPatients(req, res) {
     try {
       const { page = 1, limit = 10 } = req.query;
-      
+
       // Get patients with pagination
       const patients = await Patient.findAndCountAll({
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return successResponse(res, {
         message: 'Patients retrieved successfully',
         data: patients.rows,
@@ -174,23 +178,23 @@ class PatientController {
   async getMedicalRecords(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find patient
       const patient = await Patient.findByPk(id);
-      
+
       if (!patient) {
         return errorResponse(res, {
           message: 'Patient not found',
         }, 404);
       }
-      
+
       // Get patient medical records
       // Note: This would require importing the MedicalRecord model
       // const medicalRecords = await MedicalRecord.findAll({
       //   where: { patientId: id },
       //   order: [['recordDate', 'DESC']],
       // });
-      
+
       return successResponse(res, {
         message: 'Patient medical records retrieved successfully',
         data: [],

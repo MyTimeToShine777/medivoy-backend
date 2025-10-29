@@ -5,29 +5,29 @@ const PasswordReset = sequelize.define('PasswordReset', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
   user_id: {
     type: DataTypes.INTEGER,
-    references: { model: 'users', key: 'id' }
+    references: { model: 'users', key: 'id' },
   },
   token: {
     type: DataTypes.STRING(255),
     allowNull: false,
-    unique: true
+    unique: true,
   },
   expires_at: {
-    type: DataTypes.DATE
+    type: DataTypes.DATE,
   },
   is_used: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false
-  }
+    defaultValue: false,
+  },
 }, {
   tableName: 'password_resets',
   timestamps: true,
   underscored: true,
-  updatedAt: false
+  updatedAt: false,
 });
 
 module.exports = PasswordReset;

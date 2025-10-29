@@ -18,7 +18,7 @@ const createPackageSchema = Joi.object({
   max_bookings: Joi.number().integer().min(1).allow(null),
   is_active: Joi.boolean().default(true),
   valid_from: Joi.date().required(),
-  valid_until: Joi.date().greater(Joi.ref('valid_from')).required()
+  valid_until: Joi.date().greater(Joi.ref('valid_from')).required(),
 });
 
 const updatePackageSchema = Joi.object({
@@ -39,10 +39,10 @@ const updatePackageSchema = Joi.object({
   max_bookings: Joi.number().integer().min(1).allow(null),
   is_active: Joi.boolean(),
   valid_from: Joi.date(),
-  valid_until: Joi.date()
+  valid_until: Joi.date(),
 }).min(1);
 
 module.exports = {
   createPackageSchema,
-  updatePackageSchema
+  updatePackageSchema,
 };

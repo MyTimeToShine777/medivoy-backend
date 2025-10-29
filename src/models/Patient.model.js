@@ -5,7 +5,7 @@ const Patient = sequelize.define('Patient', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
   user_id: {
     type: DataTypes.INTEGER,
@@ -13,60 +13,60 @@ const Patient = sequelize.define('Patient', {
     unique: true,
     references: {
       model: 'users',
-      key: 'id'
+      key: 'id',
     },
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE',
   },
   date_of_birth: {
     type: DataTypes.DATEONLY,
-    allowNull: false
+    allowNull: false,
   },
   gender: {
     type: DataTypes.ENUM('male', 'female', 'other'),
-    allowNull: false
+    allowNull: false,
   },
   blood_group: {
-    type: DataTypes.STRING(10)
+    type: DataTypes.STRING(10),
   },
   address: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
   },
   city: {
-    type: DataTypes.STRING(100)
+    type: DataTypes.STRING(100),
   },
   country: {
     type: DataTypes.STRING(100),
-    defaultValue: 'India'
+    defaultValue: 'India',
   },
   emergency_contact_name: {
-    type: DataTypes.STRING(100)
+    type: DataTypes.STRING(100),
   },
   emergency_contact_phone: {
-    type: DataTypes.STRING(20)
+    type: DataTypes.STRING(20),
   },
   insurance_id: {
     type: DataTypes.INTEGER,
     references: {
       model: 'insurance_providers',
-      key: 'id'
-    }
+      key: 'id',
+    },
   },
   insurance_policy_number: {
-    type: DataTypes.STRING(100)
+    type: DataTypes.STRING(100),
   },
   medical_history: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
   },
   allergies: {
-    type: DataTypes.JSONB
+    type: DataTypes.JSONB,
   },
   current_medications: {
-    type: DataTypes.JSONB
-  }
+    type: DataTypes.JSONB,
+  },
 }, {
   tableName: 'patients',
   timestamps: true,
-  underscored: true
+  underscored: true,
 });
 
 module.exports = Patient;

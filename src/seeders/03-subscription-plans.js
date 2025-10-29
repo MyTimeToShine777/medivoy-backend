@@ -1,5 +1,3 @@
-'use strict';
-
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     const plans = [
@@ -14,7 +12,7 @@ module.exports = {
           'Up to 5 appointments per month',
           'Basic support',
           'Email notifications',
-          '5% discount on treatments'
+          '5% discount on treatments',
         ]),
         max_bookings: 2,
         max_appointments: 5,
@@ -22,7 +20,7 @@ module.exports = {
         is_active: true,
         trial_days: 7,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         name: 'Standard Plan',
@@ -37,7 +35,7 @@ module.exports = {
           'Email & SMS notifications',
           '10% discount on treatments',
           'Free medical records storage',
-          'Prescription management'
+          'Prescription management',
         ]),
         max_bookings: 5,
         max_appointments: 15,
@@ -45,7 +43,7 @@ module.exports = {
         is_active: true,
         trial_days: 14,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         name: 'Premium Plan',
@@ -63,7 +61,7 @@ module.exports = {
           'Prescription management',
           'Lab test discounts',
           'Dedicated account manager',
-          'Video consultations included'
+          'Video consultations included',
         ]),
         max_bookings: null,
         max_appointments: null,
@@ -71,7 +69,7 @@ module.exports = {
         is_active: true,
         trial_days: 30,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         name: 'Annual Basic',
@@ -85,7 +83,7 @@ module.exports = {
           'Basic support',
           'Email notifications',
           '5% discount on treatments',
-          'Save 20% with annual billing'
+          'Save 20% with annual billing',
         ]),
         max_bookings: 24,
         max_appointments: 60,
@@ -93,7 +91,7 @@ module.exports = {
         is_active: true,
         trial_days: 7,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         name: 'Annual Standard',
@@ -109,7 +107,7 @@ module.exports = {
           '10% discount on treatments',
           'Free medical records storage',
           'Prescription management',
-          'Save 20% with annual billing'
+          'Save 20% with annual billing',
         ]),
         max_bookings: 60,
         max_appointments: 180,
@@ -117,7 +115,7 @@ module.exports = {
         is_active: true,
         trial_days: 14,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         name: 'Annual Premium',
@@ -136,7 +134,7 @@ module.exports = {
           'Lab test discounts',
           'Dedicated account manager',
           'Video consultations included',
-          'Save 20% with annual billing'
+          'Save 20% with annual billing',
         ]),
         max_bookings: null,
         max_appointments: null,
@@ -144,8 +142,8 @@ module.exports = {
         is_active: true,
         trial_days: 30,
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     ];
 
     await queryInterface.bulkInsert('subscription_plans', plans, {});
@@ -156,5 +154,5 @@ module.exports = {
 
   down: async (queryInterface, Sequelize) => {
     await queryInterface.bulkDelete('subscription_plans', null, {});
-  }
+  },
 };

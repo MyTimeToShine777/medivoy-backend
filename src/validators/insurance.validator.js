@@ -11,7 +11,7 @@ const createInsuranceSchema = Joi.object({
   coverage_details: Joi.string().allow('', null),
   exclusions: Joi.string().allow('', null),
   network_hospitals: Joi.array().items(Joi.number().integer()).default([]),
-  is_active: Joi.boolean().default(true)
+  is_active: Joi.boolean().default(true),
 });
 
 const updateInsuranceSchema = Joi.object({
@@ -25,18 +25,18 @@ const updateInsuranceSchema = Joi.object({
   coverage_details: Joi.string().allow('', null),
   exclusions: Joi.string().allow('', null),
   network_hospitals: Joi.array().items(Joi.number().integer()),
-  is_active: Joi.boolean()
+  is_active: Joi.boolean(),
 }).min(1);
 
 const checkCoverageSchema = Joi.object({
   insurance_id: Joi.number().integer().required(),
   treatment_id: Joi.number().integer().required(),
   hospital_id: Joi.number().integer().required(),
-  estimated_cost: Joi.number().precision(2).min(0).required()
+  estimated_cost: Joi.number().precision(2).min(0).required(),
 });
 
 module.exports = {
   createInsuranceSchema,
   updateInsuranceSchema,
-  checkCoverageSchema
+  checkCoverageSchema,
 };

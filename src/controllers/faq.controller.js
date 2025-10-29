@@ -1,6 +1,6 @@
-const FAQ = require('../models/FAQ.model');
-const { successResponse, errorResponse } = require('../utils/response');
-const logger = require('../utils/logger');
+const FAQ = require("../models/FAQ.model");
+const { successResponse, errorResponse } = require("../utils/response");
+const logger = require("../utils/logger");
 
 class FAQController {
   /**
@@ -9,7 +9,7 @@ class FAQController {
   async createFAQ(req, res) {
     try {
       const { question, answer, category, display_order } = req.body;
-      
+
       // Create FAQ
       const faq = await FAQ.create({
         question,
@@ -17,17 +17,25 @@ class FAQController {
         category,
         display_order,
       });
-      
-      return successResponse(res, {
-        message: 'FAQ created successfully',
-        data: faq,
-      }, 201);
+
+      return successResponse(
+        res,
+        {
+          message: "FAQ created successfully",
+          data: faq,
+        },
+        201,
+      );
     } catch (error) {
-      logger.error('Create FAQ error:', error);
-      return errorResponse(res, {
-        message: 'Failed to create FAQ',
-        error: error.message,
-      }, 500);
+      logger.error("Create FAQ error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to create FAQ",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 
@@ -37,26 +45,34 @@ class FAQController {
   async getFAQ(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find FAQ
       const faq = await FAQ.findByPk(id);
-      
+
       if (!faq) {
-        return errorResponse(res, {
-          message: 'FAQ not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "FAQ not found",
+          },
+          404,
+        );
       }
-      
+
       return successResponse(res, {
-        message: 'FAQ retrieved successfully',
+        message: "FAQ retrieved successfully",
         data: faq,
       });
     } catch (error) {
-      logger.error('Get FAQ error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve FAQ',
-        error: error.message,
-      }, 500);
+      logger.error("Get FAQ error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to retrieve FAQ",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 
@@ -66,21 +82,24 @@ class FAQController {
   async getAllFAQs(req, res) {
     try {
       const { page = 1, limit = 10, category } = req.query;
-      
+
       // Build where clause
       const where = {};
       if (category) where.category = category;
-      
+
       // Get FAQs with pagination
       const faqs = await FAQ.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['display_order', 'ASC'], ['createdAt', 'DESC']],
+        order: [
+          ["display_order", "ASC"],
+          ["createdAt", "DESC"],
+        ],
       });
-      
+
       return successResponse(res, {
-        message: 'FAQs retrieved successfully',
+        message: "FAQs retrieved successfully",
         data: faqs.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -89,11 +108,15 @@ class FAQController {
         },
       });
     } catch (error) {
-      logger.error('Get all FAQs error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve FAQs',
-        error: error.message,
-      }, 500);
+      logger.error("Get all FAQs error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to retrieve FAQs",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 
@@ -104,17 +127,20 @@ class FAQController {
     try {
       const { category } = req.params;
       const { page = 1, limit = 10 } = req.query;
-      
+
       // Get FAQs by category with pagination
       const faqs = await FAQ.findAndCountAll({
         where: { category },
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['display_order', 'ASC'], ['createdAt', 'DESC']],
+        order: [
+          ["display_order", "ASC"],
+          ["createdAt", "DESC"],
+        ],
       });
-      
+
       return successResponse(res, {
-        message: 'FAQs retrieved successfully',
+        message: "FAQs retrieved successfully",
         data: faqs.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -123,11 +149,15 @@ class FAQController {
         },
       });
     } catch (error) {
-      logger.error('Get FAQs by category error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve FAQs by category',
-        error: error.message,
-      }, 500);
+      logger.error("Get FAQs by category error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to retrieve FAQs by category",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 
@@ -138,16 +168,20 @@ class FAQController {
     try {
       const { id } = req.params;
       const { question, answer, category, display_order } = req.body;
-      
+
       // Find FAQ
       const faq = await FAQ.findByPk(id);
-      
+
       if (!faq) {
-        return errorResponse(res, {
-          message: 'FAQ not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "FAQ not found",
+          },
+          404,
+        );
       }
-      
+
       // Update FAQ
       await faq.update({
         question,
@@ -155,17 +189,21 @@ class FAQController {
         category,
         display_order,
       });
-      
+
       return successResponse(res, {
-        message: 'FAQ updated successfully',
+        message: "FAQ updated successfully",
         data: faq,
       });
     } catch (error) {
-      logger.error('Update FAQ error:', error);
-      return errorResponse(res, {
-        message: 'Failed to update FAQ',
-        error: error.message,
-      }, 500);
+      logger.error("Update FAQ error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to update FAQ",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 
@@ -175,28 +213,36 @@ class FAQController {
   async deleteFAQ(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find FAQ
       const faq = await FAQ.findByPk(id);
-      
+
       if (!faq) {
-        return errorResponse(res, {
-          message: 'FAQ not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "FAQ not found",
+          },
+          404,
+        );
       }
-      
+
       // Delete FAQ
       await faq.destroy();
-      
+
       return successResponse(res, {
-        message: 'FAQ deleted successfully',
+        message: "FAQ deleted successfully",
       });
     } catch (error) {
-      logger.error('Delete FAQ error:', error);
-      return errorResponse(res, {
-        message: 'Failed to delete FAQ',
-        error: error.message,
-      }, 500);
+      logger.error("Delete FAQ error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to delete FAQ",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 
@@ -206,23 +252,27 @@ class FAQController {
   async reorderFAQs(req, res) {
     try {
       const { faqOrder } = req.body;
-      
+
       // Update sort order for each FAQ
-      const updates = faqOrder.map((faqId, index) => 
-        FAQ.update({ display_order: index + 1 }, { where: { id: faqId } })
+      const updates = faqOrder.map((faqId, index) =>
+        FAQ.update({ display_order: index + 1 }, { where: { id: faqId } }),
       );
-      
+
       await Promise.all(updates);
-      
+
       return successResponse(res, {
-        message: 'FAQs reordered successfully',
+        message: "FAQs reordered successfully",
       });
     } catch (error) {
-      logger.error('Reorder FAQs error:', error);
-      return errorResponse(res, {
-        message: 'Failed to reorder FAQs',
-        error: error.message,
-      }, 500);
+      logger.error("Reorder FAQs error:", error);
+      return errorResponse(
+        res,
+        {
+          message: "Failed to reorder FAQs",
+          error: error.message,
+        },
+        500,
+      );
     }
   }
 }

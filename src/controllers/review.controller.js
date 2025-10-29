@@ -8,8 +8,10 @@ class ReviewController {
    */
   async createReview(req, res) {
     try {
-      const { bookingId, patientId, doctorId, hospitalId, rating, comment, isVerified } = req.body;
-      
+      const {
+        bookingId, patientId, doctorId, hospitalId, rating, comment, isVerified,
+      } = req.body;
+
       // Create review
       const review = await Review.create({
         bookingId,
@@ -20,7 +22,7 @@ class ReviewController {
         comment,
         isVerified,
       });
-      
+
       return successResponse(res, {
         message: 'Review created successfully',
         data: review,
@@ -40,16 +42,16 @@ class ReviewController {
   async getReview(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find review
       const review = await Review.findByPk(id);
-      
+
       if (!review) {
         return errorResponse(res, {
           message: 'Review not found',
         }, 404);
       }
-      
+
       return successResponse(res, {
         message: 'Review retrieved successfully',
         data: review,
@@ -70,22 +72,22 @@ class ReviewController {
     try {
       const { id } = req.params;
       const { rating, comment } = req.body;
-      
+
       // Find review
       const review = await Review.findByPk(id);
-      
+
       if (!review) {
         return errorResponse(res, {
           message: 'Review not found',
         }, 404);
       }
-      
+
       // Update review
       await review.update({
         rating,
         comment,
       });
-      
+
       return successResponse(res, {
         message: 'Review updated successfully',
         data: review,
@@ -105,19 +107,19 @@ class ReviewController {
   async deleteReview(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find review
       const review = await Review.findByPk(id);
-      
+
       if (!review) {
         return errorResponse(res, {
           message: 'Review not found',
         }, 404);
       }
-      
+
       // Delete review
       await review.destroy();
-      
+
       return successResponse(res, {
         message: 'Review deleted successfully',
       });
@@ -135,14 +137,16 @@ class ReviewController {
    */
   async getAllReviews(req, res) {
     try {
-      const { page = 1, limit = 10, doctorId, hospitalId, minRating } = req.query;
-      
+      const {
+        page = 1, limit = 10, doctorId, hospitalId, minRating,
+      } = req.query;
+
       // Build where clause
       const where = {};
       if (doctorId) where.doctorId = doctorId;
       if (hospitalId) where.hospitalId = hospitalId;
       if (minRating) where.rating = { [Sequelize.Op.gte]: minRating };
-      
+
       // Get reviews with pagination
       const reviews = await Review.findAndCountAll({
         where,
@@ -150,7 +154,7 @@ class ReviewController {
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return successResponse(res, {
         message: 'Reviews retrieved successfully',
         data: reviews.rows,
@@ -175,12 +179,12 @@ class ReviewController {
   async getAverageRating(req, res) {
     try {
       const { doctorId, hospitalId } = req.query;
-      
+
       // Build where clause
       const where = {};
       if (doctorId) where.doctorId = doctorId;
       if (hospitalId) where.hospitalId = hospitalId;
-      
+
       // Calculate average rating
       const result = await Review.findOne({
         where,
@@ -189,10 +193,10 @@ class ReviewController {
           [Sequelize.fn('COUNT', Sequelize.col('id')), 'totalReviews'],
         ],
       });
-      
+
       const averageRating = result.get('averageRating');
       const totalReviews = result.get('totalReviews');
-      
+
       return successResponse(res, {
         message: 'Average rating calculated successfully',
         data: {

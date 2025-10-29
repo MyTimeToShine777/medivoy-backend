@@ -5,41 +5,39 @@ const logger = require('../utils/logger');
  * Cache middleware - Cache responses in Redis
  * @param {Number} ttl - Time to live in seconds
  */
-const cache = (ttl = 300) => {
-  return async (req, res, next) => {
-    // Only cache GET requests
-    if (req.method !== 'GET') {
-      return next();
+const cache = (ttl = 300) => async (req, res, next) => {
+  // Only cache GET requests
+  if (req.method !== 'GET') {
+    return next();
+  }
+
+  const key = `cache:${req.originalUrl}`;
+
+  try {
+    // Check if cached data exists
+    const cachedData = await redis.get(key);
+
+    if (cachedData) {
+      logger.debug(`Cache hit: ${key}`);
+      return res.json(JSON.parse(cachedData));
     }
-    
-    const key = `cache:${req.originalUrl}`;
-    
-    try {
-      // Check if cached data exists
-      const cachedData = await redis.get(key);
-      
-      if (cachedData) {
-        logger.debug(`Cache hit: ${key}`);
-        return res.json(JSON.parse(cachedData));
-      }
-      
-      // Store original res.json function
-      const originalJson = res.json.bind(res);
-      
-      // Override res.json to cache the response
-      res.json = (data) => {
-        redis.setex(key, ttl, JSON.stringify(data))
-          .catch(err => logger.error('Cache set error:', err));
-        
-        return originalJson(data);
-      };
-      
-      next();
-    } catch (error) {
-      logger.error('Cache middleware error:', error);
-      next();
-    }
-  };
+
+    // Store original res.json function
+    const originalJson = res.json.bind(res);
+
+    // Override res.json to cache the response
+    res.json = (data) => {
+      redis.setex(key, ttl, JSON.stringify(data))
+        .catch((err) => logger.error('Cache set error:', err));
+
+      return originalJson(data);
+    };
+
+    next();
+  } catch (error) {
+    logger.error('Cache middleware error:', error);
+    next();
+  }
 };
 
 /**
@@ -60,5 +58,5 @@ const clearCache = async (pattern) => {
 
 module.exports = {
   cache,
-  clearCache
+  clearCache,
 };

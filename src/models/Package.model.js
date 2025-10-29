@@ -5,60 +5,60 @@ const Package = sequelize.define('Package', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
   name: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: false,
   },
   country: {
-    type: DataTypes.STRING(100)
+    type: DataTypes.STRING(100),
   },
   description: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
   },
   duration_days: {
-    type: DataTypes.INTEGER
+    type: DataTypes.INTEGER,
   },
   base_price: {
-    type: DataTypes.DECIMAL(10, 2)
+    type: DataTypes.DECIMAL(10, 2),
   },
   currency: {
     type: DataTypes.STRING(3),
-    defaultValue: 'USD'
+    defaultValue: 'USD',
   },
   inclusions: {
-    type: DataTypes.JSONB
+    type: DataTypes.JSONB,
   },
   hospital_ids: {
-    type: DataTypes.JSONB
+    type: DataTypes.JSONB,
   },
   treatment_ids: {
-    type: DataTypes.JSONB
+    type: DataTypes.JSONB,
   },
   flights_included: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false
+    defaultValue: false,
   },
   accommodation_included: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false
+    defaultValue: false,
   },
   transfers_included: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false
+    defaultValue: false,
   },
   seasonal_pricing: {
-    type: DataTypes.JSONB
+    type: DataTypes.JSONB,
   },
   is_active: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
-  }
+    defaultValue: true,
+  },
 }, {
   tableName: 'packages',
   timestamps: true,
-  underscored: true
+  underscored: true,
 });
 
 module.exports = Package;

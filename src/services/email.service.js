@@ -53,7 +53,9 @@ class EmailService {
    * @param {string} [options.from] - Sender email (optional)
    * @returns {Promise<Object>} - SendGrid response
    */
-  async sendSendGridEmail({ to, subject, text, html, from }) {
+  async sendSendGridEmail({
+    to, subject, text, html, from,
+  }) {
     if (!this.sendgridEnabled) {
       throw new Error('SendGrid is not configured');
     }
@@ -86,7 +88,9 @@ class EmailService {
    * @param {string} [options.from] - Sender email (optional)
    * @returns {Promise<Object>} - Nodemailer response
    */
-  async sendSMTPEmail({ to, subject, text, html, from }) {
+  async sendSMTPEmail({
+    to, subject, text, html, from,
+  }) {
     if (!this.smtpEnabled) {
       throw new Error('SMTP is not configured');
     }
@@ -165,7 +169,9 @@ class EmailService {
       </div>
     `;
 
-    return this.sendEmail({ to, subject, text, html });
+    return this.sendEmail({
+      to, subject, text, html,
+    });
   }
 
   /**
@@ -195,7 +201,9 @@ class EmailService {
       </div>
     `;
 
-    return this.sendEmail({ to, subject, text, html });
+    return this.sendEmail({
+      to, subject, text, html,
+    });
   }
 
   /**
@@ -228,7 +236,9 @@ class EmailService {
       </div>
     `;
 
-    return this.sendEmail({ to, subject, text, html });
+    return this.sendEmail({
+      to, subject, text, html,
+    });
   }
 
   /**
@@ -263,7 +273,9 @@ class EmailService {
       </div>
     `;
 
-    return this.sendEmail({ to, subject, text, html });
+    return this.sendEmail({
+      to, subject, text, html,
+    });
   }
 
   /**
@@ -298,7 +310,9 @@ class EmailService {
       </div>
     `;
 
-    return this.sendEmail({ to, subject, text, html });
+    return this.sendEmail({
+      to, subject, text, html,
+    });
   }
 
   /**
@@ -310,7 +324,7 @@ class EmailService {
    */
   async sendBookingConfirmationEmail(to, booking, firstName = '') {
     const subject = 'Booking Confirmation';
-    
+
     const text = `Hello ${firstName},\n\nYour booking has been confirmed.\n\nBooking Details:\nBooking Number: ${booking.booking_number}\nTreatment: ${booking.treatment_name}\nHospital: ${booking.hospital_name}\nTotal Amount: $${booking.total_amount}\n\nThank you for choosing ${config.app.name}.\n\nBest regards,\nThe ${config.app.name} Team`;
 
     const html = `
@@ -330,7 +344,9 @@ class EmailService {
       </div>
     `;
 
-    return this.sendEmail({ to, subject, text, html });
+    return this.sendEmail({
+      to, subject, text, html,
+    });
   }
 
   /**
@@ -342,7 +358,7 @@ class EmailService {
    */
   async sendPaymentConfirmationEmail(to, payment, firstName = '') {
     const subject = 'Payment Confirmation';
-    
+
     const text = `Hello ${firstName},\n\nYour payment has been processed successfully.\n\nPayment Details:\nPayment ID: ${payment.payment_id}\nAmount: $${payment.amount}\nStatus: ${payment.status}\nPayment Method: ${payment.payment_method}\n\nThank you for your payment.\n\nBest regards,\nThe ${config.app.name} Team`;
 
     const html = `
@@ -362,7 +378,9 @@ class EmailService {
       </div>
     `;
 
-    return this.sendEmail({ to, subject, text, html });
+    return this.sendEmail({
+      to, subject, text, html,
+    });
   }
 }
 

@@ -12,7 +12,7 @@ const createMedicalRecordSchema = Joi.object({
   file_size: Joi.number().integer().min(0).allow(null),
   record_date: Joi.date().default(Date.now),
   is_confidential: Joi.boolean().default(false),
-  tags: Joi.array().items(Joi.string()).default([])
+  tags: Joi.array().items(Joi.string()).default([]),
 });
 
 const updateMedicalRecordSchema = Joi.object({
@@ -24,10 +24,10 @@ const updateMedicalRecordSchema = Joi.object({
   file_size: Joi.number().integer().min(0).allow(null),
   record_date: Joi.date(),
   is_confidential: Joi.boolean(),
-  tags: Joi.array().items(Joi.string())
+  tags: Joi.array().items(Joi.string()),
 }).min(1);
 
 module.exports = {
   createMedicalRecordSchema,
-  updateMedicalRecordSchema
+  updateMedicalRecordSchema,
 };

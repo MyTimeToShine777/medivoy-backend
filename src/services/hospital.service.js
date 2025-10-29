@@ -37,7 +37,7 @@ class HospitalService {
       if (!hospital) {
         throw new Error('Hospital not found');
       }
-      
+
       await hospital.update(data);
       return hospital;
     } catch (error) {
@@ -55,7 +55,7 @@ class HospitalService {
       if (!hospital) {
         throw new Error('Hospital not found');
       }
-      
+
       await hospital.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class HospitalService {
   async getAllHospitals(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const hospitals = await Hospital.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return hospitals;
     } catch (error) {
       logger.error('Get all hospitals service error:', error);
@@ -94,7 +94,7 @@ class HospitalService {
       if (!hospital) {
         throw new Error('Hospital not found');
       }
-      
+
       await hospital.update({ isVerified: true });
       return hospital;
     } catch (error) {

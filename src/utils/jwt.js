@@ -7,22 +7,18 @@ const { UnauthorizedError } = require('./error-handler');
  * @param {Object} payload - Token payload
  * @returns {String} JWT token
  */
-const generateAccessToken = (payload) => {
-  return jwt.sign(payload, config.jwt.secret, {
-    expiresIn: config.jwt.expire
-  });
-};
+const generateAccessToken = (payload) => jwt.sign(payload, config.jwt.secret, {
+  expiresIn: config.jwt.expire,
+});
 
 /**
  * Generate refresh token
  * @param {Object} payload - Token payload
  * @returns {String} JWT refresh token
  */
-const generateRefreshToken = (payload) => {
-  return jwt.sign(payload, config.jwt.refreshSecret, {
-    expiresIn: config.jwt.refreshExpire
-  });
-};
+const generateRefreshToken = (payload) => jwt.sign(payload, config.jwt.refreshSecret, {
+  expiresIn: config.jwt.refreshExpire,
+});
 
 /**
  * Verify access token
@@ -61,17 +57,15 @@ const verifyRefreshToken = (token) => {
  * @param {Object} payload - Token payload
  * @returns {Object} Object containing both tokens
  */
-const generateTokenPair = (payload) => {
-  return {
-    accessToken: generateAccessToken(payload),
-    refreshToken: generateRefreshToken(payload)
-  };
-};
+const generateTokenPair = (payload) => ({
+  accessToken: generateAccessToken(payload),
+  refreshToken: generateRefreshToken(payload),
+});
 
 module.exports = {
   generateAccessToken,
   generateRefreshToken,
   verifyAccessToken,
   verifyRefreshToken,
-  generateTokenPair
+  generateTokenPair,
 };

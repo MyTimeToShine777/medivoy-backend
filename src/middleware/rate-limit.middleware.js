@@ -28,13 +28,11 @@ function createLimiterConfig(options) {
     max: options.max,
     standardHeaders: true,
     legacyHeaders: false,
-    handler: (req, res) => {
-      return errorResponse(
-        res,
-        429,
-        options.message || 'Too many requests, please try again later'
-      );
-    },
+    handler: (req, res) => errorResponse(
+      res,
+      429,
+      options.message || 'Too many requests, please try again later',
+    ),
     skip: options.skip || (() => false),
   };
 
@@ -61,10 +59,10 @@ const apiLimiter = rateLimit(createLimiterConfig({
   max: config.rateLimit.maxRequests,
   prefix: 'rl:api:',
   message: 'Too many requests, please try again later',
-  skip: (req) => {
+  skip: (req) =>
     // Skip rate limiting for health check
-    return req.path === '/health';
-  },
+    req.path === '/health'
+  ,
 }));
 
 /**

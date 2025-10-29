@@ -17,7 +17,7 @@ const authMiddleware = async (req, res, next) => {
         code: 'AUTH_NO_TOKEN',
       });
     }
-    
+
     // Check if token is in Bearer format
     const tokenParts = authHeader.split(' ');
     if (tokenParts[0] !== 'Bearer' || !tokenParts[1]) {
@@ -27,12 +27,12 @@ const authMiddleware = async (req, res, next) => {
         code: 'AUTH_INVALID_TOKEN_FORMAT',
       });
     }
-    
+
     const token = tokenParts[1];
-    
+
     // Verify token
     const decoded = jwt.verify(token, config.jwt.secret);
-    
+
     // Get user from database
     const user = await User.findByPk(decoded.id);
     if (!user) {
@@ -42,13 +42,13 @@ const authMiddleware = async (req, res, next) => {
         code: 'AUTH_USER_NOT_FOUND',
       });
     }
-    
+
     // Attach user to request
     req.user = user;
     next();
   } catch (error) {
     logger.error('Authentication error:', error);
-    
+
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
@@ -56,7 +56,7 @@ const authMiddleware = async (req, res, next) => {
         code: 'AUTH_TOKEN_EXPIRED',
       });
     }
-    
+
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
         success: false,
@@ -64,7 +64,7 @@ const authMiddleware = async (req, res, next) => {
         code: 'AUTH_TOKEN_INVALID',
       });
     }
-    
+
     return res.status(500).json({
       success: false,
       message: 'Authentication failed',

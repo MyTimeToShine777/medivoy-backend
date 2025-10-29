@@ -37,7 +37,7 @@ class InvoiceService {
       if (!invoice) {
         throw new Error('Invoice not found');
       }
-      
+
       await invoice.update(data);
       return invoice;
     } catch (error) {
@@ -55,7 +55,7 @@ class InvoiceService {
       if (!invoice) {
         throw new Error('Invoice not found');
       }
-      
+
       await invoice.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class InvoiceService {
   async getAllInvoices(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const invoices = await Invoice.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return invoices;
     } catch (error) {
       logger.error('Get all invoices service error:', error);

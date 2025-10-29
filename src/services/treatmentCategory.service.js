@@ -37,7 +37,7 @@ class TreatmentCategoryService {
       if (!treatmentCategory) {
         throw new Error('Treatment category not found');
       }
-      
+
       await treatmentCategory.update(data);
       return treatmentCategory;
     } catch (error) {
@@ -55,7 +55,7 @@ class TreatmentCategoryService {
       if (!treatmentCategory) {
         throw new Error('Treatment category not found');
       }
-      
+
       await treatmentCategory.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class TreatmentCategoryService {
   async getAllTreatmentCategories(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const treatmentCategories = await TreatmentCategory.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['sortOrder', 'ASC'], ['createdAt', 'DESC']],
       });
-      
+
       return treatmentCategories;
     } catch (error) {
       logger.error('Get all treatment categories service error:', error);

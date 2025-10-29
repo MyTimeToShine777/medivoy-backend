@@ -1,15 +1,15 @@
 const express = require('express');
 const treatmentController = require('../../controllers/treatment.controller');
-const authMiddleware = require('../../middleware/auth.middleware');
-const authorizeMiddleware = require('../../middleware/authorize.middleware');
+const auth = require('../../middleware/auth.middleware');
+const authorize = require('../../middleware/authorize.middleware');
 
 const router = express.Router();
 
 // Create treatment (admin only)
 router.post(
   '/',
-  authMiddleware,
-  authorizeMiddleware(['admin']),
+  auth,
+  authorize(['admin']),
   treatmentController.createTreatment,
 );
 
@@ -22,16 +22,16 @@ router.get(
 // Update treatment (admin only)
 router.put(
   '/:id',
-  authMiddleware,
-  authorizeMiddleware(['admin']),
+  auth,
+  authorize(['admin']),
   treatmentController.updateTreatment,
 );
 
 // Delete treatment (admin only)
 router.delete(
   '/:id',
-  authMiddleware,
-  authorizeMiddleware(['admin']),
+  auth,
+  authorize(['admin']),
   treatmentController.deleteTreatment,
 );
 

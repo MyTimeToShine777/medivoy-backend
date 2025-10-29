@@ -5,61 +5,61 @@ const Payment = sequelize.define('Payment', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
   transaction_id: {
     type: DataTypes.STRING(100),
-    unique: true
+    unique: true,
   },
   booking_id: {
     type: DataTypes.INTEGER,
-    references: { model: 'bookings', key: 'id' }
+    references: { model: 'bookings', key: 'id' },
   },
   appointment_id: {
     type: DataTypes.INTEGER,
-    references: { model: 'appointments', key: 'id' }
+    references: { model: 'appointments', key: 'id' },
   },
   patient_id: {
     type: DataTypes.INTEGER,
-    references: { model: 'patients', key: 'id' }
+    references: { model: 'patients', key: 'id' },
   },
   amount: {
     type: DataTypes.DECIMAL(10, 2),
-    allowNull: false
+    allowNull: false,
   },
   currency: {
     type: DataTypes.STRING(3),
-    defaultValue: 'USD'
+    defaultValue: 'USD',
   },
   payment_method: {
-    type: DataTypes.STRING(50)
+    type: DataTypes.STRING(50),
   },
   payment_gateway: {
-    type: DataTypes.STRING(50)
+    type: DataTypes.STRING(50),
   },
   gateway_transaction_id: {
-    type: DataTypes.STRING(255)
+    type: DataTypes.STRING(255),
   },
   status: {
     type: DataTypes.STRING(50),
-    defaultValue: 'pending'
+    defaultValue: 'pending',
   },
   payment_date: {
-    type: DataTypes.DATE
+    type: DataTypes.DATE,
   },
   refund_amount: {
-    type: DataTypes.DECIMAL(10, 2)
+    type: DataTypes.DECIMAL(10, 2),
   },
   refund_date: {
-    type: DataTypes.DATE
+    type: DataTypes.DATE,
   },
   metadata: {
-    type: DataTypes.JSONB
-  }
+    type: DataTypes.JSONB,
+  },
 }, {
   tableName: 'payments',
   timestamps: true,
-  underscored: true
+  underscored: true,
 });
 
 module.exports = Payment;

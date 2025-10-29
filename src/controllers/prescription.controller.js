@@ -8,8 +8,10 @@ class PrescriptionController {
    */
   async createPrescription(req, res) {
     try {
-      const { appointmentId, doctorId, patientId, medications, dosage, duration, notes } = req.body;
-      
+      const {
+        appointmentId, doctorId, patientId, medications, dosage, duration, notes,
+      } = req.body;
+
       // Create prescription
       const prescription = await Prescription.create({
         appointmentId,
@@ -20,7 +22,7 @@ class PrescriptionController {
         duration,
         notes,
       });
-      
+
       return successResponse(res, {
         message: 'Prescription created successfully',
         data: prescription,
@@ -40,16 +42,16 @@ class PrescriptionController {
   async getPrescription(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find prescription
       const prescription = await Prescription.findByPk(id);
-      
+
       if (!prescription) {
         return errorResponse(res, {
           message: 'Prescription not found',
         }, 404);
       }
-      
+
       return successResponse(res, {
         message: 'Prescription retrieved successfully',
         data: prescription,
@@ -69,17 +71,19 @@ class PrescriptionController {
   async updatePrescription(req, res) {
     try {
       const { id } = req.params;
-      const { medications, dosage, duration, notes, isFulfilled } = req.body;
-      
+      const {
+        medications, dosage, duration, notes, isFulfilled,
+      } = req.body;
+
       // Find prescription
       const prescription = await Prescription.findByPk(id);
-      
+
       if (!prescription) {
         return errorResponse(res, {
           message: 'Prescription not found',
         }, 404);
       }
-      
+
       // Update prescription
       await prescription.update({
         medications,
@@ -88,7 +92,7 @@ class PrescriptionController {
         notes,
         isFulfilled,
       });
-      
+
       return successResponse(res, {
         message: 'Prescription updated successfully',
         data: prescription,
@@ -108,19 +112,19 @@ class PrescriptionController {
   async deletePrescription(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find prescription
       const prescription = await Prescription.findByPk(id);
-      
+
       if (!prescription) {
         return errorResponse(res, {
           message: 'Prescription not found',
         }, 404);
       }
-      
+
       // Delete prescription
       await prescription.destroy();
-      
+
       return successResponse(res, {
         message: 'Prescription deleted successfully',
       });
@@ -140,11 +144,11 @@ class PrescriptionController {
     try {
       const { patientId } = req.params;
       const { page = 1, limit = 10, isFulfilled } = req.query;
-      
+
       // Build where clause
       const where = { patientId };
       if (isFulfilled !== undefined) where.isFulfilled = isFulfilled === 'true';
-      
+
       // Get prescriptions with pagination
       const prescriptions = await Prescription.findAndCountAll({
         where,
@@ -152,7 +156,7 @@ class PrescriptionController {
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return successResponse(res, {
         message: 'Prescriptions retrieved successfully',
         data: prescriptions.rows,
@@ -177,23 +181,23 @@ class PrescriptionController {
   async generatePrescriptionPDF(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find prescription
       const prescription = await Prescription.findByPk(id);
-      
+
       if (!prescription) {
         return errorResponse(res, {
           message: 'Prescription not found',
         }, 404);
       }
-      
+
       // Generate PDF
       // Note: This would require integrating with PDF generation service
       const pdfUrl = `https://example.com/prescriptions/${id}.pdf`; // Placeholder
-      
+
       // Update prescription with PDF URL
       await prescription.update({ pdfUrl });
-      
+
       return successResponse(res, {
         message: 'Prescription PDF generated successfully',
         data: { pdfUrl },

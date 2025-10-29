@@ -5,42 +5,42 @@ const Notification = sequelize.define('Notification', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
   user_id: {
     type: DataTypes.INTEGER,
-    references: { model: 'users', key: 'id' }
+    references: { model: 'users', key: 'id' },
   },
   title: {
-    type: DataTypes.STRING(255)
+    type: DataTypes.STRING(255),
   },
   message: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
   },
   type: {
-    type: DataTypes.STRING(50)
+    type: DataTypes.STRING(50),
   },
   reference_type: {
-    type: DataTypes.STRING(50)
+    type: DataTypes.STRING(50),
   },
   reference_id: {
-    type: DataTypes.INTEGER
+    type: DataTypes.INTEGER,
   },
   is_read: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false
+    defaultValue: false,
   },
   is_sent: {
     type: DataTypes.BOOLEAN,
-    defaultValue: false
+    defaultValue: false,
   },
   channel: {
-    type: DataTypes.STRING(50)
-  }
+    type: DataTypes.STRING(50),
+  },
 }, {
   tableName: 'notifications',
   timestamps: true,
-  underscored: true
+  underscored: true,
 });
 
 module.exports = Notification;

@@ -5,71 +5,71 @@ const Appointment = sequelize.define('Appointment', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
   appointment_number: {
     type: DataTypes.STRING(50),
     allowNull: false,
-    unique: true
+    unique: true,
   },
   patient_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    references: { model: 'patients', key: 'id' }
+    references: { model: 'patients', key: 'id' },
   },
   doctor_id: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    references: { model: 'doctors', key: 'id' }
+    references: { model: 'doctors', key: 'id' },
   },
   booking_id: {
     type: DataTypes.INTEGER,
-    references: { model: 'bookings', key: 'id' }
+    references: { model: 'bookings', key: 'id' },
   },
   appointment_type: {
-    type: DataTypes.STRING(50)
+    type: DataTypes.STRING(50),
   },
   status: {
     type: DataTypes.STRING(50),
-    defaultValue: 'requested'
+    defaultValue: 'requested',
   },
   scheduled_date: {
     type: DataTypes.DATE,
-    allowNull: false
+    allowNull: false,
   },
   duration_minutes: {
     type: DataTypes.INTEGER,
-    defaultValue: 30
+    defaultValue: 30,
   },
   consultation_fee: {
-    type: DataTypes.DECIMAL(10, 2)
+    type: DataTypes.DECIMAL(10, 2),
   },
   currency: {
     type: DataTypes.STRING(3),
-    defaultValue: 'USD'
+    defaultValue: 'USD',
   },
   chief_complaint: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
   },
   diagnosis: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
   },
   prescription: {
-    type: DataTypes.JSONB
+    type: DataTypes.JSONB,
   },
   follow_up_date: {
-    type: DataTypes.DATEONLY
+    type: DataTypes.DATEONLY,
   },
   video_call_link: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
   },
   notes: {
-    type: DataTypes.TEXT
-  }
+    type: DataTypes.TEXT,
+  },
 }, {
   tableName: 'appointments',
   timestamps: true,
-  underscored: true
+  underscored: true,
 });
 
 module.exports = Appointment;

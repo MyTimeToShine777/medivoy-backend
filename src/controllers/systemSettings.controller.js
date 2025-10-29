@@ -3,8 +3,8 @@
  * Handles system configuration and settings management
  */
 
-const { SystemSettings, User } = require('../models');
 const { Op } = require('sequelize');
+const { SystemSettings, User } = require('../models');
 
 /**
  * Get all settings
@@ -23,22 +23,22 @@ exports.getAllSettings = async (req, res) => {
         {
           model: User,
           as: 'updatedBy',
-          attributes: ['id', 'first_name', 'last_name', 'email']
-        }
+          attributes: ['id', 'first_name', 'last_name', 'email'],
+        },
       ],
-      order: [['category', 'ASC'], ['setting_key', 'ASC']]
+      order: [['category', 'ASC'], ['setting_key', 'ASC']],
     });
 
     res.json({
       success: true,
-      data: settings
+      data: settings,
     });
   } catch (error) {
     console.error('Error fetching settings:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching settings',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -56,28 +56,28 @@ exports.getSettingByKey = async (req, res) => {
         {
           model: User,
           as: 'updatedBy',
-          attributes: ['id', 'first_name', 'last_name', 'email']
-        }
-      ]
+          attributes: ['id', 'first_name', 'last_name', 'email'],
+        },
+      ],
     });
 
     if (!setting) {
       return res.status(404).json({
         success: false,
-        message: 'Setting not found'
+        message: 'Setting not found',
       });
     }
 
     res.json({
       success: true,
-      data: setting
+      data: setting,
     });
   } catch (error) {
     console.error('Error fetching setting:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching setting',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -95,22 +95,22 @@ exports.getSettingsByCategory = async (req, res) => {
         {
           model: User,
           as: 'updatedBy',
-          attributes: ['id', 'first_name', 'last_name']
-        }
+          attributes: ['id', 'first_name', 'last_name'],
+        },
       ],
-      order: [['setting_key', 'ASC']]
+      order: [['setting_key', 'ASC']],
     });
 
     res.json({
       success: true,
-      data: settings
+      data: settings,
     });
   } catch (error) {
     console.error('Error fetching settings by category:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching settings by category',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -130,7 +130,7 @@ exports.upsertSetting = async (req, res) => {
       is_encrypted,
       default_value,
       validation_rules,
-      updated_by
+      updated_by,
     } = req.body;
 
     const [setting, created] = await SystemSettings.upsert(
@@ -144,11 +144,11 @@ exports.upsertSetting = async (req, res) => {
         is_encrypted: is_encrypted !== undefined ? is_encrypted : false,
         default_value,
         validation_rules,
-        updated_by
+        updated_by,
       },
       {
-        returning: true
-      }
+        returning: true,
+      },
     );
 
     const settingWithDetails = await SystemSettings.findOne({
@@ -157,22 +157,22 @@ exports.upsertSetting = async (req, res) => {
         {
           model: User,
           as: 'updatedBy',
-          attributes: ['id', 'first_name', 'last_name', 'email']
-        }
-      ]
+          attributes: ['id', 'first_name', 'last_name', 'email'],
+        },
+      ],
     });
 
     res.status(created ? 201 : 200).json({
       success: true,
       message: created ? 'Setting created successfully' : 'Setting updated successfully',
-      data: settingWithDetails
+      data: settingWithDetails,
     });
   } catch (error) {
     console.error('Error upserting setting:', error);
     res.status(500).json({
       success: false,
       message: 'Error saving setting',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -186,19 +186,19 @@ exports.updateSettingValue = async (req, res) => {
     const { setting_value, updated_by } = req.body;
 
     const setting = await SystemSettings.findOne({
-      where: { setting_key: key }
+      where: { setting_key: key },
     });
 
     if (!setting) {
       return res.status(404).json({
         success: false,
-        message: 'Setting not found'
+        message: 'Setting not found',
       });
     }
 
     await setting.update({
       setting_value,
-      updated_by
+      updated_by,
     });
 
     const updatedSetting = await SystemSettings.findOne({
@@ -207,22 +207,22 @@ exports.updateSettingValue = async (req, res) => {
         {
           model: User,
           as: 'updatedBy',
-          attributes: ['id', 'first_name', 'last_name', 'email']
-        }
-      ]
+          attributes: ['id', 'first_name', 'last_name', 'email'],
+        },
+      ],
     });
 
     res.json({
       success: true,
       message: 'Setting value updated successfully',
-      data: updatedSetting
+      data: updatedSetting,
     });
   } catch (error) {
     console.error('Error updating setting value:', error);
     res.status(500).json({
       success: false,
       message: 'Error updating setting value',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -235,13 +235,13 @@ exports.deleteSetting = async (req, res) => {
     const { key } = req.params;
 
     const setting = await SystemSettings.findOne({
-      where: { setting_key: key }
+      where: { setting_key: key },
     });
 
     if (!setting) {
       return res.status(404).json({
         success: false,
-        message: 'Setting not found'
+        message: 'Setting not found',
       });
     }
 
@@ -249,14 +249,14 @@ exports.deleteSetting = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Setting deleted successfully'
+      message: 'Setting deleted successfully',
     });
   } catch (error) {
     console.error('Error deleting setting:', error);
     res.status(500).json({
       success: false,
       message: 'Error deleting setting',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -268,7 +268,7 @@ exports.getPublicSettings = async (req, res) => {
   try {
     const settings = await SystemSettings.findAll({
       where: { is_public: true },
-      attributes: ['setting_key', 'setting_value', 'setting_type', 'category', 'description']
+      attributes: ['setting_key', 'setting_value', 'setting_type', 'category', 'description'],
     });
 
     // Convert to key-value object
@@ -278,20 +278,20 @@ exports.getPublicSettings = async (req, res) => {
         value: setting.setting_value,
         type: setting.setting_type,
         category: setting.category,
-        description: setting.description
+        description: setting.description,
       };
     });
 
     res.json({
       success: true,
-      data: settingsObject
+      data: settingsObject,
     });
   } catch (error) {
     console.error('Error fetching public settings:', error);
     res.status(500).json({
       success: false,
       message: 'Error fetching public settings',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -306,13 +306,13 @@ exports.bulkUpdateSettings = async (req, res) => {
     if (!Array.isArray(settings) || settings.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Settings array is required'
+        message: 'Settings array is required',
       });
     }
 
     const results = {
       success: [],
-      failed: []
+      failed: [],
     };
 
     for (const settingData of settings) {
@@ -320,27 +320,27 @@ exports.bulkUpdateSettings = async (req, res) => {
         const { setting_key, setting_value } = settingData;
 
         const setting = await SystemSettings.findOne({
-          where: { setting_key }
+          where: { setting_key },
         });
 
         if (!setting) {
           results.failed.push({
             setting_key,
-            reason: 'Setting not found'
+            reason: 'Setting not found',
           });
           continue;
         }
 
         await setting.update({
           setting_value,
-          updated_by
+          updated_by,
         });
 
         results.success.push(setting_key);
       } catch (error) {
         results.failed.push({
           setting_key: settingData.setting_key,
-          reason: error.message
+          reason: error.message,
         });
       }
     }
@@ -348,14 +348,14 @@ exports.bulkUpdateSettings = async (req, res) => {
     res.json({
       success: true,
       message: `Updated ${results.success.length} settings, ${results.failed.length} failed`,
-      data: results
+      data: results,
     });
   } catch (error) {
     console.error('Error bulk updating settings:', error);
     res.status(500).json({
       success: false,
       message: 'Error bulk updating settings',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -369,39 +369,39 @@ exports.resetSettingToDefault = async (req, res) => {
     const { updated_by } = req.body;
 
     const setting = await SystemSettings.findOne({
-      where: { setting_key: key }
+      where: { setting_key: key },
     });
 
     if (!setting) {
       return res.status(404).json({
         success: false,
-        message: 'Setting not found'
+        message: 'Setting not found',
       });
     }
 
     if (!setting.default_value) {
       return res.status(400).json({
         success: false,
-        message: 'No default value defined for this setting'
+        message: 'No default value defined for this setting',
       });
     }
 
     await setting.update({
       setting_value: setting.default_value,
-      updated_by
+      updated_by,
     });
 
     res.json({
       success: true,
       message: 'Setting reset to default value',
-      data: setting
+      data: setting,
     });
   } catch (error) {
     console.error('Error resetting setting:', error);
     res.status(500).json({
       success: false,
       message: 'Error resetting setting',
-      error: error.message
+      error: error.message,
     });
   }
 };

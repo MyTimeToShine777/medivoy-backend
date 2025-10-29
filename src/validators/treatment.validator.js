@@ -14,7 +14,7 @@ const createTreatmentSchema = Joi.object({
   is_active: Joi.boolean().default(true),
   seo_title: Joi.string().max(255).allow('', null),
   seo_description: Joi.string().allow('', null),
-  seo_keywords: Joi.string().allow('', null)
+  seo_keywords: Joi.string().allow('', null),
 });
 
 const updateTreatmentSchema = Joi.object({
@@ -31,7 +31,7 @@ const updateTreatmentSchema = Joi.object({
   is_active: Joi.boolean(),
   seo_title: Joi.string().max(255).allow('', null),
   seo_description: Joi.string().allow('', null),
-  seo_keywords: Joi.string().allow('', null)
+  seo_keywords: Joi.string().allow('', null),
 }).min(1);
 
 const categorySchema = Joi.object({
@@ -40,7 +40,7 @@ const categorySchema = Joi.object({
   description: Joi.string().allow('', null),
   icon: Joi.string().max(255).allow('', null),
   sort_order: Joi.number().integer().default(0),
-  is_active: Joi.boolean().default(true)
+  is_active: Joi.boolean().default(true),
 });
 
 const subcategorySchema = Joi.object({
@@ -50,12 +50,12 @@ const subcategorySchema = Joi.object({
   description: Joi.string().allow('', null),
   icon: Joi.string().max(255).allow('', null),
   sort_order: Joi.number().integer().default(0),
-  is_active: Joi.boolean().default(true)
+  is_active: Joi.boolean().default(true),
 });
 
 module.exports = {
   createTreatmentSchema,
   updateTreatmentSchema,
   categorySchema,
-  subcategorySchema
+  subcategorySchema,
 };

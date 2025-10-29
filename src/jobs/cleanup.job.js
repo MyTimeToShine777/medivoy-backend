@@ -1,5 +1,5 @@
-const { cleanupQueue } = require('./queue');
 const path = require('path');
+const { cleanupQueue } = require('./queue');
 const fs = require('fs').promises;
 const logger = require('../utils/logger');
 const { PasswordReset, RefreshToken } = require('../models');
@@ -84,29 +84,29 @@ const cleanupExpiredTokens = async (data) => {
     const deletedPasswordResets = await PasswordReset.destroy({
       where: {
         expires_at: {
-          [Op.lt]: now
-        }
-      }
+          [Op.lt]: now,
+        },
+      },
     });
 
     // Delete expired refresh tokens
     const deletedRefreshTokens = await RefreshToken.destroy({
       where: {
         expires_at: {
-          [Op.lt]: now
-        }
-      }
+          [Op.lt]: now,
+        },
+      },
     });
 
     logger.info('Expired tokens cleaned up', {
       passwordResets: deletedPasswordResets,
-      refreshTokens: deletedRefreshTokens
+      refreshTokens: deletedRefreshTokens,
     });
 
     return {
       success: true,
       deletedPasswordResets,
-      deletedRefreshTokens
+      deletedRefreshTokens,
     };
   } catch (error) {
     logger.error('Failed to cleanup expired tokens', { error: error.message });
@@ -158,7 +158,7 @@ const cleanupSessionData = async (data) => {
     cutoffDate.setDate(cutoffDate.getDate() - maxAge);
 
     const result = await Session.deleteMany({
-      updatedAt: { $lt: cutoffDate }
+      updatedAt: { $lt: cutoffDate },
     });
 
     logger.info('Old session data cleaned up', { deletedCount: result.deletedCount });
@@ -175,7 +175,7 @@ const cleanupAll = async (data) => {
     tempFiles: null,
     expiredTokens: null,
     oldLogs: null,
-    sessionData: null
+    sessionData: null,
   };
 
   try {
@@ -199,9 +199,9 @@ const scheduleDailyCleanup = () => {
     { type: 'all', data: {} },
     {
       repeat: {
-        cron: '0 3 * * *' // 3 AM every day
-      }
-    }
+        cron: '0 3 * * *', // 3 AM every day
+      },
+    },
   );
 
   logger.info('Daily cleanup scheduled');
@@ -214,8 +214,8 @@ const addCleanupJob = async (type, data = {}, options = {}) => {
       { type, data },
       {
         priority: options.priority || 2,
-        ...options
-      }
+        ...options,
+      },
     );
 
     logger.info('Cleanup job added to queue', { type, jobId: job.id });
@@ -228,5 +228,5 @@ const addCleanupJob = async (type, data = {}, options = {}) => {
 
 module.exports = {
   addCleanupJob,
-  scheduleDailyCleanup
+  scheduleDailyCleanup,
 };

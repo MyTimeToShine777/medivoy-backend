@@ -5,45 +5,45 @@ const Laboratory = sequelize.define('Laboratory', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
-    autoIncrement: true
+    autoIncrement: true,
   },
   name: {
     type: DataTypes.STRING(255),
-    allowNull: false
+    allowNull: false,
   },
   hospital_id: {
     type: DataTypes.INTEGER,
-    references: { model: 'hospitals', key: 'id' }
+    references: { model: 'hospitals', key: 'id' },
   },
   type: {
-    type: DataTypes.STRING(100)
+    type: DataTypes.STRING(100),
   },
   country: {
-    type: DataTypes.STRING(100)
+    type: DataTypes.STRING(100),
   },
   city: {
-    type: DataTypes.STRING(100)
+    type: DataTypes.STRING(100),
   },
   address: {
-    type: DataTypes.TEXT
+    type: DataTypes.TEXT,
   },
   phone: {
-    type: DataTypes.STRING(20)
+    type: DataTypes.STRING(20),
   },
   email: {
-    type: DataTypes.STRING(255)
+    type: DataTypes.STRING(255),
   },
   services_offered: {
-    type: DataTypes.JSONB
+    type: DataTypes.JSONB,
   },
   is_active: {
     type: DataTypes.BOOLEAN,
-    defaultValue: true
-  }
+    defaultValue: true,
+  },
 }, {
   tableName: 'laboratories',
   timestamps: true,
-  underscored: true
+  underscored: true,
 });
 
 module.exports = Laboratory;

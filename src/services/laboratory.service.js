@@ -37,7 +37,7 @@ class LaboratoryService {
       if (!laboratory) {
         throw new Error('Laboratory not found');
       }
-      
+
       await laboratory.update(data);
       return laboratory;
     } catch (error) {
@@ -55,7 +55,7 @@ class LaboratoryService {
       if (!laboratory) {
         throw new Error('Laboratory not found');
       }
-      
+
       await laboratory.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class LaboratoryService {
   async getAllLaboratories(filters = {}) {
     try {
       const { page = 1, limit = 10, ...where } = filters;
-      
+
       const laboratories = await Laboratory.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return laboratories;
     } catch (error) {
       logger.error('Get all laboratories service error:', error);

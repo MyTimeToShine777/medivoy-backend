@@ -1,7 +1,7 @@
+const { Sequelize } = require('sequelize');
 const { Treatment, TreatmentCategory, TreatmentSubcategory } = require('../models');
 const { successResponse, errorResponse } = require('../utils/response');
 const logger = require('../utils/logger');
-const { Sequelize } = require('sequelize');
 
 class TreatmentController {
   /**
@@ -9,8 +9,10 @@ class TreatmentController {
    */
   async createTreatment(req, res) {
     try {
-      const { name, description, categoryId, subcategoryId, price, duration, isActive } = req.body;
-      
+      const {
+        name, description, categoryId, subcategoryId, price, duration, isActive,
+      } = req.body;
+
       // Create treatment
       const treatment = await Treatment.create({
         name,
@@ -21,7 +23,7 @@ class TreatmentController {
         duration,
         isActive,
       });
-      
+
       return successResponse(res, {
         message: 'Treatment created successfully',
         data: treatment,
@@ -41,7 +43,7 @@ class TreatmentController {
   async getTreatment(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find treatment with associated category and subcategory
       const treatment = await Treatment.findByPk(id, {
         include: [
@@ -57,13 +59,13 @@ class TreatmentController {
           },
         ],
       });
-      
+
       if (!treatment) {
         return errorResponse(res, {
           message: 'Treatment not found',
         }, 404);
       }
-      
+
       return successResponse(res, {
         message: 'Treatment retrieved successfully',
         data: treatment,
@@ -83,17 +85,19 @@ class TreatmentController {
   async updateTreatment(req, res) {
     try {
       const { id } = req.params;
-      const { name, description, categoryId, subcategoryId, price, duration, isActive } = req.body;
-      
+      const {
+        name, description, categoryId, subcategoryId, price, duration, isActive,
+      } = req.body;
+
       // Find treatment
       const treatment = await Treatment.findByPk(id);
-      
+
       if (!treatment) {
         return errorResponse(res, {
           message: 'Treatment not found',
         }, 404);
       }
-      
+
       // Update treatment
       await treatment.update({
         name,
@@ -104,7 +108,7 @@ class TreatmentController {
         duration,
         isActive,
       });
-      
+
       return successResponse(res, {
         message: 'Treatment updated successfully',
         data: treatment,
@@ -124,19 +128,19 @@ class TreatmentController {
   async deleteTreatment(req, res) {
     try {
       const { id } = req.params;
-      
+
       // Find treatment
       const treatment = await Treatment.findByPk(id);
-      
+
       if (!treatment) {
         return errorResponse(res, {
           message: 'Treatment not found',
         }, 404);
       }
-      
+
       // Delete treatment
       await treatment.destroy();
-      
+
       return successResponse(res, {
         message: 'Treatment deleted successfully',
       });
@@ -154,15 +158,17 @@ class TreatmentController {
    */
   async getAllTreatments(req, res) {
     try {
-      const { page = 1, limit = 10, categoryId, subcategoryId, isActive, search } = req.query;
-      
+      const {
+        page = 1, limit = 10, categoryId, subcategoryId, isActive, search,
+      } = req.query;
+
       // Build where clause
       const where = {};
       if (categoryId) where.categoryId = categoryId;
       if (subcategoryId) where.subcategoryId = subcategoryId;
       if (isActive !== undefined) where.isActive = isActive === 'true';
       if (search) where.name = { [Sequelize.Op.iLike]: `%${search}%` };
-      
+
       // Get treatments with pagination and associated category/subcategory
       const treatments = await Treatment.findAndCountAll({
         where,
@@ -182,7 +188,7 @@ class TreatmentController {
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['name', 'ASC']],
       });
-      
+
       return successResponse(res, {
         message: 'Treatments retrieved successfully',
         data: treatments.rows,
@@ -208,11 +214,11 @@ class TreatmentController {
     try {
       const { categoryId } = req.params;
       const { page = 1, limit = 10, isActive } = req.query;
-      
+
       // Build where clause
       const where = { categoryId };
       if (isActive !== undefined) where.isActive = isActive === 'true';
-      
+
       // Get treatments with pagination
       const treatments = await Treatment.findAndCountAll({
         where,
@@ -220,7 +226,7 @@ class TreatmentController {
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['name', 'ASC']],
       });
-      
+
       return successResponse(res, {
         message: 'Treatments retrieved successfully',
         data: treatments.rows,

@@ -6,7 +6,7 @@ const config = require('../config');
 const sendSMS = async (phone, message) => {
   // TODO: Implement actual Twilio SMS sending
   logger.info('Sending SMS', { phone, message });
-  
+
   // Simulated SMS sending
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -43,11 +43,11 @@ smsQueue.process(async (job) => {
         break;
 
       case 'prescription_ready':
-        message = `Your prescription is ready. Please check your email or app for details.`;
+        message = 'Your prescription is ready. Please check your email or app for details.';
         break;
 
       case 'lab_results_ready':
-        message = `Your lab test results are ready. Please login to view them.`;
+        message = 'Your lab test results are ready. Please login to view them.';
         break;
 
       case 'status_update':
@@ -76,8 +76,8 @@ const addSMSJob = async (type, data, options = {}) => {
       {
         priority: options.priority || 5,
         delay: options.delay || 0,
-        ...options
-      }
+        ...options,
+      },
     );
 
     logger.info('SMS job added to queue', { type, jobId: job.id });
@@ -89,5 +89,5 @@ const addSMSJob = async (type, data, options = {}) => {
 };
 
 module.exports = {
-  addSMSJob
+  addSMSJob,
 };

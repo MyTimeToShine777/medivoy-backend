@@ -37,7 +37,7 @@ class MedicalRecordService {
       if (!medicalRecord) {
         throw new Error('Medical record not found');
       }
-      
+
       await medicalRecord.update(data);
       return medicalRecord;
     } catch (error) {
@@ -55,7 +55,7 @@ class MedicalRecordService {
       if (!medicalRecord) {
         throw new Error('Medical record not found');
       }
-      
+
       await medicalRecord.destroy();
       return true;
     } catch (error) {
@@ -70,14 +70,14 @@ class MedicalRecordService {
   async getPatientMedicalRecords(patientId, filters = {}) {
     try {
       const { page = 1, limit = 10 } = filters;
-      
+
       const medicalRecords = await MedicalRecord.findAndCountAll({
         where: { patientId },
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [['createdAt', 'DESC']],
       });
-      
+
       return medicalRecords;
     } catch (error) {
       logger.error('Get patient medical records service error:', error);

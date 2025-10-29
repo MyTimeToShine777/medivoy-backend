@@ -11,7 +11,7 @@ const createLabTestSchema = Joi.object({
   results: Joi.string().allow('', null),
   result_file_url: Joi.string().uri().allow('', null),
   notes: Joi.string().allow('', null),
-  cost: Joi.number().precision(2).min(0).required()
+  cost: Joi.number().precision(2).min(0).required(),
 });
 
 const updateLabTestSchema = Joi.object({
@@ -25,17 +25,17 @@ const updateLabTestSchema = Joi.object({
   results: Joi.string().allow('', null),
   result_file_url: Joi.string().uri().allow('', null),
   notes: Joi.string().allow('', null),
-  cost: Joi.number().precision(2).min(0)
+  cost: Joi.number().precision(2).min(0),
 }).min(1);
 
 const updateResultsSchema = Joi.object({
   results: Joi.string().required(),
   result_file_url: Joi.string().uri().allow('', null),
-  notes: Joi.string().allow('', null)
+  notes: Joi.string().allow('', null),
 });
 
 module.exports = {
   createLabTestSchema,
   updateLabTestSchema,
-  updateResultsSchema
+  updateResultsSchema,
 };

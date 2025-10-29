@@ -1,5 +1,3 @@
-'use strict';
-
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     const faqs = [
@@ -11,7 +9,7 @@ module.exports = {
         sort_order: 1,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         question: 'What payment methods do you accept?',
@@ -21,7 +19,7 @@ module.exports = {
         sort_order: 2,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         question: 'Can I cancel or reschedule my appointment?',
@@ -31,7 +29,7 @@ module.exports = {
         sort_order: 3,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         question: 'How do I access my medical records?',
@@ -41,7 +39,7 @@ module.exports = {
         sort_order: 4,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         question: 'Is my personal and medical information secure?',
@@ -51,7 +49,7 @@ module.exports = {
         sort_order: 5,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         question: 'Do you accept insurance?',
@@ -61,7 +59,7 @@ module.exports = {
         sort_order: 6,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         question: 'How do video consultations work?',
@@ -71,7 +69,7 @@ module.exports = {
         sort_order: 7,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         question: 'What is included in a medical package?',
@@ -81,7 +79,7 @@ module.exports = {
         sort_order: 8,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         question: 'How do I get my prescription?',
@@ -91,7 +89,7 @@ module.exports = {
         sort_order: 9,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         question: 'What should I do if I need to contact support?',
@@ -101,7 +99,7 @@ module.exports = {
         sort_order: 10,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         question: 'How do subscription plans work?',
@@ -111,7 +109,7 @@ module.exports = {
         sort_order: 11,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         question: 'Can I get a refund if I cancel my booking?',
@@ -121,8 +119,8 @@ module.exports = {
         sort_order: 12,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     ];
 
     await queryInterface.bulkInsert('faqs', faqs, {});
@@ -133,5 +131,5 @@ module.exports = {
 
   down: async (queryInterface, Sequelize) => {
     await queryInterface.bulkDelete('faqs', null, {});
-  }
+  },
 };

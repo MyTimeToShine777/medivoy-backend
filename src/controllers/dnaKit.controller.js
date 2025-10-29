@@ -3,8 +3,8 @@
  * Handles DNA kit orders and genetic testing services
  */
 
-const { DNAKit, Patient, Laboratory, User } = require('../models');
-const { Op } = require('sequelize');
+const { Op } = require("sequelize");
+const { DNAKit, Patient, Laboratory, User } = require("../models");
 
 /**
  * Get all DNA kit orders
@@ -19,8 +19,8 @@ exports.getAllDNAKits = async (req, res) => {
       orderStatus,
       paymentStatus,
       patientId,
-      sortBy = 'created_at',
-      sortOrder = 'DESC'
+      sortBy = "created_at",
+      sortOrder = "DESC",
     } = req.query;
 
     const offset = (page - 1) * limit;
@@ -30,7 +30,7 @@ exports.getAllDNAKits = async (req, res) => {
       whereClause[Op.or] = [
         { order_number: { [Op.iLike]: `%${search}%` } },
         { barcode: { [Op.iLike]: `%${search}%` } },
-        { kit_name: { [Op.iLike]: `%${search}%` } }
+        { kit_name: { [Op.iLike]: `%${search}%` } },
       ];
     }
 
@@ -44,18 +44,24 @@ exports.getAllDNAKits = async (req, res) => {
       include: [
         {
           model: Patient,
-          as: 'patient',
-          include: [{ model: User, as: 'user', attributes: ['first_name', 'last_name', 'email'] }]
+          as: "patient",
+          include: [
+            {
+              model: User,
+              as: "user",
+              attributes: ["first_name", "last_name", "email"],
+            },
+          ],
         },
         {
           model: Laboratory,
-          as: 'laboratory',
-          attributes: ['id', 'name', 'city', 'country']
-        }
+          as: "laboratory",
+          attributes: ["id", "name", "city", "country"],
+        },
       ],
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-      order: [[sortBy, sortOrder]]
+      limit: parseInt(limit, 10),
+      offset: parseInt(offset, 10),
+      order: [[sortBy, sortOrder]],
     });
 
     res.json({
@@ -63,17 +69,17 @@ exports.getAllDNAKits = async (req, res) => {
       data: rows,
       pagination: {
         total: count,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(count / limit)
-      }
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+        totalPages: Math.ceil(count / limit),
+      },
     });
   } catch (error) {
-    console.error('Error fetching DNA kits:', error);
+    console.error("Error fetching DNA kits:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching DNA kit orders',
-      error: error.message
+      message: "Error fetching DNA kit orders",
+      error: error.message,
     });
   }
 };
@@ -89,33 +95,39 @@ exports.getDNAKitById = async (req, res) => {
       include: [
         {
           model: Patient,
-          as: 'patient',
-          include: [{ model: User, as: 'user', attributes: ['first_name', 'last_name', 'email', 'phone'] }]
+          as: "patient",
+          include: [
+            {
+              model: User,
+              as: "user",
+              attributes: ["first_name", "last_name", "email", "phone"],
+            },
+          ],
         },
         {
           model: Laboratory,
-          as: 'laboratory'
-        }
-      ]
+          as: "laboratory",
+        },
+      ],
     });
 
     if (!dnaKit) {
       return res.status(404).json({
         success: false,
-        message: 'DNA kit order not found'
+        message: "DNA kit order not found",
       });
     }
 
     res.json({
       success: true,
-      data: dnaKit
+      data: dnaKit,
     });
   } catch (error) {
-    console.error('Error fetching DNA kit:', error);
+    console.error("Error fetching DNA kit:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching DNA kit order',
-      error: error.message
+      message: "Error fetching DNA kit order",
+      error: error.message,
     });
   }
 };
@@ -137,7 +149,7 @@ exports.createDNAKitOrder = async (req, res) => {
       shipping_address,
       sample_collection_method,
       consent_given,
-      privacy_settings
+      privacy_settings,
     } = req.body;
 
     // Validate patient exists
@@ -145,7 +157,7 @@ exports.createDNAKitOrder = async (req, res) => {
     if (!patient) {
       return res.status(404).json({
         success: false,
-        message: 'Patient not found'
+        message: "Patient not found",
       });
     }
 
@@ -155,48 +167,54 @@ exports.createDNAKitOrder = async (req, res) => {
     const dnaKit = await DNAKit.create({
       order_number: orderNumber,
       patient_id,
-      kit_type: kit_type || 'health',
+      kit_type: kit_type || "health",
       kit_name,
       kit_description,
       laboratory_id,
       lab_partner_name,
       amount: amount || 0,
-      currency: currency || 'USD',
-      order_status: 'ordered',
-      payment_status: 'pending',
+      currency: currency || "USD",
+      order_status: "ordered",
+      payment_status: "pending",
       ordered_at: new Date(),
       shipping_address,
-      sample_collection_method: sample_collection_method || 'saliva',
+      sample_collection_method: sample_collection_method || "saliva",
       consent_given: consent_given || false,
       consent_date: consent_given ? new Date() : null,
-      privacy_settings
+      privacy_settings,
     });
 
     const dnaKitWithDetails = await DNAKit.findByPk(dnaKit.id, {
       include: [
         {
           model: Patient,
-          as: 'patient',
-          include: [{ model: User, as: 'user', attributes: ['first_name', 'last_name', 'email'] }]
+          as: "patient",
+          include: [
+            {
+              model: User,
+              as: "user",
+              attributes: ["first_name", "last_name", "email"],
+            },
+          ],
         },
         {
           model: Laboratory,
-          as: 'laboratory'
-        }
-      ]
+          as: "laboratory",
+        },
+      ],
     });
 
     res.status(201).json({
       success: true,
-      message: 'DNA kit order created successfully',
-      data: dnaKitWithDetails
+      message: "DNA kit order created successfully",
+      data: dnaKitWithDetails,
     });
   } catch (error) {
-    console.error('Error creating DNA kit order:', error);
+    console.error("Error creating DNA kit order:", error);
     res.status(500).json({
       success: false,
-      message: 'Error creating DNA kit order',
-      error: error.message
+      message: "Error creating DNA kit order",
+      error: error.message,
     });
   }
 };
@@ -213,7 +231,7 @@ exports.updateDNAKitOrder = async (req, res) => {
     if (!dnaKit) {
       return res.status(404).json({
         success: false,
-        message: 'DNA kit order not found'
+        message: "DNA kit order not found",
       });
     }
 
@@ -223,27 +241,33 @@ exports.updateDNAKitOrder = async (req, res) => {
       include: [
         {
           model: Patient,
-          as: 'patient',
-          include: [{ model: User, as: 'user', attributes: ['first_name', 'last_name', 'email'] }]
+          as: "patient",
+          include: [
+            {
+              model: User,
+              as: "user",
+              attributes: ["first_name", "last_name", "email"],
+            },
+          ],
         },
         {
           model: Laboratory,
-          as: 'laboratory'
-        }
-      ]
+          as: "laboratory",
+        },
+      ],
     });
 
     res.json({
       success: true,
-      message: 'DNA kit order updated successfully',
-      data: updatedDNAKit
+      message: "DNA kit order updated successfully",
+      data: updatedDNAKit,
     });
   } catch (error) {
-    console.error('Error updating DNA kit order:', error);
+    console.error("Error updating DNA kit order:", error);
     res.status(500).json({
       success: false,
-      message: 'Error updating DNA kit order',
-      error: error.message
+      message: "Error updating DNA kit order",
+      error: error.message,
     });
   }
 };
@@ -260,22 +284,25 @@ exports.updateOrderStatus = async (req, res) => {
     if (!dnaKit) {
       return res.status(404).json({
         success: false,
-        message: 'DNA kit order not found'
+        message: "DNA kit order not found",
       });
     }
 
     const updateData = { order_status };
 
     // Update timestamps based on status
-    if (order_status === 'shipped' && !dnaKit.shipped_at) {
+    if (order_status === "shipped" && !dnaKit.shipped_at) {
       updateData.shipped_at = new Date();
       if (tracking_number) updateData.tracking_number = tracking_number;
       if (shipping_carrier) updateData.shipping_carrier = shipping_carrier;
-    } else if (order_status === 'delivered' && !dnaKit.delivered_at) {
+    } else if (order_status === "delivered" && !dnaKit.delivered_at) {
       updateData.delivered_at = new Date();
-    } else if (order_status === 'sample_received' && !dnaKit.sample_received_at) {
+    } else if (
+      order_status === "sample_received" &&
+      !dnaKit.sample_received_at
+    ) {
       updateData.sample_received_at = new Date();
-    } else if (order_status === 'completed' && !dnaKit.results_ready_at) {
+    } else if (order_status === "completed" && !dnaKit.results_ready_at) {
       updateData.results_ready_at = new Date();
     }
 
@@ -285,15 +312,15 @@ exports.updateOrderStatus = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Order status updated successfully',
-      data: dnaKit
+      message: "Order status updated successfully",
+      data: dnaKit,
     });
   } catch (error) {
-    console.error('Error updating order status:', error);
+    console.error("Error updating order status:", error);
     res.status(500).json({
       success: false,
-      message: 'Error updating order status',
-      error: error.message
+      message: "Error updating order status",
+      error: error.message,
     });
   }
 };
@@ -304,13 +331,14 @@ exports.updateOrderStatus = async (req, res) => {
 exports.uploadTestResults = async (req, res) => {
   try {
     const { id } = req.params;
-    const { test_results, results_pdf_url, raw_data_url, sample_quality } = req.body;
+    const { test_results, results_pdf_url, raw_data_url, sample_quality } =
+      req.body;
 
     const dnaKit = await DNAKit.findByPk(id);
     if (!dnaKit) {
       return res.status(404).json({
         success: false,
-        message: 'DNA kit order not found'
+        message: "DNA kit order not found",
       });
     }
 
@@ -319,21 +347,21 @@ exports.uploadTestResults = async (req, res) => {
       results_pdf_url,
       raw_data_url,
       sample_quality,
-      order_status: 'completed',
-      results_ready_at: new Date()
+      order_status: "completed",
+      results_ready_at: new Date(),
     });
 
     res.json({
       success: true,
-      message: 'Test results uploaded successfully',
-      data: dnaKit
+      message: "Test results uploaded successfully",
+      data: dnaKit,
     });
   } catch (error) {
-    console.error('Error uploading test results:', error);
+    console.error("Error uploading test results:", error);
     res.status(500).json({
       success: false,
-      message: 'Error uploading test results',
-      error: error.message
+      message: "Error uploading test results",
+      error: error.message,
     });
   }
 };
@@ -350,34 +378,34 @@ exports.cancelOrder = async (req, res) => {
     if (!dnaKit) {
       return res.status(404).json({
         success: false,
-        message: 'DNA kit order not found'
+        message: "DNA kit order not found",
       });
     }
 
-    if (['completed', 'cancelled'].includes(dnaKit.order_status)) {
+    if (["completed", "cancelled"].includes(dnaKit.order_status)) {
       return res.status(400).json({
         success: false,
-        message: 'Cannot cancel order in current status'
+        message: "Cannot cancel order in current status",
       });
     }
 
     await dnaKit.update({
-      order_status: 'cancelled',
+      order_status: "cancelled",
       cancellation_reason,
-      cancelled_at: new Date()
+      cancelled_at: new Date(),
     });
 
     res.json({
       success: true,
-      message: 'DNA kit order cancelled successfully',
-      data: dnaKit
+      message: "DNA kit order cancelled successfully",
+      data: dnaKit,
     });
   } catch (error) {
-    console.error('Error cancelling order:', error);
+    console.error("Error cancelling order:", error);
     res.status(500).json({
       success: false,
-      message: 'Error cancelling order',
-      error: error.message
+      message: "Error cancelling order",
+      error: error.message,
     });
   }
 };
@@ -394,23 +422,23 @@ exports.getPatientDNAKits = async (req, res) => {
       include: [
         {
           model: Laboratory,
-          as: 'laboratory',
-          attributes: ['id', 'name', 'city', 'country']
-        }
+          as: "laboratory",
+          attributes: ["id", "name", "city", "country"],
+        },
       ],
-      order: [['created_at', 'DESC']]
+      order: [["created_at", "DESC"]],
     });
 
     res.json({
       success: true,
-      data: dnaKits
+      data: dnaKits,
     });
   } catch (error) {
-    console.error('Error fetching patient DNA kits:', error);
+    console.error("Error fetching patient DNA kits:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching patient DNA kit orders',
-      error: error.message
+      message: "Error fetching patient DNA kit orders",
+      error: error.message,
     });
   }
 };
@@ -424,24 +452,30 @@ exports.getDNAKitStatistics = async (req, res) => {
 
     const ordersByStatus = await DNAKit.findAll({
       attributes: [
-        'order_status',
-        [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count']
+        "order_status",
+        [
+          require("sequelize").fn("COUNT", require("sequelize").col("id")),
+          "count",
+        ],
       ],
-      group: ['order_status'],
-      raw: true
+      group: ["order_status"],
+      raw: true,
     });
 
     const ordersByType = await DNAKit.findAll({
       attributes: [
-        'kit_type',
-        [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count']
+        "kit_type",
+        [
+          require("sequelize").fn("COUNT", require("sequelize").col("id")),
+          "count",
+        ],
       ],
-      group: ['kit_type'],
-      raw: true
+      group: ["kit_type"],
+      raw: true,
     });
 
-    const totalRevenue = await DNAKit.sum('amount', {
-      where: { payment_status: 'paid' }
+    const totalRevenue = await DNAKit.sum("amount", {
+      where: { payment_status: "paid" },
     });
 
     res.json({
@@ -450,15 +484,15 @@ exports.getDNAKitStatistics = async (req, res) => {
         totalOrders,
         totalRevenue: totalRevenue || 0,
         ordersByStatus,
-        ordersByType
-      }
+        ordersByType,
+      },
     });
   } catch (error) {
-    console.error('Error fetching DNA kit statistics:', error);
+    console.error("Error fetching DNA kit statistics:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching DNA kit statistics',
-      error: error.message
+      message: "Error fetching DNA kit statistics",
+      error: error.message,
     });
   }
 };

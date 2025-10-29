@@ -1,5 +1,3 @@
-'use strict';
-
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     // Create treatment categories
@@ -12,7 +10,7 @@ module.exports = {
         sort_order: 1,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         name: 'Orthopedics',
@@ -22,7 +20,7 @@ module.exports = {
         sort_order: 2,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         name: 'Oncology',
@@ -32,7 +30,7 @@ module.exports = {
         sort_order: 3,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         name: 'Neurology',
@@ -42,7 +40,7 @@ module.exports = {
         sort_order: 4,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         name: 'Cosmetic Surgery',
@@ -52,7 +50,7 @@ module.exports = {
         sort_order: 5,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         name: 'Dental',
@@ -62,7 +60,7 @@ module.exports = {
         sort_order: 6,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         name: 'Ophthalmology',
@@ -72,7 +70,7 @@ module.exports = {
         sort_order: 7,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
+        updated_at: new Date(),
       },
       {
         name: 'Fertility',
@@ -82,8 +80,8 @@ module.exports = {
         sort_order: 8,
         is_active: true,
         created_at: new Date(),
-        updated_at: new Date()
-      }
+        updated_at: new Date(),
+      },
     ];
 
     await queryInterface.bulkInsert('treatment_categories', categories, {});
@@ -91,14 +89,14 @@ module.exports = {
     // Get inserted category IDs
     const insertedCategories = await queryInterface.sequelize.query(
       'SELECT id, slug FROM treatment_categories',
-      { type: queryInterface.sequelize.QueryTypes.SELECT }
+      { type: queryInterface.sequelize.QueryTypes.SELECT },
     );
 
     // Create subcategories
     const subcategories = [];
 
     // Cardiology subcategories
-    const cardiologyId = insertedCategories.find(c => c.slug === 'cardiology')?.id;
+    const cardiologyId = insertedCategories.find((c) => c.slug === 'cardiology')?.id;
     if (cardiologyId) {
       subcategories.push(
         {
@@ -109,7 +107,7 @@ module.exports = {
           sort_order: 1,
           is_active: true,
           created_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
         },
         {
           category_id: cardiologyId,
@@ -119,7 +117,7 @@ module.exports = {
           sort_order: 2,
           is_active: true,
           created_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
         },
         {
           category_id: cardiologyId,
@@ -129,13 +127,13 @@ module.exports = {
           sort_order: 3,
           is_active: true,
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       );
     }
 
     // Orthopedics subcategories
-    const orthopedicsId = insertedCategories.find(c => c.slug === 'orthopedics')?.id;
+    const orthopedicsId = insertedCategories.find((c) => c.slug === 'orthopedics')?.id;
     if (orthopedicsId) {
       subcategories.push(
         {
@@ -146,7 +144,7 @@ module.exports = {
           sort_order: 1,
           is_active: true,
           created_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
         },
         {
           category_id: orthopedicsId,
@@ -156,7 +154,7 @@ module.exports = {
           sort_order: 2,
           is_active: true,
           created_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
         },
         {
           category_id: orthopedicsId,
@@ -166,13 +164,13 @@ module.exports = {
           sort_order: 3,
           is_active: true,
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       );
     }
 
     // Cosmetic Surgery subcategories
-    const cosmeticId = insertedCategories.find(c => c.slug === 'cosmetic-surgery')?.id;
+    const cosmeticId = insertedCategories.find((c) => c.slug === 'cosmetic-surgery')?.id;
     if (cosmeticId) {
       subcategories.push(
         {
@@ -183,7 +181,7 @@ module.exports = {
           sort_order: 1,
           is_active: true,
           created_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
         },
         {
           category_id: cosmeticId,
@@ -193,7 +191,7 @@ module.exports = {
           sort_order: 2,
           is_active: true,
           created_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
         },
         {
           category_id: cosmeticId,
@@ -203,13 +201,13 @@ module.exports = {
           sort_order: 3,
           is_active: true,
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       );
     }
 
     // Dental subcategories
-    const dentalId = insertedCategories.find(c => c.slug === 'dental')?.id;
+    const dentalId = insertedCategories.find((c) => c.slug === 'dental')?.id;
     if (dentalId) {
       subcategories.push(
         {
@@ -220,7 +218,7 @@ module.exports = {
           sort_order: 1,
           is_active: true,
           created_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
         },
         {
           category_id: dentalId,
@@ -230,7 +228,7 @@ module.exports = {
           sort_order: 2,
           is_active: true,
           created_at: new Date(),
-          updated_at: new Date()
+          updated_at: new Date(),
         },
         {
           category_id: dentalId,
@@ -240,8 +238,8 @@ module.exports = {
           sort_order: 3,
           is_active: true,
           created_at: new Date(),
-          updated_at: new Date()
-        }
+          updated_at: new Date(),
+        },
       );
     }
 
@@ -255,5 +253,5 @@ module.exports = {
   down: async (queryInterface, Sequelize) => {
     await queryInterface.bulkDelete('treatment_subcategories', null, {});
     await queryInterface.bulkDelete('treatment_categories', null, {});
-  }
+  },
 };

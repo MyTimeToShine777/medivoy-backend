@@ -6,13 +6,13 @@ const fs = require('fs').promises;
 class ImageKitService {
   constructor() {
     // Initialize ImageKit client
-    if (process.env.IMAGEKIT_PUBLIC_KEY && 
-        process.env.IMAGEKIT_PRIVATE_KEY && 
-        process.env.IMAGEKIT_URL_ENDPOINT) {
+    if (process.env.IMAGEKIT_PUBLIC_KEY
+        && process.env.IMAGEKIT_PRIVATE_KEY
+        && process.env.IMAGEKIT_URL_ENDPOINT) {
       this.imagekit = new ImageKit({
         publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
         privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-        urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
+        urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT,
       });
       this.isConfigured = true;
     } else {
@@ -81,7 +81,7 @@ class ImageKitService {
         width: result.width,
         height: result.height,
         tags: result.tags,
-        metadata: result.metadata
+        metadata: result.metadata,
       };
     } catch (error) {
       logger.error('ImageKit upload error:', error);
@@ -101,20 +101,19 @@ class ImageKitService {
         throw new Error('No files provided');
       }
 
-      const uploadPromises = files.map(file => this.uploadFile(file, options));
+      const uploadPromises = files.map((file) => this.uploadFile(file, options));
       const results = await Promise.allSettled(uploadPromises);
 
       return results.map((result, index) => {
         if (result.status === 'fulfilled') {
           return result.value;
-        } else {
-          logger.error(`File upload failed for ${files[index].originalname}:`, result.reason);
-          return {
-            success: false,
-            fileName: files[index].originalname,
-            error: result.reason.message
-          };
         }
+        logger.error(`File upload failed for ${files[index].originalname}:`, result.reason);
+        return {
+          success: false,
+          fileName: files[index].originalname,
+          error: result.reason.message,
+        };
       });
     } catch (error) {
       logger.error('Multiple files upload error:', error);
@@ -153,13 +152,13 @@ class ImageKitService {
         throw new Error('No file IDs provided');
       }
 
-      const deletePromises = fileIds.map(fileId => this.deleteFile(fileId));
+      const deletePromises = fileIds.map((fileId) => this.deleteFile(fileId));
       const results = await Promise.allSettled(deletePromises);
 
       return results.map((result, index) => ({
         fileId: fileIds[index],
         success: result.status === 'fulfilled',
-        error: result.status === 'rejected' ? result.reason.message : null
+        error: result.status === 'rejected' ? result.reason.message : null,
       }));
     } catch (error) {
       logger.error('Multiple files deletion error:', error);
@@ -202,7 +201,7 @@ class ImageKitService {
         limit: options.limit || 100,
         searchQuery: options.searchQuery || '',
         tags: options.tags || [],
-        path: options.path || this.defaultFolder
+        path: options.path || this.defaultFolder,
       };
 
       const result = await this.imagekit.listFiles(listParams);
@@ -227,7 +226,7 @@ class ImageKitService {
 
       const updateParams = {
         fileId,
-        ...updates
+        ...updates,
       };
 
       const result = await this.imagekit.updateFileDetails(updateParams);
@@ -253,7 +252,7 @@ class ImageKitService {
 
       const url = this.imagekit.url({
         path,
-        transformation: [transformations]
+        transformation: [transformations],
       });
 
       return url;
@@ -275,7 +274,7 @@ class ImageKitService {
       width,
       height,
       crop: 'at_max',
-      quality: 80
+      quality: 80,
     });
   }
 
@@ -289,7 +288,7 @@ class ImageKitService {
     const transformations = {
       quality: options.quality || 80,
       format: options.format || 'auto',
-      ...options
+      ...options,
     };
 
     return this.getUrl(path, transformations);
@@ -347,7 +346,7 @@ class ImageKitService {
 
       const result = await this.imagekit.createFolder({
         folderName,
-        parentFolderPath
+        parentFolderPath,
       });
 
       logger.info('Folder created in ImageKit:', folderName);
