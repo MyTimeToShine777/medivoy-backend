@@ -1,0 +1,97 @@
+🧪 Testing Medivoy Backend Endpoints
+======================================
+
+1. Testing Health Check...
+{
+  "status": "OK",
+  "timestamp": "2025-10-29T11:15:05.350Z",
+  "uptime": 87.896809914,
+  "environment": "development",
+  "version": "1.0.0"
+}
+
+
+2. Testing API Root...
+{
+  "auth": "/api/v1/auth",
+  "users": "/api/v1/users",
+  "patients": "/api/v1/patients",
+  "doctors": "/api/v1/doctors",
+  "hospitals": "/api/v1/hospitals",
+  "treatments": "/api/v1/treatments",
+  "treatmentCategories": "/api/v1/treatment-categories",
+  "bookings": "/api/v1/bookings",
+  "appointments": "/api/v1/appointments",
+  "prescriptions": "/api/v1/prescriptions",
+  "payments": "/api/v1/payments",
+  "invoices": "/api/v1/invoices",
+  "reviews": "/api/v1/reviews",
+  "notifications": "/api/v1/notifications",
+  "uploads": "/api/v1/uploads",
+  "insurance": "/api/v1/insurance",
+  "laboratories": "/api/v1/laboratories",
+  "labTests": "/api/v1/lab-tests",
+  "packages": "/api/v1/packages",
+  "medicalRecords": "/api/v1/medical-records",
+  "support": "/api/v1/support",
+  "subscriptions": "/api/v1/subscriptions",
+  "translations": "/api/v1/translations",
+  "coupons": "/api/v1/coupons",
+  "faqs": "/api/v1/faqs",
+  "websiteContent": "/api/v1/website-content",
+  "health": "/api/v1/health",
+  "docs": "/api-docs"
+}
+
+
+3. Testing API Docs...
+<title>Medivoy API Documentation</title>
+
+
+4. Testing Auth Endpoints...
+   - POST /api/v1/auth/register (requires body)
+   - POST /api/v1/auth/login (requires body)
+   - POST /api/v1/auth/forgot-password (requires body)
+
+5. Testing Public Endpoints...
+   - GET /api/v1/treatments (requires DB)
+   - GET /api/v1/hospitals (requires DB)
+   - GET /api/v1/doctors (requires DB)
+   - GET /api/v1/faqs (requires DB)
+
+6. Testing Protected Endpoints (401 expected)...
+{
+  "success": false,
+  "message": "No authorization header provided",
+  "code": "AUTH_NO_TOKEN"
+}
+
+
+{
+  "success": false,
+  "message": "No authorization header provided",
+  "code": "AUTH_NO_TOKEN"
+}
+
+
+{
+  "success": false,
+  "message": "No authorization header provided",
+  "code": "AUTH_NO_TOKEN"
+}
+
+
+======================================
+✅ Endpoint Testing Complete!
+
+Summary:
+- Health check: Working ✅
+- API root: Working ✅
+- API docs: Working ✅
+- Protected endpoints: Returning 401 (correct) ✅
+- Database endpoints: Require DB connection ⚠️
+
+To test with database:
+1. Run: pnpm run docker:up
+2. Wait for databases to start
+3. Run this script again
