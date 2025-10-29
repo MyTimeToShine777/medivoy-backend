@@ -17,57 +17,37 @@ const PORT = config.port;
 async function startServer() {
   try {
     // ========================================================================
-    // DATABASE CONNECTIONS (Optional - will warn if not available)
+    // DATABASE CONNECTIONS
     // ========================================================================
-
-    logger.info('🔌 Attempting to connect to databases...');
-
-    // Connect to PostgreSQL (optional)
-    const postgresConnected = await testConnection();
-
-    // Connect to MongoDB (optional)
-    const mongoConnected = await connectMongoDB();
-
-    // Test Redis connection (optional)
-    let redisConnected = false;
-    try {
-      await redis.ping();
-      logger.info('✅ Redis connected successfully');
-      redisConnected = true;
-    } catch (error) {
-      logger.warn('⚠️  Redis not available:', error.message);
-      logger.warn('⚠️  Application will continue without Redis caching');
-    }
-
-    // Log connection status
-    if (postgresConnected && mongoConnected && redisConnected) {
-      logger.info('✅ All database connections established');
-    } else {
-      logger.warn('⚠️  Some database connections are not available:');
-      if (!postgresConnected) logger.warn('   - PostgreSQL: Not connected');
-      if (!mongoConnected) logger.warn('   - MongoDB: Not connected');
-      if (!redisConnected) logger.warn('   - Redis: Not connected');
-      logger.info('✅ Server will continue with available connections');
-    }
-
+    
+    logger.info('🔌 Connecting to databases...');
+    
+    // Connect to PostgreSQL
+    await testConnection();
+    
+    // Connect to MongoDB
+    await connectMongoDB();
+    
+    // Test Redis connection
+    await redis.ping();
+    logger.info('✅ Redis connected successfully');
+    
+    logger.info('✅ All database connections established');
+    
     // ========================================================================
-    // SYNC DATABASE (Development only - if PostgreSQL is connected)
+    // SYNC DATABASE (Development only)
     // ========================================================================
-
-    if (config.env === 'development' && postgresConnected) {
-      try {
-        const { sequelize } = require('./config/database');
-        await sequelize.sync({ alter: false }); // Set to true to auto-update schema
-        logger.info('✅ Database synchronized');
-      } catch (error) {
-        logger.warn('⚠️  Database sync failed:', error.message);
-      }
+    
+    if (config.env === 'development') {
+      const { sequelize } = require('./config/database');
+      await sequelize.sync({ alter: false }); // Set to true to auto-update schema
+      logger.info('✅ Database synchronized');
     }
-
+    
     // ========================================================================
     // START SERVER
     // ========================================================================
-
+    
     app.listen(PORT, () => {
       logger.info('='.repeat(60));
       logger.info(`🚀 Server running on http://localhost:${PORT}`);
@@ -76,7 +56,7 @@ async function startServer() {
       logger.info(`🌍 Environment: ${config.env}`);
       logger.info(`⏰ Started at: ${new Date().toISOString()}`);
       logger.info('='.repeat(60));
-
+      
       // Log some useful endpoints
       logger.info('\n📍 Key Endpoints:');
       logger.info(`   Health Check: http://localhost:${PORT}/health`);
@@ -88,25 +68,10 @@ async function startServer() {
       logger.info(`   Bookings: http://localhost:${PORT}/api/${config.apiVersion}/bookings`);
       logger.info(`   Insurance: http://localhost:${PORT}/api/${config.apiVersion}/insurances`);
       logger.info('');
-
-      // Log database status
-      logger.info('📊 Database Status:');
-      logger.info(`   PostgreSQL: ${postgresConnected ? '✅ Connected' : '❌ Not Connected'}`);
-      logger.info(`   MongoDB: ${mongoConnected ? '✅ Connected' : '❌ Not Connected'}`);
-      logger.info(`   Redis: ${redisConnected ? '✅ Connected' : '❌ Not Connected'}`);
-      logger.info('');
-
-      if (!postgresConnected || !mongoConnected || !redisConnected) {
-        logger.warn('⚠️  Note: Some features may be limited without database connections');
-        logger.warn('⚠️  Please configure database settings in .env file');
-        logger.warn('⚠️  Or run: docker-compose up -d (to start databases)');
-        logger.info('');
-      }
     });
-
+    
   } catch (error) {
     logger.error('❌ Server startup failed:', error);
-    logger.error('Stack trace:', error.stack);
     process.exit(1);
   }
 }
@@ -128,7 +93,6 @@ process.on('SIGINT', () => {
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
-  logger.error('Stack trace:', error.stack);
   process.exit(1);
 });
 

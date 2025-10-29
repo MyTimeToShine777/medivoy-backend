@@ -28,12 +28,9 @@ async function testConnection() {
   try {
     await sequelize.authenticate();
     logger.info('✅ PostgreSQL connection established successfully');
-    return true;
   } catch (error) {
-    logger.warn('⚠️  Unable to connect to PostgreSQL:', error.message);
-    logger.warn('⚠️  Application will continue without database connection');
-    logger.warn('⚠️  Please configure database settings in .env file');
-    return false;
+    logger.error('❌ Unable to connect to PostgreSQL:', error);
+    process.exit(1);
   }
 }
 

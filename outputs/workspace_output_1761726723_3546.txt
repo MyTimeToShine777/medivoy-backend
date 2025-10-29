@@ -1,0 +1,3 @@
+src/controllers/auth.controller.js:const bcrypt = require('bcrypt');
+src/models/User.model.js:const bcrypt = require('bcrypt');
+src/seeders/01-admin-user.js:const bcrypt = require('bcrypt');

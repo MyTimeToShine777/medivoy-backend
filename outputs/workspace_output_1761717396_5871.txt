@@ -1,0 +1,2 @@
+origin	https://x-access-token:ghs_iDv3wckkqjKUkk3vzHoh0kIMXQUPo94XP02E@github.com/MyTimeToShine777/medivoy-backend.git (fetch)
+origin	https://x-access-token:ghs_iDv3wckkqjKUkk3vzHoh0kIMXQUPo94XP02E@github.com/MyTimeToShine777/medivoy-backend.git (push)
