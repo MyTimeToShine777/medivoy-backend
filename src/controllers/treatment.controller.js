@@ -1,8 +1,7 @@
-const Treatment = require('../models/Treatment.model');
-const TreatmentCategory = require('../models/TreatmentCategory.model');
-const TreatmentSubcategory = require('../models/TreatmentSubcategory.model');
+const { Treatment, TreatmentCategory, TreatmentSubcategory } = require('../models');
 const { successResponse, errorResponse } = require('../utils/response');
 const logger = require('../utils/logger');
+const { Sequelize } = require('sequelize');
 
 class TreatmentController {
   /**

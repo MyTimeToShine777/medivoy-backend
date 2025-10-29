@@ -1,0 +1,4 @@
+  swagger: {
+    enabled: process.env.SWAGGER_ENABLED === 'true' || process.env.NODE_ENV === 'development',
+  },
+};

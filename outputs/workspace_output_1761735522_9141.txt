@@ -1,0 +1,20 @@
+const Treatment = require('../models/Treatment.model');
+const TreatmentCategory = require('../models/TreatmentCategory.model');
+const TreatmentSubcategory = require('../models/TreatmentSubcategory.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const logger = require('../utils/logger');
+
+class TreatmentController {
+  /**
+   * Create a new treatment
+   */
+  async createTreatment(req, res) {
+    try {
+      const { name, description, categoryId, subcategoryId, price, duration, isActive } = req.body;
+      
+      // Create treatment
+      const treatment = await Treatment.create({
+        name,
+        description,
+        categoryId,
+        subcategoryId,

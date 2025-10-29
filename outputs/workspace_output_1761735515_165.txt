@@ -1,0 +1,40 @@
+  async getAllTreatments(req, res) {
+    try {
+      const { page = 1, limit = 10, categoryId, subcategoryId, isActive, search } = req.query;
+      
+      // Build where clause
+      const where = {};
+      if (categoryId) where.categoryId = categoryId;
+      if (subcategoryId) where.subcategoryId = subcategoryId;
+      if (isActive !== undefined) where.isActive = isActive === 'true';
+      if (search) where.name = { [Sequelize.Op.iLike]: `%${search}%` };
+      
+      // Get treatments with pagination and associated category/subcategory
+      const treatments = await Treatment.findAndCountAll({
+        where,
+        include: [
+          {
+            model: TreatmentCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'slug'],
+          },
+          {
+            model: TreatmentSubcategory,
+            as: 'subcategory',
+            attributes: ['id', 'name', 'slug'],
+          },
+        ],
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['name', 'ASC']],
+      });
+      
+      return successResponse(res, {
+        message: 'Treatments retrieved successfully',
+        data: treatments.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(treatments.count / parseInt(limit, 10)),
+          totalRecords: treatments.count,
+        },
+      });

@@ -76,3 +76,5 @@
 2025-10-29 10:41:26 [[33mwarn[39m]: ⚠️  Please configure database settings in .env file
 2025-10-29 10:41:26 [[33mwarn[39m]: ⚠️  Or run: docker-compose up -d (to start databases)
 2025-10-29 10:41:26 [[32minfo[39m]: 
+2025-10-29 10:58:00 [[32minfo[39m]: SIGTERM signal received: closing HTTP server
+ ELIFECYCLE  Command failed.
