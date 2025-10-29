@@ -24,7 +24,10 @@
 - [x] Fix linting issues in all route files
 
 ## Middleware
-- [ ] Fix linting issues in all middleware files
+- [x] Fix linting issues in audit.middleware.js
+- [x] Fix linting issues in auth.middleware.js
+- [x] Fix linting issues in authorize.middleware.js
+- [ ] Fix linting issues in remaining middleware files (cache, error, locale, logger, rate-limit, upload, validate)
 
 ## Models
 - [ ] Fix linting issues in all model files
