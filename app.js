@@ -1,0 +1,132 @@
+/**
+ * Express Application Setup
+ */
+
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const swaggerUi = require('swagger-ui-express');
+const config = require('./config');
+const loggerMiddleware = require('./middleware/logger.middleware');
+const { apiLimiter } = require('./middleware/rate-limit.middleware');
+const {
+  securityMiddleware,
+  corsMiddleware,
+  apiSecurityMiddleware,
+  requestSizeLimiter,
+} = require('./middleware/security.middleware');
+const {
+  errorMiddleware,
+  notFoundHandler,
+} = require('./middleware/error.middleware');
+const routes = require('./routes');
+const swaggerSpec = require('./config/swagger');
+
+// Create Express app
+const app = express();
+
+// ============================================================================
+// SECURITY MIDDLEWARE
+// ============================================================================
+
+// Helmet - Security headers
+app.use(
+  helmet({
+    contentSecurityPolicy: config.env === 'production',
+    crossOriginEmbedderPolicy: config.env === 'production',
+  }),
+);
+
+// CORS - Cross-Origin Resource Sharing
+app.use(
+  cors({
+    origin: config.cors.origin,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+);
+// Enhanced Security Middleware\n  app.use(securityMiddleware);\n  \n  // Custom CORS Middleware\n  app.use(corsMiddleware);\n  \n  // API Security Headers\n  app.use(apiSecurityMiddleware);\n  \n  // Request Size Limiter\n  app.use(requestSizeLimiter);
+
+// ============================================================================
+// COMPRESSION
+// ============================================================================
+
+app.use(compression());
+
+// ============================================================================
+// LOGGING
+// ============================================================================
+
+if (config.env === 'development') {
+  app.use(loggerMiddleware);
+}
+
+// ============================================================================
+// RATE LIMITING
+// ============================================================================
+
+app.use('/api', apiLimiter);
+
+// ============================================================================
+// HEALTH CHECK
+// ============================================================================
+
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: config.env,
+    version: '1.0.0',
+  });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Medivoy Healthcare API',
+    version: '1.0.0',
+    documentation: '/api-docs',
+    health: '/health',
+  });
+});
+
+// ============================================================================
+// SWAGGER DOCUMENTATION
+// ============================================================================
+
+if (config.swagger.enabled) {
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec, {
+      explorer: true,
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'Medivoy API Documentation',
+    }),
+  );
+}
+
+// ============================================================================
+// API ROUTES
+// ============================================================================
+
+app.use(`/api/${config.apiVersion}`, routes);
+
+// ============================================================================
+// ERROR HANDLING
+// ============================================================================
+
+// 404 handler
+app.use(notFoundHandler);
+
+// Global error handler
+app.use(errorMiddleware);
+
+// ============================================================================
+// EXPORT APP
+// ============================================================================
+
+module.exports = app;
