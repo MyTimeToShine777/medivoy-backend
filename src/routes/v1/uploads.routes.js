@@ -2,7 +2,7 @@ const express = require('express');
 const uploadController = require('../../controllers/upload.controller');
 const authMiddleware = require('../../middleware/auth.middleware');
 const authorizeMiddleware = require('../../middleware/authorize.middleware');
-const uploadMiddleware = require('../../middleware/upload.middleware');
+const { uploadSingle } = require('../../middleware/upload.middleware');
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ router.post(
   '/',
   authMiddleware,
   authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
-  uploadMiddleware,
+  uploadSingle('file'),
   uploadController.uploadFile,
 );
 

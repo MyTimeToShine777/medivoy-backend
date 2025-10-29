@@ -1,0 +1,20 @@
+7:   * Create a new package
+13:      // Create package
+30:      logger.error('Create package error:', error);
+32:        message: 'Failed to create package',
+39:   * Get package by ID
+45:      // Find package
+59:      logger.error('Get package error:', error);
+61:        message: 'Failed to retrieve package',
+68:   * Update package
+75:      // Find package
+84:      // Update package
+99:      logger.error('Update package error:', error);
+101:        message: 'Failed to update package',
+108:   * Delete package
+114:      // Find package
+123:      // Delete package
+130:      logger.error('Delete package error:', error);
+132:        message: 'Failed to delete package',
+139:   * Get all packages
+151:      // Get packages with pagination

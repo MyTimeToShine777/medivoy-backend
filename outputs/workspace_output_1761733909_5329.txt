@@ -1,0 +1,6 @@
+  async createTreatment(req, res) {
+  async getTreatment(req, res) {
+  async updateTreatment(req, res) {
+  async deleteTreatment(req, res) {
+  async getAllTreatments(req, res) {
+  async getTreatmentsByCategory(req, res) {

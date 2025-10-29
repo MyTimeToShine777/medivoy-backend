@@ -1,0 +1,60 @@
+
+> medivoy-backend@1.0.0 dev /workspace
+> nodemon src/server.js
+
+[33m[nodemon] 3.1.10[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node src/server.js`[39m
+⚠️  Could not create Redis store, using memory store
+⚠️  Could not create Redis store, using memory store
+⚠️  Could not create Redis store, using memory store
+⚠️  Could not create Redis store, using memory store
+⚠️  Could not create Redis store, using memory store
+2025-10-29 10:36:25 [[33mwarn[39m]: SendGrid API key is missing or invalid. SendGrid emails will be disabled.
+/workspace/node_modules/.pnpm/express@4.21.2/node_modules/express/lib/router/route.js:216
+        throw new Error(msg);
+        ^
+
+Error: Route.post() requires a callback function but got a [object Object]
+    at Route.<computed> [as post] (/workspace/node_modules/.pnpm/express@4.21.2/node_modules/express/lib/router/route.js:216:15)
+    at proto.<computed> [as post] (/workspace/node_modules/.pnpm/express@4.21.2/node_modules/express/lib/router/index.js:521:19)
+    at Object.<anonymous> (/workspace/src/routes/v1/uploads.routes.js:10:8)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/workspace/src/routes/index.js:24:23)
+
+Node.js v20.19.5
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+⚠️  Could not create Redis store, using memory store
+⚠️  Could not create Redis store, using memory store
+⚠️  Could not create Redis store, using memory store
+⚠️  Could not create Redis store, using memory store
+⚠️  Could not create Redis store, using memory store
+2025-10-29 10:37:04 [[33mwarn[39m]: SendGrid API key is missing or invalid. SendGrid emails will be disabled.
+/workspace/src/controllers/package.controller.js:14
+      const package = await Package.create({
+            ^^^^^^^
+
+SyntaxError: Unexpected strict mode reserved word
+    at wrapSafe (node:internal/modules/cjs/loader:1464:18)
+    at Module._compile (node:internal/modules/cjs/loader:1495:20)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+    at Module.require (node:internal/modules/cjs/loader:1289:19)
+    at require (node:internal/modules/helpers:182:18)
+    at Object.<anonymous> (/workspace/src/routes/v1/packages.routes.js:2:27)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+
+Node.js v20.19.5
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+ ELIFECYCLE  Command failed.

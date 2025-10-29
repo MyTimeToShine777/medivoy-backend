@@ -203,6 +203,82 @@ class BookingController {
       }, 500);
     }
   }
+
+  /**
+   * Get patient bookings
+   */
+  async getPatientBookings(req, res) {
+    try {
+      const { patientId } = req.params;
+      const { page = 1, limit = 10, status } = req.query;
+
+      // Build where clause
+      const where = { patient_id: patientId };
+      if (status) where.status = status;
+
+      // Get bookings with pagination
+      const bookings = await Booking.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['created_at', 'DESC']],
+      });
+
+      return successResponse(res, {
+        message: 'Patient bookings retrieved successfully',
+        data: bookings.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(bookings.count / parseInt(limit, 10)),
+          totalRecords: bookings.count,
+        },
+      });
+    } catch (error) {
+      logger.error('Get patient bookings error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve patient bookings',
+        error: error.message,
+      }, 500);
+    }
+  }
+
+  /**
+   * Get hospital bookings
+   */
+  async getHospitalBookings(req, res) {
+    try {
+      const { hospitalId } = req.params;
+      const { page = 1, limit = 10, status } = req.query;
+
+      // Build where clause
+      const where = { hospital_id: hospitalId };
+      if (status) where.status = status;
+
+      // Get bookings with pagination
+      const bookings = await Booking.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['created_at', 'DESC']],
+      });
+
+      return successResponse(res, {
+        message: 'Hospital bookings retrieved successfully',
+        data: bookings.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(bookings.count / parseInt(limit, 10)),
+          totalRecords: bookings.count,
+        },
+      });
+    } catch (error) {
+      logger.error('Get hospital bookings error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve hospital bookings',
+        error: error.message,
+      }, 500);
+    }
+  }
 }
 
 module.exports = new BookingController();

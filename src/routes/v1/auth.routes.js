@@ -1,6 +1,5 @@
 const express = require('express');
 const authController = require('../../controllers/auth.controller');
-const validateMiddleware = require('../../middleware/validate.middleware');
 const authValidation = require('../../validators/auth.validator');
 
 const router = express.Router();
@@ -9,7 +8,6 @@ const router = express.Router();
 router.post(
   '/register',
   authValidation.register,
-  validateMiddleware,
   authController.register,
 );
 
@@ -17,64 +15,62 @@ router.post(
 router.post(
   '/login',
   authValidation.login,
-  validateMiddleware,
   authController.login,
 );
 
 // Logout user
-router.post(
-  '/logout',
-  authController.logout,
-);
+router.post('/logout', authController.logout);
 
-// Refresh token
+// Refresh access token
 router.post(
   '/refresh',
-  authController.refreshToken,
+  authValidation.refresh,
+  authController.refresh,
 );
 
-// Get user profile
-router.get(
-  '/profile',
-  authController.getProfile,
-);
+// Get current user profile
+router.get('/profile', authController.getProfile);
 
 // Update user profile
 router.put(
   '/profile',
+  authValidation.updateProfile,
   authController.updateProfile,
+);
+
+// Change password
+router.put(
+  '/change-password',
+  authValidation.changePassword,
+  authController.changePassword,
 );
 
 // Request password reset
 router.post(
-  '/password/reset/request',
-  authValidation.requestPasswordReset,
-  validateMiddleware,
-  authController.requestPasswordReset,
+  '/forgot-password',
+  authValidation.forgotPassword,
+  authController.forgotPassword,
 );
 
-// Reset password
+// Reset password with token
 router.post(
-  '/password/reset',
+  '/reset-password',
   authValidation.resetPassword,
-  validateMiddleware,
   authController.resetPassword,
 );
 
-// Verify email
+// Verify email with token
 router.post(
-  '/email/verify',
+  '/verify-email',
   authValidation.verifyEmail,
-  validateMiddleware,
   authController.verifyEmail,
 );
 
 // Resend verification email
 router.post(
-  '/email/resend',
-  authValidation.resendVerificationEmail,
-  validateMiddleware,
-  authController.resendVerificationEmail,
+  '/resend-verification',
+  authValidation.resendVerification,
+  authController.resendVerification,
 );
 
 module.exports = router;

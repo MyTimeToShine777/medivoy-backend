@@ -1,0 +1,30 @@
+      if (patientId) where.patientId = patientId;
+      
+      // Get invoices with pagination
+      const invoices = await Invoice.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return successResponse(res, {
+        message: 'Invoices retrieved successfully',
+        data: invoices.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(invoices.count / parseInt(limit, 10)),
+          totalRecords: invoices.count,
+        },
+      });
+    } catch (error) {
+      logger.error('Get all invoices error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve invoices',
+        error: error.message,
+      }, 500);
+    }
+  }
+}
+
+module.exports = new InvoiceController();

@@ -1,0 +1,30 @@
+        
+        // Find existing translation or create new one
+        const [translation, created] = await Translation.findOrCreate({
+          where: { key, language },
+          defaults: { key, language, text },
+        });
+        
+        if (!created) {
+          // Update existing translation
+          await translation.update({ text });
+        }
+        
+        updatedTranslations.push(translation);
+      }
+      
+      return successResponse(res, {
+        message: 'Translations updated successfully',
+        data: updatedTranslations,
+      });
+    } catch (error) {
+      logger.error('Bulk update translations error:', error);
+      return errorResponse(res, {
+        message: 'Failed to update translations',
+        error: error.message,
+      }, 500);
+    }
+  }
+}
+
+module.exports = new TranslationController();

@@ -1,0 +1,7 @@
+  async createAppointment(req, res) {
+  async getAppointment(req, res) {
+  async updateAppointment(req, res) {
+  async updateAppointmentStatus(req, res) {
+  async getAllAppointments(req, res) {
+  async cancelAppointment(req, res) {
+  async rescheduleAppointment(req, res) {

@@ -4,18 +4,18 @@ const config = require('../config');
 const logger = require('../utils/logger');
 
 // Set SendGrid API key
-if (config.email.sendgrid.apiKey && config.email.sendgrid.apiKey.startsWith('SG.')) {
-  sendgrid.setApiKey(config.email.sendgrid.apiKey);
+if (config.sendgrid.apiKey && config.sendgrid.apiKey.startsWith('SG.')) {
+  sendgrid.setApiKey(config.sendgrid.apiKey);
 }
 
 // nodemailer configuration for sending emails
 const transporter = nodemailer.createTransport({
-  host: config.email.smtp.host || process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: config.email.smtp.port || process.env.EMAIL_PORT || 587,
-  secure: config.email.smtp.secure || process.env.EMAIL_SECURE === 'true',
+  host: config.email.host || process.env.EMAIL_HOST || 'smtp.gmail.com',
+  port: config.email.port || process.env.EMAIL_PORT || 587,
+  secure: config.email.secure || process.env.EMAIL_SECURE === 'true',
   auth: {
-    user: config.email.smtp.user || process.env.EMAIL_USER,
-    pass: config.email.smtp.pass || process.env.EMAIL_PASS,
+    user: config.email.user || process.env.EMAIL_USER,
+    pass: config.email.pass || process.env.EMAIL_PASS,
   },
 });
 
@@ -26,7 +26,7 @@ const transporter = nodemailer.createTransport({
 class EmailService {
   constructor() {
     // Initialize SendGrid if API key is provided
-    if (config.email.sendgrid.apiKey && config.email.sendgrid.apiKey.startsWith('SG.')) {
+    if (config.sendgrid.apiKey && config.sendgrid.apiKey.startsWith('SG.')) {
       this.sendgridEnabled = true;
     } else {
       this.sendgridEnabled = false;
@@ -34,7 +34,7 @@ class EmailService {
     }
 
     // Initialize Nodemailer with SMTP configuration
-    if (config.email.smtp.host && config.email.smtp.port) {
+    if (config.email.host && config.email.port) {
       this.transporter = transporter;
       this.smtpEnabled = true;
     } else {
@@ -60,7 +60,7 @@ class EmailService {
 
     const msg = {
       to,
-      from: from || config.email.from,
+      from: from || config.sendgrid.fromEmail || config.email.from,
       subject,
       text,
       html,
@@ -147,7 +147,7 @@ class EmailService {
    * @returns {Promise<Object>} - Email service response
    */
   async sendVerificationEmail(to, token, firstName = '') {
-    const verificationUrl = `${config.frontend.url}/verify-email?token=${token}`;
+    const verificationUrl = `${config.app.frontendUrl || 'http://localhost:3000'}/verify-email?token=${token}`;
     const subject = 'Verify Your Email Address';
 
     const text = `Hello ${firstName},\n\nPlease verify your email address by clicking the link below:\n${verificationUrl}\n\nThis link will expire in 24 hours.\n\nThank you,\n${config.app.name}`;
@@ -176,7 +176,7 @@ class EmailService {
    * @returns {Promise<Object>} - Email service response
    */
   async sendPasswordResetEmail(to, token, firstName = '') {
-    const resetUrl = `${config.frontend.url}/reset-password?token=${token}`;
+    const resetUrl = `${config.app.frontendUrl || 'http://localhost:3000'}/reset-password?token=${token}`;
     const subject = 'Reset Your Password';
 
     const text = `Hello ${firstName},\n\nYou requested a password reset. Please click the link below to reset your password:\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.\n\nThank you,\n${config.app.name}`;
@@ -221,7 +221,7 @@ class EmailService {
           <li>Manage prescriptions</li>
           <li>And much more!</li>
         </ul>
-        <a href="${config.frontend.url}/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #28a745; color: white; text-decoration: none; border-radius: 4px; margin-top: 20px;">Go to Dashboard</a>
+        <a href="${config.app.frontendUrl || 'http://localhost:3000'}/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #28a745; color: white; text-decoration: none; border-radius: 4px; margin-top: 20px;">Go to Dashboard</a>
         <p style="margin-top: 30px;">If you have any questions, feel free to contact our support team.</p>
         <p style="margin-top: 20px;">Thank you for choosing ${config.app.name}!</p>
         <p style="margin-top: 20px;">Best regards,<br>The ${config.app.name} Team</p>

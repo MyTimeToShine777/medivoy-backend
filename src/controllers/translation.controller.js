@@ -229,6 +229,72 @@ class TranslationController {
       }, 500);
     }
   }
+
+  /**
+   * Get translation by key and language
+   */
+  async getTranslationByKeyAndLanguage(req, res) {
+    try {
+      const { key, language } = req.params;
+
+      // Find translation
+      const translation = await Translation.findOne({
+        where: { key, language },
+      });
+
+      if (!translation) {
+        return errorResponse(res, {
+          message: 'Translation not found',
+          code: 'TRANSLATION_NOT_FOUND',
+        }, 404);
+      }
+
+      return successResponse(res, {
+        message: 'Translation retrieved successfully',
+        data: translation,
+      });
+    } catch (error) {
+      logger.error('Get translation by key and language error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve translation',
+        error: error.message,
+      }, 500);
+    }
+  }
+
+  /**
+   * Get translations by language
+   */
+  async getTranslationsByLanguage(req, res) {
+    try {
+      const { language } = req.params;
+      const { page = 1, limit = 100 } = req.query;
+
+      // Get translations with pagination
+      const translations = await Translation.findAndCountAll({
+        where: { language },
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['key', 'ASC']],
+      });
+
+      return successResponse(res, {
+        message: 'Translations retrieved successfully',
+        data: translations.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(translations.count / parseInt(limit, 10)),
+          totalRecords: translations.count,
+        },
+      });
+    } catch (error) {
+      logger.error('Get translations by language error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve translations',
+        error: error.message,
+      }, 500);
+    }
+  }
 }
 
 module.exports = new TranslationController();

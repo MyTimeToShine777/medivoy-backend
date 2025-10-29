@@ -1,0 +1,10 @@
+    // Replace request property with validated value
+    req[property] = value;
+    next();
+  };
+};
+
+module.exports = {
+  validate,
+  validateJoi
+};

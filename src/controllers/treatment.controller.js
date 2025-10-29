@@ -239,6 +239,44 @@ class TreatmentController {
       }, 500);
     }
   }
+
+  /**
+   * Get treatments by subcategory
+   */
+  async getTreatmentsBySubcategory(req, res) {
+    try {
+      const { subcategoryId } = req.params;
+      const { page = 1, limit = 10, isActive } = req.query;
+
+      // Build where clause
+      const where = { subcategory_id: subcategoryId };
+      if (isActive !== undefined) where.isActive = isActive === 'true';
+
+      // Get treatments with pagination
+      const treatments = await Treatment.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['name', 'ASC']],
+      });
+
+      return successResponse(res, {
+        message: 'Treatments retrieved successfully',
+        data: treatments.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(treatments.count / parseInt(limit, 10)),
+          totalRecords: treatments.count,
+        },
+      });
+    } catch (error) {
+      logger.error('Get treatments by subcategory error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve treatments',
+        error: error.message,
+      }, 500);
+    }
+  }
 }
 
 module.exports = new TreatmentController();

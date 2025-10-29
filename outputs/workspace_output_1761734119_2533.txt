@@ -1,0 +1,30 @@
+      // Calculate average rating
+      const result = await Review.findOne({
+        where,
+        attributes: [
+          [Sequelize.fn('AVG', Sequelize.col('rating')), 'averageRating'],
+          [Sequelize.fn('COUNT', Sequelize.col('id')), 'totalReviews'],
+        ],
+      });
+      
+      const averageRating = result.get('averageRating');
+      const totalReviews = result.get('totalReviews');
+      
+      return successResponse(res, {
+        message: 'Average rating calculated successfully',
+        data: {
+          averageRating: parseFloat(averageRating).toFixed(1),
+          totalReviews: parseInt(totalReviews, 10),
+        },
+      });
+    } catch (error) {
+      logger.error('Get average rating error:', error);
+      return errorResponse(res, {
+        message: 'Failed to calculate average rating',
+        error: error.message,
+      }, 500);
+    }
+  }
+}
+
+module.exports = new ReviewController();

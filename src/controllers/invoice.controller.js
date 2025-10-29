@@ -99,6 +99,104 @@ class InvoiceController {
       }, 500);
     }
   }
+
+  /**
+   * Update invoice
+   */
+  async updateInvoice(req, res) {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+
+      // Find invoice
+      const invoice = await Invoice.findByPk(id);
+
+      if (!invoice) {
+        return errorResponse(res, {
+          message: 'Invoice not found',
+          code: 'INVOICE_NOT_FOUND',
+        }, 404);
+      }
+
+      // Update invoice
+      await invoice.update(updateData);
+
+      return successResponse(res, {
+        message: 'Invoice updated successfully',
+        data: invoice,
+      });
+    } catch (error) {
+      logger.error('Update invoice error:', error);
+      return errorResponse(res, {
+        message: 'Failed to update invoice',
+        error: error.message,
+      }, 500);
+    }
+  }
+
+  /**
+   * Delete invoice
+   */
+  async deleteInvoice(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Find invoice
+      const invoice = await Invoice.findByPk(id);
+
+      if (!invoice) {
+        return errorResponse(res, {
+          message: 'Invoice not found',
+          code: 'INVOICE_NOT_FOUND',
+        }, 404);
+      }
+
+      // Delete invoice
+      await invoice.destroy();
+
+      return successResponse(res, {
+        message: 'Invoice deleted successfully',
+      });
+    } catch (error) {
+      logger.error('Delete invoice error:', error);
+      return errorResponse(res, {
+        message: 'Failed to delete invoice',
+        error: error.message,
+      }, 500);
+    }
+  }
+
+  /**
+   * Generate invoice PDF
+   */
+  async generateInvoicePDF(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Find invoice
+      const invoice = await Invoice.findByPk(id);
+
+      if (!invoice) {
+        return errorResponse(res, {
+          message: 'Invoice not found',
+          code: 'INVOICE_NOT_FOUND',
+        }, 404);
+      }
+
+      // TODO: Implement PDF generation logic here
+      // For now, return success message
+      return successResponse(res, {
+        message: 'Invoice PDF generation not yet implemented',
+        data: invoice,
+      });
+    } catch (error) {
+      logger.error('Generate invoice PDF error:', error);
+      return errorResponse(res, {
+        message: 'Failed to generate invoice PDF',
+        error: error.message,
+      }, 500);
+    }
+  }
 }
 
 module.exports = new InvoiceController();

@@ -1,0 +1,6 @@
+[main 4a13dce] 🔐 Add Git authentication fix guides for VS Code push issues
+ 2 files changed, 363 insertions(+)
+ create mode 100644 GIT_AUTHENTICATION_FIX.md
+ create mode 100644 QUICK_AUTH_FIX.md
+To https://github.com/MyTimeToShine777/medivoy-backend.git
+   91f8450..4a13dce  main -> main

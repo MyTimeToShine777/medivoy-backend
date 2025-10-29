@@ -1,0 +1,6 @@
+  async createBooking(req, res) {
+  async getBooking(req, res) {
+  async updateBooking(req, res) {
+  async updateBookingStatus(req, res) {
+  async getAllBookings(req, res) {
+  async cancelBooking(req, res) {

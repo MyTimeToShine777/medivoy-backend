@@ -1,0 +1,11 @@
+router.get(
+  '/category/:categoryId',
+  treatmentController.getTreatmentsByCategory,
+);
+
+// Get treatments by subcategory (public access)
+router.get(
+  '/subcategory/:subcategoryId',
+  treatmentController.getTreatmentsBySubcategory,
+);
+

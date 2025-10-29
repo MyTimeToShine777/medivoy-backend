@@ -1,0 +1,10 @@
+      logger.error('Reset password error:', error);
+      return errorResponse(res, {
+        message: 'Failed to reset password',
+        error: error.message,
+      }, 400);
+    }
+  }
+}
+
+module.exports = new AuthController();

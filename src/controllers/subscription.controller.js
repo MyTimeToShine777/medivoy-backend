@@ -218,6 +218,79 @@ class SubscriptionController {
       }, 500);
     }
   }
+
+  /**
+   * Delete subscription (admin only)
+   */
+  async deleteSubscription(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Find subscription
+      const subscription = await Subscription.findByPk(id);
+
+      if (!subscription) {
+        return errorResponse(res, {
+          message: 'Subscription not found',
+          code: 'SUBSCRIPTION_NOT_FOUND',
+        }, 404);
+      }
+
+      // Delete subscription
+      await subscription.destroy();
+
+      return successResponse(res, {
+        message: 'Subscription deleted successfully',
+      });
+    } catch (error) {
+      logger.error('Delete subscription error:', error);
+      return errorResponse(res, {
+        message: 'Failed to delete subscription',
+        error: error.message,
+      }, 500);
+    }
+  }
+
+  /**
+   * Renew subscription
+   */
+  async renewSubscription(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Find subscription
+      const subscription = await Subscription.findByPk(id);
+
+      if (!subscription) {
+        return errorResponse(res, {
+          message: 'Subscription not found',
+          code: 'SUBSCRIPTION_NOT_FOUND',
+        }, 404);
+      }
+
+      // Calculate new end date based on plan duration
+      const plan = await SubscriptionPlan.findByPk(subscription.plan_id);
+      const newEndDate = new Date();
+      newEndDate.setMonth(newEndDate.getMonth() + (plan.duration_months || 1));
+
+      // Update subscription
+      await subscription.update({
+        end_date: newEndDate,
+        status: 'active',
+      });
+
+      return successResponse(res, {
+        message: 'Subscription renewed successfully',
+        data: subscription,
+      });
+    } catch (error) {
+      logger.error('Renew subscription error:', error);
+      return errorResponse(res, {
+        message: 'Failed to renew subscription',
+        error: error.message,
+      }, 500);
+    }
+  }
 }
 
 module.exports = new SubscriptionController();

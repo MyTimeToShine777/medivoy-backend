@@ -1,0 +1,11 @@
+  '/',
+  translationController.getAllTranslations,
+);
+
+// Get translation by key and language (public access)
+router.get(
+  '/:key/:language',
+  translationController.getTranslationByKeyAndLanguage,
+);
+
+module.exports = router;

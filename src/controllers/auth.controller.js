@@ -454,6 +454,150 @@ class AuthController {
       }, 400);
     }
   }
+
+  /**
+   * Change password
+   */
+  async changePassword(req, res) {
+    try {
+      const { current_password, new_password } = req.body;
+      const userId = req.user.id;
+
+      // Find user
+      const user = await User.findByPk(userId);
+      if (!user) {
+        return errorResponse(res, {
+          message: 'User not found',
+          code: 'USER_NOT_FOUND',
+        }, 404);
+      }
+
+      // Verify current password
+      const isPasswordValid = await bcrypt.compare(current_password, user.password);
+      if (!isPasswordValid) {
+        return errorResponse(res, {
+          message: 'Current password is incorrect',
+          code: 'INVALID_PASSWORD',
+        }, 400);
+      }
+
+      // Hash new password
+      const saltRounds = config.bcryptSaltRounds || 12;
+      const hashedPassword = await bcrypt.hash(new_password, saltRounds);
+
+      // Update password
+      await user.update({ password: hashedPassword });
+
+      logger.info(`Password changed for user: ${user.email}`);
+
+      return successResponse(res, {
+        message: 'Password changed successfully',
+      });
+    } catch (error) {
+      logger.error('Change password error:', error);
+      return errorResponse(res, {
+        message: 'Failed to change password',
+        error: error.message,
+      }, 500);
+    }
+  }
+
+  /**
+   * Verify email
+   */
+  async verifyEmail(req, res) {
+    try {
+      const { token } = req.body;
+
+      // Verify token
+      const decoded = jwt.verify(token, config.jwt.secret);
+
+      // Find user
+      const user = await User.findByPk(decoded.id);
+      if (!user) {
+        return errorResponse(res, {
+          message: 'Invalid or expired token',
+          code: 'AUTH_TOKEN_INVALID',
+        }, 400);
+      }
+
+      // Check if already verified
+      if (user.is_verified) {
+        return successResponse(res, {
+          message: 'Email already verified',
+        });
+      }
+
+      // Update user verification status
+      await user.update({
+        is_verified: true,
+        email_verified_at: new Date(),
+      });
+
+      logger.info(`Email verified for user: ${user.email}`);
+
+      return successResponse(res, {
+        message: 'Email verified successfully',
+      });
+    } catch (error) {
+      logger.error('Verify email error:', error);
+      return errorResponse(res, {
+        message: 'Failed to verify email',
+        error: error.message,
+      }, 400);
+    }
+  }
+
+  /**
+   * Resend verification email
+   */
+  async resendVerification(req, res) {
+    try {
+      const { email } = req.body;
+
+      // Find user
+      const user = await User.findOne({ where: { email } });
+      if (!user) {
+        return errorResponse(res, {
+          message: 'User not found',
+          code: 'USER_NOT_FOUND',
+        }, 404);
+      }
+
+      // Check if already verified
+      if (user.is_verified) {
+        return successResponse(res, {
+          message: 'Email already verified',
+        });
+      }
+
+      // Generate verification token
+      const verificationToken = jwt.sign(
+        { id: user.id, email: user.email },
+        config.jwt.secret,
+        { expiresIn: '24h' },
+      );
+
+      // Send verification email
+      await EmailService.sendVerificationEmail(
+        user.email,
+        verificationToken,
+        user.first_name,
+      );
+
+      logger.info(`Verification email resent to: ${user.email}`);
+
+      return successResponse(res, {
+        message: 'Verification email sent successfully',
+      });
+    } catch (error) {
+      logger.error('Resend verification error:', error);
+      return errorResponse(res, {
+        message: 'Failed to resend verification email',
+        error: error.message,
+      }, 500);
+    }
+  }
 }
 
 module.exports = new AuthController();

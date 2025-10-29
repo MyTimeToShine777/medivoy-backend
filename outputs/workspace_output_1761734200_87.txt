@@ -1,0 +1,11 @@
+const uploadMiddleware = require('../../middleware/upload.middleware');
+
+const router = express.Router();
+
+// Upload file (authenticated users)
+router.post(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  uploadMiddleware,
+  uploadController.uploadFile,

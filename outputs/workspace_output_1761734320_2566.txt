@@ -1,0 +1,6 @@
+  async createSubscription(req, res) {
+  async getSubscription(req, res) {
+  async updateSubscription(req, res) {
+  async cancelSubscription(req, res) {
+  async getUserSubscriptions(req, res) {
+  async getSubscriptionPlans(req, res) {

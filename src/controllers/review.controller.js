@@ -208,6 +208,85 @@ class ReviewController {
       }, 500);
     }
   }
+
+  /**
+   * Verify review (admin only)
+   */
+  async verifyReview(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Find review
+      const review = await Review.findByPk(id);
+
+      if (!review) {
+        return errorResponse(res, {
+          message: 'Review not found',
+          code: 'REVIEW_NOT_FOUND',
+        }, 404);
+      }
+
+      // Update review verification status
+      await review.update({ is_verified: true });
+
+      return successResponse(res, {
+        message: 'Review verified successfully',
+        data: review,
+      });
+    } catch (error) {
+      logger.error('Verify review error:', error);
+      return errorResponse(res, {
+        message: 'Failed to verify review',
+        error: error.message,
+      }, 500);
+    }
+  }
+
+  /**
+   * Get reviews by entity (doctor, hospital, treatment)
+   */
+  async getReviewsByEntity(req, res) {
+    try {
+      const { entityType, entityId } = req.params;
+      const { page = 1, limit = 10 } = req.query;
+
+      // Build where clause based on entity type
+      const where = {};
+      if (entityType === 'doctor') where.doctor_id = entityId;
+      else if (entityType === 'hospital') where.hospital_id = entityId;
+      else if (entityType === 'treatment') where.treatment_id = entityId;
+      else {
+        return errorResponse(res, {
+          message: 'Invalid entity type',
+          code: 'INVALID_ENTITY_TYPE',
+        }, 400);
+      }
+
+      // Get reviews with pagination
+      const reviews = await Review.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['created_at', 'DESC']],
+      });
+
+      return successResponse(res, {
+        message: 'Reviews retrieved successfully',
+        data: reviews.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(reviews.count / parseInt(limit, 10)),
+          totalRecords: reviews.count,
+        },
+      });
+    } catch (error) {
+      logger.error('Get reviews by entity error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve reviews',
+        error: error.message,
+      }, 500);
+    }
+  }
 }
 
 module.exports = new ReviewController();

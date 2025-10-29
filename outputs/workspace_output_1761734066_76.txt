@@ -1,0 +1,3 @@
+  async createInvoice(req, res) {
+  async getInvoice(req, res) {
+  async getAllInvoices(req, res) {

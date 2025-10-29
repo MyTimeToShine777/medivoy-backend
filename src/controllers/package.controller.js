@@ -11,7 +11,7 @@ class PackageController {
       const { name, description, treatmentId, hospitalId, duration, price, currency, isActive } = req.body;
       
       // Create package
-      const package = await Package.create({
+      const pkg = await Package.create({
         name,
         description,
         treatmentId,
@@ -24,7 +24,7 @@ class PackageController {
       
       return successResponse(res, {
         message: 'Package created successfully',
-        data: package,
+        data: pkg,
       }, 201);
     } catch (error) {
       logger.error('Create package error:', error);
@@ -43,9 +43,9 @@ class PackageController {
       const { id } = req.params;
       
       // Find package
-      const package = await Package.findByPk(id);
+      const pkg = await Package.findByPk(id);
       
-      if (!package) {
+      if (!pkg) {
         return errorResponse(res, {
           message: 'Package not found',
         }, 404);
@@ -53,7 +53,7 @@ class PackageController {
       
       return successResponse(res, {
         message: 'Package retrieved successfully',
-        data: package,
+        data: pkg,
       });
     } catch (error) {
       logger.error('Get package error:', error);
@@ -73,16 +73,16 @@ class PackageController {
       const { name, description, duration, price, currency, isActive } = req.body;
       
       // Find package
-      const package = await Package.findByPk(id);
+      const pkg = await Package.findByPk(id);
       
-      if (!package) {
+      if (!pkg) {
         return errorResponse(res, {
           message: 'Package not found',
         }, 404);
       }
       
       // Update package
-      await package.update({
+      await pkg.update({
         name,
         description,
         duration,
@@ -93,7 +93,7 @@ class PackageController {
       
       return successResponse(res, {
         message: 'Package updated successfully',
-        data: package,
+        data: pkg,
       });
     } catch (error) {
       logger.error('Update package error:', error);
@@ -112,16 +112,16 @@ class PackageController {
       const { id } = req.params;
       
       // Find package
-      const package = await Package.findByPk(id);
+      const pkg = await Package.findByPk(id);
       
-      if (!package) {
+      if (!pkg) {
         return errorResponse(res, {
           message: 'Package not found',
         }, 404);
       }
       
       // Delete package
-      await package.destroy();
+      await pkg.destroy();
       
       return successResponse(res, {
         message: 'Package deleted successfully',

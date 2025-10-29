@@ -1,0 +1,6 @@
+  async createReview(req, res) {
+  async getReview(req, res) {
+  async updateReview(req, res) {
+  async deleteReview(req, res) {
+  async getAllReviews(req, res) {
+  async getAverageRating(req, res) {

@@ -1,0 +1,7 @@
+  async createTranslation(req, res) {
+  async getTranslation(req, res) {
+  async updateTranslation(req, res) {
+  async deleteTranslation(req, res) {
+  async getAllTranslations(req, res) {
+  async getTranslationByKey(req, res) {
+  async bulkUpdateTranslations(req, res) {

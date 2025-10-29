@@ -23,7 +23,26 @@ module.exports = {
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   ],
 
+  // Allowed MIME types (alias for ALLOWED_FILE_TYPES)
+  ALLOWED_MIME_TYPES: [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ],
+
   // Maximum file sizes (in bytes)
   MAX_IMAGE_SIZE: 5 * 1024 * 1024, // 5MB
   MAX_DOCUMENT_SIZE: 10 * 1024 * 1024, // 10MB
+
+  // Maximum file sizes object
+  MAX_FILE_SIZES: {
+    IMAGE: 5 * 1024 * 1024, // 5MB
+    DOCUMENT: 10 * 1024 * 1024, // 10MB
+    VIDEO: 50 * 1024 * 1024, // 50MB
+    AUDIO: 10 * 1024 * 1024, // 10MB
+  },
 };

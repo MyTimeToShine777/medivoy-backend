@@ -1,0 +1,7 @@
+router.post(
+  '/register',
+  authValidation.register,
+  validateMiddleware,
+  authController.register,
+);
+

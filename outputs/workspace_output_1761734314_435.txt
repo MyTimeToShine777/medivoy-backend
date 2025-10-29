@@ -1,0 +1,11 @@
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  subscriptionController.cancelSubscription,
+);
+
+// Delete subscription (admin only)
+router.delete(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  subscriptionController.deleteSubscription,

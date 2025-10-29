@@ -1,0 +1,50 @@
+        message: 'Failed to process password reset request',
+        error: error.message,
+      }, 500);
+    }
+  }
+
+  /**
+   * Reset password
+   */
+  async resetPassword(req, res) {
+    try {
+      const { token, newPassword } = req.body;
+
+      // Verify token
+      const decoded = jwt.verify(token, config.jwt.secret);
+
+      // Find user
+      const user = await User.findByPk(decoded.id);
+      if (!user) {
+        return errorResponse(res, {
+          message: 'Invalid or expired token',
+          code: 'AUTH_TOKEN_INVALID',
+        }, 400);
+      }
+
+      // Hash new password
+      const saltRounds = config.bcryptSaltRounds;
+      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+      // Update password and clear reset token
+      await user.update({
+        password: hashedPassword,
+        resetToken: null,
+      });
+
+      // Return success response
+      return successResponse(res, {
+        message: 'Password reset successfully',
+      });
+    } catch (error) {
+      logger.error('Reset password error:', error);
+      return errorResponse(res, {
+        message: 'Failed to reset password',
+        error: error.message,
+      }, 400);
+    }
+  }
+}
+
+module.exports = new AuthController();

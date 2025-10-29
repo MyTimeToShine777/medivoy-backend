@@ -239,6 +239,82 @@ class AppointmentController {
       }, 500);
     }
   }
+
+  /**
+   * Get patient appointments
+   */
+  async getPatientAppointments(req, res) {
+    try {
+      const { patientId } = req.params;
+      const { page = 1, limit = 10, status } = req.query;
+
+      // Build where clause
+      const where = { patient_id: patientId };
+      if (status) where.status = status;
+
+      // Get appointments with pagination
+      const appointments = await Appointment.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['created_at', 'DESC']],
+      });
+
+      return successResponse(res, {
+        message: 'Patient appointments retrieved successfully',
+        data: appointments.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(appointments.count / parseInt(limit, 10)),
+          totalRecords: appointments.count,
+        },
+      });
+    } catch (error) {
+      logger.error('Get patient appointments error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve patient appointments',
+        error: error.message,
+      }, 500);
+    }
+  }
+
+  /**
+   * Get doctor appointments
+   */
+  async getDoctorAppointments(req, res) {
+    try {
+      const { doctorId } = req.params;
+      const { page = 1, limit = 10, status } = req.query;
+
+      // Build where clause
+      const where = { doctor_id: doctorId };
+      if (status) where.status = status;
+
+      // Get appointments with pagination
+      const appointments = await Appointment.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['created_at', 'DESC']],
+      });
+
+      return successResponse(res, {
+        message: 'Doctor appointments retrieved successfully',
+        data: appointments.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(appointments.count / parseInt(limit, 10)),
+          totalRecords: appointments.count,
+        },
+      });
+    } catch (error) {
+      logger.error('Get doctor appointments error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve doctor appointments',
+        error: error.message,
+      }, 500);
+    }
+  }
 }
 
 module.exports = new AppointmentController();
