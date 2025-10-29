@@ -1,71 +1,88 @@
-const { Invoice, Payment, Booking } = require('../models');
-const { AppError } = require('../utils/error-handler');
-const { generateInvoiceNumber } = require('../utils/helpers');
+const Invoice = require('../models/Invoice.model');
 const logger = require('../utils/logger');
 
 class InvoiceService {
+  /**
+   * Create a new invoice
+   */
   async createInvoice(data) {
     try {
-      const invoice_number = generateInvoiceNumber();
-      const invoice = await Invoice.create({ ...data, invoice_number });
-      logger.info(`Invoice created: ${invoice.id}`);
+      const invoice = await Invoice.create(data);
       return invoice;
     } catch (error) {
-      logger.error('Error creating invoice:', error);
-      throw new AppError('Failed to create invoice', 500);
+      logger.error('Create invoice service error:', error);
+      throw error;
     }
   }
 
+  /**
+   * Get invoice by ID
+   */
   async getInvoiceById(id) {
-    const invoice = await Invoice.findByPk(id, {
-      include: [
-        { model: Booking, as: 'booking' },
-        { model: Payment, as: 'payment' }
-      ]
-    });
-    if (!invoice) throw new AppError('Invoice not found', 404);
-    return invoice;
+    try {
+      const invoice = await Invoice.findByPk(id);
+      return invoice;
+    } catch (error) {
+      logger.error('Get invoice by ID service error:', error);
+      throw error;
+    }
   }
 
-  async getAllInvoices(filters = {}, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-    const { count, rows } = await Invoice.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      include: [{ model: Booking, as: 'booking' }],
-      order: [['created_at', 'DESC']]
-    });
-    return { invoices: rows, total: count, page, totalPages: Math.ceil(count / limit) };
-  }
-
+  /**
+   * Update invoice
+   */
   async updateInvoice(id, data) {
-    const invoice = await this.getInvoiceById(id);
-    await invoice.update(data);
-    logger.info(`Invoice updated: ${id}`);
-    return invoice;
+    try {
+      const invoice = await Invoice.findByPk(id);
+      if (!invoice) {
+        throw new Error('Invoice not found');
+      }
+      
+      await invoice.update(data);
+      return invoice;
+    } catch (error) {
+      logger.error('Update invoice service error:', error);
+      throw error;
+    }
   }
 
-  async generatePDF(id) {
-    const invoice = await this.getInvoiceById(id);
-    // TODO: Implement PDF generation using puppeteer or similar
-    logger.info(`Generating PDF for invoice: ${id}`);
-    return { message: 'PDF generation not yet implemented', invoice };
-  }
-
-  async sendInvoiceEmail(id) {
-    const invoice = await this.getInvoiceById(id);
-    // TODO: Implement email sending
-    logger.info(`Sending invoice email: ${id}`);
-    return { message: 'Invoice email sent successfully' };
-  }
-
+  /**
+   * Delete invoice
+   */
   async deleteInvoice(id) {
-    const invoice = await this.getInvoiceById(id);
-    await invoice.destroy();
-    logger.info(`Invoice deleted: ${id}`);
-    return { message: 'Invoice deleted successfully' };
+    try {
+      const invoice = await Invoice.findByPk(id);
+      if (!invoice) {
+        throw new Error('Invoice not found');
+      }
+      
+      await invoice.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete invoice service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all invoices
+   */
+  async getAllInvoices(filters = {}) {
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      
+      const invoices = await Invoice.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return invoices;
+    } catch (error) {
+      logger.error('Get all invoices service error:', error);
+      throw error;
+    }
   }
 }
 

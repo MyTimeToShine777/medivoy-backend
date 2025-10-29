@@ -1,7 +1,3 @@
-/**
- * Swagger/OpenAPI Configuration
- */
-
 const swaggerJsdoc = require('swagger-jsdoc');
 const config = require('./index');
 
@@ -11,26 +7,21 @@ const options = {
     info: {
       title: 'Medivoy Healthcare API',
       version: '1.0.0',
-      description: 'Complete Healthcare Management System API - Production Ready',
+      description: 'Complete Healthcare Management System API',
       contact: {
-        name: 'Medivoy Team',
+        name: 'Medivoy API Support',
         email: 'support@medivoy.com',
-        url: 'https://medivoy.com'
       },
-      license: {
-        name: 'MIT',
-        url: 'https://opensource.org/licenses/MIT'
-      }
     },
     servers: [
       {
         url: `http://localhost:${config.port}/api/${config.apiVersion}`,
-        description: 'Development server'
+        description: 'Development server',
       },
       {
-        url: `https://api.medivoy.com/api/${config.apiVersion}`,
-        description: 'Production server'
-      }
+        url: `${config.frontendUrl}/api/${config.apiVersion}`,
+        description: 'Production server',
+      },
     ],
     components: {
       securitySchemes: {
@@ -38,112 +29,66 @@ const options = {
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'JWT',
-          description: 'Enter your JWT token'
-        }
+        },
       },
       schemas: {
+        User: {
+          type: 'object',
+          properties: {
+            id: {
+              type: 'integer',
+              description: 'User ID',
+            },
+            email: {
+              type: 'string',
+              format: 'email',
+              description: 'User email address',
+            },
+            firstName: {
+              type: 'string',
+              description: 'User first name',
+            },
+            lastName: {
+              type: 'string',
+              description: 'User last name',
+            },
+            role: {
+              type: 'string',
+              enum: ['admin', 'doctor', 'patient', 'hospital_admin'],
+              description: 'User role',
+            },
+          },
+        },
         Error: {
           type: 'object',
           properties: {
             success: {
               type: 'boolean',
-              example: false
+              example: false,
             },
             message: {
               type: 'string',
-              example: 'Error message'
+              description: 'Error message',
             },
-            errors: {
-              type: 'array',
-              items: {
-                type: 'object'
-              }
-            }
-          }
+            code: {
+              type: 'integer',
+              description: 'Error code',
+            },
+          },
         },
-        Success: {
-          type: 'object',
-          properties: {
-            success: {
-              type: 'boolean',
-              example: true
-            },
-            message: {
-              type: 'string',
-              example: 'Success message'
-            },
-            data: {
-              type: 'object'
-            }
-          }
-        },
-        Pagination: {
-          type: 'object',
-          properties: {
-            total: {
-              type: 'integer',
-              example: 100
-            },
-            page: {
-              type: 'integer',
-              example: 1
-            },
-            limit: {
-              type: 'integer',
-              example: 10
-            },
-            totalPages: {
-              type: 'integer',
-              example: 10
-            },
-            hasNextPage: {
-              type: 'boolean',
-              example: true
-            },
-            hasPrevPage: {
-              type: 'boolean',
-              example: false
-            }
-          }
-        }
-      }
+      },
     },
-    tags: [
-      { name: 'Authentication', description: 'Authentication endpoints' },
-      { name: 'Users', description: 'User management' },
-      { name: 'Patients', description: 'Patient management' },
-      { name: 'Doctors', description: 'Doctor management' },
-      { name: 'Hospitals', description: 'Hospital management' },
-      { name: 'Treatments', description: 'Treatment catalog' },
-      { name: 'Treatment Categories', description: 'Treatment taxonomy - Categories' },
-      { name: 'Treatment Subcategories', description: 'Treatment taxonomy - Subcategories' },
-      { name: 'Packages', description: 'Medical tour packages' },
-      { name: 'Bookings', description: 'Booking management' },
-      { name: 'Appointments', description: 'Appointment scheduling' },
-      { name: 'Medical Records', description: 'Medical document management' },
-      { name: 'Prescriptions', description: 'Prescription management' },
-      { name: 'Laboratories', description: 'Laboratory management' },
-      { name: 'Lab Tests', description: 'Lab test management' },
-      { name: 'Insurance', description: 'Insurance provider management' },
-      { name: 'Payments', description: 'Payment processing' },
-      { name: 'Invoices', description: 'Invoice management' },
-      { name: 'Reviews', description: 'Reviews and ratings' },
-      { name: 'Notifications', description: 'Notification system' },
-      { name: 'Support', description: 'Support ticket system' },
-      { name: 'Subscriptions', description: 'Subscription management' },
-      { name: 'Translations', description: 'Multi-language support' },
-      { name: 'Analytics', description: 'Analytics and reporting' },
-      { name: 'Dashboard', description: 'Dashboard data' },
-      { name: 'Media', description: 'Media management' },
-      { name: 'Coupons', description: 'Coupon management' },
-      { name: 'FAQs', description: 'FAQ management' }
-    ]
+    security: [
+      {
+        bearerAuth: [],
+      },
+    ],
   },
   apis: [
-    './src/routes/v1/*.js',
-    './src/controllers/*.js',
-    './src/models/*.js'
-  ]
+    './src/routes/*.js',
+    './src/routes/**/*.js',
+    './src/models/*.js',
+  ],
 };
 
 const swaggerSpec = swaggerJsdoc(options);

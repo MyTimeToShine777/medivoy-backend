@@ -1,86 +1,103 @@
-const { WebsiteContent } = require('../models');
-const { AppError } = require('../utils/error-handler');
-const { generateSlug } = require('../utils/helpers');
+const WebsiteContent = require('../models/WebsiteContent.model');
 const logger = require('../utils/logger');
 
 class WebsiteContentService {
+  /**
+   * Create a new website content
+   */
   async createContent(data) {
     try {
-      const slug = generateSlug(data.title);
-      const content = await WebsiteContent.create({ ...data, slug });
-      logger.info(`Website content created: ${content.id}`);
-      return content;
+      const websiteContent = await WebsiteContent.create(data);
+      return websiteContent;
     } catch (error) {
-      logger.error('Error creating website content:', error);
-      throw new AppError('Failed to create website content', 500);
+      logger.error('Create website content service error:', error);
+      throw error;
     }
   }
 
+  /**
+   * Get website content by ID
+   */
   async getContentById(id) {
-    const content = await WebsiteContent.findByPk(id);
-    if (!content) throw new AppError('Website content not found', 404);
-    return content;
-  }
-
-  async getContentBySlug(slug) {
-    const content = await WebsiteContent.findOne({ where: { slug, is_published: true } });
-    if (!content) throw new AppError('Website content not found', 404);
-    return content;
-  }
-
-  async getAllContent(filters = {}, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-    const { count, rows } = await WebsiteContent.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      order: [['created_at', 'DESC']]
-    });
-    return { content: rows, total: count, page, totalPages: Math.ceil(count / limit) };
-  }
-
-  async getContentByType(type, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-    const { count, rows } = await WebsiteContent.findAndCountAll({
-      where: { type, is_published: true },
-      limit,
-      offset,
-      order: [['created_at', 'DESC']]
-    });
-    return { content: rows, total: count, page, totalPages: Math.ceil(count / limit) };
-  }
-
-  async updateContent(id, data) {
-    const content = await this.getContentById(id);
-    if (data.title) {
-      data.slug = generateSlug(data.title);
+    try {
+      const websiteContent = await WebsiteContent.findByPk(id);
+      return websiteContent;
+    } catch (error) {
+      logger.error('Get website content by ID service error:', error);
+      throw error;
     }
-    await content.update(data);
-    logger.info(`Website content updated: ${id}`);
-    return content;
   }
 
-  async publishContent(id) {
-    const content = await this.getContentById(id);
-    await content.update({ is_published: true, published_at: new Date() });
-    logger.info(`Website content published: ${id}`);
-    return content;
+  /**
+   * Update website content
+   */
+  async updateContent(id, data) {
+    try {
+      const websiteContent = await WebsiteContent.findByPk(id);
+      if (!websiteContent) {
+        throw new Error('Website content not found');
+      }
+      
+      await websiteContent.update(data);
+      return websiteContent;
+    } catch (error) {
+      logger.error('Update website content service error:', error);
+      throw error;
+    }
   }
 
-  async unpublishContent(id) {
-    const content = await this.getContentById(id);
-    await content.update({ is_published: false });
-    logger.info(`Website content unpublished: ${id}`);
-    return content;
-  }
-
+  /**
+   * Delete website content
+   */
   async deleteContent(id) {
-    const content = await this.getContentById(id);
-    await content.destroy();
-    logger.info(`Website content deleted: ${id}`);
-    return { message: 'Website content deleted successfully' };
+    try {
+      const websiteContent = await WebsiteContent.findByPk(id);
+      if (!websiteContent) {
+        throw new Error('Website content not found');
+      }
+      
+      await websiteContent.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete website content service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all website content
+   */
+  async getAllContent(filters = {}) {
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      
+      const websiteContent = await WebsiteContent.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return websiteContent;
+    } catch (error) {
+      logger.error('Get all website content service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get content by slug
+   */
+  async getContentBySlug(slug) {
+    try {
+      const websiteContent = await WebsiteContent.findOne({
+        where: { slug },
+      });
+      return websiteContent;
+    } catch (error) {
+      logger.error('Get website content by slug service error:', error);
+      throw error;
+    }
   }
 }
 

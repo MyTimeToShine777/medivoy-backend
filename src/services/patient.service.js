@@ -1,89 +1,88 @@
-const { Patient, User, MedicalRecord, Appointment, Booking } = require('../models');
-const { AppError } = require('../utils/error-handler');
+const Patient = require('../models/Patient.model');
 const logger = require('../utils/logger');
 
 class PatientService {
-  async createPatient(patientData) {
+  /**
+   * Create a new patient
+   */
+  async createPatient(data) {
     try {
-      const patient = await Patient.create(patientData);
-      logger.info(`Patient created: ${patient.id}`);
+      const patient = await Patient.create(data);
       return patient;
     } catch (error) {
-      logger.error('Error creating patient:', error);
-      throw new AppError('Failed to create patient', 500);
+      logger.error('Create patient service error:', error);
+      throw error;
     }
   }
 
-  async getPatientById(patientId) {
-    const patient = await Patient.findByPk(patientId, {
-      include: [
-        { model: User, as: 'user' },
-        { model: MedicalRecord, as: 'medical_records' }
-      ]
-    });
-    
-    if (!patient) {
-      throw new AppError('Patient not found', 404);
+  /**
+   * Get patient by ID
+   */
+  async getPatientById(id) {
+    try {
+      const patient = await Patient.findByPk(id);
+      return patient;
+    } catch (error) {
+      logger.error('Get patient by ID service error:', error);
+      throw error;
     }
-    
-    return patient;
   }
 
-  async updatePatient(patientId, updateData) {
-    const patient = await this.getPatientById(patientId);
-    await patient.update(updateData);
-    logger.info(`Patient updated: ${patientId}`);
-    return patient;
+  /**
+   * Update patient
+   */
+  async updatePatient(id, data) {
+    try {
+      const patient = await Patient.findByPk(id);
+      if (!patient) {
+        throw new Error('Patient not found');
+      }
+      
+      await patient.update(data);
+      return patient;
+    } catch (error) {
+      logger.error('Update patient service error:', error);
+      throw error;
+    }
   }
 
-  async deletePatient(patientId) {
-    const patient = await this.getPatientById(patientId);
-    await patient.destroy();
-    logger.info(`Patient deleted: ${patientId}`);
-    return { message: 'Patient deleted successfully' };
+  /**
+   * Delete patient
+   */
+  async deletePatient(id) {
+    try {
+      const patient = await Patient.findByPk(id);
+      if (!patient) {
+        throw new Error('Patient not found');
+      }
+      
+      await patient.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete patient service error:', error);
+      throw error;
+    }
   }
 
-  async getAllPatients(filters = {}, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-
-    const { count, rows } = await Patient.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      include: [{ model: User, as: 'user' }],
-      order: [['created_at', 'DESC']]
-    });
-
-    return {
-      patients: rows,
-      total: count,
-      page,
-      totalPages: Math.ceil(count / limit)
-    };
-  }
-
-  async updateMedicalHistory(patientId, medicalHistoryData) {
-    const patient = await this.getPatientById(patientId);
-    await patient.update({ medical_history: medicalHistoryData });
-    logger.info(`Patient medical history updated: ${patientId}`);
-    return patient;
-  }
-
-  async getPatientAppointments(patientId, filters = {}) {
-    const appointments = await Appointment.findAll({
-      where: { patient_id: patientId, ...filters },
-      order: [['appointment_date', 'DESC']]
-    });
-    return appointments;
-  }
-
-  async getPatientBookings(patientId, filters = {}) {
-    const bookings = await Booking.findAll({
-      where: { patient_id: patientId, ...filters },
-      order: [['created_at', 'DESC']]
-    });
-    return bookings;
+  /**
+   * Get all patients
+   */
+  async getAllPatients(filters = {}) {
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      
+      const patients = await Patient.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return patients;
+    } catch (error) {
+      logger.error('Get all patients service error:', error);
+      throw error;
+    }
   }
 }
 

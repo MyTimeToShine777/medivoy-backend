@@ -1,132 +1,106 @@
-const { Review, User, Hospital, Doctor } = require('../models');
-const { AppError } = require('../utils/error-handler');
+const Review = require('../models/Review.model');
 const logger = require('../utils/logger');
 
 class ReviewService {
-  async createReview(reviewData) {
+  /**
+   * Create a new review
+   */
+  async createReview(data) {
     try {
-      const review = await Review.create(reviewData);
-      
-      // Update average rating for the reviewed entity
-      await this.updateAverageRating(reviewData.reviewable_type, reviewData.reviewable_id);
-      
-      logger.info(`Review created: ${review.id}`);
+      const review = await Review.create(data);
       return review;
     } catch (error) {
-      logger.error('Error creating review:', error);
-      throw new AppError('Failed to create review', 500);
+      logger.error('Create review service error:', error);
+      throw error;
     }
   }
 
-  async getReviewById(reviewId) {
-    const review = await Review.findByPk(reviewId, {
-      include: [{ model: User, as: 'user' }]
-    });
-    
-    if (!review) {
-      throw new AppError('Review not found', 404);
+  /**
+   * Get review by ID
+   */
+  async getReviewById(id) {
+    try {
+      const review = await Review.findByPk(id);
+      return review;
+    } catch (error) {
+      logger.error('Get review by ID service error:', error);
+      throw error;
     }
-    
-    return review;
   }
 
-  async updateReview(reviewId, updateData) {
-    const review = await this.getReviewById(reviewId);
-    await review.update(updateData);
-    
-    // Update average rating
-    await this.updateAverageRating(review.reviewable_type, review.reviewable_id);
-    
-    logger.info(`Review updated: ${reviewId}`);
-    return review;
-  }
-
-  async deleteReview(reviewId) {
-    const review = await this.getReviewById(reviewId);
-    const { reviewable_type, reviewable_id } = review;
-    
-    await review.destroy();
-    
-    // Update average rating
-    await this.updateAverageRating(reviewable_type, reviewable_id);
-    
-    logger.info(`Review deleted: ${reviewId}`);
-    return { message: 'Review deleted successfully' };
-  }
-
-  async getEntityReviews(reviewableType, reviewableId, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-
-    const { count, rows } = await Review.findAndCountAll({
-      where: {
-        reviewable_type: reviewableType,
-        reviewable_id: reviewableId,
-        is_approved: true
-      },
-      limit,
-      offset,
-      include: [{ model: User, as: 'user' }],
-      order: [['created_at', 'DESC']]
-    });
-
-    return {
-      reviews: rows,
-      total: count,
-      page,
-      totalPages: Math.ceil(count / limit)
-    };
-  }
-
-  async updateAverageRating(reviewableType, reviewableId) {
-    const reviews = await Review.findAll({
-      where: {
-        reviewable_type: reviewableType,
-        reviewable_id: reviewableId,
-        is_approved: true
+  /**
+   * Update review
+   */
+  async updateReview(id, data) {
+    try {
+      const review = await Review.findByPk(id);
+      if (!review) {
+        throw new Error('Review not found');
       }
-    });
-
-    if (reviews.length === 0) return;
-
-    const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
-    const averageRating = totalRating / reviews.length;
-
-    // Update the entity's average rating
-    let Model;
-    if (reviewableType === 'Hospital') {
-      Model = Hospital;
-    } else if (reviewableType === 'Doctor') {
-      Model = Doctor;
-    }
-
-    if (Model) {
-      await Model.update(
-        { average_rating: averageRating, total_reviews: reviews.length },
-        { where: { id: reviewableId } }
-      );
+      
+      await review.update(data);
+      return review;
+    } catch (error) {
+      logger.error('Update review service error:', error);
+      throw error;
     }
   }
 
-  async approveReview(reviewId) {
-    const review = await this.getReviewById(reviewId);
-    await review.update({ is_approved: true, approved_at: new Date() });
-    
-    // Update average rating
-    await this.updateAverageRating(review.reviewable_type, review.reviewable_id);
-    
-    logger.info(`Review approved: ${reviewId}`);
-    return review;
+  /**
+   * Delete review
+   */
+  async deleteReview(id) {
+    try {
+      const review = await Review.findByPk(id);
+      if (!review) {
+        throw new Error('Review not found');
+      }
+      
+      await review.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete review service error:', error);
+      throw error;
+    }
   }
 
-  async rejectReview(reviewId, reason) {
-    const review = await this.getReviewById(reviewId);
-    await review.update({
-      is_approved: false,
-      rejection_reason: reason
-    });
-    logger.info(`Review rejected: ${reviewId}`);
-    return review;
+  /**
+   * Get all reviews
+   */
+  async getAllReviews(filters = {}) {
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      
+      const reviews = await Review.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return reviews;
+    } catch (error) {
+      logger.error('Get all reviews service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Verify review
+   */
+  async verifyReview(id) {
+    try {
+      const review = await Review.findByPk(id);
+      if (!review) {
+        throw new Error('Review not found');
+      }
+      
+      await review.update({ isVerified: true });
+      return review;
+    } catch (error) {
+      logger.error('Verify review service error:', error);
+      throw error;
+    }
   }
 }
 

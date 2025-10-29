@@ -1,76 +1,56 @@
 const express = require('express');
-const router = express.Router();
 const treatmentController = require('../../controllers/treatment.controller');
-const { authenticate } = require('../../middleware/auth.middleware');
-const { authorize } = require('../../middleware/authorize.middleware');
+const authMiddleware = require('../../middleware/auth.middleware');
+const authorizeMiddleware = require('../../middleware/authorize.middleware');
 
-/**
- * @swagger
- * /api/v1/treatments:
- *   get:
- *     summary: Get all treatments
- *     tags: [Treatments]
- */
-router.get('/', treatmentController.getAllTreatments);
+const router = express.Router();
 
-/**
- * @swagger
- * /api/v1/treatments:
- *   post:
- *     summary: Create a new treatment
- *     tags: [Treatments]
- *     security:
- *       - bearerAuth: []
- */
-router.post('/', authenticate, authorize(['admin']), treatmentController.createTreatment);
+// Create treatment (admin only)
+router.post(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  treatmentController.createTreatment,
+);
 
-/**
- * @swagger
- * /api/v1/treatments/{id}:
- *   get:
- *     summary: Get treatment by ID
- *     tags: [Treatments]
- */
-router.get('/:id', treatmentController.getTreatment);
+// Get treatment by ID (public access)
+router.get(
+  '/:id',
+  treatmentController.getTreatment,
+);
 
-/**
- * @swagger
- * /api/v1/treatments/{id}:
- *   put:
- *     summary: Update treatment
- *     tags: [Treatments]
- *     security:
- *       - bearerAuth: []
- */
-router.put('/:id', authenticate, authorize(['admin']), treatmentController.updateTreatment);
+// Update treatment (admin only)
+router.put(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  treatmentController.updateTreatment,
+);
 
-/**
- * @swagger
- * /api/v1/treatments/{id}:
- *   delete:
- *     summary: Delete treatment
- *     tags: [Treatments]
- *     security:
- *       - bearerAuth: []
- */
-router.delete('/:id', authenticate, authorize(['admin']), treatmentController.deleteTreatment);
+// Delete treatment (admin only)
+router.delete(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  treatmentController.deleteTreatment,
+);
 
-/**
- * @swagger
- * /api/v1/treatments/category/{categoryId}:
- *   get:
- *     summary: Get treatments by category
- *     tags: [Treatments]
- */
-router.get('/category/:categoryId', treatmentController.getTreatmentsByCategory);
+// Get all treatments (public access)
+router.get(
+  '/',
+  treatmentController.getAllTreatments,
+);
 
-/**
- * @swagger
- * /api/v1/treatments/subcategory/{subcategoryId}:
- *   get:
- *     summary: Get treatments by subcategory
- *     tags: [Treatments]
- */
-router.get('/subcategory/:subcategoryId', treatmentController.getTreatmentsBySubcategory);
+// Get treatments by category (public access)
+router.get(
+  '/category/:categoryId',
+  treatmentController.getTreatmentsByCategory,
+);
+
+// Get treatments by subcategory (public access)
+router.get(
+  '/subcategory/:subcategoryId',
+  treatmentController.getTreatmentsBySubcategory,
+);
 
 module.exports = router;

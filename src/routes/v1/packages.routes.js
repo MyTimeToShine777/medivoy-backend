@@ -1,13 +1,48 @@
 const express = require('express');
-const router = express.Router();
 const packageController = require('../../controllers/package.controller');
-const { authenticate } = require('../../middleware/auth.middleware');
-const { authorize } = require('../../middleware/authorize.middleware');
+const authMiddleware = require('../../middleware/auth.middleware');
+const authorizeMiddleware = require('../../middleware/authorize.middleware');
 
-router.get('/', packageController.getAllPackages);
-router.post('/', authenticate, authorize(['admin']), packageController.createPackage);
-router.get('/:id', packageController.getPackage);
-router.put('/:id', authenticate, authorize(['admin']), packageController.updatePackage);
-router.delete('/:id', authenticate, authorize(['admin']), packageController.deletePackage);
+const router = express.Router();
+
+// Create package (admin only)
+router.post(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  packageController.createPackage,
+);
+
+// Get package by ID (authenticated users)
+router.get(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  packageController.getPackage,
+);
+
+// Update package (admin only)
+router.put(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  packageController.updatePackage,
+);
+
+// Delete package (admin only)
+router.delete(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  packageController.deletePackage,
+);
+
+// Get all packages (authenticated users)
+router.get(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  packageController.getAllPackages,
+);
 
 module.exports = router;

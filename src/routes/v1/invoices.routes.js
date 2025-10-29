@@ -1,15 +1,48 @@
 const express = require('express');
-const router = express.Router();
 const invoiceController = require('../../controllers/invoice.controller');
-const { authenticate } = require('../../middleware/auth.middleware');
-const { authorize } = require('../../middleware/authorize.middleware');
+const authMiddleware = require('../../middleware/auth.middleware');
+const authorizeMiddleware = require('../../middleware/authorize.middleware');
 
-router.get('/', authenticate, invoiceController.getAllInvoices);
-router.post('/', authenticate, authorize(['admin']), invoiceController.createInvoice);
-router.get('/:id', authenticate, invoiceController.getInvoice);
-router.put('/:id', authenticate, authorize(['admin']), invoiceController.updateInvoice);
-router.get('/:id/pdf', authenticate, invoiceController.generatePDF);
-router.post('/:id/send-email', authenticate, authorize(['admin']), invoiceController.sendInvoiceEmail);
-router.delete('/:id', authenticate, authorize(['admin']), invoiceController.deleteInvoice);
+const router = express.Router();
+
+// Create invoice (admin, hospital admins)
+router.post(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'hospital_admin']),
+  invoiceController.createInvoice,
+);
+
+// Get invoice by ID (authenticated users)
+router.get(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  invoiceController.getInvoice,
+);
+
+// Update invoice (admin, hospital admins)
+router.put(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'hospital_admin']),
+  invoiceController.updateInvoice,
+);
+
+// Delete invoice (admin only)
+router.delete(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  invoiceController.deleteInvoice,
+);
+
+// Get all invoices (admin, hospital admins)
+router.get(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'hospital_admin']),
+  invoiceController.getAllInvoices,
+);
 
 module.exports = router;

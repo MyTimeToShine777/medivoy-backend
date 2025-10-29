@@ -1,66 +1,102 @@
-const { Translation } = require('../models');
-const { AppError } = require('../utils/error-handler');
+const Translation = require('../models/Translation.model');
 const logger = require('../utils/logger');
 
 class TranslationService {
+  /**
+   * Create a new translation
+   */
   async createTranslation(data) {
     try {
       const translation = await Translation.create(data);
-      logger.info(`Translation created: ${translation.id}`);
       return translation;
     } catch (error) {
-      logger.error('Error creating translation:', error);
-      throw new AppError('Failed to create translation', 500);
+      logger.error('Create translation service error:', error);
+      throw error;
     }
   }
 
+  /**
+   * Get translation by ID
+   */
   async getTranslationById(id) {
-    const translation = await Translation.findByPk(id);
-    if (!translation) throw new AppError('Translation not found', 404);
-    return translation;
-  }
-
-  async getAllTranslations(filters = {}, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-    const { count, rows } = await Translation.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      order: [['created_at', 'DESC']]
-    });
-    return { translations: rows, total: count, page, totalPages: Math.ceil(count / limit) };
-  }
-
-  async getTranslationByKey(key, language) {
-    const translation = await Translation.findOne({
-      where: { key, language }
-    });
-    return translation ? translation.value : key;
-  }
-
-  async updateTranslation(id, data) {
-    const translation = await this.getTranslationById(id);
-    await translation.update(data);
-    logger.info(`Translation updated: ${id}`);
-    return translation;
-  }
-
-  async deleteTranslation(id) {
-    const translation = await this.getTranslationById(id);
-    await translation.destroy();
-    logger.info(`Translation deleted: ${id}`);
-    return { message: 'Translation deleted successfully' };
-  }
-
-  async bulkCreateTranslations(translations) {
     try {
-      const created = await Translation.bulkCreate(translations);
-      logger.info(`Bulk translations created: ${created.length}`);
-      return created;
+      const translation = await Translation.findByPk(id);
+      return translation;
     } catch (error) {
-      logger.error('Error bulk creating translations:', error);
-      throw new AppError('Failed to bulk create translations', 500);
+      logger.error('Get translation by ID service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update translation
+   */
+  async updateTranslation(id, data) {
+    try {
+      const translation = await Translation.findByPk(id);
+      if (!translation) {
+        throw new Error('Translation not found');
+      }
+      
+      await translation.update(data);
+      return translation;
+    } catch (error) {
+      logger.error('Update translation service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete translation
+   */
+  async deleteTranslation(id) {
+    try {
+      const translation = await Translation.findByPk(id);
+      if (!translation) {
+        throw new Error('Translation not found');
+      }
+      
+      await translation.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete translation service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all translations
+   */
+  async getAllTranslations(filters = {}) {
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      
+      const translations = await Translation.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['key', 'ASC']],
+      });
+      
+      return translations;
+    } catch (error) {
+      logger.error('Get all translations service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get translation by key and language
+   */
+  async getTranslationByKeyAndLanguage(key, language) {
+    try {
+      const translation = await Translation.findOne({
+        where: { key, language },
+      });
+      return translation;
+    } catch (error) {
+      logger.error('Get translation by key and language service error:', error);
+      throw error;
     }
   }
 }

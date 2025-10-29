@@ -1,16 +1,47 @@
 const express = require('express');
-const router = express.Router();
 const supportController = require('../../controllers/support.controller');
-const { authenticate } = require('../../middleware/auth.middleware');
-const { authorize } = require('../../middleware/authorize.middleware');
+const authMiddleware = require('../../middleware/auth.middleware');
+const authorizeMiddleware = require('../../middleware/authorize.middleware');
 
-router.get('/', authenticate, supportController.getAllTickets);
-router.post('/', authenticate, supportController.createTicket);
-router.get('/:id', authenticate, supportController.getTicket);
-router.put('/:id', authenticate, supportController.updateTicket);
-router.patch('/:id/status', authenticate, authorize(['admin']), supportController.updateTicketStatus);
-router.post('/:id/reply', authenticate, supportController.addReply);
-router.post('/:id/close', authenticate, authorize(['admin']), supportController.closeTicket);
-router.delete('/:id', authenticate, authorize(['admin']), supportController.deleteTicket);
+const router = express.Router();
+
+// Create support ticket (authenticated users)
+router.post(
+  '/',
+  authMiddleware,
+  supportController.createTicket,
+);
+
+// Get support ticket by ID (users can only access their own tickets, admin can access all)
+router.get(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  supportController.getTicket,
+);
+
+// Update support ticket (users can only update their own tickets, admin can update all)
+router.put(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  supportController.updateTicket,
+);
+
+// Delete support ticket (admin only)
+router.delete(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  supportController.deleteTicket,
+);
+
+// Get all support tickets (admin only)
+router.get(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  supportController.getAllTickets,
+);
 
 module.exports = router;

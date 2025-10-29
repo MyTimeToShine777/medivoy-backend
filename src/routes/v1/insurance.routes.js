@@ -1,15 +1,48 @@
 const express = require('express');
-const router = express.Router();
 const insuranceController = require('../../controllers/insurance.controller');
-const { authenticate } = require('../../middleware/auth.middleware');
-const { authorize } = require('../../middleware/authorize.middleware');
+const authMiddleware = require('../../middleware/auth.middleware');
+const authorizeMiddleware = require('../../middleware/authorize.middleware');
 
-router.get('/', authenticate, insuranceController.getAllInsurance);
-router.post('/', authenticate, insuranceController.createInsurance);
-router.get('/:id', authenticate, insuranceController.getInsurance);
-router.put('/:id', authenticate, insuranceController.updateInsurance);
-router.delete('/:id', authenticate, authorize(['admin']), insuranceController.deleteInsurance);
-router.post('/:id/verify', authenticate, authorize(['admin']), insuranceController.verifyInsurance);
-router.post('/:id/check-coverage', authenticate, insuranceController.checkCoverage);
+const router = express.Router();
+
+// Create insurance provider (admin only)
+router.post(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  insuranceController.createInsurance,
+);
+
+// Get insurance provider by ID (authenticated users)
+router.get(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  insuranceController.getInsurance,
+);
+
+// Update insurance provider (admin only)
+router.put(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  insuranceController.updateInsurance,
+);
+
+// Delete insurance provider (admin only)
+router.delete(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  insuranceController.deleteInsurance,
+);
+
+// Get all insurance providers (authenticated users)
+router.get(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  insuranceController.getAllInsurance,
+);
 
 module.exports = router;

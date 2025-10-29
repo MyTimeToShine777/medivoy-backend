@@ -1,13 +1,44 @@
 const express = require('express');
-const router = express.Router();
 const treatmentCategoryController = require('../../controllers/treatmentCategory.controller');
-const { authenticate } = require('../../middleware/auth.middleware');
-const { authorize } = require('../../middleware/authorize.middleware');
+const authMiddleware = require('../../middleware/auth.middleware');
+const authorizeMiddleware = require('../../middleware/authorize.middleware');
 
-router.get('/', treatmentCategoryController.getAllCategories);
-router.post('/', authenticate, authorize(['admin']), treatmentCategoryController.createCategory);
-router.get('/:id', treatmentCategoryController.getCategory);
-router.put('/:id', authenticate, authorize(['admin']), treatmentCategoryController.updateCategory);
-router.delete('/:id', authenticate, authorize(['admin']), treatmentCategoryController.deleteCategory);
+const router = express.Router();
+
+// Create treatment category (admin only)
+router.post(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  treatmentCategoryController.createTreatmentCategory,
+);
+
+// Get treatment category by ID (public access)
+router.get(
+  '/:id',
+  treatmentCategoryController.getTreatmentCategory,
+);
+
+// Update treatment category (admin only)
+router.put(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  treatmentCategoryController.updateTreatmentCategory,
+);
+
+// Delete treatment category (admin only)
+router.delete(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  treatmentCategoryController.deleteTreatmentCategory,
+);
+
+// Get all treatment categories (public access)
+router.get(
+  '/',
+  treatmentCategoryController.getAllTreatmentCategories,
+);
 
 module.exports = router;

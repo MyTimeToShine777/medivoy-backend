@@ -1,90 +1,107 @@
-const { Notification } = require('../models');
-const emailService = require('./email.service');
+const Notification = require('../models/Notification.model');
 const logger = require('../utils/logger');
-const { AppError } = require('../utils/error-handler');
 
 class NotificationService {
-  async createNotification(notificationData) {
+  /**
+   * Create a new notification
+   */
+  async createNotification(data) {
     try {
-      const notification = await Notification.create(notificationData);
-      
-      // Send notification based on type
-      if (notificationData.type === 'email') {
-        await this.sendEmailNotification(notification);
-      } else if (notificationData.type === 'sms') {
-        await this.sendSMSNotification(notification);
-      } else if (notificationData.type === 'push') {
-        await this.sendPushNotification(notification);
-      }
-      
-      logger.info(`Notification created: ${notification.id}`);
+      const notification = await Notification.create(data);
       return notification;
     } catch (error) {
-      logger.error('Error creating notification:', error);
-      throw new AppError('Failed to create notification', 500);
-    }
-  }
-
-  async sendEmailNotification(notification) {
-    try {
-      await emailService.sendEmail(
-        notification.recipient_email,
-        notification.title,
-        notification.message
-      );
-      await notification.update({ status: 'sent', sent_at: new Date() });
-    } catch (error) {
-      await notification.update({ status: 'failed', error_message: error.message });
+      logger.error('Create notification service error:', error);
       throw error;
     }
   }
 
-  async sendSMSNotification(notification) {
-    // TODO: Implement Twilio SMS sending
-    logger.info(`SMS notification: ${notification.id}`);
-    await notification.update({ status: 'sent', sent_at: new Date() });
-  }
-
-  async sendPushNotification(notification) {
-    // TODO: Implement Firebase push notification
-    logger.info(`Push notification: ${notification.id}`);
-    await notification.update({ status: 'sent', sent_at: new Date() });
-  }
-
-  async getNotificationById(notificationId) {
-    const notification = await Notification.findByPk(notificationId);
-    if (!notification) {
-      throw new AppError('Notification not found', 404);
+  /**
+   * Get notification by ID
+   */
+  async getNotificationById(id) {
+    try {
+      const notification = await Notification.findByPk(id);
+      return notification;
+    } catch (error) {
+      logger.error('Get notification by ID service error:', error);
+      throw error;
     }
-    return notification;
   }
 
+  /**
+   * Update notification
+   */
+  async updateNotification(id, data) {
+    try {
+      const notification = await Notification.findByPk(id);
+      if (!notification) {
+        throw new Error('Notification not found');
+      }
+      
+      await notification.update(data);
+      return notification;
+    } catch (error) {
+      logger.error('Update notification service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete notification
+   */
+  async deleteNotification(id) {
+    try {
+      const notification = await Notification.findByPk(id);
+      if (!notification) {
+        throw new Error('Notification not found');
+      }
+      
+      await notification.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete notification service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all notifications for a user
+   */
   async getUserNotifications(userId, filters = {}) {
-    const notifications = await Notification.findAll({
-      where: { user_id: userId, ...filters },
-      order: [['created_at', 'DESC']]
-    });
-    return notifications;
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      where.userId = userId;
+      
+      const notifications = await Notification.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return notifications;
+    } catch (error) {
+      logger.error('Get user notifications service error:', error);
+      throw error;
+    }
   }
 
-  async markAsRead(notificationId) {
-    const notification = await this.getNotificationById(notificationId);
-    await notification.update({ is_read: true, read_at: new Date() });
-    return notification;
-  }
-
-  async markAllAsRead(userId) {
-    await Notification.update(
-      { is_read: true, read_at: new Date() },
-      { where: { user_id: userId, is_read: false } }
-    );
-    return { message: 'All notifications marked as read' };
-  }
-
-  async deleteNotification(notificationId) {
-    const notification = await this.getNotificationById(notificationId);
-    await notification.destroy();
-    return { message: 'Notification deleted successfully' };
+  /**
+   * Mark notification as read
+   */
+  async markAsRead(id) {
+    try {
+      const notification = await Notification.findByPk(id);
+      if (!notification) {
+        throw new Error('Notification not found');
+      }
+      
+      await notification.update({ isRead: true });
+      return notification;
+    } catch (error) {
+      logger.error('Mark notification as read service error:', error);
+      throw error;
+    }
   }
 }
 

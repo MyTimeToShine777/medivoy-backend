@@ -1,15 +1,48 @@
 const express = require('express');
-const router = express.Router();
 const couponController = require('../../controllers/coupon.controller');
-const { authenticate } = require('../../middleware/auth.middleware');
-const { authorize } = require('../../middleware/authorize.middleware');
+const authMiddleware = require('../../middleware/auth.middleware');
+const authorizeMiddleware = require('../../middleware/authorize.middleware');
 
-router.get('/', authenticate, authorize(['admin']), couponController.getAllCoupons);
-router.post('/', authenticate, authorize(['admin']), couponController.createCoupon);
-router.post('/validate', authenticate, couponController.validateCoupon);
-router.post('/apply', authenticate, couponController.applyCoupon);
-router.get('/:id', authenticate, authorize(['admin']), couponController.getCoupon);
-router.put('/:id', authenticate, authorize(['admin']), couponController.updateCoupon);
-router.delete('/:id', authenticate, authorize(['admin']), couponController.deleteCoupon);
+const router = express.Router();
+
+// Create coupon (admin only)
+router.post(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  couponController.createCoupon,
+);
+
+// Get coupon by ID (authenticated users)
+router.get(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  couponController.getCoupon,
+);
+
+// Get all coupons (authenticated users)
+router.get(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  couponController.getAllCoupons,
+);
+
+// Validate coupon (authenticated users)
+router.get(
+  '/validate/:code',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  couponController.validateCoupon,
+);
+
+// Apply coupon (patients, hospital admins, admin)
+router.post(
+  '/apply/:code',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'hospital_admin']),
+  couponController.applyCoupon,
+);
 
 module.exports = router;

@@ -1,15 +1,56 @@
 const express = require('express');
-const router = express.Router();
 const subscriptionController = require('../../controllers/subscription.controller');
-const { authenticate } = require('../../middleware/auth.middleware');
-const { authorize } = require('../../middleware/authorize.middleware');
+const authMiddleware = require('../../middleware/auth.middleware');
+const authorizeMiddleware = require('../../middleware/authorize.middleware');
 
-router.get('/', authenticate, subscriptionController.getAllSubscriptions);
-router.post('/', authenticate, subscriptionController.createSubscription);
-router.get('/:id', authenticate, subscriptionController.getSubscription);
-router.put('/:id', authenticate, subscriptionController.updateSubscription);
-router.post('/:id/cancel', authenticate, subscriptionController.cancelSubscription);
-router.post('/:id/renew', authenticate, subscriptionController.renewSubscription);
-router.delete('/:id', authenticate, authorize(['admin']), subscriptionController.deleteSubscription);
+const router = express.Router();
+
+// Create subscription (admin only)
+router.post(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  subscriptionController.createSubscription,
+);
+
+// Get subscription by ID (users can only access their own subscriptions)
+router.get(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  subscriptionController.getSubscription,
+);
+
+// Update subscription (admin only)
+router.put(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  subscriptionController.updateSubscription,
+);
+
+// Cancel subscription (users can only cancel their own subscriptions)
+router.patch(
+  '/:id/cancel',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  subscriptionController.cancelSubscription,
+);
+
+// Delete subscription (admin only)
+router.delete(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  subscriptionController.deleteSubscription,
+);
+
+// Get all subscriptions for a user
+router.get(
+  '/user/:userId',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  subscriptionController.getUserSubscriptions,
+);
 
 module.exports = router;

@@ -2,6 +2,7 @@ const Redis = require('ioredis');
 const config = require('./index');
 const logger = require('../utils/logger');
 
+// Create Redis instance
 const redis = new Redis({
   host: config.redis.host,
   port: config.redis.port,
@@ -10,23 +11,24 @@ const redis = new Redis({
     const delay = Math.min(times * 50, 2000);
     return delay;
   },
-  maxRetriesPerRequest: 3
+  maxRetriesPerRequest: 3,
 });
 
+// Handle Redis connection events
 redis.on('connect', () => {
-  logger.info('✅ Redis connected successfully');
+  logger.info('✅ Redis client connected');
 });
 
-redis.on('error', (err) => {
-  logger.error('❌ Redis connection error:', err);
-});
-
-redis.on('close', () => {
-  logger.warn('⚠️  Redis connection closed');
+redis.on('error', (error) => {
+  logger.error('❌ Redis connection error:', error);
 });
 
 redis.on('reconnecting', () => {
-  logger.info('🔄 Redis reconnecting...');
+  logger.info('🔄 Redis client reconnecting');
+});
+
+redis.on('close', () => {
+  logger.info('🔒 Redis client closed');
 });
 
 module.exports = redis;

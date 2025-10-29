@@ -1,332 +1,457 @@
-const { User, Patient, Doctor, RefreshToken, PasswordReset } = require('../models');
-const { generateTokenPair, verifyRefreshToken } = require('../utils/jwt');
-const { successResponse, errorResponse } = require('../utils/response');
-const { UnauthorizedError, ValidationError, NotFoundError } = require('../utils/error-handler');
-const { generateRandomString } = require('../utils/helpers');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { validationResult } = require('express-validator');
+const User = require('../models/User.model');
+const Patient = require('../models/Patient.model');
+const Doctor = require('../models/Doctor.model');
+const Hospital = require('../models/Hospital.model');
+const {
+  generateAccessToken,
+  generateRefreshToken,
+} = require('../utils/jwt');
+const config = require('../config');
 const logger = require('../utils/logger');
+const { sendWelcomeEmail } = require('../services/email.service');
+const RefreshToken = require('../models/RefreshToken.model');
+const {
+  successResponse,
+  errorResponse,
+} = require('../utils/response');
 
 class AuthController {
   /**
-   * Register new user
-   * @route POST /api/v1/auth/register
+   * Register a new user
    */
-  async register(req, res, next) {
+  async register(req, res) {
     try {
-      const { email, password, role, first_name, last_name, phone } = req.body;
+      // Check for validation errors
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return errorResponse(res, {
+          message: 'Validation failed',
+          errors: errors.array(),
+        }, 400);
+      }
 
-      // Check if user exists
+      const {
+        email,
+        password,
+        firstName,
+        lastName,
+        role,
+        phone,
+      } = req.body;
+
+      // Check if user already exists
       const existingUser = await User.findOne({ where: { email } });
       if (existingUser) {
-        throw new ValidationError('Email already registered');
+        return errorResponse(res, {
+          message: 'User with this email already exists',
+          code: 'USER_EMAIL_EXISTS',
+        }, 409);
       }
+
+      // Hash password
+      const saltRounds = config.bcryptSaltRounds;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
 
       // Create user
       const user = await User.create({
         email,
-        password_hash: password,
-        role: role || 'patient',
-        first_name,
-        last_name,
-        phone
+        password: hashedPassword,
+        firstName,
+        lastName,
+        role,
+        phone,
       });
 
+      // Create role-specific profile
+      if (role === 'patient') {
+        await Patient.create({
+          userId: user.id,
+          dateOfBirth: null,
+          gender: null,
+          bloodType: null,
+          emergencyContact: null,
+        });
+      } else if (role === 'doctor') {
+        await Doctor.create({
+          userId: user.id,
+          specialty: null,
+          licenseNumber: null,
+          yearsOfExperience: null,
+        });
+      } else if (role === 'hospital_admin') {
+        await Hospital.create({
+          userId: user.id,
+          name: null,
+          address: null,
+          phone: null,
+          licenseNumber: null,
+        });
+      }
+
       // Generate tokens
-      const tokens = generateTokenPair({
-        id: user.id,
-        email: user.email,
-        role: user.role
-      });
+      const accessToken = generateAccessToken(user);
+      const refreshToken = generateRefreshToken(user);
 
       // Save refresh token
       await RefreshToken.create({
-        user_id: user.id,
-        token: tokens.refreshToken,
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+        token: refreshToken,
+        userId: user.id,
       });
 
-      logger.info(`User registered: ${email}`);
+      // Send welcome email
+      await sendWelcomeEmail(user.email, user.firstName);
 
-      return successResponse(res, 201, 'User registered successfully', {
-        user: {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          first_name: user.first_name,
-          last_name: user.last_name
+      // Return success response
+      return successResponse(res, {
+        message: 'User registered successfully',
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+          },
+          accessToken,
+          refreshToken,
         },
-        ...tokens
-      });
+      }, 201);
     } catch (error) {
-      next(error);
+      logger.error('Registration error:', error);
+      return errorResponse(res, {
+        message: 'Registration failed',
+        error: error.message,
+      }, 500);
     }
   }
 
   /**
    * Login user
-   * @route POST /api/v1/auth/login
    */
-  async login(req, res, next) {
+  async login(req, res) {
     try {
+      // Check for validation errors
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return errorResponse(res, {
+          message: 'Validation failed',
+          errors: errors.array(),
+        }, 400);
+      }
+
       const { email, password } = req.body;
 
       // Find user
       const user = await User.findOne({ where: { email } });
       if (!user) {
-        throw new UnauthorizedError('Invalid credentials');
+        return errorResponse(res, {
+          message: 'Invalid credentials',
+          code: 'AUTH_INVALID_CREDENTIALS',
+        }, 401);
       }
 
-      // Check if user is active
-      if (!user.is_active) {
-        throw new UnauthorizedError('Account is disabled');
-      }
-
-      // Verify password
-      const isPasswordValid = await user.comparePassword(password);
+      // Check password
+      const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
-        throw new UnauthorizedError('Invalid credentials');
+        return errorResponse(res, {
+          message: 'Invalid credentials',
+          code: 'AUTH_INVALID_CREDENTIALS',
+        }, 401);
+      }
+
+      // Check if account is verified
+      if (!user.isVerified) {
+        return errorResponse(res, {
+          message: 'Please verify your account',
+          code: 'AUTH_ACCOUNT_NOT_VERIFIED',
+        }, 401);
       }
 
       // Generate tokens
-      const tokens = generateTokenPair({
-        id: user.id,
-        email: user.email,
-        role: user.role
+      const accessToken = generateAccessToken(user);
+      const refreshToken = generateRefreshToken(user);
+
+      // Save or update refresh token
+      await RefreshToken.upsert({
+        token: refreshToken,
+        userId: user.id,
       });
 
-      // Save refresh token
-      await RefreshToken.create({
-        user_id: user.id,
-        token: tokens.refreshToken,
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      });
-
-      // Update last login
-      await user.update({ last_login: new Date() });
-
-      logger.info(`User logged in: ${email}`);
-
-      return successResponse(res, 200, 'Login successful', {
-        user: {
-          id: user.id,
-          email: user.email,
-          role: user.role,
-          first_name: user.first_name,
-          last_name: user.last_name
+      // Return success response
+      return successResponse(res, {
+        message: 'Login successful',
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+          },
+          accessToken,
+          refreshToken,
         },
-        ...tokens
       });
     } catch (error) {
-      next(error);
+      logger.error('Login error:', error);
+      return errorResponse(res, {
+        message: 'Login failed',
+        error: error.message,
+      }, 500);
     }
   }
 
   /**
    * Refresh access token
-   * @route POST /api/v1/auth/refresh
    */
-  async refresh(req, res, next) {
+  async refresh(req, res) {
     try {
       const { refreshToken } = req.body;
 
-      if (!refreshToken) {
-        throw new ValidationError('Refresh token is required');
+      // Verify refresh token
+      const decoded = jwt.verify(refreshToken, config.jwt.refreshSecret);
+
+      // Find user
+      const user = await User.findByPk(decoded.id);
+      if (!user) {
+        return errorResponse(res, {
+          message: 'Invalid refresh token',
+          code: 'AUTH_TOKEN_INVALID',
+        }, 401);
       }
 
-      // Verify refresh token
-      const decoded = verifyRefreshToken(refreshToken);
-
-      // Check if token exists and not revoked
-      const tokenRecord = await RefreshToken.findOne({
-        where: { token: refreshToken, user_id: decoded.id, is_revoked: false }
+      // Check if refresh token exists in database
+      const storedToken = await RefreshToken.findOne({
+        where: {
+          token: refreshToken,
+          userId: user.id,
+        },
       });
 
-      if (!tokenRecord) {
-        throw new UnauthorizedError('Invalid refresh token');
-      }
-
-      // Check if token expired
-      if (new Date() > tokenRecord.expires_at) {
-        throw new UnauthorizedError('Refresh token expired');
-      }
-
-      // Get user
-      const user = await User.findByPk(decoded.id);
-      if (!user || !user.is_active) {
-        throw new UnauthorizedError('User not found or inactive');
+      if (!storedToken) {
+        return errorResponse(res, {
+          message: 'Invalid refresh token',
+          code: 'AUTH_TOKEN_INVALID',
+        }, 401);
       }
 
       // Generate new tokens
-      const tokens = generateTokenPair({
-        id: user.id,
-        email: user.email,
-        role: user.role
+      const newAccessToken = generateAccessToken(user);
+      const newRefreshToken = generateRefreshToken(user);
+
+      // Update refresh token in database
+      await RefreshToken.update(
+        { token: newRefreshToken },
+        { where: { userId: user.id } },
+      );
+
+      // Return success response
+      return successResponse(res, {
+        message: 'Token refreshed successfully',
+        data: {
+          accessToken: newAccessToken,
+          refreshToken: newRefreshToken,
+        },
       });
-
-      // Revoke old refresh token
-      await tokenRecord.update({ is_revoked: true });
-
-      // Save new refresh token
-      await RefreshToken.create({
-        user_id: user.id,
-        token: tokens.refreshToken,
-        expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-      });
-
-      return successResponse(res, 200, 'Token refreshed successfully', tokens);
     } catch (error) {
-      next(error);
+      logger.error('Token refresh error:', error);
+      return errorResponse(res, {
+        message: 'Token refresh failed',
+        error: error.message,
+      }, 401);
     }
   }
 
   /**
    * Logout user
-   * @route POST /api/v1/auth/logout
    */
-  async logout(req, res, next) {
+  async logout(req, res) {
     try {
-      const { refreshToken } = req.body;
+      const { user } = req;
 
-      if (refreshToken) {
-        await RefreshToken.update(
-          { is_revoked: true },
-          { where: { token: refreshToken } }
-        );
-      }
-
-      logger.info(`User logged out: ${req.user.email}`);
-
-      return successResponse(res, 200, 'Logout successful');
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  /**
-   * Get current user profile
-   * @route GET /api/v1/auth/profile
-   */
-  async getProfile(req, res, next) {
-    try {
-      const user = await User.findByPk(req.user.id, {
-        attributes: { exclude: ['password_hash'] },
-        include: [
-          { model: Patient, as: 'patientProfile' },
-          { model: Doctor, as: 'doctorProfile' }
-        ]
+      // Remove refresh token from database
+      await RefreshToken.destroy({
+        where: { userId: user.id },
       });
 
-      if (!user) {
-        throw new NotFoundError('User not found');
-      }
-
-      return successResponse(res, 200, 'Profile retrieved successfully', user);
+      // Return success response
+      return successResponse(res, {
+        message: 'Logout successful',
+      });
     } catch (error) {
-      next(error);
+      logger.error('Logout error:', error);
+      return errorResponse(res, {
+        message: 'Logout failed',
+        error: error.message,
+      }, 500);
     }
   }
 
   /**
-   * Update current user profile
-   * @route PATCH /api/v1/auth/profile
+   * Get user profile
    */
-  async updateProfile(req, res, next) {
+  async getProfile(req, res) {
     try {
-      const { first_name, last_name, phone, profile_picture } = req.body;
+      const { user } = req;
 
-      const user = await User.findByPk(req.user.id);
-      if (!user) {
-        throw new NotFoundError('User not found');
-      }
+      // Return success response
+      return successResponse(res, {
+        message: 'Profile retrieved successfully',
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            phone: user.phone,
+            isVerified: user.isVerified,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+          },
+        },
+      });
+    } catch (error) {
+      logger.error('Get profile error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve profile',
+        error: error.message,
+      }, 500);
+    }
+  }
 
+  /**
+   * Update user profile
+   */
+  async updateProfile(req, res) {
+    try {
+      const { user } = req;
+      const {
+        firstName,
+        lastName,
+        phone,
+        profilePicture,
+      } = req.body;
+
+      // Update user
       await user.update({
-        first_name: first_name || user.first_name,
-        last_name: last_name || user.last_name,
-        phone: phone || user.phone,
-        profile_picture: profile_picture || user.profile_picture
+        firstName,
+        lastName,
+        phone,
+        profilePicture,
       });
 
-      logger.info(`Profile updated: ${user.email}`);
-
-      return successResponse(res, 200, 'Profile updated successfully', {
-        id: user.id,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        phone: user.phone,
-        profile_picture: user.profile_picture
+      // Return success response
+      return successResponse(res, {
+        message: 'Profile updated successfully',
+        data: {
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.role,
+            phone: user.phone,
+            profilePicture: user.profilePicture,
+            isVerified: user.isVerified,
+            createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
+          },
+        },
       });
     } catch (error) {
-      next(error);
+      logger.error('Update profile error:', error);
+      return errorResponse(res, {
+        message: 'Failed to update profile',
+        error: error.message,
+      }, 500);
     }
   }
 
   /**
-   * Request password reset
-   * @route POST /api/v1/auth/forgot-password
+   * Forgot password
    */
-  async forgotPassword(req, res, next) {
+  async forgotPassword(req, res) {
     try {
       const { email } = req.body;
 
+      // Find user
       const user = await User.findOne({ where: { email } });
       if (!user) {
-        // Don't reveal if email exists
-        return successResponse(res, 200, 'If email exists, reset link will be sent');
+        return errorResponse(res, {
+          message: 'User not found',
+          code: 'USER_NOT_FOUND',
+        }, 404);
       }
 
       // Generate reset token
-      const token = generateRandomString(32);
+      const resetToken = jwt.sign(
+        { id: user.id },
+        config.jwt.secret,
+        { expiresIn: '1h' },
+      );
 
       // Save reset token
-      await PasswordReset.create({
-        user_id: user.id,
-        token,
-        expires_at: new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+      await user.update({ resetToken });
+
+      // Send reset email
+      // await sendPasswordResetEmail(user.email, resetToken);
+
+      // Return success response
+      return successResponse(res, {
+        message: 'Password reset instructions sent to your email',
       });
-
-      // TODO: Send email with reset link
-      logger.info(`Password reset requested: ${email}`);
-
-      return successResponse(res, 200, 'If email exists, reset link will be sent');
     } catch (error) {
-      next(error);
+      logger.error('Forgot password error:', error);
+      return errorResponse(res, {
+        message: 'Failed to process password reset request',
+        error: error.message,
+      }, 500);
     }
   }
 
   /**
    * Reset password
-   * @route POST /api/v1/auth/reset-password
    */
-  async resetPassword(req, res, next) {
+  async resetPassword(req, res) {
     try {
-      const { token, password } = req.body;
+      const { token, newPassword } = req.body;
 
-      // Find reset token
-      const resetRecord = await PasswordReset.findOne({
-        where: { token, is_used: false }
+      // Verify token
+      const decoded = jwt.verify(token, config.jwt.secret);
+
+      // Find user
+      const user = await User.findByPk(decoded.id);
+      if (!user) {
+        return errorResponse(res, {
+          message: 'Invalid or expired token',
+          code: 'AUTH_TOKEN_INVALID',
+        }, 400);
+      }
+
+      // Hash new password
+      const saltRounds = config.bcryptSaltRounds;
+      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+      // Update password and clear reset token
+      await user.update({
+        password: hashedPassword,
+        resetToken: null,
       });
 
-      if (!resetRecord) {
-        throw new ValidationError('Invalid or expired reset token');
-      }
-
-      // Check if token expired
-      if (new Date() > resetRecord.expires_at) {
-        throw new ValidationError('Reset token has expired');
-      }
-
-      // Update password
-      const user = await User.findByPk(resetRecord.user_id);
-      await user.update({ password_hash: password });
-
-      // Mark token as used
-      await resetRecord.update({ is_used: true });
-
-      logger.info(`Password reset completed: ${user.email}`);
-
-      return successResponse(res, 200, 'Password reset successful');
+      // Return success response
+      return successResponse(res, {
+        message: 'Password reset successfully',
+      });
     } catch (error) {
-      next(error);
+      logger.error('Reset password error:', error);
+      return errorResponse(res, {
+        message: 'Failed to reset password',
+        error: error.message,
+      }, 400);
     }
   }
 }

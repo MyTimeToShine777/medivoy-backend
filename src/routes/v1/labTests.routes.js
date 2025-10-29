@@ -1,14 +1,48 @@
 const express = require('express');
-const router = express.Router();
 const labTestController = require('../../controllers/labTest.controller');
-const { authenticate } = require('../../middleware/auth.middleware');
-const { authorize } = require('../../middleware/authorize.middleware');
+const authMiddleware = require('../../middleware/auth.middleware');
+const authorizeMiddleware = require('../../middleware/authorize.middleware');
 
-router.get('/', authenticate, labTestController.getAllLabTests);
-router.post('/', authenticate, labTestController.createLabTest);
-router.get('/:id', authenticate, labTestController.getLabTest);
-router.put('/:id', authenticate, labTestController.updateLabTest);
-router.patch('/:id/results', authenticate, authorize(['doctor', 'admin']), labTestController.updateLabTestResults);
-router.delete('/:id', authenticate, authorize(['admin']), labTestController.deleteLabTest);
+const router = express.Router();
+
+// Create lab test (admin, hospital admins)
+router.post(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'hospital_admin']),
+  labTestController.createLabTest,
+);
+
+// Get lab test by ID (authenticated users)
+router.get(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  labTestController.getLabTest,
+);
+
+// Update lab test (admin, hospital admins)
+router.put(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'hospital_admin']),
+  labTestController.updateLabTest,
+);
+
+// Delete lab test (admin only)
+router.delete(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  labTestController.deleteLabTest,
+);
+
+// Get all lab tests (authenticated users)
+router.get(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  labTestController.getAllLabTests,
+);
 
 module.exports = router;

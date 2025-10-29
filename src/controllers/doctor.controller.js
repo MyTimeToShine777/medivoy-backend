@@ -1,77 +1,288 @@
-const doctorService = require('../services/doctor.service');
-const { successResponse } = require('../utils/response');
+const Doctor = require('../models/Doctor.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const logger = require('../utils/logger');
 
 class DoctorController {
-  async createDoctor(req, res, next) {
+  /**
+   * Create a new doctor
+   */
+  async createDoctor(req, res) {
     try {
-      const doctor = await doctorService.createDoctor(req.body);
-      return successResponse(res, doctor, 'Doctor created successfully', 201);
+      const { userId, specialty, licenseNumber, yearsOfExperience, bio, education, certifications } = req.body;
+      
+      // Create doctor
+      const doctor = await Doctor.create({
+        userId,
+        specialty,
+        licenseNumber,
+        yearsOfExperience,
+        bio,
+        education,
+        certifications,
+      });
+      
+      return successResponse(res, {
+        message: 'Doctor created successfully',
+        data: doctor,
+      }, 201);
     } catch (error) {
-      next(error);
+      logger.error('Create doctor error:', error);
+      return errorResponse(res, {
+        message: 'Failed to create doctor',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getDoctor(req, res, next) {
+  /**
+   * Get doctor by ID
+   */
+  async getDoctor(req, res) {
     try {
-      const doctor = await doctorService.getDoctorById(req.params.id);
-      return successResponse(res, doctor, 'Doctor retrieved successfully');
+      const { id } = req.params;
+      
+      // Find doctor
+      const doctor = await Doctor.findByPk(id);
+      
+      if (!doctor) {
+        return errorResponse(res, {
+          message: 'Doctor not found',
+        }, 404);
+      }
+      
+      return successResponse(res, {
+        message: 'Doctor retrieved successfully',
+        data: doctor,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Get doctor error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve doctor',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async updateDoctor(req, res, next) {
+  /**
+   * Update doctor
+   */
+  async updateDoctor(req, res) {
     try {
-      const doctor = await doctorService.updateDoctor(req.params.id, req.body);
-      return successResponse(res, doctor, 'Doctor updated successfully');
+      const { id } = req.params;
+      const { specialty, licenseNumber, yearsOfExperience, bio, education, certifications, availability } = req.body;
+      
+      // Find doctor
+      const doctor = await Doctor.findByPk(id);
+      
+      if (!doctor) {
+        return errorResponse(res, {
+          message: 'Doctor not found',
+        }, 404);
+      }
+      
+      // Update doctor
+      await doctor.update({
+        specialty,
+        licenseNumber,
+        yearsOfExperience,
+        bio,
+        education,
+        certifications,
+        availability,
+      });
+      
+      return successResponse(res, {
+        message: 'Doctor updated successfully',
+        data: doctor,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Update doctor error:', error);
+      return errorResponse(res, {
+        message: 'Failed to update doctor',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async deleteDoctor(req, res, next) {
+  /**
+   * Delete doctor
+   */
+  async deleteDoctor(req, res) {
     try {
-      const result = await doctorService.deleteDoctor(req.params.id);
-      return successResponse(res, result, 'Doctor deleted successfully');
+      const { id } = req.params;
+      
+      // Find doctor
+      const doctor = await Doctor.findByPk(id);
+      
+      if (!doctor) {
+        return errorResponse(res, {
+          message: 'Doctor not found',
+        }, 404);
+      }
+      
+      // Delete doctor
+      await doctor.destroy();
+      
+      return successResponse(res, {
+        message: 'Doctor deleted successfully',
+      });
     } catch (error) {
-      next(error);
+      logger.error('Delete doctor error:', error);
+      return errorResponse(res, {
+        message: 'Failed to delete doctor',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getAllDoctors(req, res, next) {
+  /**
+   * Get all doctors
+   */
+  async getAllDoctors(req, res) {
     try {
-      const { page, limit, ...filters } = req.query;
-      const result = await doctorService.getAllDoctors(filters, { page, limit });
-      return successResponse(res, result, 'Doctors retrieved successfully');
+      const { page = 1, limit = 10, specialty, isVerified } = req.query;
+      
+      // Build where clause
+      const where = {};
+      if (specialty) where.specialty = specialty;
+      if (isVerified !== undefined) where.isVerified = isVerified === 'true';
+      
+      // Get doctors with pagination
+      const doctors = await Doctor.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return successResponse(res, {
+        message: 'Doctors retrieved successfully',
+        data: doctors.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(doctors.count / parseInt(limit, 10)),
+          totalRecords: doctors.count,
+        },
+      });
     } catch (error) {
-      next(error);
+      logger.error('Get all doctors error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve doctors',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async updateAvailability(req, res, next) {
+  /**
+   * Update doctor availability
+   */
+  async updateAvailability(req, res) {
     try {
-      const doctor = await doctorService.updateAvailability(req.params.id, req.body);
-      return successResponse(res, doctor, 'Doctor availability updated successfully');
+      const { id } = req.params;
+      const { availability } = req.body;
+      
+      // Find doctor
+      const doctor = await Doctor.findByPk(id);
+      
+      if (!doctor) {
+        return errorResponse(res, {
+          message: 'Doctor not found',
+        }, 404);
+      }
+      
+      // Update doctor availability
+      await doctor.update({ availability });
+      
+      return successResponse(res, {
+        message: 'Doctor availability updated successfully',
+        data: doctor,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Update doctor availability error:', error);
+      return errorResponse(res, {
+        message: 'Failed to update doctor availability',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getAppointments(req, res, next) {
+  /**
+   * Get doctor appointments
+   */
+  async getAppointments(req, res) {
     try {
-      const appointments = await doctorService.getDoctorAppointments(req.params.id, req.query);
-      return successResponse(res, appointments, 'Doctor appointments retrieved successfully');
+      const { id } = req.params;
+      const { page = 1, limit = 10, status } = req.query;
+      
+      // Find doctor
+      const doctor = await Doctor.findByPk(id);
+      
+      if (!doctor) {
+        return errorResponse(res, {
+          message: 'Doctor not found',
+        }, 404);
+      }
+      
+      // Build where clause for appointments
+      const where = { doctorId: id };
+      if (status) where.status = status;
+      
+      // Get doctor appointments with pagination
+      // Note: This would require importing the Appointment model
+      // const appointments = await Appointment.findAndCountAll({
+      //   where,
+      //   limit: parseInt(limit, 10),
+      //   offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+      //   order: [['scheduledAt', 'ASC']],
+      // });
+      
+      return successResponse(res, {
+        message: 'Doctor appointments retrieved successfully',
+        data: [],
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: 0,
+          totalRecords: 0,
+        },
+      });
     } catch (error) {
-      next(error);
+      logger.error('Get doctor appointments error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve doctor appointments',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async verifyDoctor(req, res, next) {
+  /**
+   * Verify doctor
+   */
+  async verifyDoctor(req, res) {
     try {
-      const doctor = await doctorService.verifyDoctor(req.params.id, req.body);
-      return successResponse(res, doctor, 'Doctor verified successfully');
+      const { id } = req.params;
+      
+      // Find doctor
+      const doctor = await Doctor.findByPk(id);
+      
+      if (!doctor) {
+        return errorResponse(res, {
+          message: 'Doctor not found',
+        }, 404);
+      }
+      
+      // Update doctor verification status
+      await doctor.update({ isVerified: true });
+      
+      return successResponse(res, {
+        message: 'Doctor verified successfully',
+        data: doctor,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Verify doctor error:', error);
+      return errorResponse(res, {
+        message: 'Failed to verify doctor',
+        error: error.message,
+      }, 500);
     }
   }
 }

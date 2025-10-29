@@ -1,60 +1,88 @@
-const { MedicalRecord, Patient } = require('../models');
-const { AppError } = require('../utils/error-handler');
+const MedicalRecord = require('../models/MedicalRecord.model');
 const logger = require('../utils/logger');
 
 class MedicalRecordService {
+  /**
+   * Create a new medical record
+   */
   async createMedicalRecord(data) {
     try {
-      const record = await MedicalRecord.create(data);
-      logger.info(`Medical record created: ${record.id}`);
-      return record;
+      const medicalRecord = await MedicalRecord.create(data);
+      return medicalRecord;
     } catch (error) {
-      logger.error('Error creating medical record:', error);
-      throw new AppError('Failed to create medical record', 500);
+      logger.error('Create medical record service error:', error);
+      throw error;
     }
   }
 
+  /**
+   * Get medical record by ID
+   */
   async getMedicalRecordById(id) {
-    const record = await MedicalRecord.findByPk(id, {
-      include: [{ model: Patient, as: 'patient' }]
-    });
-    if (!record) throw new AppError('Medical record not found', 404);
-    return record;
+    try {
+      const medicalRecord = await MedicalRecord.findByPk(id);
+      return medicalRecord;
+    } catch (error) {
+      logger.error('Get medical record by ID service error:', error);
+      throw error;
+    }
   }
 
-  async getAllMedicalRecords(filters = {}, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-    const { count, rows } = await MedicalRecord.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      include: [{ model: Patient, as: 'patient' }],
-      order: [['created_at', 'DESC']]
-    });
-    return { medicalRecords: rows, total: count, page, totalPages: Math.ceil(count / limit) };
-  }
-
-  async getPatientMedicalRecords(patientId) {
-    const records = await MedicalRecord.findAll({
-      where: { patient_id: patientId },
-      order: [['created_at', 'DESC']]
-    });
-    return records;
-  }
-
+  /**
+   * Update medical record
+   */
   async updateMedicalRecord(id, data) {
-    const record = await this.getMedicalRecordById(id);
-    await record.update(data);
-    logger.info(`Medical record updated: ${id}`);
-    return record;
+    try {
+      const medicalRecord = await MedicalRecord.findByPk(id);
+      if (!medicalRecord) {
+        throw new Error('Medical record not found');
+      }
+      
+      await medicalRecord.update(data);
+      return medicalRecord;
+    } catch (error) {
+      logger.error('Update medical record service error:', error);
+      throw error;
+    }
   }
 
+  /**
+   * Delete medical record
+   */
   async deleteMedicalRecord(id) {
-    const record = await this.getMedicalRecordById(id);
-    await record.destroy();
-    logger.info(`Medical record deleted: ${id}`);
-    return { message: 'Medical record deleted successfully' };
+    try {
+      const medicalRecord = await MedicalRecord.findByPk(id);
+      if (!medicalRecord) {
+        throw new Error('Medical record not found');
+      }
+      
+      await medicalRecord.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete medical record service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all medical records for a patient
+   */
+  async getPatientMedicalRecords(patientId, filters = {}) {
+    try {
+      const { page = 1, limit = 10 } = filters;
+      
+      const medicalRecords = await MedicalRecord.findAndCountAll({
+        where: { patientId },
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return medicalRecords;
+    } catch (error) {
+      logger.error('Get patient medical records service error:', error);
+      throw error;
+    }
   }
 }
 

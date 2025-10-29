@@ -1,15 +1,52 @@
 const express = require('express');
-const router = express.Router();
 const translationController = require('../../controllers/translation.controller');
-const { authenticate } = require('../../middleware/auth.middleware');
-const { authorize } = require('../../middleware/authorize.middleware');
+const authMiddleware = require('../../middleware/auth.middleware');
+const authorizeMiddleware = require('../../middleware/authorize.middleware');
 
-router.get('/', translationController.getAllTranslations);
-router.get('/key', translationController.getTranslationByKey);
-router.post('/', authenticate, authorize(['admin']), translationController.createTranslation);
-router.post('/bulk', authenticate, authorize(['admin']), translationController.bulkCreateTranslations);
-router.get('/:id', translationController.getTranslation);
-router.put('/:id', authenticate, authorize(['admin']), translationController.updateTranslation);
-router.delete('/:id', authenticate, authorize(['admin']), translationController.deleteTranslation);
+const router = express.Router();
+
+// Create translation (admin only)
+router.post(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  translationController.createTranslation,
+);
+
+// Get translation by ID (admin only)
+router.get(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  translationController.getTranslation,
+);
+
+// Update translation (admin only)
+router.put(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  translationController.updateTranslation,
+);
+
+// Delete translation (admin only)
+router.delete(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  translationController.deleteTranslation,
+);
+
+// Get all translations (public access)
+router.get(
+  '/',
+  translationController.getAllTranslations,
+);
+
+// Get translation by key and language (public access)
+router.get(
+  '/:key/:language',
+  translationController.getTranslationByKeyAndLanguage,
+);
 
 module.exports = router;

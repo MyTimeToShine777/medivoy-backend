@@ -1,69 +1,228 @@
-const faqService = require('../services/faq.service');
-const { successResponse } = require('../utils/response');
+const FAQ = require('../models/FAQ.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const logger = require('../utils/logger');
 
 class FAQController {
-  async createFAQ(req, res, next) {
+  /**
+   * Create a new FAQ
+   */
+  async createFAQ(req, res) {
     try {
-      const faq = await faqService.createFAQ(req.body);
-      return successResponse(res, faq, 'FAQ created successfully', 201);
+      const { question, answer, category, sortOrder } = req.body;
+      
+      // Create FAQ
+      const faq = await FAQ.create({
+        question,
+        answer,
+        category,
+        sortOrder,
+      });
+      
+      return successResponse(res, {
+        message: 'FAQ created successfully',
+        data: faq,
+      }, 201);
     } catch (error) {
-      next(error);
+      logger.error('Create FAQ error:', error);
+      return errorResponse(res, {
+        message: 'Failed to create FAQ',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getFAQ(req, res, next) {
+  /**
+   * Get FAQ by ID
+   */
+  async getFAQ(req, res) {
     try {
-      const faq = await faqService.getFAQById(req.params.id);
-      return successResponse(res, faq, 'FAQ retrieved successfully');
+      const { id } = req.params;
+      
+      // Find FAQ
+      const faq = await FAQ.findByPk(id);
+      
+      if (!faq) {
+        return errorResponse(res, {
+          message: 'FAQ not found',
+        }, 404);
+      }
+      
+      return successResponse(res, {
+        message: 'FAQ retrieved successfully',
+        data: faq,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Get FAQ error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve FAQ',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getAllFAQs(req, res, next) {
+  /**
+   * Get all FAQs
+   */
+  async getAllFAQs(req, res) {
     try {
-      const { page, limit, ...filters } = req.query;
-      const result = await faqService.getAllFAQs(filters, { page, limit });
-      return successResponse(res, result, 'FAQs retrieved successfully');
+      const { page = 1, limit = 10, category } = req.query;
+      
+      // Build where clause
+      const where = {};
+      if (category) where.category = category;
+      
+      // Get FAQs with pagination
+      const faqs = await FAQ.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['sortOrder', 'ASC'], ['createdAt', 'DESC']],
+      });
+      
+      return successResponse(res, {
+        message: 'FAQs retrieved successfully',
+        data: faqs.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(faqs.count / parseInt(limit, 10)),
+          totalRecords: faqs.count,
+        },
+      });
     } catch (error) {
-      next(error);
+      logger.error('Get all FAQs error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve FAQs',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getFAQsByCategory(req, res, next) {
+  /**
+   * Get FAQs by category
+   */
+  async getFAQsByCategory(req, res) {
     try {
-      const { page, limit } = req.query;
-      const result = await faqService.getFAQsByCategory(req.params.category, { page, limit });
-      return successResponse(res, result, 'FAQs retrieved successfully');
+      const { category } = req.params;
+      const { page = 1, limit = 10 } = req.query;
+      
+      // Get FAQs by category with pagination
+      const faqs = await FAQ.findAndCountAll({
+        where: { category },
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['sortOrder', 'ASC'], ['createdAt', 'DESC']],
+      });
+      
+      return successResponse(res, {
+        message: 'FAQs retrieved successfully',
+        data: faqs.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(faqs.count / parseInt(limit, 10)),
+          totalRecords: faqs.count,
+        },
+      });
     } catch (error) {
-      next(error);
+      logger.error('Get FAQs by category error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve FAQs by category',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async updateFAQ(req, res, next) {
+  /**
+   * Update FAQ
+   */
+  async updateFAQ(req, res) {
     try {
-      const faq = await faqService.updateFAQ(req.params.id, req.body);
-      return successResponse(res, faq, 'FAQ updated successfully');
+      const { id } = req.params;
+      const { question, answer, category, sortOrder } = req.body;
+      
+      // Find FAQ
+      const faq = await FAQ.findByPk(id);
+      
+      if (!faq) {
+        return errorResponse(res, {
+          message: 'FAQ not found',
+        }, 404);
+      }
+      
+      // Update FAQ
+      await faq.update({
+        question,
+        answer,
+        category,
+        sortOrder,
+      });
+      
+      return successResponse(res, {
+        message: 'FAQ updated successfully',
+        data: faq,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Update FAQ error:', error);
+      return errorResponse(res, {
+        message: 'Failed to update FAQ',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async deleteFAQ(req, res, next) {
+  /**
+   * Delete FAQ
+   */
+  async deleteFAQ(req, res) {
     try {
-      const result = await faqService.deleteFAQ(req.params.id);
-      return successResponse(res, result, 'FAQ deleted successfully');
+      const { id } = req.params;
+      
+      // Find FAQ
+      const faq = await FAQ.findByPk(id);
+      
+      if (!faq) {
+        return errorResponse(res, {
+          message: 'FAQ not found',
+        }, 404);
+      }
+      
+      // Delete FAQ
+      await faq.destroy();
+      
+      return successResponse(res, {
+        message: 'FAQ deleted successfully',
+      });
     } catch (error) {
-      next(error);
+      logger.error('Delete FAQ error:', error);
+      return errorResponse(res, {
+        message: 'Failed to delete FAQ',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async reorderFAQs(req, res, next) {
+  /**
+   * Reorder FAQs
+   */
+  async reorderFAQs(req, res) {
     try {
-      const result = await faqService.reorderFAQs(req.body.orders);
-      return successResponse(res, result, 'FAQs reordered successfully');
+      const { faqOrder } = req.body;
+      
+      // Update sort order for each FAQ
+      const updates = faqOrder.map((faqId, index) => 
+        FAQ.update({ sortOrder: index + 1 }, { where: { id: faqId } })
+      );
+      
+      await Promise.all(updates);
+      
+      return successResponse(res, {
+        message: 'FAQs reordered successfully',
+      });
     } catch (error) {
-      next(error);
+      logger.error('Reorder FAQs error:', error);
+      return errorResponse(res, {
+        message: 'Failed to reorder FAQs',
+        error: error.message,
+      }, 500);
     }
   }
 }

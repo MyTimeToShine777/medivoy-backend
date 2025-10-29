@@ -1,15 +1,56 @@
 const express = require('express');
-const router = express.Router();
 const reviewController = require('../../controllers/review.controller');
-const { authenticate } = require('../../middleware/auth.middleware');
-const { authorize } = require('../../middleware/authorize.middleware');
+const authMiddleware = require('../../middleware/auth.middleware');
+const authorizeMiddleware = require('../../middleware/authorize.middleware');
 
-router.post('/', authenticate, reviewController.createReview);
-router.get('/:id', reviewController.getReview);
-router.put('/:id', authenticate, reviewController.updateReview);
-router.delete('/:id', authenticate, reviewController.deleteReview);
-router.get('/:reviewableType/:reviewableId', reviewController.getEntityReviews);
-router.post('/:id/approve', authenticate, authorize(['admin']), reviewController.approveReview);
-router.post('/:id/reject', authenticate, authorize(['admin']), reviewController.rejectReview);
+const router = express.Router();
+
+// Create review (patients only)
+router.post(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['patient']),
+  reviewController.createReview,
+);
+
+// Get review by ID (authenticated users)
+router.get(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  reviewController.getReview,
+);
+
+// Update review (patients who wrote it, admin)
+router.put(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient']),
+  reviewController.updateReview,
+);
+
+// Delete review (admin only)
+router.delete(
+  '/:id',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  reviewController.deleteReview,
+);
+
+// Get all reviews (authenticated users)
+router.get(
+  '/',
+  authMiddleware,
+  authorizeMiddleware(['admin', 'patient', 'doctor', 'hospital_admin']),
+  reviewController.getAllReviews,
+);
+
+// Verify review (admin only)
+router.patch(
+  '/:id/verify',
+  authMiddleware,
+  authorizeMiddleware(['admin']),
+  reviewController.verifyReview,
+);
 
 module.exports = router;

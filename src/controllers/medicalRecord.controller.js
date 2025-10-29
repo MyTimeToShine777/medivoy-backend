@@ -1,59 +1,172 @@
-const medicalRecordService = require('../services/medicalRecord.service');
-const { successResponse } = require('../utils/response');
+const MedicalRecord = require('../models/MedicalRecord.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const logger = require('../utils/logger');
 
 class MedicalRecordController {
-  async createMedicalRecord(req, res, next) {
+  /**
+   * Create a new medical record
+   */
+  async createMedicalRecord(req, res) {
     try {
-      const record = await medicalRecordService.createMedicalRecord(req.body);
-      return successResponse(res, record, 'Medical record created successfully', 201);
+      const { patientId, doctorId, hospitalId, recordType, recordDate, notes, fileUrl } = req.body;
+      
+      // Create medical record
+      const medicalRecord = await MedicalRecord.create({
+        patientId,
+        doctorId,
+        hospitalId,
+        recordType,
+        recordDate,
+        notes,
+        fileUrl,
+      });
+      
+      return successResponse(res, {
+        message: 'Medical record created successfully',
+        data: medicalRecord,
+      }, 201);
     } catch (error) {
-      next(error);
+      logger.error('Create medical record error:', error);
+      return errorResponse(res, {
+        message: 'Failed to create medical record',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getMedicalRecord(req, res, next) {
+  /**
+   * Get medical record by ID
+   */
+  async getMedicalRecord(req, res) {
     try {
-      const record = await medicalRecordService.getMedicalRecordById(req.params.id);
-      return successResponse(res, record, 'Medical record retrieved successfully');
+      const { id } = req.params;
+      
+      // Find medical record
+      const medicalRecord = await MedicalRecord.findByPk(id);
+      
+      if (!medicalRecord) {
+        return errorResponse(res, {
+          message: 'Medical record not found',
+        }, 404);
+      }
+      
+      return successResponse(res, {
+        message: 'Medical record retrieved successfully',
+        data: medicalRecord,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Get medical record error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve medical record',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getAllMedicalRecords(req, res, next) {
+  /**
+   * Update medical record
+   */
+  async updateMedicalRecord(req, res) {
     try {
-      const { page, limit, ...filters } = req.query;
-      const result = await medicalRecordService.getAllMedicalRecords(filters, { page, limit });
-      return successResponse(res, result, 'Medical records retrieved successfully');
+      const { id } = req.params;
+      const { recordType, recordDate, notes, fileUrl } = req.body;
+      
+      // Find medical record
+      const medicalRecord = await MedicalRecord.findByPk(id);
+      
+      if (!medicalRecord) {
+        return errorResponse(res, {
+          message: 'Medical record not found',
+        }, 404);
+      }
+      
+      // Update medical record
+      await medicalRecord.update({
+        recordType,
+        recordDate,
+        notes,
+        fileUrl,
+      });
+      
+      return successResponse(res, {
+        message: 'Medical record updated successfully',
+        data: medicalRecord,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Update medical record error:', error);
+      return errorResponse(res, {
+        message: 'Failed to update medical record',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getPatientMedicalRecords(req, res, next) {
+  /**
+   * Delete medical record
+   */
+  async deleteMedicalRecord(req, res) {
     try {
-      const records = await medicalRecordService.getPatientMedicalRecords(req.params.patientId);
-      return successResponse(res, records, 'Patient medical records retrieved successfully');
+      const { id } = req.params;
+      
+      // Find medical record
+      const medicalRecord = await MedicalRecord.findByPk(id);
+      
+      if (!medicalRecord) {
+        return errorResponse(res, {
+          message: 'Medical record not found',
+        }, 404);
+      }
+      
+      // Delete medical record
+      await medicalRecord.destroy();
+      
+      return successResponse(res, {
+        message: 'Medical record deleted successfully',
+      });
     } catch (error) {
-      next(error);
+      logger.error('Delete medical record error:', error);
+      return errorResponse(res, {
+        message: 'Failed to delete medical record',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async updateMedicalRecord(req, res, next) {
+  /**
+   * Get all medical records for a patient
+   */
+  async getPatientMedicalRecords(req, res) {
     try {
-      const record = await medicalRecordService.updateMedicalRecord(req.params.id, req.body);
-      return successResponse(res, record, 'Medical record updated successfully');
+      const { patientId } = req.params;
+      const { page = 1, limit = 10, recordType } = req.query;
+      
+      // Build where clause
+      const where = { patientId };
+      if (recordType) where.recordType = recordType;
+      
+      // Get medical records with pagination
+      const medicalRecords = await MedicalRecord.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['recordDate', 'DESC']],
+      });
+      
+      return successResponse(res, {
+        message: 'Medical records retrieved successfully',
+        data: medicalRecords.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(medicalRecords.count / parseInt(limit, 10)),
+          totalRecords: medicalRecords.count,
+        },
+      });
     } catch (error) {
-      next(error);
-    }
-  }
-
-  async deleteMedicalRecord(req, res, next) {
-    try {
-      const result = await medicalRecordService.deleteMedicalRecord(req.params.id);
-      return successResponse(res, result, 'Medical record deleted successfully');
-    } catch (error) {
-      next(error);
+      logger.error('Get patient medical records error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve medical records',
+        error: error.message,
+      }, 500);
     }
   }
 }

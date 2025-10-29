@@ -21,20 +21,20 @@ module.exports = {
       max: 10,
       min: 0,
       acquire: 30000,
-      idle: 10000
-    }
+      idle: 10000,
+    },
   },
 
   // MongoDB
   mongodb: {
-    uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/medivoy_logs'
+    uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/medivoy_logs',
   },
 
   // Redis
   redis: {
     host: process.env.REDIS_HOST || 'localhost',
     port: parseInt(process.env.REDIS_PORT || '6379', 10),
-    password: process.env.REDIS_PASSWORD || undefined
+    password: process.env.REDIS_PASSWORD || undefined,
   },
 
   // JWT
@@ -42,7 +42,7 @@ module.exports = {
     secret: process.env.JWT_SECRET || 'your-secret-key',
     expire: process.env.JWT_EXPIRE || '7d',
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
-    refreshExpire: process.env.JWT_REFRESH_EXPIRE || '30d'
+    refreshExpire: process.env.JWT_REFRESH_EXPIRE || '30d',
   },
 
   // Bcrypt
@@ -52,7 +52,7 @@ module.exports = {
   cloudinary: {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
     apiKey: process.env.CLOUDINARY_API_KEY || '',
-    apiSecret: process.env.CLOUDINARY_API_SECRET || ''
+    apiSecret: process.env.CLOUDINARY_API_SECRET || '',
   },
 
   // Email (SMTP)
@@ -62,40 +62,40 @@ module.exports = {
     secure: process.env.SMTP_SECURE === 'true',
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || '',
-    from: process.env.EMAIL_FROM || 'Medivoy <noreply@medivoy.com>'
+    from: process.env.EMAIL_FROM || 'Medivoy <noreply@medivoy.com>',
   },
 
   // SendGrid
   sendgrid: {
     apiKey: process.env.SENDGRID_API_KEY || '',
-    fromEmail: process.env.SENDGRID_FROM_EMAIL || 'noreply@medivoy.com'
+    fromEmail: process.env.SENDGRID_FROM_EMAIL || 'noreply@medivoy.com',
   },
 
   // Twilio
   twilio: {
     accountSid: process.env.TWILIO_ACCOUNT_SID || '',
     authToken: process.env.TWILIO_AUTH_TOKEN || '',
-    phoneNumber: process.env.TWILIO_PHONE_NUMBER || ''
+    phoneNumber: process.env.TWILIO_PHONE_NUMBER || '',
   },
 
   // Stripe
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY || '',
     publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || ''
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
   },
 
   // Razorpay
   razorpay: {
     keyId: process.env.RAZORPAY_KEY_ID || '',
-    keySecret: process.env.RAZORPAY_KEY_SECRET || ''
+    keySecret: process.env.RAZORPAY_KEY_SECRET || '',
   },
 
   // Firebase
   firebase: {
     projectId: process.env.FIREBASE_PROJECT_ID || '',
     privateKey: process.env.FIREBASE_PRIVATE_KEY || '',
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL || ''
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL || '',
   },
 
   // AWS S3
@@ -103,50 +103,50 @@ module.exports = {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
     region: process.env.AWS_REGION || 'us-east-1',
-    s3Bucket: process.env.AWS_S3_BUCKET || 'medivoy-uploads'
+    s3Bucket: process.env.AWS_S3_BUCKET || 'medivoy-uploads',
   },
 
   // Rate Limiting
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 minutes
-    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10)
+    maxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100', 10),
   },
 
   // Pagination
   pagination: {
     defaultPageSize: parseInt(process.env.DEFAULT_PAGE_SIZE || '10', 10),
-    maxPageSize: parseInt(process.env.MAX_PAGE_SIZE || '100', 10)
+    maxPageSize: parseInt(process.env.MAX_PAGE_SIZE || '100', 10),
   },
 
   // File Upload
   upload: {
     maxFileSize: parseInt(process.env.MAX_FILE_SIZE || '10485760', 10), // 10MB
-    allowedFileTypes: (process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/gif,application/pdf').split(',')
+    allowedFileTypes: (process.env.ALLOWED_FILE_TYPES || 'image/jpeg,image/png,image/gif,application/pdf').split(','),
   },
 
   // Logging
   logging: {
     level: process.env.LOG_LEVEL || 'info',
-    filePath: process.env.LOG_FILE_PATH || 'logs/'
+    filePath: process.env.LOG_FILE_PATH || 'logs/',
   },
 
   // Cache
   cache: {
-    ttl: parseInt(process.env.CACHE_TTL || '300', 10) // 5 minutes
+    ttl: parseInt(process.env.CACHE_TTL || '300', 10), // 5 minutes
   },
 
   // Session
   session: {
-    secret: process.env.SESSION_SECRET || 'your-session-secret'
+    secret: process.env.SESSION_SECRET || 'your-session-secret',
   },
 
   // CORS
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000'
+    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   },
 
   // Swagger
   swagger: {
-    enabled: process.env.SWAGGER_ENABLED === 'true' || process.env.NODE_ENV === 'development'
-  }
+    enabled: process.env.SWAGGER_ENABLED === 'true' || process.env.NODE_ENV === 'development',
+  },
 };

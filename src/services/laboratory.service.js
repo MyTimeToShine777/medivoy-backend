@@ -1,51 +1,88 @@
-const { Laboratory, LabTest } = require('../models');
-const { AppError } = require('../utils/error-handler');
+const Laboratory = require('../models/Laboratory.model');
 const logger = require('../utils/logger');
 
 class LaboratoryService {
+  /**
+   * Create a new laboratory
+   */
   async createLaboratory(data) {
     try {
       const laboratory = await Laboratory.create(data);
-      logger.info(`Laboratory created: ${laboratory.id}`);
       return laboratory;
     } catch (error) {
-      logger.error('Error creating laboratory:', error);
-      throw new AppError('Failed to create laboratory', 500);
+      logger.error('Create laboratory service error:', error);
+      throw error;
     }
   }
 
+  /**
+   * Get laboratory by ID
+   */
   async getLaboratoryById(id) {
-    const laboratory = await Laboratory.findByPk(id, {
-      include: [{ model: LabTest, as: 'lab_tests' }]
-    });
-    if (!laboratory) throw new AppError('Laboratory not found', 404);
-    return laboratory;
+    try {
+      const laboratory = await Laboratory.findByPk(id);
+      return laboratory;
+    } catch (error) {
+      logger.error('Get laboratory by ID service error:', error);
+      throw error;
+    }
   }
 
-  async getAllLaboratories(filters = {}, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-    const { count, rows } = await Laboratory.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      order: [['created_at', 'DESC']]
-    });
-    return { laboratories: rows, total: count, page, totalPages: Math.ceil(count / limit) };
-  }
-
+  /**
+   * Update laboratory
+   */
   async updateLaboratory(id, data) {
-    const laboratory = await this.getLaboratoryById(id);
-    await laboratory.update(data);
-    logger.info(`Laboratory updated: ${id}`);
-    return laboratory;
+    try {
+      const laboratory = await Laboratory.findByPk(id);
+      if (!laboratory) {
+        throw new Error('Laboratory not found');
+      }
+      
+      await laboratory.update(data);
+      return laboratory;
+    } catch (error) {
+      logger.error('Update laboratory service error:', error);
+      throw error;
+    }
   }
 
+  /**
+   * Delete laboratory
+   */
   async deleteLaboratory(id) {
-    const laboratory = await this.getLaboratoryById(id);
-    await laboratory.destroy();
-    logger.info(`Laboratory deleted: ${id}`);
-    return { message: 'Laboratory deleted successfully' };
+    try {
+      const laboratory = await Laboratory.findByPk(id);
+      if (!laboratory) {
+        throw new Error('Laboratory not found');
+      }
+      
+      await laboratory.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete laboratory service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all laboratories
+   */
+  async getAllLaboratories(filters = {}) {
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      
+      const laboratories = await Laboratory.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return laboratories;
+    } catch (error) {
+      logger.error('Get all laboratories service error:', error);
+      throw error;
+    }
   }
 }
 

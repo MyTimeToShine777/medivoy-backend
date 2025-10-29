@@ -1,77 +1,119 @@
-const { User, Patient, Doctor } = require('../models');
-const { AppError } = require('../utils/error-handler');
-const { generateSlug } = require('../utils/helpers');
+const User = require('../models/User.model');
 const logger = require('../utils/logger');
 
 class UserService {
-  async createUser(userData) {
+  /**
+   * Create a new user
+   */
+  async createUser(data) {
     try {
-      const user = await User.create(userData);
-      logger.info(`User created: ${user.id}`);
+      const user = await User.create(data);
       return user;
     } catch (error) {
-      logger.error('Error creating user:', error);
-      throw new AppError('Failed to create user', 500);
+      logger.error('Create user service error:', error);
+      throw error;
     }
   }
 
-  async getUserById(userId) {
-    const user = await User.findByPk(userId, {
-      include: [
-        { model: Patient, as: 'patient' },
-        { model: Doctor, as: 'doctor' }
-      ]
-    });
-    
-    if (!user) {
-      throw new AppError('User not found', 404);
+  /**
+   * Get user by ID
+   */
+  async getUserById(id) {
+    try {
+      const user = await User.findByPk(id);
+      return user;
+    } catch (error) {
+      logger.error('Get user by ID service error:', error);
+      throw error;
     }
-    
-    return user;
   }
 
-  async updateUser(userId, updateData) {
-    const user = await this.getUserById(userId);
-    await user.update(updateData);
-    logger.info(`User updated: ${userId}`);
-    return user;
+  /**
+   * Update user
+   */
+  async updateUser(id, data) {
+    try {
+      const user = await User.findByPk(id);
+      if (!user) {
+        throw new Error('User not found');
+      }
+      
+      await user.update(data);
+      return user;
+    } catch (error) {
+      logger.error('Update user service error:', error);
+      throw error;
+    }
   }
 
-  async deleteUser(userId) {
-    const user = await this.getUserById(userId);
-    await user.destroy();
-    logger.info(`User deleted: ${userId}`);
-    return { message: 'User deleted successfully' };
+  /**
+   * Delete user
+   */
+  async deleteUser(id) {
+    try {
+      const user = await User.findByPk(id);
+      if (!user) {
+        throw new Error('User not found');
+      }
+      
+      await user.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete user service error:', error);
+      throw error;
+    }
   }
 
-  async getAllUsers(filters = {}, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-
-    const { count, rows } = await User.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      order: [['created_at', 'DESC']]
-    });
-
-    return {
-      users: rows,
-      total: count,
-      page,
-      totalPages: Math.ceil(count / limit)
-    };
+  /**
+   * Get all users
+   */
+  async getAllUsers(filters = {}) {
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      
+      const users = await User.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return users;
+    } catch (error) {
+      logger.error('Get all users service error:', error);
+      throw error;
+    }
   }
 
+  /**
+   * Get user by email
+   */
   async getUserByEmail(email) {
-    return await User.findOne({ where: { email } });
+    try {
+      const user = await User.findOne({ where: { email } });
+      return user;
+    } catch (error) {
+      logger.error('Get user by email service error:', error);
+      throw error;
+    }
   }
 
-  async updateUserStatus(userId, status) {
-    const user = await this.getUserById(userId);
-    await user.update({ status });
-    logger.info(`User status updated: ${userId} - ${status}`);
-    return user;
+  /**
+   * Update user's last login
+   */
+  async updateLastLogin(id) {
+    try {
+      const user = await User.findByPk(id);
+      if (!user) {
+        throw new Error('User not found');
+      }
+      
+      await user.update({ lastLogin: new Date() });
+      return user;
+    } catch (error) {
+      logger.error('Update last login service error:', error);
+      throw error;
+    }
   }
 }
 

@@ -1,75 +1,39 @@
-/**
- * Status codes for bookings and appointments
- */
-
-const BOOKING_STATUS = {
-  REQUESTED: 'requested',
-  UNDER_REVIEW: 'under_review',
-  ACCEPTED: 'accepted',
-  REJECTED: 'rejected',
-  AWAITING_MEDICAL_DETAILS: 'awaiting_medical_details',
-  QUOTATION_SENT: 'quotation_sent',
-  CONFIRMED: 'confirmed',
-  ON_HOLD: 'on_hold',
-  CANCELLED: 'cancelled',
-  PAYMENT_PENDING: 'payment_pending',
-  PAYMENT_COMPLETED: 'payment_completed',
-  INVOICE_SENT: 'invoice_sent',
-  TRAVEL_ARRANGEMENT: 'travel_arrangement',
-  IN_TREATMENT: 'in_treatment',
-  COMPLETED: 'completed',
-  FEEDBACK_RECEIVED: 'feedback_received'
-};
-
-const APPOINTMENT_STATUS = {
-  REQUESTED: 'requested',
-  BOOKED: 'booked',
-  CONFIRMED: 'confirmed',
-  AWAITING_CONSULTATION: 'awaiting_consultation',
-  IN_PROGRESS: 'in_progress',
-  PRESCRIPTION_PROVIDED: 'prescription_provided',
-  FOLLOW_UP_SCHEDULED: 'follow_up_scheduled',
-  COMPLETED: 'completed',
-  CANCELLED: 'cancelled'
-};
-
-const PAYMENT_STATUS = {
-  PENDING: 'pending',
-  PROCESSING: 'processing',
-  COMPLETED: 'completed',
-  FAILED: 'failed',
-  REFUNDED: 'refunded',
-  PARTIALLY_REFUNDED: 'partially_refunded'
-};
-
-const INVOICE_STATUS = {
-  DRAFT: 'draft',
-  SENT: 'sent',
-  PAID: 'paid',
-  OVERDUE: 'overdue',
-  CANCELLED: 'cancelled'
-};
-
-const SUPPORT_TICKET_STATUS = {
-  OPEN: 'open',
-  IN_PROGRESS: 'in_progress',
-  WAITING_FOR_CUSTOMER: 'waiting_for_customer',
-  RESOLVED: 'resolved',
-  CLOSED: 'closed'
-};
-
-const SUPPORT_TICKET_PRIORITY = {
-  LOW: 'low',
-  MEDIUM: 'medium',
-  HIGH: 'high',
-  URGENT: 'urgent'
-};
+// Status codes for bookings and appointments in the Medivoy Healthcare System
 
 module.exports = {
-  BOOKING_STATUS,
-  APPOINTMENT_STATUS,
-  PAYMENT_STATUS,
-  INVOICE_STATUS,
-  SUPPORT_TICKET_STATUS,
-  SUPPORT_TICKET_PRIORITY
+  // Booking status codes (12-stage workflow)
+  BOOKING_REQUESTED: 'requested',
+  BOOKING_UNDER_REVIEW: 'under_review',
+  BOOKING_ACCEPTED: 'accepted',
+  BOOKING_REJECTED: 'rejected',
+  BOOKING_AWAITING_MEDICAL_DETAILS: 'awaiting_medical_details',
+  BOOKING_QUOTATION_SENT: 'quotation_sent',
+  BOOKING_CONFIRMED: 'confirmed',
+  BOOKING_PAYMENT_COMPLETED: 'payment_completed',
+  BOOKING_INVOICE_SENT: 'invoice_sent',
+  BOOKING_TRAVEL_ARRANGEMENT: 'travel_arrangement',
+  BOOKING_IN_TREATMENT: 'in_treatment',
+  BOOKING_COMPLETED: 'completed',
+  BOOKING_FEEDBACK_RECEIVED: 'feedback_received',
+
+  // Appointment status codes (9-stage workflow)
+  APPOINTMENT_REQUESTED: 'requested',
+  APPOINTMENT_CONFIRMED: 'confirmed',
+  APPOINTMENT_AWAITING_CONSULTATION: 'awaiting_consultation',
+  APPOINTMENT_IN_PROGRESS: 'in_progress',
+  APPOINTMENT_PRESCRIPTION_PROVIDED: 'prescription_provided',
+  APPOINTMENT_FOLLOW_UP_SCHEDULED: 'follow_up_scheduled',
+  APPOINTMENT_COMPLETED: 'completed',
+  APPOINTMENT_CANCELLED: 'cancelled',
+  APPOINTMENT_NO_SHOW: 'no_show',
+
+  // Treatment status codes
+  TREATMENT_ACTIVE: 'active',
+  TREATMENT_INACTIVE: 'inactive',
+
+  // Hospital verification status codes
+  HOSPITAL_UNVERIFIED: 'unverified',
+  HOSPITAL_PENDING_VERIFICATION: 'pending_verification',
+  HOSPITAL_VERIFIED: 'verified',
+  HOSPITAL_REJECTED: 'rejected',
 };

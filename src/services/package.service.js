@@ -1,63 +1,88 @@
-const { Package, Treatment, Hospital } = require('../models');
-const { AppError } = require('../utils/error-handler');
-const { generateSlug } = require('../utils/helpers');
+const Package = require('../models/Package.model');
 const logger = require('../utils/logger');
 
 class PackageService {
+  /**
+   * Create a new package
+   */
   async createPackage(data) {
     try {
-      const slug = generateSlug(data.name);
-      const pkg = await Package.create({ ...data, slug });
-      logger.info(`Package created: ${pkg.id}`);
-      return pkg;
+      const package = await Package.create(data);
+      return package;
     } catch (error) {
-      logger.error('Error creating package:', error);
-      throw new AppError('Failed to create package', 500);
+      logger.error('Create package service error:', error);
+      throw error;
     }
   }
 
+  /**
+   * Get package by ID
+   */
   async getPackageById(id) {
-    const pkg = await Package.findByPk(id, {
-      include: [
-        { model: Treatment, as: 'treatments' },
-        { model: Hospital, as: 'hospital' }
-      ]
-    });
-    if (!pkg) throw new AppError('Package not found', 404);
-    return pkg;
-  }
-
-  async getAllPackages(filters = {}, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-    const { count, rows } = await Package.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      include: [
-        { model: Treatment, as: 'treatments' },
-        { model: Hospital, as: 'hospital' }
-      ],
-      order: [['created_at', 'DESC']]
-    });
-    return { packages: rows, total: count, page, totalPages: Math.ceil(count / limit) };
-  }
-
-  async updatePackage(id, data) {
-    const pkg = await this.getPackageById(id);
-    if (data.name) {
-      data.slug = generateSlug(data.name);
+    try {
+      const package = await Package.findByPk(id);
+      return package;
+    } catch (error) {
+      logger.error('Get package by ID service error:', error);
+      throw error;
     }
-    await pkg.update(data);
-    logger.info(`Package updated: ${id}`);
-    return pkg;
   }
 
+  /**
+   * Update package
+   */
+  async updatePackage(id, data) {
+    try {
+      const package = await Package.findByPk(id);
+      if (!package) {
+        throw new Error('Package not found');
+      }
+      
+      await package.update(data);
+      return package;
+    } catch (error) {
+      logger.error('Update package service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete package
+   */
   async deletePackage(id) {
-    const pkg = await this.getPackageById(id);
-    await pkg.destroy();
-    logger.info(`Package deleted: ${id}`);
-    return { message: 'Package deleted successfully' };
+    try {
+      const package = await Package.findByPk(id);
+      if (!package) {
+        throw new Error('Package not found');
+      }
+      
+      await package.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete package service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all packages
+   */
+  async getAllPackages(filters = {}) {
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      
+      const packages = await Package.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return packages;
+    } catch (error) {
+      logger.error('Get all packages service error:', error);
+      throw error;
+    }
   }
 }
 

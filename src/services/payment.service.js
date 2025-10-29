@@ -1,133 +1,88 @@
-const { Payment, Invoice, Booking } = require('../models');
-const { AppError } = require('../utils/error-handler');
+const Payment = require('../models/Payment.model');
 const logger = require('../utils/logger');
 
 class PaymentService {
-  async createPayment(paymentData) {
+  /**
+   * Create a new payment
+   */
+  async createPayment(data) {
     try {
-      const payment = await Payment.create(paymentData);
-      logger.info(`Payment created: ${payment.id}`);
+      const payment = await Payment.create(data);
       return payment;
     } catch (error) {
-      logger.error('Error creating payment:', error);
-      throw new AppError('Failed to create payment', 500);
+      logger.error('Create payment service error:', error);
+      throw error;
     }
   }
 
-  async getPaymentById(paymentId) {
-    const payment = await Payment.findByPk(paymentId, {
-      include: [
-        { model: Booking, as: 'booking' },
-        { model: Invoice, as: 'invoice' }
-      ]
-    });
-    
-    if (!payment) {
-      throw new AppError('Payment not found', 404);
-    }
-    
-    return payment;
-  }
-
-  async processStripePayment(paymentData) {
+  /**
+   * Get payment by ID
+   */
+  async getPaymentById(id) {
     try {
-      // TODO: Implement Stripe payment processing
-      const payment = await this.createPayment({
-        ...paymentData,
-        payment_method: 'stripe',
-        status: 'pending'
-      });
-      
-      // Simulate Stripe processing
-      await payment.update({
-        status: 'completed',
-        transaction_id: `stripe_${Date.now()}`,
-        paid_at: new Date()
-      });
-      
-      logger.info(`Stripe payment processed: ${payment.id}`);
+      const payment = await Payment.findByPk(id);
       return payment;
     } catch (error) {
-      logger.error('Error processing Stripe payment:', error);
-      throw new AppError('Failed to process payment', 500);
+      logger.error('Get payment by ID service error:', error);
+      throw error;
     }
   }
 
-  async processRazorpayPayment(paymentData) {
+  /**
+   * Update payment
+   */
+  async updatePayment(id, data) {
     try {
-      // TODO: Implement Razorpay payment processing
-      const payment = await this.createPayment({
-        ...paymentData,
-        payment_method: 'razorpay',
-        status: 'pending'
-      });
+      const payment = await Payment.findByPk(id);
+      if (!payment) {
+        throw new Error('Payment not found');
+      }
       
-      // Simulate Razorpay processing
-      await payment.update({
-        status: 'completed',
-        transaction_id: `razorpay_${Date.now()}`,
-        paid_at: new Date()
-      });
-      
-      logger.info(`Razorpay payment processed: ${payment.id}`);
+      await payment.update(data);
       return payment;
     } catch (error) {
-      logger.error('Error processing Razorpay payment:', error);
-      throw new AppError('Failed to process payment', 500);
+      logger.error('Update payment service error:', error);
+      throw error;
     }
   }
 
-  async refundPayment(paymentId, refundAmount, reason) {
-    const payment = await this.getPaymentById(paymentId);
-    
-    if (payment.status !== 'completed') {
-      throw new AppError('Only completed payments can be refunded', 400);
+  /**
+   * Delete payment
+   */
+  async deletePayment(id) {
+    try {
+      const payment = await Payment.findByPk(id);
+      if (!payment) {
+        throw new Error('Payment not found');
+      }
+      
+      await payment.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete payment service error:', error);
+      throw error;
     }
-    
-    // TODO: Implement actual refund logic with payment gateway
-    await payment.update({
-      status: 'refunded',
-      refund_amount: refundAmount,
-      refund_reason: reason,
-      refunded_at: new Date()
-    });
-    
-    logger.info(`Payment refunded: ${paymentId}`);
-    return payment;
   }
 
-  async getAllPayments(filters = {}, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-
-    const { count, rows } = await Payment.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      include: [
-        { model: Booking, as: 'booking' },
-        { model: Invoice, as: 'invoice' }
-      ],
-      order: [['created_at', 'DESC']]
-    });
-
-    return {
-      payments: rows,
-      total: count,
-      page,
-      totalPages: Math.ceil(count / limit)
-    };
-  }
-
-  async verifyPayment(paymentId, verificationData) {
-    const payment = await this.getPaymentById(paymentId);
-    await payment.update({
-      is_verified: true,
-      verification_data: verificationData,
-      verified_at: new Date()
-    });
-    logger.info(`Payment verified: ${paymentId}`);
-    return payment;
+  /**
+   * Get all payments
+   */
+  async getAllPayments(filters = {}) {
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      
+      const payments = await Payment.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return payments;
+    } catch (error) {
+      logger.error('Get all payments service error:', error);
+      throw error;
+    }
   }
 }
 

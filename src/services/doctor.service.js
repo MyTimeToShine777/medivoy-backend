@@ -1,96 +1,106 @@
-const { Doctor, User, Hospital, Appointment } = require('../models');
-const { AppError } = require('../utils/error-handler');
-const { generateSlug } = require('../utils/helpers');
+const Doctor = require('../models/Doctor.model');
 const logger = require('../utils/logger');
 
 class DoctorService {
-  async createDoctor(doctorData) {
+  /**
+   * Create a new doctor
+   */
+  async createDoctor(data) {
     try {
-      const doctor = await Doctor.create(doctorData);
-      logger.info(`Doctor created: ${doctor.id}`);
+      const doctor = await Doctor.create(data);
       return doctor;
     } catch (error) {
-      logger.error('Error creating doctor:', error);
-      throw new AppError('Failed to create doctor', 500);
+      logger.error('Create doctor service error:', error);
+      throw error;
     }
   }
 
-  async getDoctorById(doctorId) {
-    const doctor = await Doctor.findByPk(doctorId, {
-      include: [
-        { model: User, as: 'user' },
-        { model: Hospital, as: 'hospitals', through: { attributes: [] } }
-      ]
-    });
-    
-    if (!doctor) {
-      throw new AppError('Doctor not found', 404);
+  /**
+   * Get doctor by ID
+   */
+  async getDoctorById(id) {
+    try {
+      const doctor = await Doctor.findByPk(id);
+      return doctor;
+    } catch (error) {
+      logger.error('Get doctor by ID service error:', error);
+      throw error;
     }
-    
-    return doctor;
   }
 
-  async updateDoctor(doctorId, updateData) {
-    const doctor = await this.getDoctorById(doctorId);
-    await doctor.update(updateData);
-    logger.info(`Doctor updated: ${doctorId}`);
-    return doctor;
+  /**
+   * Update doctor
+   */
+  async updateDoctor(id, data) {
+    try {
+      const doctor = await Doctor.findByPk(id);
+      if (!doctor) {
+        throw new Error('Doctor not found');
+      }
+      
+      await doctor.update(data);
+      return doctor;
+    } catch (error) {
+      logger.error('Update doctor service error:', error);
+      throw error;
+    }
   }
 
-  async deleteDoctor(doctorId) {
-    const doctor = await this.getDoctorById(doctorId);
-    await doctor.destroy();
-    logger.info(`Doctor deleted: ${doctorId}`);
-    return { message: 'Doctor deleted successfully' };
+  /**
+   * Delete doctor
+   */
+  async deleteDoctor(id) {
+    try {
+      const doctor = await Doctor.findByPk(id);
+      if (!doctor) {
+        throw new Error('Doctor not found');
+      }
+      
+      await doctor.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete doctor service error:', error);
+      throw error;
+    }
   }
 
-  async getAllDoctors(filters = {}, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-
-    const { count, rows } = await Doctor.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      include: [
-        { model: User, as: 'user' },
-        { model: Hospital, as: 'hospitals', through: { attributes: [] } }
-      ],
-      order: [['created_at', 'DESC']]
-    });
-
-    return {
-      doctors: rows,
-      total: count,
-      page,
-      totalPages: Math.ceil(count / limit)
-    };
+  /**
+   * Get all doctors
+   */
+  async getAllDoctors(filters = {}) {
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      
+      const doctors = await Doctor.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return doctors;
+    } catch (error) {
+      logger.error('Get all doctors service error:', error);
+      throw error;
+    }
   }
 
-  async updateAvailability(doctorId, availabilityData) {
-    const doctor = await this.getDoctorById(doctorId);
-    await doctor.update({ availability: availabilityData });
-    logger.info(`Doctor availability updated: ${doctorId}`);
-    return doctor;
-  }
-
-  async getDoctorAppointments(doctorId, filters = {}) {
-    const appointments = await Appointment.findAll({
-      where: { doctor_id: doctorId, ...filters },
-      order: [['appointment_date', 'ASC']]
-    });
-    return appointments;
-  }
-
-  async verifyDoctor(doctorId, verificationData) {
-    const doctor = await this.getDoctorById(doctorId);
-    await doctor.update({
-      is_verified: true,
-      verification_status: 'verified',
-      ...verificationData
-    });
-    logger.info(`Doctor verified: ${doctorId}`);
-    return doctor;
+  /**
+   * Verify doctor
+   */
+  async verifyDoctor(id) {
+    try {
+      const doctor = await Doctor.findByPk(id);
+      if (!doctor) {
+        throw new Error('Doctor not found');
+      }
+      
+      await doctor.update({ isVerified: true });
+      return doctor;
+    } catch (error) {
+      logger.error('Verify doctor service error:', error);
+      throw error;
+    }
   }
 }
 

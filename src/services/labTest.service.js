@@ -1,69 +1,88 @@
-const { LabTest, Laboratory, Patient } = require('../models');
-const { AppError } = require('../utils/error-handler');
+const LabTest = require('../models/LabTest.model');
 const logger = require('../utils/logger');
 
 class LabTestService {
+  /**
+   * Create a new lab test
+   */
   async createLabTest(data) {
     try {
       const labTest = await LabTest.create(data);
-      logger.info(`Lab test created: ${labTest.id}`);
       return labTest;
     } catch (error) {
-      logger.error('Error creating lab test:', error);
-      throw new AppError('Failed to create lab test', 500);
+      logger.error('Create lab test service error:', error);
+      throw error;
     }
   }
 
+  /**
+   * Get lab test by ID
+   */
   async getLabTestById(id) {
-    const labTest = await LabTest.findByPk(id, {
-      include: [
-        { model: Laboratory, as: 'laboratory' },
-        { model: Patient, as: 'patient' }
-      ]
-    });
-    if (!labTest) throw new AppError('Lab test not found', 404);
-    return labTest;
+    try {
+      const labTest = await LabTest.findByPk(id);
+      return labTest;
+    } catch (error) {
+      logger.error('Get lab test by ID service error:', error);
+      throw error;
+    }
   }
 
-  async getAllLabTests(filters = {}, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-    const { count, rows } = await LabTest.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      include: [
-        { model: Laboratory, as: 'laboratory' },
-        { model: Patient, as: 'patient' }
-      ],
-      order: [['created_at', 'DESC']]
-    });
-    return { labTests: rows, total: count, page, totalPages: Math.ceil(count / limit) };
-  }
-
+  /**
+   * Update lab test
+   */
   async updateLabTest(id, data) {
-    const labTest = await this.getLabTestById(id);
-    await labTest.update(data);
-    logger.info(`Lab test updated: ${id}`);
-    return labTest;
+    try {
+      const labTest = await LabTest.findByPk(id);
+      if (!labTest) {
+        throw new Error('Lab test not found');
+      }
+      
+      await labTest.update(data);
+      return labTest;
+    } catch (error) {
+      logger.error('Update lab test service error:', error);
+      throw error;
+    }
   }
 
-  async updateLabTestResults(id, results) {
-    const labTest = await this.getLabTestById(id);
-    await labTest.update({ 
-      results, 
-      status: 'completed',
-      completed_at: new Date()
-    });
-    logger.info(`Lab test results updated: ${id}`);
-    return labTest;
-  }
-
+  /**
+   * Delete lab test
+   */
   async deleteLabTest(id) {
-    const labTest = await this.getLabTestById(id);
-    await labTest.destroy();
-    logger.info(`Lab test deleted: ${id}`);
-    return { message: 'Lab test deleted successfully' };
+    try {
+      const labTest = await LabTest.findByPk(id);
+      if (!labTest) {
+        throw new Error('Lab test not found');
+      }
+      
+      await labTest.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete lab test service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all lab tests
+   */
+  async getAllLabTests(filters = {}) {
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      
+      const labTests = await LabTest.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return labTests;
+    } catch (error) {
+      logger.error('Get all lab tests service error:', error);
+      throw error;
+    }
   }
 }
 

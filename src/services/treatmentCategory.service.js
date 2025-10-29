@@ -1,56 +1,88 @@
-const { TreatmentCategory, Treatment } = require('../models');
-const { AppError } = require('../utils/error-handler');
-const { generateSlug } = require('../utils/helpers');
+const TreatmentCategory = require('../models/TreatmentCategory.model');
 const logger = require('../utils/logger');
 
 class TreatmentCategoryService {
-  async createCategory(data) {
+  /**
+   * Create a new treatment category
+   */
+  async createTreatmentCategory(data) {
     try {
-      const slug = generateSlug(data.name);
-      const category = await TreatmentCategory.create({ ...data, slug });
-      logger.info(`Treatment category created: ${category.id}`);
-      return category;
+      const treatmentCategory = await TreatmentCategory.create(data);
+      return treatmentCategory;
     } catch (error) {
-      logger.error('Error creating treatment category:', error);
-      throw new AppError('Failed to create treatment category', 500);
+      logger.error('Create treatment category service error:', error);
+      throw error;
     }
   }
 
-  async getCategoryById(id) {
-    const category = await TreatmentCategory.findByPk(id, {
-      include: [{ model: Treatment, as: 'treatments' }]
-    });
-    if (!category) throw new AppError('Treatment category not found', 404);
-    return category;
-  }
-
-  async getAllCategories(filters = {}, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-    const { count, rows } = await TreatmentCategory.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      order: [['sort_order', 'ASC'], ['name', 'ASC']]
-    });
-    return { categories: rows, total: count, page, totalPages: Math.ceil(count / limit) };
-  }
-
-  async updateCategory(id, data) {
-    const category = await this.getCategoryById(id);
-    if (data.name) {
-      data.slug = generateSlug(data.name);
+  /**
+   * Get treatment category by ID
+   */
+  async getTreatmentCategoryById(id) {
+    try {
+      const treatmentCategory = await TreatmentCategory.findByPk(id);
+      return treatmentCategory;
+    } catch (error) {
+      logger.error('Get treatment category by ID service error:', error);
+      throw error;
     }
-    await category.update(data);
-    logger.info(`Treatment category updated: ${id}`);
-    return category;
   }
 
-  async deleteCategory(id) {
-    const category = await this.getCategoryById(id);
-    await category.destroy();
-    logger.info(`Treatment category deleted: ${id}`);
-    return { message: 'Treatment category deleted successfully' };
+  /**
+   * Update treatment category
+   */
+  async updateTreatmentCategory(id, data) {
+    try {
+      const treatmentCategory = await TreatmentCategory.findByPk(id);
+      if (!treatmentCategory) {
+        throw new Error('Treatment category not found');
+      }
+      
+      await treatmentCategory.update(data);
+      return treatmentCategory;
+    } catch (error) {
+      logger.error('Update treatment category service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete treatment category
+   */
+  async deleteTreatmentCategory(id) {
+    try {
+      const treatmentCategory = await TreatmentCategory.findByPk(id);
+      if (!treatmentCategory) {
+        throw new Error('Treatment category not found');
+      }
+      
+      await treatmentCategory.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete treatment category service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all treatment categories
+   */
+  async getAllTreatmentCategories(filters = {}) {
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      
+      const treatmentCategories = await TreatmentCategory.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['sortOrder', 'ASC'], ['createdAt', 'DESC']],
+      });
+      
+      return treatmentCategories;
+    } catch (error) {
+      logger.error('Get all treatment categories service error:', error);
+      throw error;
+    }
   }
 }
 

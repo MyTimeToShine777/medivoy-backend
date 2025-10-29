@@ -1,70 +1,242 @@
-const treatmentService = require('../services/treatment.service');
-const { successResponse } = require('../utils/response');
+const Treatment = require('../models/Treatment.model');
+const TreatmentCategory = require('../models/TreatmentCategory.model');
+const TreatmentSubcategory = require('../models/TreatmentSubcategory.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const logger = require('../utils/logger');
 
 class TreatmentController {
-  async createTreatment(req, res, next) {
+  /**
+   * Create a new treatment
+   */
+  async createTreatment(req, res) {
     try {
-      const treatment = await treatmentService.createTreatment(req.body);
-      return successResponse(res, treatment, 'Treatment created successfully', 201);
+      const { name, description, categoryId, subcategoryId, price, duration, isActive } = req.body;
+      
+      // Create treatment
+      const treatment = await Treatment.create({
+        name,
+        description,
+        categoryId,
+        subcategoryId,
+        price,
+        duration,
+        isActive,
+      });
+      
+      return successResponse(res, {
+        message: 'Treatment created successfully',
+        data: treatment,
+      }, 201);
     } catch (error) {
-      next(error);
+      logger.error('Create treatment error:', error);
+      return errorResponse(res, {
+        message: 'Failed to create treatment',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getTreatment(req, res, next) {
+  /**
+   * Get treatment by ID
+   */
+  async getTreatment(req, res) {
     try {
-      const treatment = await treatmentService.getTreatmentById(req.params.id);
-      return successResponse(res, treatment, 'Treatment retrieved successfully');
+      const { id } = req.params;
+      
+      // Find treatment with associated category and subcategory
+      const treatment = await Treatment.findByPk(id, {
+        include: [
+          {
+            model: TreatmentCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'slug'],
+          },
+          {
+            model: TreatmentSubcategory,
+            as: 'subcategory',
+            attributes: ['id', 'name', 'slug'],
+          },
+        ],
+      });
+      
+      if (!treatment) {
+        return errorResponse(res, {
+          message: 'Treatment not found',
+        }, 404);
+      }
+      
+      return successResponse(res, {
+        message: 'Treatment retrieved successfully',
+        data: treatment,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Get treatment error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve treatment',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async updateTreatment(req, res, next) {
+  /**
+   * Update treatment
+   */
+  async updateTreatment(req, res) {
     try {
-      const treatment = await treatmentService.updateTreatment(req.params.id, req.body);
-      return successResponse(res, treatment, 'Treatment updated successfully');
+      const { id } = req.params;
+      const { name, description, categoryId, subcategoryId, price, duration, isActive } = req.body;
+      
+      // Find treatment
+      const treatment = await Treatment.findByPk(id);
+      
+      if (!treatment) {
+        return errorResponse(res, {
+          message: 'Treatment not found',
+        }, 404);
+      }
+      
+      // Update treatment
+      await treatment.update({
+        name,
+        description,
+        categoryId,
+        subcategoryId,
+        price,
+        duration,
+        isActive,
+      });
+      
+      return successResponse(res, {
+        message: 'Treatment updated successfully',
+        data: treatment,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Update treatment error:', error);
+      return errorResponse(res, {
+        message: 'Failed to update treatment',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async deleteTreatment(req, res, next) {
+  /**
+   * Delete treatment
+   */
+  async deleteTreatment(req, res) {
     try {
-      const result = await treatmentService.deleteTreatment(req.params.id);
-      return successResponse(res, result, 'Treatment deleted successfully');
+      const { id } = req.params;
+      
+      // Find treatment
+      const treatment = await Treatment.findByPk(id);
+      
+      if (!treatment) {
+        return errorResponse(res, {
+          message: 'Treatment not found',
+        }, 404);
+      }
+      
+      // Delete treatment
+      await treatment.destroy();
+      
+      return successResponse(res, {
+        message: 'Treatment deleted successfully',
+      });
     } catch (error) {
-      next(error);
+      logger.error('Delete treatment error:', error);
+      return errorResponse(res, {
+        message: 'Failed to delete treatment',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getAllTreatments(req, res, next) {
+  /**
+   * Get all treatments
+   */
+  async getAllTreatments(req, res) {
     try {
-      const { page, limit, ...filters } = req.query;
-      const result = await treatmentService.getAllTreatments(filters, { page, limit });
-      return successResponse(res, result, 'Treatments retrieved successfully');
+      const { page = 1, limit = 10, categoryId, subcategoryId, isActive, search } = req.query;
+      
+      // Build where clause
+      const where = {};
+      if (categoryId) where.categoryId = categoryId;
+      if (subcategoryId) where.subcategoryId = subcategoryId;
+      if (isActive !== undefined) where.isActive = isActive === 'true';
+      if (search) where.name = { [Sequelize.Op.iLike]: `%${search}%` };
+      
+      // Get treatments with pagination and associated category/subcategory
+      const treatments = await Treatment.findAndCountAll({
+        where,
+        include: [
+          {
+            model: TreatmentCategory,
+            as: 'category',
+            attributes: ['id', 'name', 'slug'],
+          },
+          {
+            model: TreatmentSubcategory,
+            as: 'subcategory',
+            attributes: ['id', 'name', 'slug'],
+          },
+        ],
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['name', 'ASC']],
+      });
+      
+      return successResponse(res, {
+        message: 'Treatments retrieved successfully',
+        data: treatments.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(treatments.count / parseInt(limit, 10)),
+          totalRecords: treatments.count,
+        },
+      });
     } catch (error) {
-      next(error);
+      logger.error('Get all treatments error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve treatments',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getTreatmentsByCategory(req, res, next) {
+  /**
+   * Get treatments by category
+   */
+  async getTreatmentsByCategory(req, res) {
     try {
-      const { page, limit } = req.query;
-      const result = await treatmentService.getTreatmentsByCategory(req.params.categoryId, { page, limit });
-      return successResponse(res, result, 'Treatments by category retrieved successfully');
+      const { categoryId } = req.params;
+      const { page = 1, limit = 10, isActive } = req.query;
+      
+      // Build where clause
+      const where = { categoryId };
+      if (isActive !== undefined) where.isActive = isActive === 'true';
+      
+      // Get treatments with pagination
+      const treatments = await Treatment.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['name', 'ASC']],
+      });
+      
+      return successResponse(res, {
+        message: 'Treatments retrieved successfully',
+        data: treatments.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(treatments.count / parseInt(limit, 10)),
+          totalRecords: treatments.count,
+        },
+      });
     } catch (error) {
-      next(error);
-    }
-  }
-
-  async getTreatmentsBySubcategory(req, res, next) {
-    try {
-      const { page, limit } = req.query;
-      const result = await treatmentService.getTreatmentsBySubcategory(req.params.subcategoryId, { page, limit });
-      return successResponse(res, result, 'Treatments by subcategory retrieved successfully');
-    } catch (error) {
-      next(error);
+      logger.error('Get treatments by category error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve treatments',
+        error: error.message,
+      }, 500);
     }
   }
 }

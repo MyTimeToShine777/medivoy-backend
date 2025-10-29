@@ -1,86 +1,126 @@
-const { Subscription, SubscriptionPlan, User } = require('../models');
-const { AppError } = require('../utils/error-handler');
+const Subscription = require('../models/Subscription.model');
+const SubscriptionPlan = require('../models/SubscriptionPlan.model');
 const logger = require('../utils/logger');
 
 class SubscriptionService {
+  /**
+   * Create a new subscription
+   */
   async createSubscription(data) {
     try {
-      const subscription = await Subscription.create(data);
-      logger.info(`Subscription created: ${subscription.id}`);
+      // Find subscription plan
+      const plan = await SubscriptionPlan.findByPk(data.planId);
+      if (!plan) {
+        throw new Error('Subscription plan not found');
+      }
+      
+      // Add plan details to subscription data
+      const subscriptionData = {
+        ...data,
+        planName: plan.name,
+        planPrice: plan.price,
+        planFeatures: plan.features,
+      };
+      
+      const subscription = await Subscription.create(subscriptionData);
       return subscription;
     } catch (error) {
-      logger.error('Error creating subscription:', error);
-      throw new AppError('Failed to create subscription', 500);
+      logger.error('Create subscription service error:', error);
+      throw error;
     }
   }
 
+  /**
+   * Get subscription by ID
+   */
   async getSubscriptionById(id) {
-    const subscription = await Subscription.findByPk(id, {
-      include: [
-        { model: User, as: 'user' },
-        { model: SubscriptionPlan, as: 'plan' }
-      ]
-    });
-    if (!subscription) throw new AppError('Subscription not found', 404);
-    return subscription;
+    try {
+      const subscription = await Subscription.findByPk(id);
+      return subscription;
+    } catch (error) {
+      logger.error('Get subscription by ID service error:', error);
+      throw error;
+    }
   }
 
-  async getAllSubscriptions(filters = {}, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-    const { count, rows } = await Subscription.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      include: [
-        { model: User, as: 'user' },
-        { model: SubscriptionPlan, as: 'plan' }
-      ],
-      order: [['created_at', 'DESC']]
-    });
-    return { subscriptions: rows, total: count, page, totalPages: Math.ceil(count / limit) };
-  }
-
+  /**
+   * Update subscription
+   */
   async updateSubscription(id, data) {
-    const subscription = await this.getSubscriptionById(id);
-    await subscription.update(data);
-    logger.info(`Subscription updated: ${id}`);
-    return subscription;
+    try {
+      const subscription = await Subscription.findByPk(id);
+      if (!subscription) {
+        throw new Error('Subscription not found');
+      }
+      
+      await subscription.update(data);
+      return subscription;
+    } catch (error) {
+      logger.error('Update subscription service error:', error);
+      throw error;
+    }
   }
 
-  async cancelSubscription(id, reason) {
-    const subscription = await this.getSubscriptionById(id);
-    await subscription.update({
-      status: 'cancelled',
-      cancelled_at: new Date(),
-      cancellation_reason: reason
-    });
-    logger.info(`Subscription cancelled: ${id}`);
-    return subscription;
-  }
-
-  async renewSubscription(id) {
-    const subscription = await this.getSubscriptionById(id);
-    const plan = await SubscriptionPlan.findByPk(subscription.plan_id);
-    
-    const newEndDate = new Date(subscription.end_date);
-    newEndDate.setMonth(newEndDate.getMonth() + plan.duration_months);
-    
-    await subscription.update({
-      status: 'active',
-      end_date: newEndDate,
-      renewed_at: new Date()
-    });
-    
-    logger.info(`Subscription renewed: ${id}`);
-    return subscription;
-  }
-
+  /**
+   * Delete subscription
+   */
   async deleteSubscription(id) {
-    const subscription = await this.getSubscriptionById(id);
-    await subscription.destroy();
-    logger.info(`Subscription deleted: ${id}`);
-    return { message: 'Subscription deleted successfully' };
+    try {
+      const subscription = await Subscription.findByPk(id);
+      if (!subscription) {
+        throw new Error('Subscription not found');
+      }
+      
+      await subscription.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete subscription service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all subscriptions for a user
+   */
+  async getUserSubscriptions(userId, filters = {}) {
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      where.userId = userId;
+      
+      const subscriptions = await Subscription.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return subscriptions;
+    } catch (error) {
+      logger.error('Get user subscriptions service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Cancel subscription
+   */
+  async cancelSubscription(id) {
+    try {
+      const subscription = await Subscription.findByPk(id);
+      if (!subscription) {
+        throw new Error('Subscription not found');
+      }
+      
+      await subscription.update({
+        isActive: false,
+        cancelledAt: new Date(),
+      });
+      
+      return subscription;
+    } catch (error) {
+      logger.error('Cancel subscription service error:', error);
+      throw error;
+    }
   }
 }
 

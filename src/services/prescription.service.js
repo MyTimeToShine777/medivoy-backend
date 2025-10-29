@@ -1,95 +1,89 @@
-const { Prescription, Appointment, Doctor, Patient } = require('../models');
-const { AppError } = require('../utils/error-handler');
+const Prescription = require('../models/Prescription.model');
 const logger = require('../utils/logger');
 
 class PrescriptionService {
-  async createPrescription(prescriptionData) {
+  /**
+   * Create a new prescription
+   */
+  async createPrescription(data) {
     try {
-      const prescription = await Prescription.create(prescriptionData);
-      logger.info(`Prescription created: ${prescription.id}`);
+      const prescription = await Prescription.create(data);
       return prescription;
     } catch (error) {
-      logger.error('Error creating prescription:', error);
-      throw new AppError('Failed to create prescription', 500);
+      logger.error('Create prescription service error:', error);
+      throw error;
     }
   }
 
-  async getPrescriptionById(prescriptionId) {
-    const prescription = await Prescription.findByPk(prescriptionId, {
-      include: [
-        { model: Appointment, as: 'appointment' },
-        { model: Doctor, as: 'doctor' },
-        { model: Patient, as: 'patient' }
-      ]
-    });
-    
-    if (!prescription) {
-      throw new AppError('Prescription not found', 404);
+  /**
+   * Get prescription by ID
+   */
+  async getPrescriptionById(id) {
+    try {
+      const prescription = await Prescription.findByPk(id);
+      return prescription;
+    } catch (error) {
+      logger.error('Get prescription by ID service error:', error);
+      throw error;
     }
-    
-    return prescription;
   }
 
-  async updatePrescription(prescriptionId, updateData) {
-    const prescription = await this.getPrescriptionById(prescriptionId);
-    await prescription.update(updateData);
-    logger.info(`Prescription updated: ${prescriptionId}`);
-    return prescription;
+  /**
+   * Update prescription
+   */
+  async updatePrescription(id, data) {
+    try {
+      const prescription = await Prescription.findByPk(id);
+      if (!prescription) {
+        throw new Error('Prescription not found');
+      }
+      
+      await prescription.update(data);
+      return prescription;
+    } catch (error) {
+      logger.error('Update prescription service error:', error);
+      throw error;
+    }
   }
 
-  async deletePrescription(prescriptionId) {
-    const prescription = await this.getPrescriptionById(prescriptionId);
-    await prescription.destroy();
-    logger.info(`Prescription deleted: ${prescriptionId}`);
-    return { message: 'Prescription deleted successfully' };
+  /**
+   * Delete prescription
+   */
+  async deletePrescription(id) {
+    try {
+      const prescription = await Prescription.findByPk(id);
+      if (!prescription) {
+        throw new Error('Prescription not found');
+      }
+      
+      await prescription.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete prescription service error:', error);
+      throw error;
+    }
   }
 
-  async getAllPrescriptions(filters = {}, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-
-    const { count, rows } = await Prescription.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      include: [
-        { model: Appointment, as: 'appointment' },
-        { model: Doctor, as: 'doctor' },
-        { model: Patient, as: 'patient' }
-      ],
-      order: [['created_at', 'DESC']]
-    });
-
-    return {
-      prescriptions: rows,
-      total: count,
-      page,
-      totalPages: Math.ceil(count / limit)
-    };
-  }
-
-  async getPatientPrescriptions(patientId) {
-    const prescriptions = await Prescription.findAll({
-      where: { patient_id: patientId },
-      include: [
-        { model: Doctor, as: 'doctor' },
-        { model: Appointment, as: 'appointment' }
-      ],
-      order: [['created_at', 'DESC']]
-    });
-    return prescriptions;
-  }
-
-  async generatePrescriptionPDF(prescriptionId) {
-    const prescription = await this.getPrescriptionById(prescriptionId);
-    
-    // TODO: Implement PDF generation
-    logger.info(`Generating PDF for prescription: ${prescriptionId}`);
-    
-    return {
-      message: 'PDF generation not yet implemented',
-      prescription
-    };
+  /**
+   * Get all prescriptions for a patient
+   */
+  async getPatientPrescriptions(patientId, filters = {}) {
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      where.patientId = patientId;
+      
+      const prescriptions = await Prescription.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return prescriptions;
+    } catch (error) {
+      logger.error('Get patient prescriptions service error:', error);
+      throw error;
+    }
   }
 }
 

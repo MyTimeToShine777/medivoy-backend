@@ -1,61 +1,206 @@
-const bookingService = require('../services/booking.service');
-const { successResponse } = require('../utils/response');
+const Booking = require('../models/Booking.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const logger = require('../utils/logger');
 
 class BookingController {
-  async createBooking(req, res, next) {
+  /**
+   * Create a new booking
+   */
+  async createBooking(req, res) {
     try {
-      const booking = await bookingService.createBooking(req.body);
-      return successResponse(res, booking, 'Booking created successfully', 201);
+      const { patientId, treatmentId, hospitalId, notes } = req.body;
+      
+      // Create booking
+      const booking = await Booking.create({
+        patientId,
+        treatmentId,
+        hospitalId,
+        notes,
+      });
+      
+      return successResponse(res, {
+        message: 'Booking created successfully',
+        data: booking,
+      }, 201);
     } catch (error) {
-      next(error);
+      logger.error('Create booking error:', error);
+      return errorResponse(res, {
+        message: 'Failed to create booking',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getBooking(req, res, next) {
+  /**
+   * Get booking by ID
+   */
+  async getBooking(req, res) {
     try {
-      const booking = await bookingService.getBookingById(req.params.id);
-      return successResponse(res, booking, 'Booking retrieved successfully');
+      const { id } = req.params;
+      
+      // Find booking
+      const booking = await Booking.findByPk(id);
+      
+      if (!booking) {
+        return errorResponse(res, {
+          message: 'Booking not found',
+          code: 'BOOKING_NOT_FOUND',
+        }, 404);
+      }
+      
+      return successResponse(res, {
+        message: 'Booking retrieved successfully',
+        data: booking,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Get booking error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve booking',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async updateBooking(req, res, next) {
+  /**
+   * Update booking
+   */
+  async updateBooking(req, res) {
     try {
-      const booking = await bookingService.updateBooking(req.params.id, req.body);
-      return successResponse(res, booking, 'Booking updated successfully');
+      const { id } = req.params;
+      const { notes, status } = req.body;
+      
+      // Find booking
+      const booking = await Booking.findByPk(id);
+      
+      if (!booking) {
+        return errorResponse(res, {
+          message: 'Booking not found',
+          code: 'BOOKING_NOT_FOUND',
+        }, 404);
+      }
+      
+      // Update booking
+      await booking.update({
+        notes,
+        status,
+      });
+      
+      return successResponse(res, {
+        message: 'Booking updated successfully',
+        data: booking,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Update booking error:', error);
+      return errorResponse(res, {
+        message: 'Failed to update booking',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async updateBookingStatus(req, res, next) {
+  /**
+   * Update booking status
+   */
+  async updateBookingStatus(req, res) {
     try {
-      const { status, notes } = req.body;
-      const booking = await bookingService.updateBookingStatus(req.params.id, status, notes);
-      return successResponse(res, booking, 'Booking status updated successfully');
+      const { id } = req.params;
+      const { status } = req.body;
+      
+      // Find booking
+      const booking = await Booking.findByPk(id);
+      
+      if (!booking) {
+        return errorResponse(res, {
+          message: 'Booking not found',
+          code: 'BOOKING_NOT_FOUND',
+        }, 404);
+      }
+      
+      // Update booking status
+      await booking.update({ status });
+      
+      return successResponse(res, {
+        message: 'Booking status updated successfully',
+        data: booking,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Update booking status error:', error);
+      return errorResponse(res, {
+        message: 'Failed to update booking status',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getAllBookings(req, res, next) {
+  /**
+   * Get all bookings
+   */
+  async getAllBookings(req, res) {
     try {
-      const { page, limit, ...filters } = req.query;
-      const result = await bookingService.getAllBookings(filters, { page, limit });
-      return successResponse(res, result, 'Bookings retrieved successfully');
+      const { page = 1, limit = 10, status, patientId, hospitalId } = req.query;
+      
+      // Build where clause
+      const where = {};
+      if (status) where.status = status;
+      if (patientId) where.patientId = patientId;
+      if (hospitalId) where.hospitalId = hospitalId;
+      
+      // Get bookings with pagination
+      const bookings = await Booking.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return successResponse(res, {
+        message: 'Bookings retrieved successfully',
+        data: bookings.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(bookings.count / parseInt(limit, 10)),
+          totalRecords: bookings.count,
+        },
+      });
     } catch (error) {
-      next(error);
+      logger.error('Get all bookings error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve bookings',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async cancelBooking(req, res, next) {
+  /**
+   * Cancel booking
+   */
+  async cancelBooking(req, res) {
     try {
-      const { reason } = req.body;
-      const booking = await bookingService.cancelBooking(req.params.id, reason);
-      return successResponse(res, booking, 'Booking cancelled successfully');
+      const { id } = req.params;
+      
+      // Find booking
+      const booking = await Booking.findByPk(id);
+      
+      if (!booking) {
+        return errorResponse(res, {
+          message: 'Booking not found',
+          code: 'BOOKING_NOT_FOUND',
+        }, 404);
+      }
+      
+      // Update booking status to cancelled
+      await booking.update({ status: 'cancelled' });
+      
+      return successResponse(res, {
+        message: 'Booking cancelled successfully',
+        data: booking,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Cancel booking error:', error);
+      return errorResponse(res, {
+        message: 'Failed to cancel booking',
+        error: error.message,
+      }, 500);
     }
   }
 }

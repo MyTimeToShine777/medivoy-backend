@@ -1,54 +1,31 @@
-/**
- * User roles constants
- */
+// User roles and permissions for the Medivoy Healthcare System
 
-const USER_ROLES = {
+module.exports = {
+  // User roles
   ADMIN: 'admin',
   DOCTOR: 'doctor',
   PATIENT: 'patient',
-  HOSPITAL_ADMIN: 'hospital_admin'
-};
+  HOSPITAL_ADMIN: 'hospital_admin',
 
-const ROLE_PERMISSIONS = {
-  [USER_ROLES.ADMIN]: [
-    'manage_users',
-    'manage_hospitals',
-    'manage_doctors',
-    'manage_patients',
-    'manage_treatments',
-    'manage_packages',
-    'manage_bookings',
-    'manage_appointments',
-    'manage_insurance',
-    'manage_subscriptions',
-    'view_analytics',
-    'manage_content'
-  ],
-  [USER_ROLES.HOSPITAL_ADMIN]: [
-    'manage_hospital',
-    'manage_doctors',
-    'view_bookings',
-    'view_appointments',
-    'view_analytics'
-  ],
-  [USER_ROLES.DOCTOR]: [
-    'view_appointments',
-    'manage_appointments',
-    'view_patients',
-    'manage_prescriptions',
-    'manage_medical_records'
-  ],
-  [USER_ROLES.PATIENT]: [
-    'view_profile',
-    'manage_profile',
-    'create_appointments',
-    'view_appointments',
-    'view_medical_records',
-    'create_bookings'
-  ]
-};
+  // Role hierarchy
+  ROLE_HIERARCHY: {
+    admin: 4,
+    hospital_admin: 3,
+    doctor: 2,
+    patient: 1,
+  },
 
-module.exports = {
-  USER_ROLES,
-  ROLE_PERMISSIONS
+  // Permissions
+  PERMISSION_READ: 'read',
+  PERMISSION_WRITE: 'write',
+  PERMISSION_UPDATE: 'update',
+  PERMISSION_DELETE: 'delete',
+
+  // Default permissions by role
+  DEFAULT_PERMISSIONS: {
+    admin: ['read', 'write', 'update', 'delete'],
+    hospital_admin: ['read', 'write', 'update'],
+    doctor: ['read', 'write', 'update'],
+    patient: ['read', 'write'],
+  },
 };

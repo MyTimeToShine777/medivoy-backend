@@ -1,76 +1,108 @@
-const { FAQ } = require('../models');
-const { AppError } = require('../utils/error-handler');
+const FAQ = require('../models/FAQ.model');
 const logger = require('../utils/logger');
 
 class FAQService {
+  /**
+   * Create a new FAQ
+   */
   async createFAQ(data) {
     try {
       const faq = await FAQ.create(data);
-      logger.info(`FAQ created: ${faq.id}`);
       return faq;
     } catch (error) {
-      logger.error('Error creating FAQ:', error);
-      throw new AppError('Failed to create FAQ', 500);
+      logger.error('Create FAQ service error:', error);
+      throw error;
     }
   }
 
+  /**
+   * Get FAQ by ID
+   */
   async getFAQById(id) {
-    const faq = await FAQ.findByPk(id);
-    if (!faq) throw new AppError('FAQ not found', 404);
-    return faq;
-  }
-
-  async getAllFAQs(filters = {}, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-    const { count, rows } = await FAQ.findAndCountAll({
-      where: filters,
-      limit,
-      offset,
-      order: [['sort_order', 'ASC'], ['created_at', 'DESC']]
-    });
-    return { faqs: rows, total: count, page, totalPages: Math.ceil(count / limit) };
-  }
-
-  async getFAQsByCategory(category, pagination = {}) {
-    const { page = 1, limit = 10 } = pagination;
-    const offset = (page - 1) * limit;
-    const { count, rows } = await FAQ.findAndCountAll({
-      where: { category, is_active: true },
-      limit,
-      offset,
-      order: [['sort_order', 'ASC']]
-    });
-    return { faqs: rows, total: count, page, totalPages: Math.ceil(count / limit) };
-  }
-
-  async updateFAQ(id, data) {
-    const faq = await this.getFAQById(id);
-    await faq.update(data);
-    logger.info(`FAQ updated: ${id}`);
-    return faq;
-  }
-
-  async deleteFAQ(id) {
-    const faq = await this.getFAQById(id);
-    await faq.destroy();
-    logger.info(`FAQ deleted: ${id}`);
-    return { message: 'FAQ deleted successfully' };
-  }
-
-  async reorderFAQs(orders) {
     try {
-      for (const order of orders) {
-        await FAQ.update(
-          { sort_order: order.sort_order },
-          { where: { id: order.id } }
-        );
-      }
-      logger.info('FAQs reordered successfully');
-      return { message: 'FAQs reordered successfully' };
+      const faq = await FAQ.findByPk(id);
+      return faq;
     } catch (error) {
-      logger.error('Error reordering FAQs:', error);
-      throw new AppError('Failed to reorder FAQs', 500);
+      logger.error('Get FAQ by ID service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update FAQ
+   */
+  async updateFAQ(id, data) {
+    try {
+      const faq = await FAQ.findByPk(id);
+      if (!faq) {
+        throw new Error('FAQ not found');
+      }
+      
+      await faq.update(data);
+      return faq;
+    } catch (error) {
+      logger.error('Update FAQ service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete FAQ
+   */
+  async deleteFAQ(id) {
+    try {
+      const faq = await FAQ.findByPk(id);
+      if (!faq) {
+        throw new Error('FAQ not found');
+      }
+      
+      await faq.destroy();
+      return true;
+    } catch (error) {
+      logger.error('Delete FAQ service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all FAQs
+   */
+  async getAllFAQs(filters = {}) {
+    try {
+      const { page = 1, limit = 10, ...where } = filters;
+      
+      const faqs = await FAQ.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['sortOrder', 'ASC'], ['createdAt', 'DESC']],
+      });
+      
+      return faqs;
+    } catch (error) {
+      logger.error('Get all FAQs service error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get FAQs by category
+   */
+  async getFAQsByCategory(category, filters = {}) {
+    try {
+      const { page = 1, limit = 10 } = filters;
+      
+      const faqs = await FAQ.findAndCountAll({
+        where: { category },
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['sortOrder', 'ASC'], ['createdAt', 'DESC']],
+      });
+      
+      return faqs;
+    } catch (error) {
+      logger.error('Get FAQs by category service error:', error);
+      throw error;
     }
   }
 }

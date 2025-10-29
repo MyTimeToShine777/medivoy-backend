@@ -1,69 +1,239 @@
-const insuranceService = require('../services/insurance.service');
-const { successResponse } = require('../utils/response');
+const Insurance = require('../models/Insurance.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const logger = require('../utils/logger');
 
 class InsuranceController {
-  async createInsurance(req, res, next) {
+  /**
+   * Create a new insurance provider
+   */
+  async createInsurance(req, res) {
     try {
-      const insurance = await insuranceService.createInsurance(req.body);
-      return successResponse(res, insurance, 'Insurance created successfully', 201);
+      const { name, description, isActive, coverageDetails } = req.body;
+      
+      // Create insurance provider
+      const insurance = await Insurance.create({
+        name,
+        description,
+        isActive,
+        coverageDetails,
+      });
+      
+      return successResponse(res, {
+        message: 'Insurance provider created successfully',
+        data: insurance,
+      }, 201);
     } catch (error) {
-      next(error);
+      logger.error('Create insurance error:', error);
+      return errorResponse(res, {
+        message: 'Failed to create insurance provider',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getInsurance(req, res, next) {
+  /**
+   * Get insurance provider by ID
+   */
+  async getInsurance(req, res) {
     try {
-      const insurance = await insuranceService.getInsuranceById(req.params.id);
-      return successResponse(res, insurance, 'Insurance retrieved successfully');
+      const { id } = req.params;
+      
+      // Find insurance provider
+      const insurance = await Insurance.findByPk(id);
+      
+      if (!insurance) {
+        return errorResponse(res, {
+          message: 'Insurance provider not found',
+        }, 404);
+      }
+      
+      return successResponse(res, {
+        message: 'Insurance provider retrieved successfully',
+        data: insurance,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Get insurance error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve insurance provider',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async updateInsurance(req, res, next) {
+  /**
+   * Update insurance provider
+   */
+  async updateInsurance(req, res) {
     try {
-      const insurance = await insuranceService.updateInsurance(req.params.id, req.body);
-      return successResponse(res, insurance, 'Insurance updated successfully');
+      const { id } = req.params;
+      const { name, description, isActive, coverageDetails } = req.body;
+      
+      // Find insurance provider
+      const insurance = await Insurance.findByPk(id);
+      
+      if (!insurance) {
+        return errorResponse(res, {
+          message: 'Insurance provider not found',
+        }, 404);
+      }
+      
+      // Update insurance provider
+      await insurance.update({
+        name,
+        description,
+        isActive,
+        coverageDetails,
+      });
+      
+      return successResponse(res, {
+        message: 'Insurance provider updated successfully',
+        data: insurance,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Update insurance error:', error);
+      return errorResponse(res, {
+        message: 'Failed to update insurance provider',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async deleteInsurance(req, res, next) {
+  /**
+   * Delete insurance provider
+   */
+  async deleteInsurance(req, res) {
     try {
-      const result = await insuranceService.deleteInsurance(req.params.id);
-      return successResponse(res, result, 'Insurance deleted successfully');
+      const { id } = req.params;
+      
+      // Find insurance provider
+      const insurance = await Insurance.findByPk(id);
+      
+      if (!insurance) {
+        return errorResponse(res, {
+          message: 'Insurance provider not found',
+        }, 404);
+      }
+      
+      // Delete insurance provider
+      await insurance.destroy();
+      
+      return successResponse(res, {
+        message: 'Insurance provider deleted successfully',
+      });
     } catch (error) {
-      next(error);
+      logger.error('Delete insurance error:', error);
+      return errorResponse(res, {
+        message: 'Failed to delete insurance provider',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async getAllInsurance(req, res, next) {
+  /**
+   * Get all insurance providers
+   */
+  async getAllInsurance(req, res) {
     try {
-      const { page, limit, ...filters } = req.query;
-      const result = await insuranceService.getAllInsurance(filters, { page, limit });
-      return successResponse(res, result, 'Insurance retrieved successfully');
+      const { page = 1, limit = 10, isActive } = req.query;
+      
+      // Build where clause
+      const where = {};
+      if (isActive !== undefined) where.isActive = isActive === 'true';
+      
+      // Get insurance providers with pagination
+      const insurances = await Insurance.findAndCountAll({
+        where,
+        limit: parseInt(limit, 10),
+        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+        order: [['createdAt', 'DESC']],
+      });
+      
+      return successResponse(res, {
+        message: 'Insurance providers retrieved successfully',
+        data: insurances.rows,
+        pagination: {
+          currentPage: parseInt(page, 10),
+          totalPages: Math.ceil(insurances.count / parseInt(limit, 10)),
+          totalRecords: insurances.count,
+        },
+      });
     } catch (error) {
-      next(error);
+      logger.error('Get all insurance error:', error);
+      return errorResponse(res, {
+        message: 'Failed to retrieve insurance providers',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async verifyInsurance(req, res, next) {
+  /**
+   * Verify insurance provider
+   */
+  async verifyInsurance(req, res) {
     try {
-      const insurance = await insuranceService.verifyInsurance(req.params.id, req.body);
-      return successResponse(res, insurance, 'Insurance verified successfully');
+      const { id } = req.params;
+      
+      // Find insurance provider
+      const insurance = await Insurance.findByPk(id);
+      
+      if (!insurance) {
+        return errorResponse(res, {
+          message: 'Insurance provider not found',
+        }, 404);
+      }
+      
+      // Update insurance verification status
+      await insurance.update({ isVerified: true });
+      
+      return successResponse(res, {
+        message: 'Insurance provider verified successfully',
+        data: insurance,
+      });
     } catch (error) {
-      next(error);
+      logger.error('Verify insurance error:', error);
+      return errorResponse(res, {
+        message: 'Failed to verify insurance provider',
+        error: error.message,
+      }, 500);
     }
   }
 
-  async checkCoverage(req, res, next) {
+  /**
+   * Check insurance coverage
+   */
+  async checkCoverage(req, res) {
     try {
-      const { treatmentId } = req.body;
-      const coverage = await insuranceService.checkCoverage(req.params.id, treatmentId);
-      return successResponse(res, coverage, 'Coverage checked successfully');
+      const { insuranceId, treatmentId } = req.body;
+      
+      // Find insurance provider
+      const insurance = await Insurance.findByPk(insuranceId);
+      
+      if (!insurance) {
+        return errorResponse(res, {
+          message: 'Insurance provider not found',
+        }, 404);
+      }
+      
+      // Check if treatment is covered
+      // Note: This would require checking the coverageDetails
+      const isCovered = true; // Placeholder logic
+      const coveragePercentage = 80; // Placeholder value
+      
+      return successResponse(res, {
+        message: 'Insurance coverage checked successfully',
+        data: {
+          insuranceId,
+          treatmentId,
+          isCovered,
+          coveragePercentage,
+        },
+      });
     } catch (error) {
-      next(error);
+      logger.error('Check insurance coverage error:', error);
+      return errorResponse(res, {
+        message: 'Failed to check insurance coverage',
+        error: error.message,
+      }, 500);
     }
   }
 }

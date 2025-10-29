@@ -1,67 +1,77 @@
-const { verifyAccessToken } = require('../utils/jwt');
-const { UnauthorizedError } = require('../utils/error-handler');
+const jwt = require('jsonwebtoken');
+const config = require('../config');
+const User = require('../models/User.model');
 const logger = require('../utils/logger');
 
 /**
- * Authentication middleware - Verify JWT token
+ * Authentication middleware to verify JWT tokens
  */
-const authenticate = async (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   try {
     // Get token from header
-    const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedError('No token provided');
+    const authHeader = req.header('Authorization');
+    if (!authHeader) {
+      return res.status(401).json({
+        success: false,
+        message: 'No authorization header provided',
+        code: 'AUTH_NO_TOKEN',
+      });
     }
     
-    // Extract token
-    const token = authHeader.split(' ')[1];
+    // Check if token is in Bearer format
+    const tokenParts = authHeader.split(' ');
+    if (tokenParts[0] !== 'Bearer' || !tokenParts[1]) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid authorization header format',
+        code: 'AUTH_INVALID_TOKEN_FORMAT',
+      });
+    }
+    
+    const token = tokenParts[1];
     
     // Verify token
-    const decoded = verifyAccessToken(token);
+    const decoded = jwt.verify(token, config.jwt.secret);
+    
+    // Get user from database
+    const user = await User.findByPk(decoded.id);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not found',
+        code: 'AUTH_USER_NOT_FOUND',
+      });
+    }
     
     // Attach user to request
-    req.user = {
-      id: decoded.id,
-      email: decoded.email,
-      role: decoded.role
-    };
-    
-    logger.debug(`User authenticated: ${decoded.email}`);
-    
+    req.user = user;
     next();
   } catch (error) {
     logger.error('Authentication error:', error);
-    next(error);
-  }
-};
-
-/**
- * Optional authentication - Don't fail if no token
- */
-const optionalAuthenticate = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
     
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.split(' ')[1];
-      const decoded = verifyAccessToken(token);
-      
-      req.user = {
-        id: decoded.id,
-        email: decoded.email,
-        role: decoded.role
-      };
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Token has expired',
+        code: 'AUTH_TOKEN_EXPIRED',
+      });
     }
     
-    next();
-  } catch (error) {
-    // Continue without authentication
-    next();
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid token',
+        code: 'AUTH_TOKEN_INVALID',
+      });
+    }
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Authentication failed',
+      code: 'AUTH_FAILED',
+      error: error.message,
+    });
   }
 };
 
-module.exports = {
-  authenticate,
-  optionalAuthenticate
-};
+module.exports = authMiddleware;
