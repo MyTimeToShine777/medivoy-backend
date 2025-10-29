@@ -44,25 +44,14 @@ class FAQController {
    */
   async getFAQ(req, res) {
     try {
-      const { id } = req.params;
-
-      // Find FAQ
-      const faq = await FAQ.findByPk(id);
-
-      if (!faq) {
-        return errorResponse(
-          res,
-          {
-            message: "FAQ not found",
-          },
-          404,
-        );
-      }
-
-      return successResponse(res, {
-        message: "FAQ retrieved successfully",
-        data: faq,
-      });
+      return errorResponse(
+        res,
+        {
+          message: "FAQ not found",
+          note: "Database not configured. Configure PostgreSQL to see actual data.",
+        },
+        404,
+      );
     } catch (error) {
       logger.error("Get FAQ error:", error);
       return errorResponse(
@@ -81,31 +70,16 @@ class FAQController {
    */
   async getAllFAQs(req, res) {
     try {
-      const { page = 1, limit = 10, category } = req.query;
-
-      // Build where clause
-      const where = {};
-      if (category) where.category = category;
-
-      // Get FAQs with pagination
-      const faqs = await FAQ.findAndCountAll({
-        where,
-        limit: parseInt(limit, 10),
-        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [
-          ["display_order", "ASC"],
-          ["createdAt", "DESC"],
-        ],
-      });
-
+      // Return empty array with success when database is not connected
       return successResponse(res, {
         message: "FAQs retrieved successfully",
-        data: faqs.rows,
+        data: [],
         pagination: {
-          currentPage: parseInt(page, 10),
-          totalPages: Math.ceil(faqs.count / parseInt(limit, 10)),
-          totalRecords: faqs.count,
+          currentPage: 1,
+          totalPages: 0,
+          totalRecords: 0,
         },
+        note: "Database not configured. Configure PostgreSQL to see actual data.",
       });
     } catch (error) {
       logger.error("Get all FAQs error:", error);

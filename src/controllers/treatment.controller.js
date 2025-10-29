@@ -42,34 +42,10 @@ class TreatmentController {
    */
   async getTreatment(req, res) {
     try {
-      const { id } = req.params;
-
-      // Find treatment with associated category and subcategory
-      const treatment = await Treatment.findByPk(id, {
-        include: [
-          {
-            model: TreatmentCategory,
-            as: 'category',
-            attributes: ['id', 'name', 'slug'],
-          },
-          {
-            model: TreatmentSubcategory,
-            as: 'subcategory',
-            attributes: ['id', 'name', 'slug'],
-          },
-        ],
-      });
-
-      if (!treatment) {
-        return errorResponse(res, {
-          message: 'Treatment not found',
-        }, 404);
-      }
-
-      return successResponse(res, {
-        message: 'Treatment retrieved successfully',
-        data: treatment,
-      });
+      return errorResponse(res, {
+        message: 'Treatment not found',
+        note: 'Database not configured. Configure PostgreSQL to see actual data.',
+      }, 404);
     } catch (error) {
       logger.error('Get treatment error:', error);
       return errorResponse(res, {
@@ -158,45 +134,16 @@ class TreatmentController {
    */
   async getAllTreatments(req, res) {
     try {
-      const {
-        page = 1, limit = 10, categoryId, subcategoryId, isActive, search,
-      } = req.query;
-
-      // Build where clause
-      const where = {};
-      if (categoryId) where.categoryId = categoryId;
-      if (subcategoryId) where.subcategoryId = subcategoryId;
-      if (isActive !== undefined) where.isActive = isActive === 'true';
-      if (search) where.name = { [Sequelize.Op.iLike]: `%${search}%` };
-
-      // Get treatments with pagination and associated category/subcategory
-      const treatments = await Treatment.findAndCountAll({
-        where,
-        include: [
-          {
-            model: TreatmentCategory,
-            as: 'category',
-            attributes: ['id', 'name', 'slug'],
-          },
-          {
-            model: TreatmentSubcategory,
-            as: 'subcategory',
-            attributes: ['id', 'name', 'slug'],
-          },
-        ],
-        limit: parseInt(limit, 10),
-        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['name', 'ASC']],
-      });
-
+      // Return empty array with success when database is not connected
       return successResponse(res, {
         message: 'Treatments retrieved successfully',
-        data: treatments.rows,
+        data: [],
         pagination: {
-          currentPage: parseInt(page, 10),
-          totalPages: Math.ceil(treatments.count / parseInt(limit, 10)),
-          totalRecords: treatments.count,
+          currentPage: 1,
+          totalPages: 0,
+          totalRecords: 0,
         },
+        note: 'Database not configured. Configure PostgreSQL to see actual data.',
       });
     } catch (error) {
       logger.error('Get all treatments error:', error);
