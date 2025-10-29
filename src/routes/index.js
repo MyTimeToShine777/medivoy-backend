@@ -40,6 +40,13 @@ const staffRoutes = require('./v1/staff.routes');
 const chatRoutes = require('./v1/chat.routes');
 const videoCallsRoutes = require('./v1/videoCalls.routes');
 const bookingStatusRoutes = require('./v1/bookingStatus.routes');
+const mediaRoutes = require('./v1/media.routes');
+const systemSettingsRoutes = require('./v1/systemSettings.routes');
+const termsPrivacyRoutes = require('./v1/termsPrivacy.routes');
+const dnaKitsRoutes = require('./v1/dnaKits.routes');
+const auditLogsRoutes = require('./v1/auditLogs.routes');
+const integrationsRoutes = require('./v1/integrations.routes');
+const translationRoutes = require('./v1/translation.routes');
 
 // Mount routes
 router.use('/auth', authRoutes);
@@ -75,6 +82,13 @@ router.use('/staff', staffRoutes);
 router.use('/chat', chatRoutes);
 router.use('/video-calls', videoCallsRoutes);
 router.use('/booking-status', bookingStatusRoutes);
+router.use('/media', mediaRoutes);
+router.use('/system-settings', systemSettingsRoutes);
+router.use('/terms-privacy', termsPrivacyRoutes);
+router.use('/dna-kits', dnaKitsRoutes);
+router.use('/audit-logs', auditLogsRoutes);
+router.use('/integrations', integrationsRoutes);
+   router.use('/translation', translationRoutes);
 
 // Root endpoint
 router.get('/', (req, res) => {
@@ -116,7 +130,14 @@ router.get('/', (req, res) => {
          staff: '/api/v1/staff',
          chat: '/api/v1/chat',
          videoCalls: '/api/v1/video-calls',
-         bookingStatus: '/api/v1/booking-status'
+         bookingStatus: '/api/v1/booking-status',
+         media: '/api/v1/media',
+         systemSettings: '/api/v1/system-settings',
+         termsPrivacy: '/api/v1/terms-privacy',
+         dnaKits: '/api/v1/dna-kits',
+         auditLogs: '/api/v1/audit-logs',
+         integrations: '/api/v1/integrations',
+            translation: '/api/v1/translation'
     },
     timestamp: new Date().toISOString()
   });

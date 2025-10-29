@@ -4,7 +4,7 @@
  */
 
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const { sequelize } = require('../config/database');
 
 const BookingStatusHistory = sequelize.define('BookingStatusHistory', {
   id: {

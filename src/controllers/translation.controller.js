@@ -1,300 +1,306 @@
-const Translation = require('../models/Translation.model');
-const { successResponse, errorResponse } = require('../utils/response');
+const googleTranslateService = require('../services/googleTranslate.service');
+const { 
+  addTranslationJob, 
+  getJobStatus, 
+  removeJob, 
+  getQueueStats,
+  cleanCompletedJobs,
+  cleanFailedJobs 
+} = require('../workers/translation.worker');
 const logger = require('../utils/logger');
 
-class TranslationController {
-  /**
-   * Create a new translation
-   */
-  async createTranslation(req, res) {
-    try {
-      const { key, language, text } = req.body;
-      
-      // Create translation
-      const translation = await Translation.create({
-        key,
-        language,
-        text,
+/**
+ * Translate text
+ */
+exports.translateText = async (req, res) => {
+  try {
+    const { text, targetLanguage, sourceLanguage } = req.body;
+
+    if (!text) {
+      return res.status(400).json({
+        success: false,
+        message: 'Text is required'
       });
-      
-      return successResponse(res, {
-        message: 'Translation created successfully',
-        data: translation,
-      }, 201);
-    } catch (error) {
-      logger.error('Create translation error:', error);
-      return errorResponse(res, {
-        message: 'Failed to create translation',
-        error: error.message,
-      }, 500);
     }
-  }
 
-  /**
-   * Get translation by ID
-   */
-  async getTranslation(req, res) {
-    try {
-      const { id } = req.params;
-      
-      // Find translation
-      const translation = await Translation.findByPk(id);
-      
-      if (!translation) {
-        return errorResponse(res, {
-          message: 'Translation not found',
-        }, 404);
-      }
-      
-      return successResponse(res, {
-        message: 'Translation retrieved successfully',
-        data: translation,
+    const result = await googleTranslateService.translateText(
+      text,
+      targetLanguage || 'en',
+      sourceLanguage
+    );
+
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    logger.error('Translate text controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to translate text',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Translate batch
+ */
+exports.translateBatch = async (req, res) => {
+  try {
+    const { texts, targetLanguage, sourceLanguage } = req.body;
+
+    if (!texts || !Array.isArray(texts) || texts.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Texts array is required'
       });
-    } catch (error) {
-      logger.error('Get translation error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve translation',
-        error: error.message,
-      }, 500);
     }
-  }
 
-  /**
-   * Update translation
-   */
-  async updateTranslation(req, res) {
-    try {
-      const { id } = req.params;
-      const { text } = req.body;
-      
-      // Find translation
-      const translation = await Translation.findByPk(id);
-      
-      if (!translation) {
-        return errorResponse(res, {
-          message: 'Translation not found',
-        }, 404);
-      }
-      
-      // Update translation
-      await translation.update({ text });
-      
-      return successResponse(res, {
-        message: 'Translation updated successfully',
-        data: translation,
+    const results = await googleTranslateService.translateBatch(
+      texts,
+      targetLanguage || 'en',
+      sourceLanguage
+    );
+
+    res.status(200).json({
+      success: true,
+      data: results
+    });
+  } catch (error) {
+    logger.error('Translate batch controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to translate batch',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Detect language
+ */
+exports.detectLanguage = async (req, res) => {
+  try {
+    const { text } = req.body;
+
+    if (!text) {
+      return res.status(400).json({
+        success: false,
+        message: 'Text is required'
       });
-    } catch (error) {
-      logger.error('Update translation error:', error);
-      return errorResponse(res, {
-        message: 'Failed to update translation',
-        error: error.message,
-      }, 500);
     }
-  }
 
-  /**
-   * Delete translation
-   */
-  async deleteTranslation(req, res) {
-    try {
-      const { id } = req.params;
-      
-      // Find translation
-      const translation = await Translation.findByPk(id);
-      
-      if (!translation) {
-        return errorResponse(res, {
-          message: 'Translation not found',
-        }, 404);
-      }
-      
-      // Delete translation
-      await translation.destroy();
-      
-      return successResponse(res, {
-        message: 'Translation deleted successfully',
+    const language = await googleTranslateService.detectLanguage(text);
+
+    res.status(200).json({
+      success: true,
+      data: { language }
+    });
+  } catch (error) {
+    logger.error('Detect language controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to detect language',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get supported languages
+ */
+exports.getSupportedLanguages = async (req, res) => {
+  try {
+    const languages = await googleTranslateService.getSupportedLanguages();
+
+    res.status(200).json({
+      success: true,
+      data: languages
+    });
+  } catch (error) {
+    logger.error('Get supported languages controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get supported languages',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Queue translation job
+ */
+exports.queueTranslation = async (req, res) => {
+  try {
+    const { modelName, recordId, fields, targetLanguage } = req.body;
+
+    if (!modelName || !recordId || !fields) {
+      return res.status(400).json({
+        success: false,
+        message: 'Model name, record ID, and fields are required'
       });
-    } catch (error) {
-      logger.error('Delete translation error:', error);
-      return errorResponse(res, {
-        message: 'Failed to delete translation',
-        error: error.message,
-      }, 500);
     }
-  }
 
-  /**
-   * Get all translations
-   */
-  async getAllTranslations(req, res) {
-    try {
-      const { page = 1, limit = 10, language } = req.query;
-      
-      // Build where clause
-      const where = {};
-      if (language) where.language = language;
-      
-      // Get translations with pagination
-      const translations = await Translation.findAndCountAll({
-        where,
-        limit: parseInt(limit, 10),
-        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['key', 'ASC']],
+    const job = await addTranslationJob(
+      modelName,
+      recordId,
+      fields,
+      targetLanguage || 'en'
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'Translation job queued successfully',
+      data: job
+    });
+  } catch (error) {
+    logger.error('Queue translation controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to queue translation',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get job status
+ */
+exports.getJobStatus = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+
+    if (!jobId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Job ID is required'
       });
-      
-      return successResponse(res, {
-        message: 'Translations retrieved successfully',
-        data: translations.rows,
-        pagination: {
-          currentPage: parseInt(page, 10),
-          totalPages: Math.ceil(translations.count / parseInt(limit, 10)),
-          totalRecords: translations.count,
-        },
-      });
-    } catch (error) {
-      logger.error('Get all translations error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve translations',
-        error: error.message,
-      }, 500);
     }
-  }
 
-  /**
-   * Get translation by key and language
-   */
-  async getTranslationByKey(req, res) {
-    try {
-      const { key, language } = req.params;
-      
-      // Find translation
-      const translation = await Translation.findOne({
-        where: { key, language },
+    const status = await getJobStatus(jobId);
+
+    if (!status) {
+      return res.status(404).json({
+        success: false,
+        message: 'Job not found'
       });
-      
-      if (!translation) {
-        return errorResponse(res, {
-          message: 'Translation not found',
-        }, 404);
-      }
-      
-      return successResponse(res, {
-        message: 'Translation retrieved successfully',
-        data: translation,
-      });
-    } catch (error) {
-      logger.error('Get translation by key error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve translation',
-        error: error.message,
-      }, 500);
     }
-  }
 
-  /**
-   * Bulk update translations
-   */
-  async bulkUpdateTranslations(req, res) {
-    try {
-      const { translations } = req.body;
-      
-      // Update translations in bulk
-      const updatedTranslations = [];
-      for (const translationData of translations) {
-        const { key, language, text } = translationData;
-        
-        // Find existing translation or create new one
-        const [translation, created] = await Translation.findOrCreate({
-          where: { key, language },
-          defaults: { key, language, text },
-        });
-        
-        if (!created) {
-          // Update existing translation
-          await translation.update({ text });
-        }
-        
-        updatedTranslations.push(translation);
-      }
-      
-      return successResponse(res, {
-        message: 'Translations updated successfully',
-        data: updatedTranslations,
+    res.status(200).json({
+      success: true,
+      data: status
+    });
+  } catch (error) {
+    logger.error('Get job status controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get job status',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Cancel job
+ */
+exports.cancelJob = async (req, res) => {
+  try {
+    const { jobId } = req.params;
+
+    if (!jobId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Job ID is required'
       });
-    } catch (error) {
-      logger.error('Bulk update translations error:', error);
-      return errorResponse(res, {
-        message: 'Failed to update translations',
-        error: error.message,
-      }, 500);
     }
-  }
 
-  /**
-   * Get translation by key and language
-   */
-  async getTranslationByKeyAndLanguage(req, res) {
-    try {
-      const { key, language } = req.params;
+    const removed = await removeJob(jobId);
 
-      // Find translation
-      const translation = await Translation.findOne({
-        where: { key, language },
+    if (!removed) {
+      return res.status(404).json({
+        success: false,
+        message: 'Job not found'
       });
-
-      if (!translation) {
-        return errorResponse(res, {
-          message: 'Translation not found',
-          code: 'TRANSLATION_NOT_FOUND',
-        }, 404);
-      }
-
-      return successResponse(res, {
-        message: 'Translation retrieved successfully',
-        data: translation,
-      });
-    } catch (error) {
-      logger.error('Get translation by key and language error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve translation',
-        error: error.message,
-      }, 500);
     }
+
+    res.status(200).json({
+      success: true,
+      message: 'Job cancelled successfully'
+    });
+  } catch (error) {
+    logger.error('Cancel job controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to cancel job',
+      error: error.message
+    });
   }
+};
 
-  /**
-   * Get translations by language
-   */
-  async getTranslationsByLanguage(req, res) {
-    try {
-      const { language } = req.params;
-      const { page = 1, limit = 100 } = req.query;
+/**
+ * Get queue statistics
+ */
+exports.getQueueStats = async (req, res) => {
+  try {
+    const stats = await getQueueStats();
 
-      // Get translations with pagination
-      const translations = await Translation.findAndCountAll({
-        where: { language },
-        limit: parseInt(limit, 10),
-        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['key', 'ASC']],
-      });
-
-      return successResponse(res, {
-        message: 'Translations retrieved successfully',
-        data: translations.rows,
-        pagination: {
-          currentPage: parseInt(page, 10),
-          totalPages: Math.ceil(translations.count / parseInt(limit, 10)),
-          totalRecords: translations.count,
-        },
-      });
-    } catch (error) {
-      logger.error('Get translations by language error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve translations',
-        error: error.message,
-      }, 500);
-    }
+    res.status(200).json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    logger.error('Get queue stats controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get queue statistics',
+      error: error.message
+    });
   }
-}
+};
 
-module.exports = new TranslationController();
+/**
+ * Clean completed jobs
+ */
+exports.cleanCompletedJobs = async (req, res) => {
+  try {
+    const grace = parseInt(req.query.grace) || 0;
+    const jobs = await cleanCompletedJobs(grace);
+
+    res.status(200).json({
+      success: true,
+      message: `${jobs.length} completed jobs cleaned`,
+      data: { count: jobs.length }
+    });
+  } catch (error) {
+    logger.error('Clean completed jobs controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to clean completed jobs',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Clean failed jobs
+ */
+exports.cleanFailedJobs = async (req, res) => {
+  try {
+    const grace = parseInt(req.query.grace) || 0;
+    const jobs = await cleanFailedJobs(grace);
+
+    res.status(200).json({
+      success: true,
+      message: `${jobs.length} failed jobs cleaned`,
+      data: { count: jobs.length }
+    });
+  } catch (error) {
+    logger.error('Clean failed jobs controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to clean failed jobs',
+      error: error.message
+    });
+  }
+};
