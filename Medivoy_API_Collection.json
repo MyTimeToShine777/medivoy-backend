@@ -1,0 +1,681 @@
+{
+  "info": {
+    "name": "Medivoy Healthcare API",
+    "description": "Complete API collection for Medivoy Healthcare Backend with 126+ endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('access_token', jsonData.data.token);",
+                  "    pm.environment.set('refresh_token', jsonData.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  &quot;firstName&quot;: &quot;John&quot;,\n  &quot;lastName&quot;: &quot;Doe&quot;,\n  &quot;email&quot;: &quot;john.doe@example.com&quot;,\n  &quot;password&quot;: &quot;SecurePass123!&quot;,\n  &quot;phone&quot;: &quot;+1234567890&quot;,\n  &quot;role&quot;: &quot;patient&quot;,\n  &quot;dateOfBirth&quot;: &quot;1990-01-15&quot;,\n  &quot;gender&quot;: &quot;male&quot;\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user account"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('access_token', jsonData.data.token);",
+                  "    pm.environment.set('refresh_token', jsonData.data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  &quot;email&quot;: &quot;john.doe@example.com&quot;,\n  &quot;password&quot;: &quot;SecurePass123!&quot;\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with email and password"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  &quot;refreshToken&quot;: &quot;{{refresh_token}}&quot;\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/refresh-token",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh-token"]
+            },
+            "description": "Get new access token using refresh token"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout and invalidate tokens"
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  &quot;email&quot;: &quot;john.doe@example.com&quot;\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/forgot-password",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "forgot-password"]
+            },
+            "description": "Request password reset email"
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  &quot;password&quot;: &quot;NewSecurePass123!&quot;,\n  &quot;confirmPassword&quot;: &quot;NewSecurePass123!&quot;\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/reset-password/:token",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "reset-password", ":token"],
+              "variable": [
+                {
+                  "key": "token",
+                  "value": "reset_token_here"
+                }
+              ]
+            },
+            "description": "Reset password using token from email"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hospitals",
+      "item": [
+        {
+          "name": "Get All Hospitals",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/hospitals?page=1&limit=10&city=Mumbai&rating=4",
+              "host": ["{{base_url}}"],
+              "path": ["hospitals"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "city",
+                  "value": "Mumbai"
+                },
+                {
+                  "key": "rating",
+                  "value": "4"
+                }
+              ]
+            },
+            "description": "Get list of all hospitals with pagination and filters"
+          }
+        },
+        {
+          "name": "Get Hospital by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/hospitals/:id",
+              "host": ["{{base_url}}"],
+              "path": ["hospitals", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get detailed information about a specific hospital"
+          }
+        },
+        {
+          "name": "Create Hospital",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  &quot;name&quot;: &quot;Apollo Hospital&quot;,\n  &quot;description&quot;: &quot;Leading multi-specialty hospital&quot;,\n  &quot;address&quot;: &quot;123 Main Street&quot;,\n  &quot;city&quot;: &quot;Mumbai&quot;,\n  &quot;state&quot;: &quot;Maharashtra&quot;,\n  &quot;country&quot;: &quot;India&quot;,\n  &quot;zipCode&quot;: &quot;400001&quot;,\n  &quot;phone&quot;: &quot;+91-22-12345678&quot;,\n  &quot;email&quot;: &quot;info@apollo.com&quot;,\n  &quot;website&quot;: &quot;https://apollo.com&quot;,\n  &quot;specializations&quot;: [&quot;Cardiology&quot;, &quot;Neurology&quot;, &quot;Oncology&quot;],\n  &quot;facilities&quot;: [&quot;ICU&quot;, &quot;Emergency&quot;, &quot;Pharmacy&quot;]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/hospitals",
+              "host": ["{{base_url}}"],
+              "path": ["hospitals"]
+            },
+            "description": "Create a new hospital (Admin only)"
+          }
+        },
+        {
+          "name": "Update Hospital",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  &quot;name&quot;: &quot;Apollo Hospital - Updated&quot;,\n  &quot;phone&quot;: &quot;+91-22-87654321&quot;\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/hospitals/:id",
+              "host": ["{{base_url}}"],
+              "path": ["hospitals", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Update hospital information (Admin only)"
+          }
+        },
+        {
+          "name": "Delete Hospital",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/hospitals/:id",
+              "host": ["{{base_url}}"],
+              "path": ["hospitals", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Delete a hospital (Admin only)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Doctors",
+      "item": [
+        {
+          "name": "Get All Doctors",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/doctors?specialization=Cardiologist&rating=4.5",
+              "host": ["{{base_url}}"],
+              "path": ["doctors"],
+              "query": [
+                {
+                  "key": "specialization",
+                  "value": "Cardiologist"
+                },
+                {
+                  "key": "rating",
+                  "value": "4.5"
+                }
+              ]
+            },
+            "description": "Get list of all doctors with filters"
+          }
+        },
+        {
+          "name": "Get Doctor by ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/doctors/:id",
+              "host": ["{{base_url}}"],
+              "path": ["doctors", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": "Get detailed doctor information"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create Booking",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  &quot;hospitalId&quot;: 1,\n  &quot;doctorId&quot;: 1,\n  &quot;treatmentId&quot;: 1,\n  &quot;preferredDate&quot;: &quot;2024-11-15&quot;,\n  &quot;preferredTime&quot;: &quot;10:00&quot;,\n  &quot;notes&quot;: &quot;Patient has diabetes&quot;\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/bookings",
+              "host": ["{{base_url}}"],
+              "path": ["bookings"]
+            },
+            "description": "Create a new treatment booking"
+          }
+        },
+        {
+          "name": "Get My Bookings",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/bookings/my-bookings?status=confirmed",
+              "host": ["{{base_url}}"],
+              "path": ["bookings", "my-bookings"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "confirmed"
+                }
+              ]
+            },
+            "description": "Get all bookings for logged-in patient"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Translation",
+      "item": [
+        {
+          "name": "Translate Text",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  &quot;text&quot;: &quot;नमस्ते, मैं डॉक्टर हूं&quot;,\n  &quot;targetLanguage&quot;: &quot;en&quot;,\n  &quot;sourceLanguage&quot;: &quot;hi&quot;\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/translation/translate",
+              "host": ["{{base_url}}"],
+              "path": ["translation", "translate"]
+            },
+            "description": "Translate text to target language"
+          }
+        },
+        {
+          "name": "Detect Language",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  &quot;text&quot;: &quot;Bonjour, comment allez-vous?&quot;\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/translation/detect",
+              "host": ["{{base_url}}"],
+              "path": ["translation", "detect"]
+            },
+            "description": "Detect language of text"
+          }
+        },
+        {
+          "name": "Get Supported Languages",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/translation/languages",
+              "host": ["{{base_url}}"],
+              "path": ["translation", "languages"]
+            },
+            "description": "Get list of supported languages"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Media Management",
+      "item": [
+        {
+          "name": "Upload File",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "folder",
+                  "value": "/medivoy/hospitals",
+                  "type": "text"
+                },
+                {
+                  "key": "tags",
+                  "value": "hospital,profile",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/media/upload",
+              "host": ["{{base_url}}"],
+              "path": ["media", "upload"]
+            },
+            "description": "Upload file to ImageKit"
+          }
+        },
+        {
+          "name": "Get File Details",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/media/:fileId",
+              "host": ["{{base_url}}"],
+              "path": ["media", ":fileId"],
+              "variable": [
+                {
+                  "key": "fileId",
+                  "value": "abc123"
+                }
+              ]
+            },
+            "description": "Get file details from ImageKit"
+          }
+        },
+        {
+          "name": "Delete File",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "url": {
+              "raw": "{{base_url}}/media/:fileId",
+              "host": ["{{base_url}}"],
+              "path": ["media", ":fileId"],
+              "variable": [
+                {
+                  "key": "fileId",
+                  "value": "abc123"
+                }
+              ]
+            },
+            "description": "Delete file from ImageKit"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Get Dashboard Statistics",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{access_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/analytics/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["analytics", "dashboard"]
+            },
+            "description": "Get dashboard statistics (Admin only)"
+          }
+        }
+      ]
+    }
+  ]
+}
