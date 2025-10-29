@@ -3,8 +3,8 @@
  * Handles third-party integrations and API connections
  */
 
-const { Op } = require("sequelize");
-const { Integration, User } = require("../models");
+const { Op } = require('sequelize');
+const { Integration, User } = require('../models');
 
 /**
  * Get all integrations
@@ -15,7 +15,7 @@ exports.getAllIntegrations = async (req, res) => {
 
     const whereClause = {};
     if (integrationType) whereClause.integration_type = integrationType;
-    if (isActive !== undefined) whereClause.is_active = isActive === "true";
+    if (isActive !== undefined) whereClause.is_active = isActive === 'true';
     if (provider) whereClause.provider = { [Op.iLike]: `%${provider}%` };
 
     const integrations = await Integration.findAll({
@@ -23,16 +23,16 @@ exports.getAllIntegrations = async (req, res) => {
       include: [
         {
           model: User,
-          as: "createdBy",
-          attributes: ["id", "first_name", "last_name"],
+          as: 'createdBy',
+          attributes: ['id', 'first_name', 'last_name'],
         },
         {
           model: User,
-          as: "updatedBy",
-          attributes: ["id", "first_name", "last_name"],
+          as: 'updatedBy',
+          attributes: ['id', 'first_name', 'last_name'],
         },
       ],
-      order: [["created_at", "DESC"]],
+      order: [['created_at', 'DESC']],
     });
 
     // Remove sensitive data
@@ -50,10 +50,10 @@ exports.getAllIntegrations = async (req, res) => {
       data: sanitizedIntegrations,
     });
   } catch (error) {
-    console.error("Error fetching integrations:", error);
+    console.error('Error fetching integrations:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching integrations",
+      message: 'Error fetching integrations',
       error: error.message,
     });
   }
@@ -70,13 +70,13 @@ exports.getIntegrationById = async (req, res) => {
       include: [
         {
           model: User,
-          as: "createdBy",
-          attributes: ["id", "first_name", "last_name"],
+          as: 'createdBy',
+          attributes: ['id', 'first_name', 'last_name'],
         },
         {
           model: User,
-          as: "updatedBy",
-          attributes: ["id", "first_name", "last_name"],
+          as: 'updatedBy',
+          attributes: ['id', 'first_name', 'last_name'],
         },
       ],
     });
@@ -84,7 +84,7 @@ exports.getIntegrationById = async (req, res) => {
     if (!integration) {
       return res.status(404).json({
         success: false,
-        message: "Integration not found",
+        message: 'Integration not found',
       });
     }
 
@@ -100,10 +100,10 @@ exports.getIntegrationById = async (req, res) => {
       data,
     });
   } catch (error) {
-    console.error("Error fetching integration:", error);
+    console.error('Error fetching integration:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching integration",
+      message: 'Error fetching integration',
       error: error.message,
     });
   }
@@ -137,14 +137,14 @@ exports.createIntegration = async (req, res) => {
     if (existingIntegration) {
       return res.status(400).json({
         success: false,
-        message: "Integration with this slug already exists",
+        message: 'Integration with this slug already exists',
       });
     }
 
     const integration = await Integration.create({
       name,
       slug,
-      integration_type: integration_type || "other",
+      integration_type: integration_type || 'other',
       provider,
       description,
       api_key,
@@ -156,7 +156,7 @@ exports.createIntegration = async (req, res) => {
       credentials,
       is_active: false,
       is_sandbox: is_sandbox !== false,
-      sync_status: "never",
+      sync_status: 'never',
       rate_limit,
       created_by,
     });
@@ -170,14 +170,14 @@ exports.createIntegration = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Integration created successfully",
+      message: 'Integration created successfully',
       data,
     });
   } catch (error) {
-    console.error("Error creating integration:", error);
+    console.error('Error creating integration:', error);
     res.status(500).json({
       success: false,
-      message: "Error creating integration",
+      message: 'Error creating integration',
       error: error.message,
     });
   }
@@ -195,7 +195,7 @@ exports.updateIntegration = async (req, res) => {
     if (!integration) {
       return res.status(404).json({
         success: false,
-        message: "Integration not found",
+        message: 'Integration not found',
       });
     }
 
@@ -210,14 +210,14 @@ exports.updateIntegration = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Integration updated successfully",
+      message: 'Integration updated successfully',
       data,
     });
   } catch (error) {
-    console.error("Error updating integration:", error);
+    console.error('Error updating integration:', error);
     res.status(500).json({
       success: false,
-      message: "Error updating integration",
+      message: 'Error updating integration',
       error: error.message,
     });
   }
@@ -234,7 +234,7 @@ exports.deleteIntegration = async (req, res) => {
     if (!integration) {
       return res.status(404).json({
         success: false,
-        message: "Integration not found",
+        message: 'Integration not found',
       });
     }
 
@@ -242,13 +242,13 @@ exports.deleteIntegration = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Integration deleted successfully",
+      message: 'Integration deleted successfully',
     });
   } catch (error) {
-    console.error("Error deleting integration:", error);
+    console.error('Error deleting integration:', error);
     res.status(500).json({
       success: false,
-      message: "Error deleting integration",
+      message: 'Error deleting integration',
       error: error.message,
     });
   }
@@ -266,7 +266,7 @@ exports.toggleIntegrationStatus = async (req, res) => {
     if (!integration) {
       return res.status(404).json({
         success: false,
-        message: "Integration not found",
+        message: 'Integration not found',
       });
     }
 
@@ -274,14 +274,14 @@ exports.toggleIntegrationStatus = async (req, res) => {
 
     res.json({
       success: true,
-      message: `Integration ${is_active ? "activated" : "deactivated"} successfully`,
+      message: `Integration ${is_active ? 'activated' : 'deactivated'} successfully`,
       data: { is_active: integration.is_active },
     });
   } catch (error) {
-    console.error("Error toggling integration status:", error);
+    console.error('Error toggling integration status:', error);
     res.status(500).json({
       success: false,
-      message: "Error toggling integration status",
+      message: 'Error toggling integration status',
       error: error.message,
     });
   }
@@ -298,7 +298,7 @@ exports.testIntegration = async (req, res) => {
     if (!integration) {
       return res.status(404).json({
         success: false,
-        message: "Integration not found",
+        message: 'Integration not found',
       });
     }
 
@@ -306,34 +306,34 @@ exports.testIntegration = async (req, res) => {
     // For now, we'll just update the sync status
 
     await integration.update({
-      sync_status: "success",
+      sync_status: 'success',
       last_sync_at: new Date(),
       sync_error: null,
     });
 
     res.json({
       success: true,
-      message: "Integration test successful",
+      message: 'Integration test successful',
       data: {
         sync_status: integration.sync_status,
         last_sync_at: integration.last_sync_at,
       },
     });
   } catch (error) {
-    console.error("Error testing integration:", error);
+    console.error('Error testing integration:', error);
 
     // Update sync status to failed
     const integration = await Integration.findByPk(req.params.id);
     if (integration) {
       await integration.update({
-        sync_status: "failed",
+        sync_status: 'failed',
         sync_error: error.message,
       });
     }
 
     res.status(500).json({
       success: false,
-      message: "Integration test failed",
+      message: 'Integration test failed',
       error: error.message,
     });
   }
@@ -351,25 +351,25 @@ exports.getIntegrationStatistics = async (req, res) => {
 
     const integrationsByType = await Integration.findAll({
       attributes: [
-        "integration_type",
+        'integration_type',
         [
-          require("sequelize").fn("COUNT", require("sequelize").col("id")),
-          "count",
+          require('sequelize').fn('COUNT', require('sequelize').col('id')),
+          'count',
         ],
       ],
-      group: ["integration_type"],
+      group: ['integration_type'],
       raw: true,
     });
 
     const integrationsBySyncStatus = await Integration.findAll({
       attributes: [
-        "sync_status",
+        'sync_status',
         [
-          require("sequelize").fn("COUNT", require("sequelize").col("id")),
-          "count",
+          require('sequelize').fn('COUNT', require('sequelize').col('id')),
+          'count',
         ],
       ],
-      group: ["sync_status"],
+      group: ['sync_status'],
       raw: true,
     });
 
@@ -383,10 +383,10 @@ exports.getIntegrationStatistics = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching integration statistics:", error);
+    console.error('Error fetching integration statistics:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching integration statistics",
+      message: 'Error fetching integration statistics',
       error: error.message,
     });
   }
@@ -403,14 +403,14 @@ exports.syncIntegration = async (req, res) => {
     if (!integration) {
       return res.status(404).json({
         success: false,
-        message: "Integration not found",
+        message: 'Integration not found',
       });
     }
 
     if (!integration.is_active) {
       return res.status(400).json({
         success: false,
-        message: "Integration is not active",
+        message: 'Integration is not active',
       });
     }
 
@@ -418,14 +418,14 @@ exports.syncIntegration = async (req, res) => {
     // For now, we'll just update the sync status
 
     await integration.update({
-      sync_status: "pending",
+      sync_status: 'pending',
       last_sync_at: new Date(),
     });
 
     // Simulate sync process
     setTimeout(async () => {
       await integration.update({
-        sync_status: "success",
+        sync_status: 'success',
         usage_count: integration.usage_count + 1,
         last_used_at: new Date(),
       });
@@ -433,17 +433,17 @@ exports.syncIntegration = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Integration sync initiated",
+      message: 'Integration sync initiated',
       data: {
         sync_status: integration.sync_status,
         last_sync_at: integration.last_sync_at,
       },
     });
   } catch (error) {
-    console.error("Error syncing integration:", error);
+    console.error('Error syncing integration:', error);
     res.status(500).json({
       success: false,
-      message: "Error syncing integration",
+      message: 'Error syncing integration',
       error: error.message,
     });
   }
@@ -461,13 +461,13 @@ exports.getIntegrationBySlug = async (req, res) => {
       include: [
         {
           model: User,
-          as: "createdBy",
-          attributes: ["id", "first_name", "last_name"],
+          as: 'createdBy',
+          attributes: ['id', 'first_name', 'last_name'],
         },
         {
           model: User,
-          as: "updatedBy",
-          attributes: ["id", "first_name", "last_name"],
+          as: 'updatedBy',
+          attributes: ['id', 'first_name', 'last_name'],
         },
       ],
     });
@@ -475,7 +475,7 @@ exports.getIntegrationBySlug = async (req, res) => {
     if (!integration) {
       return res.status(404).json({
         success: false,
-        message: "Integration not found",
+        message: 'Integration not found',
       });
     }
 
@@ -491,10 +491,10 @@ exports.getIntegrationBySlug = async (req, res) => {
       data,
     });
   } catch (error) {
-    console.error("Error fetching integration by slug:", error);
+    console.error('Error fetching integration by slug:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching integration",
+      message: 'Error fetching integration',
       error: error.message,
     });
   }

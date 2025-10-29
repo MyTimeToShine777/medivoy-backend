@@ -1,6 +1,6 @@
+const { validationResult } = require('express-validator');
 const imagekitService = require('../services/imagekit.service');
 const logger = require('../utils/logger');
-const { validationResult } = require('express-validator');
 
 /**
  * Upload single file
@@ -11,14 +11,14 @@ exports.uploadFile = async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        errors: errors.array()
+        errors: errors.array(),
       });
     }
 
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'No file provided'
+        message: 'No file provided',
       });
     }
 
@@ -26,7 +26,7 @@ exports.uploadFile = async (req, res) => {
       folder: req.body.folder || '/medivoy',
       tags: req.body.tags ? req.body.tags.split(',') : [],
       useUniqueFileName: req.body.useUniqueFileName !== 'false',
-      customMetadata: req.body.customMetadata ? JSON.parse(req.body.customMetadata) : undefined
+      customMetadata: req.body.customMetadata ? JSON.parse(req.body.customMetadata) : undefined,
     };
 
     const result = await imagekitService.uploadFile(req.file, options);
@@ -34,14 +34,14 @@ exports.uploadFile = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'File uploaded successfully',
-      data: result
+      data: result,
     });
   } catch (error) {
     logger.error('Upload file controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to upload file',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -55,14 +55,14 @@ exports.uploadMultipleFiles = async (req, res) => {
     if (!errors.isEmpty()) {
       return res.status(400).json({
         success: false,
-        errors: errors.array()
+        errors: errors.array(),
       });
     }
 
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No files provided'
+        message: 'No files provided',
       });
     }
 
@@ -70,25 +70,25 @@ exports.uploadMultipleFiles = async (req, res) => {
       folder: req.body.folder || '/medivoy',
       tags: req.body.tags ? req.body.tags.split(',') : [],
       useUniqueFileName: req.body.useUniqueFileName !== 'false',
-      customMetadata: req.body.customMetadata ? JSON.parse(req.body.customMetadata) : undefined
+      customMetadata: req.body.customMetadata ? JSON.parse(req.body.customMetadata) : undefined,
     };
 
     const results = await imagekitService.uploadMultipleFiles(req.files, options);
 
-    const successCount = results.filter(r => r.success).length;
+    const successCount = results.filter((r) => r.success).length;
     const failCount = results.length - successCount;
 
     res.status(201).json({
       success: true,
       message: `${successCount} files uploaded successfully, ${failCount} failed`,
-      data: results
+      data: results,
     });
   } catch (error) {
     logger.error('Upload multiple files controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to upload files',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -103,7 +103,7 @@ exports.deleteFile = async (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        message: 'File ID is required'
+        message: 'File ID is required',
       });
     }
 
@@ -111,14 +111,14 @@ exports.deleteFile = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'File deleted successfully'
+      message: 'File deleted successfully',
     });
   } catch (error) {
     logger.error('Delete file controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete file',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -133,26 +133,26 @@ exports.deleteMultipleFiles = async (req, res) => {
     if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'File IDs array is required'
+        message: 'File IDs array is required',
       });
     }
 
     const results = await imagekitService.deleteMultipleFiles(fileIds);
 
-    const successCount = results.filter(r => r.success).length;
+    const successCount = results.filter((r) => r.success).length;
     const failCount = results.length - successCount;
 
     res.status(200).json({
       success: true,
       message: `${successCount} files deleted successfully, ${failCount} failed`,
-      data: results
+      data: results,
     });
   } catch (error) {
     logger.error('Delete multiple files controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete files',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -167,7 +167,7 @@ exports.getFileDetails = async (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        message: 'File ID is required'
+        message: 'File ID is required',
       });
     }
 
@@ -175,14 +175,14 @@ exports.getFileDetails = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: result
+      data: result,
     });
   } catch (error) {
     logger.error('Get file details controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get file details',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -197,7 +197,7 @@ exports.listFiles = async (req, res) => {
       limit: parseInt(req.query.limit) || 100,
       searchQuery: req.query.searchQuery || '',
       tags: req.query.tags ? req.query.tags.split(',') : [],
-      path: req.query.path || '/medivoy'
+      path: req.query.path || '/medivoy',
     };
 
     const results = await imagekitService.listFiles(options);
@@ -208,15 +208,15 @@ exports.listFiles = async (req, res) => {
       pagination: {
         skip: options.skip,
         limit: options.limit,
-        total: results.length
-      }
+        total: results.length,
+      },
     });
   } catch (error) {
     logger.error('List files controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to list files',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -232,7 +232,7 @@ exports.updateFileDetails = async (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        message: 'File ID is required'
+        message: 'File ID is required',
       });
     }
 
@@ -241,14 +241,14 @@ exports.updateFileDetails = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'File details updated successfully',
-      data: result
+      data: result,
     });
   } catch (error) {
     logger.error('Update file details controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update file details',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -264,7 +264,7 @@ exports.getTransformedUrl = async (req, res) => {
     if (!path) {
       return res.status(400).json({
         success: false,
-        message: 'File path is required'
+        message: 'File path is required',
       });
     }
 
@@ -272,14 +272,14 @@ exports.getTransformedUrl = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: { url }
+      data: { url },
     });
   } catch (error) {
     logger.error('Get transformed URL controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get transformed URL',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -296,7 +296,7 @@ exports.getThumbnailUrl = async (req, res) => {
     if (!path) {
       return res.status(400).json({
         success: false,
-        message: 'File path is required'
+        message: 'File path is required',
       });
     }
 
@@ -304,14 +304,14 @@ exports.getThumbnailUrl = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: { url }
+      data: { url },
     });
   } catch (error) {
     logger.error('Get thumbnail URL controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get thumbnail URL',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -327,7 +327,7 @@ exports.getOptimizedUrl = async (req, res) => {
     if (!path) {
       return res.status(400).json({
         success: false,
-        message: 'File path is required'
+        message: 'File path is required',
       });
     }
 
@@ -335,14 +335,14 @@ exports.getOptimizedUrl = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: { url }
+      data: { url },
     });
   } catch (error) {
     logger.error('Get optimized URL controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get optimized URL',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -357,7 +357,7 @@ exports.purgeCache = async (req, res) => {
     if (!url) {
       return res.status(400).json({
         success: false,
-        message: 'URL is required'
+        message: 'URL is required',
       });
     }
 
@@ -366,14 +366,14 @@ exports.purgeCache = async (req, res) => {
     res.status(200).json({
       success: true,
       message: 'Cache purged successfully',
-      data: result
+      data: result,
     });
   } catch (error) {
     logger.error('Purge cache controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to purge cache',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -387,14 +387,14 @@ exports.getAuthParams = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      data: authParams
+      data: authParams,
     });
   } catch (error) {
     logger.error('Get auth params controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get authentication parameters',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -409,7 +409,7 @@ exports.createFolder = async (req, res) => {
     if (!folderName) {
       return res.status(400).json({
         success: false,
-        message: 'Folder name is required'
+        message: 'Folder name is required',
       });
     }
 
@@ -418,14 +418,14 @@ exports.createFolder = async (req, res) => {
     res.status(201).json({
       success: true,
       message: 'Folder created successfully',
-      data: result
+      data: result,
     });
   } catch (error) {
     logger.error('Create folder controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to create folder',
-      error: error.message
+      error: error.message,
     });
   }
 };
@@ -440,7 +440,7 @@ exports.deleteFolder = async (req, res) => {
     if (!folderPath) {
       return res.status(400).json({
         success: false,
-        message: 'Folder path is required'
+        message: 'Folder path is required',
       });
     }
 
@@ -448,14 +448,14 @@ exports.deleteFolder = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Folder deleted successfully'
+      message: 'Folder deleted successfully',
     });
   } catch (error) {
     logger.error('Delete folder controller error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to delete folder',
-      error: error.message
+      error: error.message,
     });
   }
 };

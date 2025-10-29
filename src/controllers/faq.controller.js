@@ -1,6 +1,6 @@
-const FAQ = require("../models/FAQ.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const logger = require("../utils/logger");
+const FAQ = require('../models/FAQ.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const logger = require('../utils/logger');
 
 class FAQController {
   /**
@@ -8,7 +8,9 @@ class FAQController {
    */
   async createFAQ(req, res) {
     try {
-      const { question, answer, category, display_order } = req.body;
+      const {
+        question, answer, category, display_order,
+      } = req.body;
 
       // Create FAQ
       const faq = await FAQ.create({
@@ -21,17 +23,17 @@ class FAQController {
       return successResponse(
         res,
         {
-          message: "FAQ created successfully",
+          message: 'FAQ created successfully',
           data: faq,
         },
         201,
       );
     } catch (error) {
-      logger.error("Create FAQ error:", error);
+      logger.error('Create FAQ error:', error);
       return errorResponse(
         res,
         {
-          message: "Failed to create FAQ",
+          message: 'Failed to create FAQ',
           error: error.message,
         },
         500,
@@ -47,17 +49,17 @@ class FAQController {
       return errorResponse(
         res,
         {
-          message: "FAQ not found",
-          note: "Database not configured. Configure PostgreSQL to see actual data.",
+          message: 'FAQ not found',
+          note: 'Database not configured. Configure PostgreSQL to see actual data.',
         },
         404,
       );
     } catch (error) {
-      logger.error("Get FAQ error:", error);
+      logger.error('Get FAQ error:', error);
       return errorResponse(
         res,
         {
-          message: "Failed to retrieve FAQ",
+          message: 'Failed to retrieve FAQ',
           error: error.message,
         },
         500,
@@ -72,21 +74,21 @@ class FAQController {
     try {
       // Return empty array with success when database is not connected
       return successResponse(res, {
-        message: "FAQs retrieved successfully",
+        message: 'FAQs retrieved successfully',
         data: [],
         pagination: {
           currentPage: 1,
           totalPages: 0,
           totalRecords: 0,
         },
-        note: "Database not configured. Configure PostgreSQL to see actual data.",
+        note: 'Database not configured. Configure PostgreSQL to see actual data.',
       });
     } catch (error) {
-      logger.error("Get all FAQs error:", error);
+      logger.error('Get all FAQs error:', error);
       return errorResponse(
         res,
         {
-          message: "Failed to retrieve FAQs",
+          message: 'Failed to retrieve FAQs',
           error: error.message,
         },
         500,
@@ -108,13 +110,13 @@ class FAQController {
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [
-          ["display_order", "ASC"],
-          ["createdAt", "DESC"],
+          ['display_order', 'ASC'],
+          ['createdAt', 'DESC'],
         ],
       });
 
       return successResponse(res, {
-        message: "FAQs retrieved successfully",
+        message: 'FAQs retrieved successfully',
         data: faqs.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -123,11 +125,11 @@ class FAQController {
         },
       });
     } catch (error) {
-      logger.error("Get FAQs by category error:", error);
+      logger.error('Get FAQs by category error:', error);
       return errorResponse(
         res,
         {
-          message: "Failed to retrieve FAQs by category",
+          message: 'Failed to retrieve FAQs by category',
           error: error.message,
         },
         500,
@@ -141,7 +143,9 @@ class FAQController {
   async updateFAQ(req, res) {
     try {
       const { id } = req.params;
-      const { question, answer, category, display_order } = req.body;
+      const {
+        question, answer, category, display_order,
+      } = req.body;
 
       // Find FAQ
       const faq = await FAQ.findByPk(id);
@@ -150,7 +154,7 @@ class FAQController {
         return errorResponse(
           res,
           {
-            message: "FAQ not found",
+            message: 'FAQ not found',
           },
           404,
         );
@@ -165,15 +169,15 @@ class FAQController {
       });
 
       return successResponse(res, {
-        message: "FAQ updated successfully",
+        message: 'FAQ updated successfully',
         data: faq,
       });
     } catch (error) {
-      logger.error("Update FAQ error:", error);
+      logger.error('Update FAQ error:', error);
       return errorResponse(
         res,
         {
-          message: "Failed to update FAQ",
+          message: 'Failed to update FAQ',
           error: error.message,
         },
         500,
@@ -195,7 +199,7 @@ class FAQController {
         return errorResponse(
           res,
           {
-            message: "FAQ not found",
+            message: 'FAQ not found',
           },
           404,
         );
@@ -205,14 +209,14 @@ class FAQController {
       await faq.destroy();
 
       return successResponse(res, {
-        message: "FAQ deleted successfully",
+        message: 'FAQ deleted successfully',
       });
     } catch (error) {
-      logger.error("Delete FAQ error:", error);
+      logger.error('Delete FAQ error:', error);
       return errorResponse(
         res,
         {
-          message: "Failed to delete FAQ",
+          message: 'Failed to delete FAQ',
           error: error.message,
         },
         500,
@@ -228,21 +232,19 @@ class FAQController {
       const { faqOrder } = req.body;
 
       // Update sort order for each FAQ
-      const updates = faqOrder.map((faqId, index) =>
-        FAQ.update({ display_order: index + 1 }, { where: { id: faqId } }),
-      );
+      const updates = faqOrder.map((faqId, index) => FAQ.update({ display_order: index + 1 }, { where: { id: faqId } }));
 
       await Promise.all(updates);
 
       return successResponse(res, {
-        message: "FAQs reordered successfully",
+        message: 'FAQs reordered successfully',
       });
     } catch (error) {
-      logger.error("Reorder FAQs error:", error);
+      logger.error('Reorder FAQs error:', error);
       return errorResponse(
         res,
         {
-          message: "Failed to reorder FAQs",
+          message: 'Failed to reorder FAQs',
           error: error.message,
         },
         500,

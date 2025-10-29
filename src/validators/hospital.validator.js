@@ -8,7 +8,7 @@ const createHospitalSchema = Joi.object({
   state: Joi.string().required(),
   country: Joi.string().required(),
   postal_code: Joi.string().required(),
-  phone: Joi.string().pattern(/^+?[1-9]d{1,14}$/).required(),
+  phone: Joi.string().pattern(/^\+?[1-9]\d{1,14}$/).required(),
   email: Joi.string().email().required(),
   website: Joi.string().uri().optional(),
   established_year: Joi.number().integer().min(1800).max(new Date().getFullYear()).optional(),

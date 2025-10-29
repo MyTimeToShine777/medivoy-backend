@@ -1,6 +1,6 @@
-const Booking = require("../models/Booking.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const logger = require("../utils/logger");
+const Booking = require('../models/Booking.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const logger = require('../utils/logger');
 
 class BookingController {
   /**
@@ -8,7 +8,9 @@ class BookingController {
    */
   async createBooking(req, res) {
     try {
-      const { patientId, treatmentId, hospitalId, notes } = req.body;
+      const {
+        patientId, treatmentId, hospitalId, notes,
+      } = req.body;
 
       // Create booking
       const booking = await Booking.create({
@@ -21,17 +23,17 @@ class BookingController {
       return successResponse(
         res,
         {
-          message: "Booking created successfully",
+          message: 'Booking created successfully',
           data: booking,
         },
         201,
       );
     } catch (error) {
-      logger.error("Create booking error:", error);
+      logger.error('Create booking error:', error);
       return errorResponse(
         res,
         {
-          message: "Failed to create booking",
+          message: 'Failed to create booking',
           error: error.message,
         },
         500,
@@ -53,23 +55,23 @@ class BookingController {
         return errorResponse(
           res,
           {
-            message: "Booking not found",
-            code: "BOOKING_NOT_FOUND",
+            message: 'Booking not found',
+            code: 'BOOKING_NOT_FOUND',
           },
           404,
         );
       }
 
       return successResponse(res, {
-        message: "Booking retrieved successfully",
+        message: 'Booking retrieved successfully',
         data: booking,
       });
     } catch (error) {
-      logger.error("Get booking error:", error);
+      logger.error('Get booking error:', error);
       return errorResponse(
         res,
         {
-          message: "Failed to retrieve booking",
+          message: 'Failed to retrieve booking',
           error: error.message,
         },
         500,
@@ -92,8 +94,8 @@ class BookingController {
         return errorResponse(
           res,
           {
-            message: "Booking not found",
-            code: "BOOKING_NOT_FOUND",
+            message: 'Booking not found',
+            code: 'BOOKING_NOT_FOUND',
           },
           404,
         );
@@ -106,15 +108,15 @@ class BookingController {
       });
 
       return successResponse(res, {
-        message: "Booking updated successfully",
+        message: 'Booking updated successfully',
         data: booking,
       });
     } catch (error) {
-      logger.error("Update booking error:", error);
+      logger.error('Update booking error:', error);
       return errorResponse(
         res,
         {
-          message: "Failed to update booking",
+          message: 'Failed to update booking',
           error: error.message,
         },
         500,
@@ -137,8 +139,8 @@ class BookingController {
         return errorResponse(
           res,
           {
-            message: "Booking not found",
-            code: "BOOKING_NOT_FOUND",
+            message: 'Booking not found',
+            code: 'BOOKING_NOT_FOUND',
           },
           404,
         );
@@ -148,15 +150,15 @@ class BookingController {
       await booking.update({ status });
 
       return successResponse(res, {
-        message: "Booking status updated successfully",
+        message: 'Booking status updated successfully',
         data: booking,
       });
     } catch (error) {
-      logger.error("Update booking status error:", error);
+      logger.error('Update booking status error:', error);
       return errorResponse(
         res,
         {
-          message: "Failed to update booking status",
+          message: 'Failed to update booking status',
           error: error.message,
         },
         500,
@@ -169,7 +171,9 @@ class BookingController {
    */
   async getAllBookings(req, res) {
     try {
-      const { page = 1, limit = 10, status, patientId, hospitalId } = req.query;
+      const {
+        page = 1, limit = 10, status, patientId, hospitalId,
+      } = req.query;
 
       // Build where clause
       const where = {};
@@ -182,11 +186,11 @@ class BookingController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Bookings retrieved successfully",
+        message: 'Bookings retrieved successfully',
         data: bookings.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -195,11 +199,11 @@ class BookingController {
         },
       });
     } catch (error) {
-      logger.error("Get all bookings error:", error);
+      logger.error('Get all bookings error:', error);
       return errorResponse(
         res,
         {
-          message: "Failed to retrieve bookings",
+          message: 'Failed to retrieve bookings',
           error: error.message,
         },
         500,
@@ -221,26 +225,26 @@ class BookingController {
         return errorResponse(
           res,
           {
-            message: "Booking not found",
-            code: "BOOKING_NOT_FOUND",
+            message: 'Booking not found',
+            code: 'BOOKING_NOT_FOUND',
           },
           404,
         );
       }
 
       // Update booking status to cancelled
-      await booking.update({ status: "cancelled" });
+      await booking.update({ status: 'cancelled' });
 
       return successResponse(res, {
-        message: "Booking cancelled successfully",
+        message: 'Booking cancelled successfully',
         data: booking,
       });
     } catch (error) {
-      logger.error("Cancel booking error:", error);
+      logger.error('Cancel booking error:', error);
       return errorResponse(
         res,
         {
-          message: "Failed to cancel booking",
+          message: 'Failed to cancel booking',
           error: error.message,
         },
         500,
@@ -265,11 +269,11 @@ class BookingController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["created_at", "DESC"]],
+        order: [['created_at', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Patient bookings retrieved successfully",
+        message: 'Patient bookings retrieved successfully',
         data: bookings.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -278,11 +282,11 @@ class BookingController {
         },
       });
     } catch (error) {
-      logger.error("Get patient bookings error:", error);
+      logger.error('Get patient bookings error:', error);
       return errorResponse(
         res,
         {
-          message: "Failed to retrieve patient bookings",
+          message: 'Failed to retrieve patient bookings',
           error: error.message,
         },
         500,
@@ -307,11 +311,11 @@ class BookingController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["created_at", "DESC"]],
+        order: [['created_at', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Hospital bookings retrieved successfully",
+        message: 'Hospital bookings retrieved successfully',
         data: bookings.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -320,11 +324,11 @@ class BookingController {
         },
       });
     } catch (error) {
-      logger.error("Get hospital bookings error:", error);
+      logger.error('Get hospital bookings error:', error);
       return errorResponse(
         res,
         {
-          message: "Failed to retrieve hospital bookings",
+          message: 'Failed to retrieve hospital bookings',
           error: error.message,
         },
         500,

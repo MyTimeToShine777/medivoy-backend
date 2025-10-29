@@ -1,6 +1,6 @@
-const mongoose = require("mongoose");
-const config = require("./index");
-const logger = require("../utils/logger");
+const mongoose = require('mongoose');
+const config = require('./index');
+const logger = require('../utils/logger');
 
 // MongoDB connection options
 const options = {
@@ -14,12 +14,12 @@ const options = {
 async function connectMongoDB() {
   try {
     await mongoose.connect(config.mongodb.uri, options);
-    logger.info("✅ MongoDB connected successfully");
+    logger.info('✅ MongoDB connected successfully');
     return true;
   } catch (error) {
-    logger.warn("⚠️  MongoDB connection error:", error.message);
-    logger.warn("⚠️  Application will continue without MongoDB connection");
-    logger.warn("⚠️  Please configure MongoDB settings in .env file");
+    logger.warn('⚠️  MongoDB connection error:', error.message);
+    logger.warn('⚠️  Application will continue without MongoDB connection');
+    logger.warn('⚠️  Please configure MongoDB settings in .env file');
     return false;
   }
 }
