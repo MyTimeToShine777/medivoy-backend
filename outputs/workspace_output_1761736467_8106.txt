@@ -1,0 +1,1 @@
+{"status":"OK","timestamp":"2025-10-29T11:14:28.931Z","uptime":51.478058143,"environment":"development","version":"1.0.0"}

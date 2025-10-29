@@ -110,13 +110,16 @@ const errorMiddleware = (err, req, res, next) => {
   // Send error response
   return errorResponse(
     res,
-    statusCode,
-    message,
-    config.env === 'development' ? {
-      errors,
-      stack: err.stack,
-      details: err
-    } : errors
+    {
+      message,
+      code: err.code || 'INTERNAL_ERROR',
+      ...(config.env === 'development' && {
+        error: err.message,
+        stack: err.stack,
+      }),
+      ...(errors && errors.length > 0 && { errors }),
+    },
+    statusCode
   );
 };
 
@@ -126,8 +129,11 @@ const errorMiddleware = (err, req, res, next) => {
 const notFoundHandler = (req, res) => {
   return errorResponse(
     res,
-    404,
-    `Route ${req.method} ${req.originalUrl} not found`
+    {
+      message: `Route ${req.method} ${req.originalUrl} not found`,
+      code: 'ROUTE_NOT_FOUND',
+    },
+    404
   );
 };
 

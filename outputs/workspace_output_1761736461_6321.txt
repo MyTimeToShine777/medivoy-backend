@@ -1,0 +1,5 @@
+  <title>Medivoy API Documentation</title>
+  <link rel="stylesheet" type="text/css" href="./swagger-ui.css" >
+<div id="swagger-ui"></div>
+<script src="./swagger-ui-bundle.js"> </script>
+<script src="./swagger-ui-standalone-preset.js"> </script>

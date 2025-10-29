@@ -76,3 +76,9 @@
 2025-10-29 11:00:47 [[33mwarn[39m]: ⚠️  Please configure database settings in .env file
 2025-10-29 11:00:47 [[33mwarn[39m]: ⚠️  Or run: docker-compose up -d (to start databases)
 2025-10-29 11:00:47 [[32minfo[39m]: 
+2025-10-29 11:03:01 [[32minfo[39m]: GET /api-docs 301 1.394 ms - anonymous - ::ffff:127.0.0.1
+2025-10-29 11:03:07 [[32minfo[39m]: GET /api-docs/ 200 3.118 ms - anonymous - ::ffff:127.0.0.1
+2025-10-29 11:03:12 [[32minfo[39m]: GET /health 200 0.929 ms - anonymous - ::ffff:127.0.0.1
+2025-10-29 11:03:18 [[32minfo[39m]: GET /api/v1 200 3.030 ms - anonymous - ::ffff:127.0.0.1
+2025-10-29 11:12:17 [[32minfo[39m]: SIGTERM signal received: closing HTTP server
+ ELIFECYCLE  Command failed.
