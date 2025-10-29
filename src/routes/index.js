@@ -34,6 +34,12 @@ const couponsRoutes = require('./v1/coupons.routes');
 const faqsRoutes = require('./v1/faqs.routes');
 const websiteContentRoutes = require('./v1/websiteContent.routes');
 const healthRoutes = require('./v1/health.routes');
+const analyticsRoutes = require('./v1/analytics.routes');
+const doctorSchedulesRoutes = require('./v1/doctorSchedules.routes');
+const staffRoutes = require('./v1/staff.routes');
+const chatRoutes = require('./v1/chat.routes');
+const videoCallsRoutes = require('./v1/videoCalls.routes');
+const bookingStatusRoutes = require('./v1/bookingStatus.routes');
 
 // Mount routes
 router.use('/auth', authRoutes);
@@ -63,6 +69,12 @@ router.use('/coupons', couponsRoutes);
 router.use('/faqs', faqsRoutes);
 router.use('/website-content', websiteContentRoutes);
 router.use('/health', healthRoutes);
+router.use('/analytics', analyticsRoutes);
+router.use('/doctor-schedules', doctorSchedulesRoutes);
+router.use('/staff', staffRoutes);
+router.use('/chat', chatRoutes);
+router.use('/video-calls', videoCallsRoutes);
+router.use('/booking-status', bookingStatusRoutes);
 
 // Root endpoint
 router.get('/', (req, res) => {
@@ -98,7 +110,13 @@ router.get('/', (req, res) => {
       faqs: '/api/v1/faqs',
       websiteContent: '/api/v1/website-content',
       health: '/api/v1/health',
-      docs: '/api-docs'
+      docs: '/api-docs',
+         analytics: '/api/v1/analytics',
+         doctorSchedules: '/api/v1/doctor-schedules',
+         staff: '/api/v1/staff',
+         chat: '/api/v1/chat',
+         videoCalls: '/api/v1/video-calls',
+         bookingStatus: '/api/v1/booking-status'
     },
     timestamp: new Date().toISOString()
   });

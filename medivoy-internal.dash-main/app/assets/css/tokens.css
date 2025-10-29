@@ -1,0 +1,40 @@
+:root {
+  /* Canvas */
+  --page: #f7fafc;
+  /* clean, soft canvas */
+  --ink-1: #0f172a;
+  /* headings */
+  --ink-2: #334155;
+  /* body */
+  --ink-3: #64748b;
+  /* meta */
+  /* Brand */
+  --brand-700: #4565ad;
+  /* primary */
+  --brand-500: #4bbecf;
+  /* accent */
+  --accent-700: #9c124f;
+  /* warm */
+  --accent-500: #4565ad;
+  /* Surfaces */
+  --panel: #4565ad;
+  --panel-border: #e6eaf0;
+  --panel-shadow: 0 6px 20px rgba(2, 6, 23, 0.06);
+  /* Lines for charts */
+  --line-1: var(--brand-500);
+  --line-2: #8bdb3c;
+  /* lime-like */
+  --line-3: #22d3ee;
+  /* cyan-like */
+}
+
+.dark:root {
+  /* keep dark available for later if needed */
+  --page: #0b1020;
+  --ink-1: rgba(255, 255, 255, 0.96);
+  --ink-2: rgba(255, 255, 255, 0.8);
+  --ink-3: rgba(255, 255, 255, 0.65);
+  --panel: rgba(19, 27, 48, 0.55);
+  --panel-border: rgba(255, 255, 255, 0.14);
+  --panel-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}

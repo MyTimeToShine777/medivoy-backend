@@ -33,6 +33,19 @@ const PasswordReset = require('./PasswordReset.model');
 const RefreshToken = require('./RefreshToken.model');
 const HospitalDoctor = require('./HospitalDoctor.model');
 const HospitalTreatment = require('./HospitalTreatment.model');
+const Staff = require('./Staff.model');
+const DoctorSchedule = require('./DoctorSchedule.model');
+const ChatConversation = require('./ChatConversation.model');
+const ChatMessage = require('./ChatMessage.model');
+const VideoCall = require('./VideoCall.model');
+const AuditLog = require('./AuditLog.model');
+const SystemSettings = require('./SystemSettings.model');
+const Integration = require('./Integration.model');
+const DNAKit = require('./DNAKit.model');
+const BookingStatusHistory = require('./BookingStatusHistory.model');
+const TermsConditions = require('./TermsConditions.model');
+const PrivacyPolicy = require('./PrivacyPolicy.model');
+const UserAcceptance = require('./UserAcceptance.model');
 
 // ============================================================================
 // DEFINE ASSOCIATIONS
@@ -41,10 +54,17 @@ const HospitalTreatment = require('./HospitalTreatment.model');
 // User associations
 User.hasOne(Patient, { foreignKey: 'user_id', as: 'patientProfile' });
 User.hasOne(Doctor, { foreignKey: 'user_id', as: 'doctorProfile' });
+User.hasOne(Staff, { foreignKey: 'user_id', as: 'staffProfile' });
 User.hasMany(Notification, { foreignKey: 'user_id', as: 'notifications' });
 User.hasMany(SupportTicket, { foreignKey: 'user_id', as: 'tickets' });
 User.hasMany(RefreshToken, { foreignKey: 'user_id', as: 'refreshTokens' });
 User.hasMany(PasswordReset, { foreignKey: 'user_id', as: 'passwordResets' });
+User.hasMany(AuditLog, { foreignKey: 'user_id', as: 'auditLogs' });
+User.hasMany(ChatConversation, { foreignKey: 'participant_1_id', as: 'conversationsAsParticipant1' });
+User.hasMany(ChatConversation, { foreignKey: 'participant_2_id', as: 'conversationsAsParticipant2' });
+User.hasMany(ChatMessage, { foreignKey: 'sender_id', as: 'sentMessages' });
+User.hasMany(VideoCall, { foreignKey: 'host_id', as: 'hostedCalls' });
+User.hasMany(VideoCall, { foreignKey: 'participant_id', as: 'participatedCalls' });
 
 // Patient associations
 Patient.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
@@ -56,6 +76,7 @@ Patient.hasMany(Prescription, { foreignKey: 'patient_id', as: 'prescriptions' })
 Patient.hasMany(LabTest, { foreignKey: 'patient_id', as: 'labTests' });
 Patient.hasMany(Payment, { foreignKey: 'patient_id', as: 'payments' });
 Patient.hasMany(Review, { foreignKey: 'patient_id', as: 'reviews' });
+Patient.hasMany(DNAKit, { foreignKey: 'patient_id', as: 'dnaKits' });
 
 // Doctor associations
 Doctor.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
@@ -63,6 +84,7 @@ Doctor.hasMany(Appointment, { foreignKey: 'doctor_id', as: 'appointments' });
 Doctor.hasMany(Prescription, { foreignKey: 'doctor_id', as: 'prescriptions' });
 Doctor.hasMany(LabTest, { foreignKey: 'doctor_id', as: 'labTests' });
 Doctor.hasMany(Review, { foreignKey: 'doctor_id', as: 'reviews' });
+Doctor.hasMany(DoctorSchedule, { foreignKey: 'doctor_id', as: 'schedules' });
 Doctor.belongsToMany(Hospital, { through: HospitalDoctor, foreignKey: 'doctor_id', as: 'hospitals' });
 
 // Hospital associations
@@ -101,6 +123,8 @@ Booking.hasMany(Appointment, { foreignKey: 'booking_id', as: 'appointments' });
 Booking.hasMany(Payment, { foreignKey: 'booking_id', as: 'payments' });
 Booking.hasMany(Invoice, { foreignKey: 'booking_id', as: 'invoices' });
 Booking.hasMany(Review, { foreignKey: 'booking_id', as: 'reviews' });
+Booking.hasMany(BookingStatusHistory, { foreignKey: 'booking_id', as: 'statusHistory' });
+Booking.hasMany(ChatConversation, { foreignKey: 'booking_id', as: 'conversations' });
 
 // Appointment associations
 Appointment.belongsTo(Patient, { foreignKey: 'patient_id', as: 'patient' });
@@ -111,6 +135,8 @@ Appointment.hasMany(MedicalRecord, { foreignKey: 'appointment_id', as: 'medicalR
 Appointment.hasMany(Payment, { foreignKey: 'appointment_id', as: 'payments' });
 Appointment.hasMany(Invoice, { foreignKey: 'appointment_id', as: 'invoices' });
 Appointment.hasMany(Review, { foreignKey: 'appointment_id', as: 'reviews' });
+Appointment.hasMany(ChatConversation, { foreignKey: 'appointment_id', as: 'conversations' });
+Appointment.hasMany(VideoCall, { foreignKey: 'appointment_id', as: 'videoCalls' });
 
 // MedicalRecord associations
 MedicalRecord.belongsTo(Patient, { foreignKey: 'patient_id', as: 'patient' });
@@ -125,6 +151,7 @@ Prescription.belongsTo(Appointment, { foreignKey: 'appointment_id', as: 'appoint
 // Laboratory associations
 Laboratory.belongsTo(Hospital, { foreignKey: 'hospital_id', as: 'hospital' });
 Laboratory.hasMany(LabTest, { foreignKey: 'lab_id', as: 'labTests' });
+Laboratory.hasMany(DNAKit, { foreignKey: 'laboratory_id', as: 'dnaKits' });
 
 // LabTest associations
 LabTest.belongsTo(Patient, { foreignKey: 'patient_id', as: 'patient' });
@@ -183,6 +210,62 @@ HospitalDoctor.belongsTo(Doctor, { foreignKey: 'doctor_id', as: 'doctor' });
 HospitalTreatment.belongsTo(Hospital, { foreignKey: 'hospital_id', as: 'hospital' });
 HospitalTreatment.belongsTo(Treatment, { foreignKey: 'treatment_id', as: 'treatment' });
 
+// Staff associations
+Staff.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+Staff.belongsTo(Hospital, { foreignKey: 'hospital_id', as: 'hospital' });
+
+// DoctorSchedule associations
+DoctorSchedule.belongsTo(Doctor, { foreignKey: 'doctor_id', as: 'doctor' });
+DoctorSchedule.belongsTo(Hospital, { foreignKey: 'hospital_id', as: 'hospital' });
+
+// ChatConversation associations
+ChatConversation.belongsTo(User, { foreignKey: 'participant_1_id', as: 'participant1' });
+ChatConversation.belongsTo(User, { foreignKey: 'participant_2_id', as: 'participant2' });
+ChatConversation.belongsTo(Booking, { foreignKey: 'booking_id', as: 'booking' });
+ChatConversation.belongsTo(Appointment, { foreignKey: 'appointment_id', as: 'appointment' });
+ChatConversation.hasMany(ChatMessage, { foreignKey: 'conversation_id', as: 'messages' });
+ChatConversation.hasMany(VideoCall, { foreignKey: 'conversation_id', as: 'videoCalls' });
+
+// ChatMessage associations
+ChatMessage.belongsTo(ChatConversation, { foreignKey: 'conversation_id', as: 'conversation' });
+ChatMessage.belongsTo(User, { foreignKey: 'sender_id', as: 'sender' });
+ChatMessage.belongsTo(ChatMessage, { foreignKey: 'reply_to_message_id', as: 'replyToMessage' });
+
+// VideoCall associations
+VideoCall.belongsTo(Appointment, { foreignKey: 'appointment_id', as: 'appointment' });
+VideoCall.belongsTo(ChatConversation, { foreignKey: 'conversation_id', as: 'conversation' });
+VideoCall.belongsTo(User, { foreignKey: 'host_id', as: 'host' });
+VideoCall.belongsTo(User, { foreignKey: 'participant_id', as: 'participant' });
+
+// AuditLog associations
+AuditLog.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
+// SystemSettings associations
+SystemSettings.belongsTo(User, { foreignKey: 'updated_by', as: 'updatedBy' });
+
+// Integration associations
+Integration.belongsTo(User, { foreignKey: 'created_by', as: 'createdBy' });
+Integration.belongsTo(User, { foreignKey: 'updated_by', as: 'updatedBy' });
+
+// DNAKit associations
+DNAKit.belongsTo(Patient, { foreignKey: 'patient_id', as: 'patient' });
+DNAKit.belongsTo(Laboratory, { foreignKey: 'laboratory_id', as: 'laboratory' });
+
+// BookingStatusHistory associations
+BookingStatusHistory.belongsTo(Booking, { foreignKey: 'booking_id', as: 'booking' });
+BookingStatusHistory.belongsTo(User, { foreignKey: 'changed_by', as: 'changedBy' });
+
+// TermsConditions associations
+TermsConditions.belongsTo(User, { foreignKey: 'created_by', as: 'createdBy' });
+TermsConditions.belongsTo(User, { foreignKey: 'published_by', as: 'publishedBy' });
+
+// PrivacyPolicy associations
+PrivacyPolicy.belongsTo(User, { foreignKey: 'created_by', as: 'createdBy' });
+PrivacyPolicy.belongsTo(User, { foreignKey: 'published_by', as: 'publishedBy' });
+
+// UserAcceptance associations
+UserAcceptance.belongsTo(User, { foreignKey: 'user_id', as: 'user' });
+
 // ============================================================================
 // EXPORT ALL MODELS
 // ============================================================================
@@ -218,5 +301,18 @@ module.exports = {
   PasswordReset,
   RefreshToken,
   HospitalDoctor,
-  HospitalTreatment
+  HospitalTreatment,
+  Staff,
+  DoctorSchedule,
+  ChatConversation,
+  ChatMessage,
+  VideoCall,
+  AuditLog,
+  SystemSettings,
+  Integration,
+  DNAKit,
+  BookingStatusHistory,
+  TermsConditions,
+  PrivacyPolicy,
+  UserAcceptance
 };

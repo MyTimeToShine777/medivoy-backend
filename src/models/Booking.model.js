@@ -33,8 +33,19 @@ const Booking = sequelize.define('Booking', {
     type: DataTypes.STRING(50)
   },
   status: {
-    type: DataTypes.STRING(50),
+    type: DataTypes.ENUM(
+      'requested', 'under_review', 'accepted', 'rejected', 
+      'quotation_sent', 'payment_details', 'confirmation_sent',
+      'payment_received', 'confirmation_completed', 'invoice_sent',
+      'travel_arrangements', 'consultation_scheduled', 'in_progress',
+      'completed', 'feedback_received', 'cancelled'
+    ),
     defaultValue: 'requested'
+  },
+  sub_status: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+    comment: 'Additional status details'
   },
   requested_date: {
     type: DataTypes.DATEONLY
@@ -70,6 +81,23 @@ const Booking = sequelize.define('Booking', {
   coordinator_id: {
     type: DataTypes.INTEGER,
     references: { model: 'users', key: 'id' }
+  },
+  priority: {
+    type: DataTypes.ENUM('low', 'medium', 'high', 'urgent'),
+    defaultValue: 'medium'
+  },
+  cancellation_reason: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  cancelled_by: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'users', key: 'id' }
+  },
+  cancelled_at: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   tableName: 'bookings',
