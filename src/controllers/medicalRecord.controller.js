@@ -4,6 +4,7 @@ const logger = require('../utils/logger');
 
 class MedicalRecordController {
   /**
+   async getAllMedicalRecords(req, res) {\n     try {\n       const { page = 1, limit = 10, recordType, patientId } = req.query;\n\n       // Build where clause\n       const where = {};\n       if (recordType) where.recordType = recordType;\n       if (patientId) where.patientId = patientId;\n\n       // Get medical records with pagination\n       const medicalRecords = await MedicalRecord.findAndCountAll({\n         where,\n         limit: parseInt(limit, 10),\n         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),\n         order: [["recordDate", "DESC"]],\n       });\n\n       return successResponse(res, {\n         message: "Medical records retrieved successfully",\n         data: medicalRecords.rows,\n         pagination: {\n           currentPage: parseInt(page, 10),\n           totalPages: Math.ceil(medicalRecords.count / parseInt(limit, 10)),\n           totalRecords: medicalRecords.count,\n         },\n       });\n     } catch (error) {\n       logger.error("Get all medical records error:", error);\n       return errorResponse(res, {\n         message: "Failed to retrieve medical records",\n         error: error.message,\n       }, 500);\n     }\n   }\n
    * Create a new medical record
    */
   async createMedicalRecord(req, res) {
