@@ -108,4 +108,5 @@ router.put('/bulk', systemSettingsController.bulkUpdateSettings);
  */
 router.put('/key/:key/reset', systemSettingsController.resetSettingToDefault);
 
+router.get('/:id', authenticate, authorize("admin"), systemSettingsController.getById);
 module.exports = router;

@@ -110,4 +110,5 @@ router.put('/:id/results', dnaKitController.uploadTestResults);
  */
 router.put('/:id/cancel', dnaKitController.cancelOrder);
 
+router.delete('/:id', authenticate, authorize("admin"), dnaKitController.deleteDNAKit);
 module.exports = router;

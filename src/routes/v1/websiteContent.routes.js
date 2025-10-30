@@ -45,7 +45,8 @@ router.delete(
 
 // Get all website content (public access)
 router.get(
-  '/',
+
+router.get('/:id', websiteContentController.getById);  '/',
   websiteContentController.getAllContent,
 );
 

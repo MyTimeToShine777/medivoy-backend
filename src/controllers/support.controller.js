@@ -248,4 +248,30 @@ class SupportController {
   }
 }
 
+
+/**
+ * Get support by ID
+ */
+const getById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    const item = await Support.findByPk(id);
+    
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: 'Support not found',
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: item,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = SupportController;

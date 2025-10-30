@@ -41,8 +41,10 @@ router.delete(
 
 // Get all media for an entity (authenticated users)
 router.get(
-  '/entity/:entityType/:entityId',
-  auth,
+
+router.get('/', authenticate, uploadController.getAll);  '/entity/:entityType/:entityId',
+
+router.get('/:id', authenticate, uploadController.getById);  auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
   uploadController.getEntityMedia,
 );

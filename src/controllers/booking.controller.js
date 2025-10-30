@@ -277,4 +277,31 @@ class BookingController {
   }
 }
 
+/**
+ * Delete booking
+ */
+const deleteItem = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const item = await Booking.findByPk(id);
+
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    await item.destroy();
+
+    res.status(200).json({
+      success: true,
+      message: "Booking deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = BookingController;

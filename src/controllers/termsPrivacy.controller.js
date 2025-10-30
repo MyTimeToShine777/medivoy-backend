@@ -560,3 +560,67 @@ exports.checkUserAcceptance = async (req, res) => {
     });
   }
 };
+
+
+/**
+ * Get terms/privacy by ID
+ */
+exports.getTermsPrivacyById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const item = await TermsConditions.findByPk(id);
+    
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: 'Terms/Privacy not found',
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: item,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching terms/privacy',
+      error: error.message,
+    });
+  }
+};
+
+
+
+/**
+ * Delete terms/privacy
+ */
+exports.deleteTermsPrivacy = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const item = await TermsConditions.findByPk(id);
+    
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: 'Terms/Privacy not found',
+      });
+    }
+    
+    await item.destroy();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Terms/Privacy deleted successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting terms/privacy',
+      error: error.message,
+    });
+  }
+};
+

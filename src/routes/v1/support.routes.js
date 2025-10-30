@@ -38,7 +38,8 @@ router.delete(
 
 // Get all support tickets (admin only)
 router.get(
-  '/',
+
+router.get('/:id', authenticate, supportController.getById);  '/',
   auth,
   authorize(['admin']),
   supportController.getAllTickets,

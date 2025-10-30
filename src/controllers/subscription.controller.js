@@ -289,4 +289,46 @@ class SubscriptionController {
   }
 }
 
+
+/**
+ * Get all subscriptions
+ */
+const getAll = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10, search, sort = '-created_at' } = req.query;
+    
+    const offset = (page - 1) * limit;
+    
+    let whereClause = {};
+    if (search) {
+      whereClause = {
+        [Op.or]: [
+          { name: { [Op.iLike]: `%${search}%` } },
+          { description: { [Op.iLike]: `%${search}%` } },
+        ],
+      };
+    }
+    
+    const { count, rows } = await Subscription.findAndCountAll({
+      where: whereClause,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order: [[sort.replace('-', ''), sort.startsWith('-') ? 'DESC' : 'ASC']],
+    });
+    
+    res.status(200).json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(count / limit),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = SubscriptionController;

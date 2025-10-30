@@ -39,8 +39,10 @@ router.get(
 
 // Apply coupon (patients, hospital admins, admin)
 router.post(
-  '/apply/:code',
-  auth,
+
+router.put('/:id', authenticate, authorize("admin"), couponController.update);  '/apply/:code',
+
+router.delete('/:id', authenticate, authorize("admin"), couponController.delete);  auth,
   authorize(['admin', 'patient', 'hospital_admin']),
   couponController.applyCoupon,
 );

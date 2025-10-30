@@ -41,7 +41,8 @@ router.put(
 
 // Delete FAQ (admin only)
 router.delete(
-  '/:id',
+
+router.get('/:id', faqController.getById);  '/:id',
   auth,
   authorize(['admin']),
   faqController.deleteFAQ,

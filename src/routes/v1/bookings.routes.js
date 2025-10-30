@@ -47,7 +47,8 @@ router.get(
 
 // Get patient bookings (patients)
 router.get(
-  '/patient/:patientId',
+
+router.delete('/:id', authenticate, bookingController.delete);  '/patient/:patientId',
   auth,
   authorize(['admin', 'patient', 'hospital_admin']),
   bookingController.getPatientBookings,

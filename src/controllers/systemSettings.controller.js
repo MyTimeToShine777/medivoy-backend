@@ -416,3 +416,37 @@ exports.resetSettingToDefault = async (req, res) => {
     });
   }
 };
+
+
+/**
+ * Get system setting by ID
+ */
+exports.getSystemSettingById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const setting = await SystemSettings.findByPk(id);
+    
+    if (!setting) {
+      return res.status(404).json({
+        success: false,
+        message: 'System setting not found',
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: setting,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching system setting',
+      error: error.message,
+    });
+  }
+};
+
+
+// Alias for compatibility
+exports.getById = exports.getSystemSettingById;

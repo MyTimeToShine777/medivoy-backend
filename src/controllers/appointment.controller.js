@@ -321,4 +321,31 @@ class AppointmentController {
   }
 }
 
+/**
+ * Delete appointment
+ */
+const deleteItem = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const item = await Appointment.findByPk(id);
+
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: "Appointment not found",
+      });
+    }
+
+    await item.destroy();
+
+    res.status(200).json({
+      success: true,
+      message: "Appointment deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = AppointmentController;

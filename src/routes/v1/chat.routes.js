@@ -110,4 +110,6 @@ router.put('/messages/conversation/:conversationId/read', chatController.markMes
  */
 router.get('/unread/:userId', chatController.getUnreadCount);
 
-module.exports = router;
+router.get('/', authenticate, chatController.getAllConversations);
+
+router.get('/:id', authenticate, chatController.getConversationById);module.exports = router;

@@ -47,7 +47,8 @@ router.get(
 
 // Mark notification as read
 router.patch(
-  '/:id/read',
+
+router.get('/', authenticate, notificationController.getAll);  '/:id/read',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
   notificationController.markAsRead,

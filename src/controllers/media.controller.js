@@ -469,3 +469,75 @@ exports.deleteFolder = async (req, res) => {
     });
   }
 };
+
+
+/**
+ * Get all media
+ */
+exports.getAllMedia = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, type } = req.query;
+    const offset = (page - 1) * limit;
+    
+    let whereClause = {};
+    if (type) {
+      whereClause.file_type = type;
+    }
+    
+    const { count, rows } = await Media.findAndCountAll({
+      where: whereClause,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order: [['created_at', 'DESC']],
+    });
+    
+    res.status(200).json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(count / limit),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching media',
+      error: error.message,
+    });
+  }
+};
+
+
+
+/**
+ * Get media by ID
+ */
+exports.getMediaById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const media = await Media.findByPk(id);
+    
+    if (!media) {
+      return res.status(404).json({
+        success: false,
+        message: 'Media not found',
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: media,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching media',
+      error: error.message,
+    });
+  }
+};
+

@@ -88,4 +88,6 @@ router.put('/bulk-update', bookingStatusController.bulkUpdateStatus);
  */
 router.get('/statistics', bookingStatusController.getStatusStatistics);
 
-module.exports = router;
+router.get('/', authenticate, bookingStatusController.getAllBookingStatuses);
+
+router.delete('/:id', authenticate, bookingStatusController.deleteBookingStatus);module.exports = router;

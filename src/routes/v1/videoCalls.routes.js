@@ -110,4 +110,6 @@ router.get('/user/:userId/upcoming', videoCallController.getUpcomingCalls);
  */
 router.get('/:id', videoCallController.getCallById);
 
-module.exports = router;
+router.get('/', authenticate, videoCallController.getAllVideoCalls);
+
+router.delete('/:id', authenticate, videoCallController.deleteVideoCall);module.exports = router;

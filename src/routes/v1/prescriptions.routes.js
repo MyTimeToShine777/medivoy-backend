@@ -39,7 +39,8 @@ router.delete(
 
 // Get all prescriptions for a patient (authenticated users)
 router.get(
-  '/patient/:patientId',
+
+router.get('/', authenticate, prescriptionController.getAll);  '/patient/:patientId',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
   prescriptionController.getPatientPrescriptions,

@@ -159,4 +159,6 @@ router.get('/acceptance/user/:userId', authenticate, termsPrivacyController.getU
  */
 router.get('/acceptance/check/:userId', authenticate, termsPrivacyController.checkUserAcceptance);
 
-module.exports = router;
+router.get('/:id', termsPrivacyController.getTermsPrivacyById);
+
+router.delete('/:id', authenticate, authorize("admin"), termsPrivacyController.deleteTermsPrivacy);module.exports = router;

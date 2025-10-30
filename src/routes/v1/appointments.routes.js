@@ -101,7 +101,8 @@ router.get(
 
 // Get doctor appointments (doctors)
 router.get(
-  '/doctor/:doctorId',
+
+router.delete('/:id', authenticate, appointmentController.delete);  '/doctor/:doctorId',
   auth,
   authorize(['admin', 'doctor', 'hospital_admin']),
   appointmentController.getDoctorAppointments,

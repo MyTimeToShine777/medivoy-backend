@@ -555,3 +555,113 @@ function formatDuration(seconds) {
   }
   return `${secs}s`;
 }
+
+
+/**
+ * Get all video calls
+ */
+exports.getAllVideoCalls = async (req, res) => {
+  try {
+    const { page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+    
+    const { count, rows } = await VideoCall.findAndCountAll({
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order: [['created_at', 'DESC']],
+      include: [
+        { model: Appointment, as: 'appointment' },
+        { model: Doctor, as: 'doctor' },
+        { model: Patient, as: 'patient' },
+      ],
+    });
+    
+    res.status(200).json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(count / limit),
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching video calls',
+      error: error.message,
+    });
+  }
+};
+
+
+
+/**
+ * Get video call by ID
+ */
+exports.getVideoCallById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const videoCall = await VideoCall.findByPk(id, {
+      include: [
+        { model: Appointment, as: 'appointment' },
+        { model: Doctor, as: 'doctor' },
+        { model: Patient, as: 'patient' },
+      ],
+    });
+    
+    if (!videoCall) {
+      return res.status(404).json({
+        success: false,
+        message: 'Video call not found',
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: videoCall,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching video call',
+      error: error.message,
+    });
+  }
+};
+
+
+
+/**
+ * Delete video call
+ */
+exports.deleteVideoCall = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const videoCall = await VideoCall.findByPk(id);
+    
+    if (!videoCall) {
+      return res.status(404).json({
+        success: false,
+        message: 'Video call not found',
+      });
+    }
+    
+    await videoCall.destroy();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Video call deleted successfully',
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting video call',
+      error: error.message,
+    });
+  }
+};
+

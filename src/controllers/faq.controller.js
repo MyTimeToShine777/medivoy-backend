@@ -199,4 +199,30 @@ class FAQController {
   }
 }
 
+
+/**
+ * Get faq by ID
+ */
+const getById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    const item = await Faq.findByPk(id);
+    
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: 'Faq not found',
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: item,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = FAQController;

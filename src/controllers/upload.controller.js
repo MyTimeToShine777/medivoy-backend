@@ -180,4 +180,72 @@ class UploadController {
   }
 }
 
+
+/**
+ * Get all uploads
+ */
+const getAll = async (req, res, next) => {
+  try {
+    const { page = 1, limit = 10, search, sort = '-created_at' } = req.query;
+    
+    const offset = (page - 1) * limit;
+    
+    let whereClause = {};
+    if (search) {
+      whereClause = {
+        [Op.or]: [
+          { name: { [Op.iLike]: `%${search}%` } },
+          { description: { [Op.iLike]: `%${search}%` } },
+        ],
+      };
+    }
+    
+    const { count, rows } = await Upload.findAndCountAll({
+      where: whereClause,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+      order: [[sort.replace('-', ''), sort.startsWith('-') ? 'DESC' : 'ASC']],
+    });
+    
+    res.status(200).json({
+      success: true,
+      data: rows,
+      pagination: {
+        total: count,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(count / limit),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+/**
+ * Get upload by ID
+ */
+const getById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    
+    const item = await Upload.findByPk(id);
+    
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: 'Upload not found',
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      data: item,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = UploadController;
