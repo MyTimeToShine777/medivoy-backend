@@ -46,9 +46,10 @@ router.delete(
 );
 
 // Get all subscriptions for a user
-router.get(
+router.get('/', auth, subscriptionController.getAll);
 
-router.get('/', authenticate, subscriptionController.getAll);  '/user/:userId',
+  // Get all subscriptions for a user
+  router.get('/user/:userId',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
   subscriptionController.getUserSubscriptions,

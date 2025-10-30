@@ -6,10 +6,10 @@ const express = require('express');
 
 const router = express.Router();
 const analyticsController = require('../../controllers/analytics.controller');
-const authenticate = require('../../middleware/auth.middleware');
+const auth = require('../../middleware/auth.middleware');
 
 // All analytics routes require authentication
-router.use(authenticate);
+router.use(auth);
 
 /**
  * @swagger

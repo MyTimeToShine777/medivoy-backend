@@ -6,7 +6,8 @@ const express = require('express');
 
 const router = express.Router();
 const termsPrivacyController = require('../../controllers/termsPrivacy.controller');
-const authenticate = require('../../middleware/auth.middleware');
+const auth = require('../../middleware/auth.middleware');
+const authorize = require('../../middleware/authorize.middleware');
 
 /**
  * Terms and Conditions Routes
@@ -21,7 +22,7 @@ const authenticate = require('../../middleware/auth.middleware');
  *     security:
  *       - bearerAuth: []
  */
-router.get('/terms', authenticate, termsPrivacyController.getAllTerms);
+router.get('/terms', auth, termsPrivacyController.getAllTerms);
 
 /**
  * @swagger
@@ -41,7 +42,7 @@ router.get('/terms/active', termsPrivacyController.getActiveTerms);
  *     security:
  *       - bearerAuth: []
  */
-router.post('/terms', authenticate, termsPrivacyController.createTerms);
+router.post('/terms', auth, termsPrivacyController.createTerms);
 
 /**
  * @swagger
@@ -52,7 +53,7 @@ router.post('/terms', authenticate, termsPrivacyController.createTerms);
  *     security:
  *       - bearerAuth: []
  */
-router.put('/terms/:id', authenticate, termsPrivacyController.updateTerms);
+router.put('/terms/:id', auth, termsPrivacyController.updateTerms);
 
 /**
  * @swagger
@@ -63,7 +64,7 @@ router.put('/terms/:id', authenticate, termsPrivacyController.updateTerms);
  *     security:
  *       - bearerAuth: []
  */
-router.put('/terms/:id/publish', authenticate, termsPrivacyController.publishTerms);
+router.put('/terms/:id/publish', auth, termsPrivacyController.publishTerms);
 
 /**
  * Privacy Policy Routes
@@ -78,7 +79,7 @@ router.put('/terms/:id/publish', authenticate, termsPrivacyController.publishTer
  *     security:
  *       - bearerAuth: []
  */
-router.get('/privacy', authenticate, termsPrivacyController.getAllPrivacyPolicies);
+router.get('/privacy', auth, termsPrivacyController.getAllPrivacyPolicies);
 
 /**
  * @swagger
@@ -98,7 +99,7 @@ router.get('/privacy/active', termsPrivacyController.getActivePrivacyPolicy);
  *     security:
  *       - bearerAuth: []
  */
-router.post('/privacy', authenticate, termsPrivacyController.createPrivacyPolicy);
+router.post('/privacy', auth, termsPrivacyController.createPrivacyPolicy);
 
 /**
  * @swagger
@@ -109,7 +110,7 @@ router.post('/privacy', authenticate, termsPrivacyController.createPrivacyPolicy
  *     security:
  *       - bearerAuth: []
  */
-router.put('/privacy/:id', authenticate, termsPrivacyController.updatePrivacyPolicy);
+router.put('/privacy/:id', auth, termsPrivacyController.updatePrivacyPolicy);
 
 /**
  * @swagger
@@ -120,7 +121,7 @@ router.put('/privacy/:id', authenticate, termsPrivacyController.updatePrivacyPol
  *     security:
  *       - bearerAuth: []
  */
-router.put('/privacy/:id/publish', authenticate, termsPrivacyController.publishPrivacyPolicy);
+router.put('/privacy/:id/publish', auth, termsPrivacyController.publishPrivacyPolicy);
 
 /**
  * User Acceptance Routes
@@ -135,7 +136,7 @@ router.put('/privacy/:id/publish', authenticate, termsPrivacyController.publishP
  *     security:
  *       - bearerAuth: []
  */
-router.post('/acceptance', authenticate, termsPrivacyController.recordAcceptance);
+router.post('/acceptance', auth, termsPrivacyController.recordAcceptance);
 
 /**
  * @swagger
@@ -146,7 +147,7 @@ router.post('/acceptance', authenticate, termsPrivacyController.recordAcceptance
  *     security:
  *       - bearerAuth: []
  */
-router.get('/acceptance/user/:userId', authenticate, termsPrivacyController.getUserAcceptances);
+router.get('/acceptance/user/:userId', auth, termsPrivacyController.getUserAcceptances);
 
 /**
  * @swagger
@@ -157,8 +158,10 @@ router.get('/acceptance/user/:userId', authenticate, termsPrivacyController.getU
  *     security:
  *       - bearerAuth: []
  */
-router.get('/acceptance/check/:userId', authenticate, termsPrivacyController.checkUserAcceptance);
+router.get('/acceptance/check/:userId', auth, termsPrivacyController.checkUserAcceptance);
 
 router.get('/:id', termsPrivacyController.getTermsPrivacyById);
 
-router.delete('/:id', authenticate, authorize("admin"), termsPrivacyController.deleteTermsPrivacy);module.exports = router;
+router.delete('/:id', auth, authorize("admin"), termsPrivacyController.deleteTermsPrivacy);
+
+module.exports = router;

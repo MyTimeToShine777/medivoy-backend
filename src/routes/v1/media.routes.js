@@ -150,5 +150,5 @@ router.post('/folder', auth, mediaController.createFolder);
  */
 router.delete('/folder', auth, authorize(['admin']), mediaController.deleteFolder);
 
-router.get('/:id', authenticate, mediaController.getMediaById);
+router.get('/:id', auth, mediaController.getMediaById);
 module.exports = router;

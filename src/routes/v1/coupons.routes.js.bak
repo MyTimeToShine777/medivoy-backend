@@ -13,7 +13,7 @@ router.post(
   couponController.createCoupon,
 );
 
-// Get coupon by ID (authd users)
+// Get coupon by ID (authenticated users)
 router.get(
   '/:id',
   auth,
@@ -21,7 +21,7 @@ router.get(
   couponController.getCoupon,
 );
 
-// Get all coupons (authd users)
+// Get all coupons (authenticated users)
 router.get(
   '/',
   auth,
@@ -29,7 +29,7 @@ router.get(
   couponController.getAllCoupons,
 );
 
-// Validate coupon (authd users)
+// Validate coupon (authenticated users)
 router.get(
   '/validate/:code',
   auth,
@@ -38,13 +38,15 @@ router.get(
 );
 
 // Apply coupon (patients, hospital admins, admin)
-router.post('/apply/:code',
-  auth,
-  authorize(['admin', 'patient', 'hospital_admin']),
-  couponController.applyCoupon,
-);
 
 // Delete coupon (admin only)
-router.delete('/:id', auth, authorize("admin"), couponController.deleteCoupon);
 
+  // Apply coupon (patients, hospital admins, admin)
+  router.post('/apply/:code',
+    auth,
+    authorize(['admin', 'patient', 'hospital_admin']),
+    couponController.applyCoupon,
+  );
+  // Delete coupon (admin only)
+  router.delete('/:id', auth, authorize("admin"), couponController.deleteCoupon);
 module.exports = router;

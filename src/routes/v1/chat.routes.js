@@ -6,10 +6,10 @@ const express = require('express');
 
 const router = express.Router();
 const chatController = require('../../controllers/chat.controller');
-const authenticate = require('../../middleware/auth.middleware');
+const auth = require('../../middleware/auth.middleware');
 
 // All routes require authentication
-router.use(authenticate);
+router.use(auth);
 
 /**
  * @swagger
@@ -110,6 +110,8 @@ router.put('/messages/conversation/:conversationId/read', chatController.markMes
  */
 router.get('/unread/:userId', chatController.getUnreadCount);
 
-router.get('/', authenticate, chatController.getAllConversations);
+router.get('/', auth, chatController.getAllConversations);
 
-router.get('/:id', authenticate, chatController.getConversationById);module.exports = router;
+router.get('/:id', auth, chatController.getConversationById);
+
+module.exports = router;

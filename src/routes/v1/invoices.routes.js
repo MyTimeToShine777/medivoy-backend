@@ -13,7 +13,7 @@ router.post(
   invoiceController.createInvoice,
 );
 
-// Get invoice by ID (authenticated users)
+// Get invoice by ID (authd users)
 router.get(
   '/:id',
   auth,

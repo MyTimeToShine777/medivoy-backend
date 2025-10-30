@@ -497,38 +497,36 @@ exports.getDNAKitStatistics = async (req, res) => {
   }
 };
 
-
 /**
  * Delete DNA kit
  */
 exports.deleteDNAKit = async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     const dnaKit = await DNAKit.findByPk(id);
-    
+
     if (!dnaKit) {
       return res.status(404).json({
         success: false,
-        message: 'DNA kit not found',
+        message: "DNA kit not found",
       });
     }
-    
+
     await dnaKit.destroy();
-    
+
     res.status(200).json({
       success: true,
-      message: 'DNA kit deleted successfully',
+      message: "DNA kit deleted successfully",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error deleting DNA kit',
+      message: "Error deleting DNA kit",
       error: error.message,
     });
   }
 };
-
 
 // Alias for compatibility
 exports.getById = exports.getDNAKitById;

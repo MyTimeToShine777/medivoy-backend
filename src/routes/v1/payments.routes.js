@@ -13,7 +13,7 @@ router.post(
   paymentController.createPayment,
 );
 
-// Get payment by ID (authenticated users)
+// Get payment by ID (authd users)
 router.get(
   '/:id',
   auth,

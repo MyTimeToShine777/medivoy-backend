@@ -178,74 +178,57 @@ class UploadController {
       return handleDatabaseError(error, res, $1);
     }
   }
-}
 
+  /**
+   * Get all uploads
+   */
+  static async getAll(req, res) {
+    try {
+      const { page = 1, limit = 10 } = req.query;
+      const offset = (page - 1) * limit;
 
-/**
- * Get all uploads
- */
-const getAll = async (req, res, next) => {
-  try {
-    const { page = 1, limit = 10, search, sort = '-created_at' } = req.query;
-    
-    const offset = (page - 1) * limit;
-    
-    let whereClause = {};
-    if (search) {
-      whereClause = {
-        [Op.or]: [
-          { name: { [Op.iLike]: `%${search}%` } },
-          { description: { [Op.iLike]: `%${search}%` } },
-        ],
-      };
-    }
-    
-    const { count, rows } = await Upload.findAndCountAll({
-      where: whereClause,
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-      order: [[sort.replace('-', ''), sort.startsWith('-') ? 'DESC' : 'ASC']],
-    });
-    
-    res.status(200).json({
-      success: true,
-      data: rows,
-      pagination: {
-        total: count,
-        page: parseInt(page),
+      const { count, rows } = await Media.findAndCountAll({
         limit: parseInt(limit),
-        pages: Math.ceil(count / limit),
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-
-/**
- * Get upload by ID
- */
-const getById = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    
-    const item = await Upload.findByPk(id);
-    
-    if (!item) {
-      return res.status(404).json({
-        success: false,
-        message: 'Upload not found',
+        offset: parseInt(offset),
+        order: [["created_at", "DESC"]],
       });
+
+      return successResponse(res, {
+        message: "Uploads retrieved successfully",
+        data: rows,
+        pagination: {
+          total: count,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          pages: Math.ceil(count / limit),
+        },
+      });
+    } catch (error) {
+      return handleDatabaseError(error, res, "Failed to retrieve uploads");
     }
-    
-    res.status(200).json({
-      success: true,
-      data: item,
-    });
-  } catch (error) {
-    next(error);
   }
-};
+
+  /**
+   * Get upload by ID
+   */
+  static async getById(req, res) {
+    try {
+      const { id } = req.params;
+
+      const upload = await Media.findByPk(id);
+
+      if (!upload) {
+        return errorResponse(res, "Upload not found", 404);
+      }
+
+      return successResponse(res, {
+        message: "Upload retrieved successfully",
+        data: upload,
+      });
+    } catch (error) {
+      return handleDatabaseError(error, res, "Failed to retrieve upload");
+    }
+  }
+}
 
 module.exports = UploadController;

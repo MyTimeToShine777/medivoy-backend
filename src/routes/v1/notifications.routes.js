@@ -45,10 +45,11 @@ router.get(
   notificationController.getUserNotifications,
 );
 
-// Mark notification as read
-router.patch(
+  // Get all notifications (admin)
+router.get('/', auth, notificationController.getAll);
 
-router.get('/', authenticate, notificationController.getAll);  '/:id/read',
+// Mark notification as read
+router.patch('/:id/read',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
   notificationController.markAsRead,

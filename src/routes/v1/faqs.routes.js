@@ -40,9 +40,9 @@ router.put(
 );
 
 // Delete FAQ (admin only)
-router.delete(
 
-router.get('/:id', faqController.getById);  '/:id',
+  // Delete FAQ (admin only)
+  router.delete('/:id',
   auth,
   authorize(['admin']),
   faqController.deleteFAQ,

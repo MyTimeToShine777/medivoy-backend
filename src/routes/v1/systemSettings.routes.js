@@ -6,10 +6,11 @@ const express = require('express');
 
 const router = express.Router();
 const systemSettingsController = require('../../controllers/systemSettings.controller');
-const authenticate = require('../../middleware/auth.middleware');
+const auth = require('../../middleware/auth.middleware');
+const authorize = require('../../middleware/authorize.middleware');
 
 // All routes require authentication
-router.use(authenticate);
+router.use(auth);
 
 /**
  * @swagger
@@ -108,5 +109,5 @@ router.put('/bulk', systemSettingsController.bulkUpdateSettings);
  */
 router.put('/key/:key/reset', systemSettingsController.resetSettingToDefault);
 
-router.get('/:id', authenticate, authorize("admin"), systemSettingsController.getById);
+router.get('/:id', auth, authorize("admin"), systemSettingsController.getById);
 module.exports = router;

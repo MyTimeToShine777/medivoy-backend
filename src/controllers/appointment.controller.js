@@ -319,33 +319,29 @@ class AppointmentController {
       );
     }
   }
-}
 
-/**
- * Delete appointment
- */
-const deleteItem = async (req, res, next) => {
-  try {
-    const { id } = req.params;
+  /**
+   * Delete appointment
+   */
+  static async delete(req, res) {
+    try {
+      const { id } = req.params;
 
-    const item = await Appointment.findByPk(id);
+      const appointment = await Appointment.findByPk(id);
 
-    if (!item) {
-      return res.status(404).json({
-        success: false,
-        message: "Appointment not found",
+      if (!appointment) {
+        return errorResponse(res, "Appointment not found", 404);
+      }
+
+      await appointment.destroy();
+
+      return successResponse(res, {
+        message: "Appointment deleted successfully",
       });
+    } catch (error) {
+      return handleDatabaseError(error, res, "Failed to delete appointment");
     }
-
-    await item.destroy();
-
-    res.status(200).json({
-      success: true,
-      message: "Appointment deleted successfully",
-    });
-  } catch (error) {
-    next(error);
   }
-};
+}
 
 module.exports = AppointmentController;

@@ -13,7 +13,7 @@ router.post(
   reviewController.createReview,
 );
 
-// Get review by ID (authenticated users)
+// Get review by ID (authd users)
 router.get(
   '/:id',
   auth,
@@ -37,7 +37,7 @@ router.delete(
   reviewController.deleteReview,
 );
 
-// Get all reviews (authenticated users)
+// Get all reviews (authd users)
 router.get(
   '/',
   auth,

@@ -59,7 +59,7 @@ router.post(
   appointmentController.createAppointment,
 );
 
-// Get appointment by ID (authenticated users)
+// Get appointment by ID (authd users)
 router.get(
   '/:id',
   auth,
@@ -100,9 +100,10 @@ router.get(
 );
 
 // Get doctor appointments (doctors)
-router.get(
+router.delete('/:id', auth, appointmentController.delete);
 
-router.delete('/:id', authenticate, appointmentController.delete);  '/doctor/:doctorId',
+// Get doctor appointments
+router.get('/doctor/:doctorId',
   auth,
   authorize(['admin', 'doctor', 'hospital_admin']),
   appointmentController.getDoctorAppointments,

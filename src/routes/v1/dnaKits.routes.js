@@ -6,10 +6,11 @@ const express = require('express');
 
 const router = express.Router();
 const dnaKitController = require('../../controllers/dnaKit.controller');
-const authenticate = require('../../middleware/auth.middleware');
+const auth = require('../../middleware/auth.middleware');
+const authorize = require('../../middleware/authorize.middleware');
 
 // All routes require authentication
-router.use(authenticate);
+router.use(auth);
 
 /**
  * @swagger
@@ -110,5 +111,5 @@ router.put('/:id/results', dnaKitController.uploadTestResults);
  */
 router.put('/:id/cancel', dnaKitController.cancelOrder);
 
-router.delete('/:id', authenticate, authorize("admin"), dnaKitController.deleteDNAKit);
+router.delete('/:id', auth, authorize("admin"), dnaKitController.deleteDNAKit);
 module.exports = router;

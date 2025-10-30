@@ -13,7 +13,7 @@ router.post(
   patientController.createPatient,
 );
 
-// Get patient by ID (authenticated users)
+// Get patient by ID (authd users)
 router.get(
   '/:id',
   auth,

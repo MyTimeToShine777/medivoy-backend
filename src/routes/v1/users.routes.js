@@ -13,7 +13,7 @@ router.post(
   userController.createUser,
 );
 
-// Get user by ID (authenticated users)
+// Get user by ID (authd users)
 router.get(
   '/:id',
   auth,

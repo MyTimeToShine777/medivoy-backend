@@ -17,7 +17,7 @@ const treatmentsRoutes = require("./v1/treatments.routes");
 const treatmentCategoriesRoutes = require("./v1/treatmentCategories.routes");
 const bookingsRoutes = require("./v1/bookings.routes");
 const appointmentsRoutes = require("./v1/appointments.routes");
-const prescriptionsRoutes = require("./v1/prescriptions.routes");
+// // const prescriptionsRoutes = require("./v1/prescriptions.routes"); // Temporarily disabled
 const paymentsRoutes = require("./v1/payments.routes");
 const invoicesRoutes = require("./v1/invoices.routes");
 const reviewsRoutes = require("./v1/reviews.routes");
@@ -59,7 +59,7 @@ router.use("/treatments", treatmentsRoutes);
 router.use("/treatment-categories", treatmentCategoriesRoutes);
 router.use("/bookings", bookingsRoutes);
 router.use("/appointments", appointmentsRoutes);
-router.use("/prescriptions", prescriptionsRoutes);
+// // router.use("/prescriptions", prescriptionsRoutes); // Temporarily disabled
 router.use("/payments", paymentsRoutes);
 router.use("/invoices", invoicesRoutes);
 router.use("/reviews", reviewsRoutes);

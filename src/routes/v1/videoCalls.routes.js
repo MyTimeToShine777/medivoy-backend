@@ -6,10 +6,10 @@ const express = require('express');
 
 const router = express.Router();
 const videoCallController = require('../../controllers/videoCall.controller');
-const authenticate = require('../../middleware/auth.middleware');
+const auth = require('../../middleware/auth.middleware');
 
 // All routes require authentication
-router.use(authenticate);
+router.use(auth);
 
 /**
  * @swagger
@@ -110,6 +110,8 @@ router.get('/user/:userId/upcoming', videoCallController.getUpcomingCalls);
  */
 router.get('/:id', videoCallController.getCallById);
 
-router.get('/', authenticate, videoCallController.getAllVideoCalls);
+router.get('/', auth, videoCallController.getAllVideoCalls);
 
-router.delete('/:id', authenticate, videoCallController.deleteVideoCall);module.exports = router;
+router.delete('/:id', auth, videoCallController.deleteVideoCall);
+
+module.exports = router;

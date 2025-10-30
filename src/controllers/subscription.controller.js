@@ -287,48 +287,43 @@ class SubscriptionController {
       return handleDatabaseError(error, res, $1);
     }
   }
-}
 
+  /**
+   * Get all subscriptions
+   */
+  static async getAll(req, res) {
+    try {
+      const { page = 1, limit = 10 } = req.query;
+      const offset = (page - 1) * limit;
 
-/**
- * Get all subscriptions
- */
-const getAll = async (req, res, next) => {
-  try {
-    const { page = 1, limit = 10, search, sort = '-created_at' } = req.query;
-    
-    const offset = (page - 1) * limit;
-    
-    let whereClause = {};
-    if (search) {
-      whereClause = {
-        [Op.or]: [
-          { name: { [Op.iLike]: `%${search}%` } },
-          { description: { [Op.iLike]: `%${search}%` } },
-        ],
-      };
-    }
-    
-    const { count, rows } = await Subscription.findAndCountAll({
-      where: whereClause,
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-      order: [[sort.replace('-', ''), sort.startsWith('-') ? 'DESC' : 'ASC']],
-    });
-    
-    res.status(200).json({
-      success: true,
-      data: rows,
-      pagination: {
-        total: count,
-        page: parseInt(page),
+      const { count, rows } = await Subscription.findAndCountAll({
         limit: parseInt(limit),
-        pages: Math.ceil(count / limit),
-      },
-    });
-  } catch (error) {
-    next(error);
+        offset: parseInt(offset),
+        order: [["created_at", "DESC"]],
+        include: [
+          { model: User, as: "user" },
+          { model: SubscriptionPlan, as: "plan" },
+        ],
+      });
+
+      return successResponse(res, {
+        message: "Subscriptions retrieved successfully",
+        data: rows,
+        pagination: {
+          total: count,
+          page: parseInt(page),
+          limit: parseInt(limit),
+          pages: Math.ceil(count / limit),
+        },
+      });
+    } catch (error) {
+      return handleDatabaseError(
+        error,
+        res,
+        "Failed to retrieve subscriptions",
+      );
+    }
   }
-};
+}
 
 module.exports = SubscriptionController;

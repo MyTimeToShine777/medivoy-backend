@@ -13,7 +13,7 @@ router.post(
   insuranceController.createInsurance,
 );
 
-// Get insurance provider by ID (authenticated users)
+// Get insurance provider by ID (authd users)
 router.get(
   '/:id',
   auth,
@@ -37,7 +37,7 @@ router.delete(
   insuranceController.deleteInsurance,
 );
 
-// Get all insurance providers (authenticated users)
+// Get all insurance providers (authd users)
 router.get(
   '/',
   auth,

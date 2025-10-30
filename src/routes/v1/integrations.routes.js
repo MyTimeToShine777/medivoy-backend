@@ -6,10 +6,11 @@ const express = require('express');
 
 const router = express.Router();
 const integrationController = require('../../controllers/integration.controller');
-const authenticate = require('../../middleware/auth.middleware');
+const auth = require('../../middleware/auth.middleware');
+const authorize = require('../../middleware/authorize.middleware');
 
 // All routes require authentication
-router.use(authenticate);
+router.use(auth);
 
 /**
  * @swagger
@@ -26,34 +27,12 @@ router.get('/', integrationController.getAllIntegrations);
  * @swagger
  * /api/v1/integrations:
  *   post:
- *     summary: Create integration
+ *     summary: Create new integration
  *     tags: [Integrations]
  *     security:
  *       - bearerAuth: []
  */
 router.post('/', integrationController.createIntegration);
-
-/**
- * @swagger
- * /api/v1/integrations/slug/{slug}:
- *   get:
- *     summary: Get integration by slug
- *     tags: [Integrations]
- *     security:
- *       - bearerAuth: []
- */
-router.get('/slug/:slug', integrationController.getIntegrationBySlug);
-
-/**
- * @swagger
- * /api/v1/integrations/statistics:
- *   get:
- *     summary: Get integration statistics
- *     tags: [Integrations]
- *     security:
- *       - bearerAuth: []
- */
-router.get('/statistics', integrationController.getIntegrationStatistics);
 
 /**
  * @swagger
@@ -90,17 +69,6 @@ router.delete('/:id', integrationController.deleteIntegration);
 
 /**
  * @swagger
- * /api/v1/integrations/{id}/toggle:
- *   put:
- *     summary: Toggle integration status
- *     tags: [Integrations]
- *     security:
- *       - bearerAuth: []
- */
-router.put('/:id/toggle', integrationController.toggleIntegrationStatus);
-
-/**
- * @swagger
  * /api/v1/integrations/{id}/test:
  *   post:
  *     summary: Test integration connection
@@ -114,7 +82,7 @@ router.post('/:id/test', integrationController.testIntegration);
  * @swagger
  * /api/v1/integrations/{id}/sync:
  *   post:
- *     summary: Sync integration
+ *     summary: Sync data with integration
  *     tags: [Integrations]
  *     security:
  *       - bearerAuth: []

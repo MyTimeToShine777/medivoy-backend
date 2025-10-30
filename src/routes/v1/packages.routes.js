@@ -13,7 +13,7 @@ router.post(
   packageController.createPackage,
 );
 
-// Get package by ID (authenticated users)
+// Get package by ID (authd users)
 router.get(
   '/:id',
   auth,
@@ -37,7 +37,7 @@ router.delete(
   packageController.deletePackage,
 );
 
-// Get all packages (authenticated users)
+// Get all packages (authd users)
 router.get(
   '/',
   auth,

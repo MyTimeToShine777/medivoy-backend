@@ -5,7 +5,7 @@ const authorize = require('../../middleware/authorize.middleware');
 
 const router = express.Router();
 
-// Create support ticket (authenticated users)
+// Create support ticket (authd users)
 router.post(
   '/',
   auth,
@@ -37,9 +37,10 @@ router.delete(
 );
 
 // Get all support tickets (admin only)
-router.get(
+router.get('/:id', auth, supportController.getById);
 
-router.get('/:id', authenticate, supportController.getById);  '/',
+  // Get all support tickets (admin only)
+  router.get('/',
   auth,
   authorize(['admin']),
   supportController.getAllTickets,

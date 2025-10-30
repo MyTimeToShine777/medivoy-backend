@@ -13,7 +13,7 @@ router.post(
   bookingController.createBooking,
 );
 
-// Get booking by ID (authenticated users)
+// Get booking by ID (authd users)
 router.get(
   '/:id',
   auth,
@@ -46,9 +46,10 @@ router.get(
 );
 
 // Get patient bookings (patients)
-router.get(
+router.delete('/:id', auth, bookingController.cancelBooking);
 
-router.delete('/:id', authenticate, bookingController.delete);  '/patient/:patientId',
+// Get patient bookings
+router.get('/patient/:patientId',
   auth,
   authorize(['admin', 'patient', 'hospital_admin']),
   bookingController.getPatientBookings,

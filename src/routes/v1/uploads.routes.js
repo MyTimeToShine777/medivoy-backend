@@ -6,7 +6,7 @@ const { uploadSingle } = require('../../middleware/upload.middleware');
 
 const router = express.Router();
 
-// Upload file (authenticated users)
+// Upload file (authd users)
 router.post(
   '/',
   auth,
@@ -15,7 +15,7 @@ router.post(
   uploadController.uploadFile,
 );
 
-// Get media by ID (authenticated users)
+// Get media by ID (authd users)
 router.get(
   '/:id',
   auth,
@@ -23,7 +23,7 @@ router.get(
   uploadController.getMedia,
 );
 
-// Update media (authenticated users)
+// Update media (authd users)
 router.put(
   '/:id',
   auth,
@@ -31,7 +31,7 @@ router.put(
   uploadController.updateMedia,
 );
 
-// Delete media (authenticated users)
+// Delete media (authd users)
 router.delete(
   '/:id',
   auth,
@@ -39,12 +39,14 @@ router.delete(
   uploadController.deleteMedia,
 );
 
-// Get all media for an entity (authenticated users)
-router.get(
+// Get all media for an entity (authd users)
+router.get('/', auth, uploadController.getAll);  '/entity/:entityType/:entityId',
 
-router.get('/', authenticate, uploadController.getAll);  '/entity/:entityType/:entityId',
+router.get('/:id', auth, uploadController.getById);
 
-router.get('/:id', authenticate, uploadController.getById);  auth,
+  // Get all media for an entity (authd users)
+  router.get('/entity/:entityType/:entityId',
+    auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
   uploadController.getEntityMedia,
 );

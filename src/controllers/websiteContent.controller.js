@@ -217,30 +217,4 @@ class WebsiteContentController {
   }
 }
 
-
-/**
- * Get websiteContent by ID
- */
-const getById = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    
-    const item = await WebsiteContent.findByPk(id);
-    
-    if (!item) {
-      return res.status(404).json({
-        success: false,
-        message: 'WebsiteContent not found',
-      });
-    }
-    
-    res.status(200).json({
-      success: true,
-      data: item,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 module.exports = WebsiteContentController;

@@ -13,7 +13,7 @@ router.post(
   laboratoryController.createLaboratory,
 );
 
-// Get laboratory by ID (authenticated users)
+// Get laboratory by ID (authd users)
 router.get(
   '/:id',
   auth,
@@ -37,7 +37,7 @@ router.delete(
   laboratoryController.deleteLaboratory,
 );
 
-// Get all laboratories (authenticated users)
+// Get all laboratories (authd users)
 router.get(
   '/',
   auth,

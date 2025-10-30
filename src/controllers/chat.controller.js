@@ -581,7 +581,6 @@ exports.getUnreadCount = async (req, res) => {
   }
 };
 
-
 /**
  * Get all conversations
  */
@@ -589,17 +588,17 @@ exports.getAllConversations = async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
     const offset = (page - 1) * limit;
-    
+
     const { count, rows } = await ChatConversation.findAndCountAll({
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [['updated_at', 'DESC']],
+      order: [["updated_at", "DESC"]],
       include: [
-        { model: User, as: 'user1' },
-        { model: User, as: 'user2' },
+        { model: User, as: "user1" },
+        { model: User, as: "user2" },
       ],
     });
-    
+
     res.status(200).json({
       success: true,
       data: rows,
@@ -613,12 +612,11 @@ exports.getAllConversations = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Error fetching conversations',
+      message: "Error fetching conversations",
       error: error.message,
     });
   }
 };
-
 
 // Alias for compatibility
 exports.getById = exports.getConversationById;

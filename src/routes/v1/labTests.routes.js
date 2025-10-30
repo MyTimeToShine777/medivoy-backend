@@ -13,7 +13,7 @@ router.post(
   labTestController.createLabTest,
 );
 
-// Get lab test by ID (authenticated users)
+// Get lab test by ID (authd users)
 router.get(
   '/:id',
   auth,
@@ -37,7 +37,7 @@ router.delete(
   labTestController.deleteLabTest,
 );
 
-// Get all lab tests (authenticated users)
+// Get all lab tests (authd users)
 router.get(
   '/',
   auth,

@@ -14,7 +14,7 @@ router.post(
   medicalRecordController.createMedicalRecord,
 );
 
-// Get medical record by ID (authenticated users)
+// Get medical record by ID (authd users)
 router.get(
   '/:id',
   auth,
@@ -38,7 +38,7 @@ router.delete(
   medicalRecordController.deleteMedicalRecord,
 );
 
-// Get all medical records for a patient (authenticated users)
+// Get all medical records for a patient (authd users)
 router.get(
   '/patient/:patientId',
   auth,

@@ -6,10 +6,11 @@ const express = require('express');
 
 const router = express.Router();
 const auditLogController = require('../../controllers/auditLog.controller');
-const authenticate = require('../../middleware/auth.middleware');
+const auth = require('../../middleware/auth.middleware');
+const authorize = require('../../middleware/authorize.middleware');
 
 // All routes require authentication
-router.use(authenticate);
+router.use(auth);
 
 /**
  * @swagger

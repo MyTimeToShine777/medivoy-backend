@@ -6,10 +6,10 @@ const express = require('express');
 
 const router = express.Router();
 const bookingStatusController = require('../../controllers/bookingStatus.controller');
-const authenticate = require('../../middleware/auth.middleware');
+const auth = require('../../middleware/auth.middleware');
 
 // All routes require authentication
-router.use(authenticate);
+router.use(auth);
 
 /**
  * @swagger
@@ -88,6 +88,8 @@ router.put('/bulk-update', bookingStatusController.bulkUpdateStatus);
  */
 router.get('/statistics', bookingStatusController.getStatusStatistics);
 
-router.get('/', authenticate, bookingStatusController.getAllBookingStatuses);
+router.get('/', auth, bookingStatusController.getAllBookingStatuses);
 
-router.delete('/:id', authenticate, bookingStatusController.deleteBookingStatus);module.exports = router;
+router.delete('/:id', auth, bookingStatusController.deleteBookingStatus);
+
+module.exports = router;

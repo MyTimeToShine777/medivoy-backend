@@ -275,33 +275,29 @@ class BookingController {
       );
     }
   }
-}
 
-/**
- * Delete booking
- */
-const deleteItem = async (req, res, next) => {
-  try {
-    const { id } = req.params;
+  /**
+   * Delete booking
+   */
+  static async delete(req, res) {
+    try {
+      const { id } = req.params;
 
-    const item = await Booking.findByPk(id);
+      const booking = await Booking.findByPk(id);
 
-    if (!item) {
-      return res.status(404).json({
-        success: false,
-        message: "Booking not found",
+      if (!booking) {
+        return errorResponse(res, "Booking not found", 404);
+      }
+
+      await booking.destroy();
+
+      return successResponse(res, {
+        message: "Booking deleted successfully",
       });
+    } catch (error) {
+      return handleDatabaseError(error, res, "Failed to delete booking");
     }
-
-    await item.destroy();
-
-    res.status(200).json({
-      success: true,
-      message: "Booking deleted successfully",
-    });
-  } catch (error) {
-    next(error);
   }
-};
+}
 
 module.exports = BookingController;

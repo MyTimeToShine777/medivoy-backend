@@ -246,32 +246,33 @@ class SupportController {
       return handleDatabaseError(error, res, $1);
     }
   }
-}
 
+  /**
+   * Get support ticket by ID
+   */
+  static async getById(req, res) {
+    try {
+      const { id } = req.params;
 
-/**
- * Get support by ID
- */
-const getById = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    
-    const item = await Support.findByPk(id);
-    
-    if (!item) {
-      return res.status(404).json({
-        success: false,
-        message: 'Support not found',
+      const ticket = await SupportTicket.findByPk(id, {
+        include: [
+          { model: User, as: "user" },
+          { model: User, as: "assignedTo" },
+        ],
       });
+
+      if (!ticket) {
+        return errorResponse(res, "Support ticket not found", 404);
+      }
+
+      return successResponse(res, {
+        message: "Support ticket retrieved successfully",
+        data: ticket,
+      });
+    } catch (error) {
+      return handleDatabaseError(error, res, "Failed to retrieve support ticket");
     }
-    
-    res.status(200).json({
-      success: true,
-      data: item,
-    });
-  } catch (error) {
-    next(error);
   }
-};
+}
 
 module.exports = SupportController;
