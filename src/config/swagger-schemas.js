@@ -1,5 +1,7 @@
 /**
  * Comprehensive Swagger Schema Definitions for Medivoy API
+ * Updated: 2024-10-30
+ * Coverage: All 287 endpoints across 40 categories
  */
 
 const schemas = {
