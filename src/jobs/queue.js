@@ -1,9 +1,9 @@
-const Queue = require('bull');
-const config = require('../config');
-const logger = require('../utils/logger');
+const Queue = require("bull");
+const config = require("../config");
+const logger = require("../utils/logger");
 
 // Create queues for different job types
-const emailQueue = new Queue('email', {
+const emailQueue = new Queue("email", {
   redis: {
     host: config.redis.host,
     port: config.redis.port,
@@ -12,7 +12,7 @@ const emailQueue = new Queue('email', {
   defaultJobOptions: {
     attempts: 3,
     backoff: {
-      type: 'exponential',
+      type: "exponential",
       delay: 2000,
     },
     removeOnComplete: true,
@@ -20,7 +20,7 @@ const emailQueue = new Queue('email', {
   },
 });
 
-const smsQueue = new Queue('sms', {
+const smsQueue = new Queue("sms", {
   redis: {
     host: config.redis.host,
     port: config.redis.port,
@@ -29,7 +29,7 @@ const smsQueue = new Queue('sms', {
   defaultJobOptions: {
     attempts: 3,
     backoff: {
-      type: 'exponential',
+      type: "exponential",
       delay: 2000,
     },
     removeOnComplete: true,
@@ -37,7 +37,7 @@ const smsQueue = new Queue('sms', {
   },
 });
 
-const notificationQueue = new Queue('notification', {
+const notificationQueue = new Queue("notification", {
   redis: {
     host: config.redis.host,
     port: config.redis.port,
@@ -46,7 +46,7 @@ const notificationQueue = new Queue('notification', {
   defaultJobOptions: {
     attempts: 3,
     backoff: {
-      type: 'exponential',
+      type: "exponential",
       delay: 2000,
     },
     removeOnComplete: true,
@@ -54,7 +54,7 @@ const notificationQueue = new Queue('notification', {
   },
 });
 
-const translationQueue = new Queue('translation', {
+const translationQueue = new Queue("translation", {
   redis: {
     host: config.redis.host,
     port: config.redis.port,
@@ -63,7 +63,7 @@ const translationQueue = new Queue('translation', {
   defaultJobOptions: {
     attempts: 2,
     backoff: {
-      type: 'fixed',
+      type: "fixed",
       delay: 5000,
     },
     removeOnComplete: true,
@@ -71,7 +71,7 @@ const translationQueue = new Queue('translation', {
   },
 });
 
-const backupQueue = new Queue('backup', {
+const backupQueue = new Queue("backup", {
   redis: {
     host: config.redis.host,
     port: config.redis.port,
@@ -84,7 +84,7 @@ const backupQueue = new Queue('backup', {
   },
 });
 
-const cleanupQueue = new Queue('cleanup', {
+const cleanupQueue = new Queue("cleanup", {
   redis: {
     host: config.redis.host,
     port: config.redis.port,
@@ -97,7 +97,7 @@ const cleanupQueue = new Queue('cleanup', {
   },
 });
 
-const analyticsQueue = new Queue('analytics', {
+const analyticsQueue = new Queue("analytics", {
   redis: {
     host: config.redis.host,
     port: config.redis.port,
@@ -112,31 +112,34 @@ const analyticsQueue = new Queue('analytics', {
 
 // Queue event listeners
 const setupQueueListeners = (queue, queueName) => {
-  queue.on('completed', (job, result) => {
+  queue.on("completed", (job, result) => {
     logger.info(`${queueName} job completed`, { jobId: job.id, result });
   });
 
-  queue.on('failed', (job, err) => {
-    logger.error(`${queueName} job failed`, { jobId: job.id, error: err.message });
+  queue.on("failed", (job, err) => {
+    logger.error(`${queueName} job failed`, {
+      jobId: job.id,
+      error: err.message,
+    });
   });
 
-  queue.on('stalled', (job) => {
+  queue.on("stalled", (job) => {
     logger.warn(`${queueName} job stalled`, { jobId: job.id });
   });
 
-  queue.on('error', (error) => {
+  queue.on("error", (error) => {
     logger.error(`${queueName} queue error`, { error: error.message });
   });
 };
 
 // Setup listeners for all queues
-setupQueueListeners(emailQueue, 'Email');
-setupQueueListeners(smsQueue, 'SMS');
-setupQueueListeners(notificationQueue, 'Notification');
-setupQueueListeners(translationQueue, 'Translation');
-setupQueueListeners(backupQueue, 'Backup');
-setupQueueListeners(cleanupQueue, 'Cleanup');
-setupQueueListeners(analyticsQueue, 'Analytics');
+setupQueueListeners(emailQueue, "Email");
+setupQueueListeners(smsQueue, "SMS");
+setupQueueListeners(notificationQueue, "Notification");
+setupQueueListeners(translationQueue, "Translation");
+setupQueueListeners(backupQueue, "Backup");
+setupQueueListeners(cleanupQueue, "Cleanup");
+setupQueueListeners(analyticsQueue, "Analytics");
 
 module.exports = {
   emailQueue,

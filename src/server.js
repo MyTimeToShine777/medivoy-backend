@@ -103,7 +103,6 @@ async function startServer() {
         logger.info('');
       }
     });
-
   } catch (error) {
     logger.error('❌ Server startup failed:', error);
     logger.error('Stack trace:', error.stack);

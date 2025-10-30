@@ -1,15 +1,22 @@
-const Patient = require('../models/Patient.model');
-const { successResponse, errorResponse } = require('../utils/response');
-const logger = require('../utils/logger');
+const Patient = require("../models/Patient.model");
+const { successResponse, errorResponse } = require("../utils/response");
+const { handleDatabaseError } = require("../utils/databaseErrorHandler");
 
 class PatientController {
   /**
    * Create a new patient
    */
-  async createPatient(req, res) {
+  static async createPatient(req, res) {
     try {
       const {
-        userId, dateOfBirth, gender, bloodType, emergencyContact, medicalHistory, allergies, insuranceId,
+        userId,
+        dateOfBirth,
+        gender,
+        bloodType,
+        emergencyContact,
+        medicalHistory,
+        allergies,
+        insuranceId,
       } = req.body;
 
       // Create patient
@@ -24,23 +31,23 @@ class PatientController {
         insuranceId,
       });
 
-      return successResponse(res, {
-        message: 'Patient created successfully',
-        data: patient,
-      }, 201);
+      return successResponse(
+        res,
+        {
+          message: "Patient created successfully",
+          data: patient,
+        },
+        201,
+      );
     } catch (error) {
-      logger.error('Create patient error:', error);
-      return errorResponse(res, {
-        message: 'Failed to create patient',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Get patient by ID
    */
-  async getPatient(req, res) {
+  static async getPatient(req, res) {
     try {
       const { id } = req.params;
 
@@ -48,41 +55,51 @@ class PatientController {
       const patient = await Patient.findByPk(id);
 
       if (!patient) {
-        return errorResponse(res, {
-          message: 'Patient not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Patient not found",
+          },
+          404,
+        );
       }
 
       return successResponse(res, {
-        message: 'Patient retrieved successfully',
+        message: "Patient retrieved successfully",
         data: patient,
       });
     } catch (error) {
-      logger.error('Get patient error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve patient',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Update patient
    */
-  async updatePatient(req, res) {
+  static async updatePatient(req, res) {
     try {
       const { id } = req.params;
       const {
-        dateOfBirth, gender, bloodType, emergencyContact, medicalHistory, allergies, insuranceId,
+        dateOfBirth,
+        gender,
+        bloodType,
+        emergencyContact,
+        medicalHistory,
+        allergies,
+        insuranceId,
       } = req.body;
 
       // Find patient
       const patient = await Patient.findByPk(id);
 
       if (!patient) {
-        return errorResponse(res, {
-          message: 'Patient not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Patient not found",
+          },
+          404,
+        );
       }
 
       // Update patient
@@ -97,22 +114,18 @@ class PatientController {
       });
 
       return successResponse(res, {
-        message: 'Patient updated successfully',
+        message: "Patient updated successfully",
         data: patient,
       });
     } catch (error) {
-      logger.error('Update patient error:', error);
-      return errorResponse(res, {
-        message: 'Failed to update patient',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Delete patient
    */
-  async deletePatient(req, res) {
+  static async deletePatient(req, res) {
     try {
       const { id } = req.params;
 
@@ -120,30 +133,30 @@ class PatientController {
       const patient = await Patient.findByPk(id);
 
       if (!patient) {
-        return errorResponse(res, {
-          message: 'Patient not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Patient not found",
+          },
+          404,
+        );
       }
 
       // Delete patient
       await patient.destroy();
 
       return successResponse(res, {
-        message: 'Patient deleted successfully',
+        message: "Patient deleted successfully",
       });
     } catch (error) {
-      logger.error('Delete patient error:', error);
-      return errorResponse(res, {
-        message: 'Failed to delete patient',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Get all patients
    */
-  async getAllPatients(req, res) {
+  static async getAllPatients(req, res) {
     try {
       const { page = 1, limit = 10 } = req.query;
 
@@ -151,11 +164,11 @@ class PatientController {
       const patients = await Patient.findAndCountAll({
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       return successResponse(res, {
-        message: 'Patients retrieved successfully',
+        message: "Patients retrieved successfully",
         data: patients.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -164,18 +177,14 @@ class PatientController {
         },
       });
     } catch (error) {
-      logger.error('Get all patients error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve patients',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Get patient medical records
    */
-  async getMedicalRecords(req, res) {
+  static async getMedicalRecords(req, res) {
     try {
       const { id } = req.params;
 
@@ -183,9 +192,13 @@ class PatientController {
       const patient = await Patient.findByPk(id);
 
       if (!patient) {
-        return errorResponse(res, {
-          message: 'Patient not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Patient not found",
+          },
+          404,
+        );
       }
 
       // Get patient medical records
@@ -196,17 +209,13 @@ class PatientController {
       // });
 
       return successResponse(res, {
-        message: 'Patient medical records retrieved successfully',
+        message: "Patient medical records retrieved successfully",
         data: [],
       });
     } catch (error) {
-      logger.error('Get patient medical records error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve patient medical records',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 }
 
-module.exports = new PatientController();
+module.exports = PatientController;

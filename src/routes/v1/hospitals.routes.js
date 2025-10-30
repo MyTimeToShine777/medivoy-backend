@@ -13,11 +13,35 @@ router.post(
   hospitalController.createHospital,
 );
 
-// Get hospital by ID (authenticated users)
+/**
+ * @swagger
+ * /hospitals/{id}:
+ *   get:
+ *     summary: Get hospital by ID
+ *     tags: [Hospitals]
+ *     security: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/idParam'
+ *     responses:
+ *       200:
+ *         description: Hospital retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/Hospital'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
+// Get hospital by ID (public endpoint)
 router.get(
   '/:id',
-  auth,
-  authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
   hospitalController.getHospital,
 );
 
@@ -37,11 +61,40 @@ router.delete(
   hospitalController.deleteHospital,
 );
 
-// Get all hospitals (authenticated users)
+/**
+ * @swagger
+ * /hospitals:
+ *   get:
+ *     summary: Get all hospitals
+ *     tags: [Hospitals]
+ *     security: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/pageParam'
+ *       - $ref: '#/components/parameters/limitParam'
+ *       - $ref: '#/components/parameters/searchParam'
+ *       - $ref: '#/components/parameters/sortParam'
+ *     responses:
+ *       200:
+ *         description: Hospitals retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Hospital'
+ *                 pagination:
+ *                   $ref: '#/components/schemas/Pagination'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
+// Get all hospitals (public endpoint)
 router.get(
   '/',
-  auth,
-  authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
   hospitalController.getAllHospitals,
 );
 

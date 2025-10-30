@@ -1,5 +1,5 @@
-const MedicalRecord = require('../models/MedicalRecord.model');
-const logger = require('../utils/logger');
+const MedicalRecord = require("../models/MedicalRecord.model");
+const logger = require("../utils/logger");
 
 class MedicalRecordService {
   /**
@@ -10,7 +10,7 @@ class MedicalRecordService {
       const medicalRecord = await MedicalRecord.create(data);
       return medicalRecord;
     } catch (error) {
-      logger.error('Create medical record service error:', error);
+      logger.error("Create medical record service error:", error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class MedicalRecordService {
       const medicalRecord = await MedicalRecord.findByPk(id);
       return medicalRecord;
     } catch (error) {
-      logger.error('Get medical record by ID service error:', error);
+      logger.error("Get medical record by ID service error:", error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class MedicalRecordService {
     try {
       const medicalRecord = await MedicalRecord.findByPk(id);
       if (!medicalRecord) {
-        throw new Error('Medical record not found');
+        throw new Error("Medical record not found");
       }
 
       await medicalRecord.update(data);
       return medicalRecord;
     } catch (error) {
-      logger.error('Update medical record service error:', error);
+      logger.error("Update medical record service error:", error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class MedicalRecordService {
     try {
       const medicalRecord = await MedicalRecord.findByPk(id);
       if (!medicalRecord) {
-        throw new Error('Medical record not found');
+        throw new Error("Medical record not found");
       }
 
       await medicalRecord.destroy();
       return true;
     } catch (error) {
-      logger.error('Delete medical record service error:', error);
+      logger.error("Delete medical record service error:", error);
       throw error;
     }
   }
@@ -75,12 +75,12 @@ class MedicalRecordService {
         where: { patientId },
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       return medicalRecords;
     } catch (error) {
-      logger.error('Get patient medical records service error:', error);
+      logger.error("Get patient medical records service error:", error);
       throw error;
     }
   }

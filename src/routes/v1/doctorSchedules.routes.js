@@ -3,6 +3,7 @@
  */
 
 const express = require('express');
+
 const router = express.Router();
 const doctorScheduleController = require('../../controllers/doctorSchedule.controller');
 const authenticate = require('../../middleware/auth.middleware');

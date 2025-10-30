@@ -7,5 +7,5 @@ module.exports = {
   AuditLog,
   Analytics,
   Session,
-  mongoose
+  mongoose,
 };

@@ -1,23 +1,21 @@
-const Queue = require('bull');
-const googleTranslateService = require('../services/googleTranslate.service');
-const logger = require('../utils/logger');
+const Queue = require("bull");
+const googleTranslateService = require("../services/googleTranslate.service");
+const logger = require("../utils/logger");
 
 // Import models that need translation
-const {
-  Hospital, Treatment, Doctor, Package, FAQ,
-} = require('../models');
+const { Hospital, Treatment, Doctor, Package, FAQ } = require("../models");
 
 // Create translation queue
-const translationQueue = new Queue('translation', {
+const translationQueue = new Queue("translation", {
   redis: {
-    host: process.env.REDIS_HOST || 'localhost',
+    host: process.env.REDIS_HOST || "localhost",
     port: process.env.REDIS_PORT || 6379,
     password: process.env.REDIS_PASSWORD || undefined,
   },
   defaultJobOptions: {
     attempts: 3,
     backoff: {
-      type: 'exponential',
+      type: "exponential",
       delay: 2000,
     },
     removeOnComplete: true,
@@ -29,9 +27,7 @@ const translationQueue = new Queue('translation', {
  * Process translation jobs
  */
 translationQueue.process(async (job) => {
-  const {
-    modelName, recordId, fields, targetLanguage,
-  } = job.data;
+  const { modelName, recordId, fields, targetLanguage } = job.data;
 
   try {
     logger.info(`Processing translation job for ${modelName} ID: ${recordId}`);
@@ -39,19 +35,19 @@ translationQueue.process(async (job) => {
     // Get the model
     let Model;
     switch (modelName) {
-      case 'Hospital':
+      case "Hospital":
         Model = Hospital;
         break;
-      case 'Treatment':
+      case "Treatment":
         Model = Treatment;
         break;
-      case 'Doctor':
+      case "Doctor":
         Model = Doctor;
         break;
-      case 'Package':
+      case "Package":
         Model = Package;
         break;
-      case 'FAQ':
+      case "FAQ":
         Model = FAQ;
         break;
       default:
@@ -71,7 +67,7 @@ translationQueue.process(async (job) => {
 
     // Collect texts to translate
     for (const field of fields) {
-      if (record[field] && typeof record[field] === 'string') {
+      if (record[field] && typeof record[field] === "string") {
         textsToTranslate.push(record[field]);
         fieldMap.push(field);
       }
@@ -79,16 +75,20 @@ translationQueue.process(async (job) => {
 
     if (textsToTranslate.length === 0) {
       logger.info(`No texts to translate for ${modelName} ID: ${recordId}`);
-      return { success: true, message: 'No texts to translate' };
+      return { success: true, message: "No texts to translate" };
     }
 
     // Detect source language from first field
-    const sourceLanguage = await googleTranslateService.detectLanguage(textsToTranslate[0]);
+    const sourceLanguage = await googleTranslateService.detectLanguage(
+      textsToTranslate[0],
+    );
 
     // If already in target language, skip translation
     if (sourceLanguage === targetLanguage) {
-      logger.info(`${modelName} ID: ${recordId} is already in ${targetLanguage}`);
-      return { success: true, message: 'Already in target language' };
+      logger.info(
+        `${modelName} ID: ${recordId} is already in ${targetLanguage}`,
+      );
+      return { success: true, message: "Already in target language" };
     }
 
     // Translate batch
@@ -125,7 +125,10 @@ translationQueue.process(async (job) => {
       fieldsTranslated: fieldMap.length,
     };
   } catch (error) {
-    logger.error(`Translation job failed for ${modelName} ID: ${recordId}:`, error);
+    logger.error(
+      `Translation job failed for ${modelName} ID: ${recordId}:`,
+      error,
+    );
     throw error;
   }
 });
@@ -138,7 +141,12 @@ translationQueue.process(async (job) => {
  * @param {string} targetLanguage - Target language code
  * @returns {Promise<Object>} - Job details
  */
-async function addTranslationJob(modelName, recordId, fields, targetLanguage = 'en') {
+async function addTranslationJob(
+  modelName,
+  recordId,
+  fields,
+  targetLanguage = "en",
+) {
   try {
     const job = await translationQueue.add({
       modelName,
@@ -147,7 +155,9 @@ async function addTranslationJob(modelName, recordId, fields, targetLanguage = '
       targetLanguage,
     });
 
-    logger.info(`Translation job added: ${job.id} for ${modelName} ID: ${recordId}`);
+    logger.info(
+      `Translation job added: ${job.id} for ${modelName} ID: ${recordId}`,
+    );
 
     return {
       jobId: job.id,
@@ -157,7 +167,7 @@ async function addTranslationJob(modelName, recordId, fields, targetLanguage = '
       targetLanguage,
     };
   } catch (error) {
-    logger.error('Add translation job error:', error);
+    logger.error("Add translation job error:", error);
     throw error;
   }
 }
@@ -187,7 +197,7 @@ async function getJobStatus(jobId) {
       returnvalue: job.returnvalue,
     };
   } catch (error) {
-    logger.error('Get job status error:', error);
+    logger.error("Get job status error:", error);
     throw error;
   }
 }
@@ -208,7 +218,7 @@ async function removeJob(jobId) {
     logger.info(`Job removed: ${jobId}`);
     return true;
   } catch (error) {
-    logger.error('Remove job error:', error);
+    logger.error("Remove job error:", error);
     throw error;
   }
 }
@@ -236,7 +246,7 @@ async function getQueueStats() {
       total: waiting + active + completed + failed + delayed,
     };
   } catch (error) {
-    logger.error('Get queue stats error:', error);
+    logger.error("Get queue stats error:", error);
     throw error;
   }
 }
@@ -248,11 +258,11 @@ async function getQueueStats() {
  */
 async function cleanCompletedJobs(grace = 0) {
   try {
-    const jobs = await translationQueue.clean(grace, 'completed');
+    const jobs = await translationQueue.clean(grace, "completed");
     logger.info(`Cleaned ${jobs.length} completed jobs`);
     return jobs;
   } catch (error) {
-    logger.error('Clean completed jobs error:', error);
+    logger.error("Clean completed jobs error:", error);
     throw error;
   }
 }
@@ -264,25 +274,25 @@ async function cleanCompletedJobs(grace = 0) {
  */
 async function cleanFailedJobs(grace = 0) {
   try {
-    const jobs = await translationQueue.clean(grace, 'failed');
+    const jobs = await translationQueue.clean(grace, "failed");
     logger.info(`Cleaned ${jobs.length} failed jobs`);
     return jobs;
   } catch (error) {
-    logger.error('Clean failed jobs error:', error);
+    logger.error("Clean failed jobs error:", error);
     throw error;
   }
 }
 
 // Event listeners
-translationQueue.on('completed', (job, result) => {
+translationQueue.on("completed", (job, result) => {
   logger.info(`Job ${job.id} completed:`, result);
 });
 
-translationQueue.on('failed', (job, err) => {
+translationQueue.on("failed", (job, err) => {
   logger.error(`Job ${job.id} failed:`, err);
 });
 
-translationQueue.on('stalled', (job) => {
+translationQueue.on("stalled", (job) => {
   logger.warn(`Job ${job.id} stalled`);
 });
 

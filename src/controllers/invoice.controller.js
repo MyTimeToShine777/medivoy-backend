@@ -1,16 +1,15 @@
-const Invoice = require('../models/Invoice.model');
-const { successResponse, errorResponse } = require('../utils/response');
-const logger = require('../utils/logger');
+const Invoice = require("../models/Invoice.model");
+const { successResponse, errorResponse } = require("../utils/response");
+const { handleDatabaseError } = require("../utils/databaseErrorHandler");
 
 class InvoiceController {
   /**
    * Create a new invoice
    */
-  async createInvoice(req, res) {
+  static async createInvoice(req, res) {
     try {
-      const {
-        bookingId, patientId, amount, currency, dueDate, items,
-      } = req.body;
+      const { bookingId, patientId, amount, currency, dueDate, items } =
+        req.body;
 
       // Create invoice
       const invoice = await Invoice.create({
@@ -25,28 +24,20 @@ class InvoiceController {
       return successResponse(
         res,
         {
-          message: 'Invoice created successfully',
+          message: "Invoice created successfully",
           data: invoice,
         },
         201,
       );
     } catch (error) {
-      logger.error('Create invoice error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to create invoice',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to create invoice");
     }
   }
 
   /**
    * Get invoice by ID
    */
-  async getInvoice(req, res) {
+  static async getInvoice(req, res) {
     try {
       const { id } = req.params;
 
@@ -57,37 +48,27 @@ class InvoiceController {
         return errorResponse(
           res,
           {
-            message: 'Invoice not found',
+            message: "Invoice not found",
           },
           404,
         );
       }
 
       return successResponse(res, {
-        message: 'Invoice retrieved successfully',
+        message: "Invoice retrieved successfully",
         data: invoice,
       });
     } catch (error) {
-      logger.error('Get invoice error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to retrieve invoice',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to retrieve invoice");
     }
   }
 
   /**
    * Get all invoices
    */
-  async getAllInvoices(req, res) {
+  static async getAllInvoices(req, res) {
     try {
-      const {
-        page = 1, limit = 10, status, patientId,
-      } = req.query;
+      const { page = 1, limit = 10, status, patientId } = req.query;
 
       // Build where clause
       const where = {};
@@ -99,11 +80,11 @@ class InvoiceController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       return successResponse(res, {
-        message: 'Invoices retrieved successfully',
+        message: "Invoices retrieved successfully",
         data: invoices.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -112,22 +93,14 @@ class InvoiceController {
         },
       });
     } catch (error) {
-      logger.error('Get all invoices error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to retrieve invoices',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to retrieve invoices");
     }
   }
 
   /**
    * Update invoice
    */
-  async updateInvoice(req, res) {
+  static async updateInvoice(req, res) {
     try {
       const { id } = req.params;
       const updateData = req.body;
@@ -139,8 +112,8 @@ class InvoiceController {
         return errorResponse(
           res,
           {
-            message: 'Invoice not found',
-            code: 'INVOICE_NOT_FOUND',
+            message: "Invoice not found",
+            code: "INVOICE_NOT_FOUND",
           },
           404,
         );
@@ -150,26 +123,18 @@ class InvoiceController {
       await invoice.update(updateData);
 
       return successResponse(res, {
-        message: 'Invoice updated successfully',
+        message: "Invoice updated successfully",
         data: invoice,
       });
     } catch (error) {
-      logger.error('Update invoice error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to update invoice',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to update invoice");
     }
   }
 
   /**
    * Delete invoice
    */
-  async deleteInvoice(req, res) {
+  static async deleteInvoice(req, res) {
     try {
       const { id } = req.params;
 
@@ -180,8 +145,8 @@ class InvoiceController {
         return errorResponse(
           res,
           {
-            message: 'Invoice not found',
-            code: 'INVOICE_NOT_FOUND',
+            message: "Invoice not found",
+            code: "INVOICE_NOT_FOUND",
           },
           404,
         );
@@ -191,25 +156,17 @@ class InvoiceController {
       await invoice.destroy();
 
       return successResponse(res, {
-        message: 'Invoice deleted successfully',
+        message: "Invoice deleted successfully",
       });
     } catch (error) {
-      logger.error('Delete invoice error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to delete invoice',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to delete invoice");
     }
   }
 
   /**
    * Generate invoice PDF
    */
-  async generateInvoicePDF(req, res) {
+  static async generateInvoicePDF(req, res) {
     try {
       const { id } = req.params;
 
@@ -220,8 +177,8 @@ class InvoiceController {
         return errorResponse(
           res,
           {
-            message: 'Invoice not found',
-            code: 'INVOICE_NOT_FOUND',
+            message: "Invoice not found",
+            code: "INVOICE_NOT_FOUND",
           },
           404,
         );
@@ -230,21 +187,13 @@ class InvoiceController {
       // TODO: Implement PDF generation logic here
       // For now, return success message
       return successResponse(res, {
-        message: 'Invoice PDF generation not yet implemented',
+        message: "Invoice PDF generation not yet implemented",
         data: invoice,
       });
     } catch (error) {
-      logger.error('Generate invoice PDF error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to generate invoice PDF',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to generate invoice PDF");
     }
   }
 }
 
-module.exports = new InvoiceController();
+module.exports = InvoiceController;

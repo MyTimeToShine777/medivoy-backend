@@ -1,44 +1,47 @@
-const redis = require('../config/redis');
-const logger = require('../utils/logger');
+const redis = require("../config/redis");
+const logger = require("../utils/logger");
 
 /**
  * Cache middleware - Cache responses in Redis
  * @param {Number} ttl - Time to live in seconds
  */
-const cache = (ttl = 300) => async (req, res, next) => {
-  // Only cache GET requests
-  if (req.method !== 'GET') {
-    return next();
-  }
-
-  const key = `cache:${req.originalUrl}`;
-
-  try {
-    // Check if cached data exists
-    const cachedData = await redis.get(key);
-
-    if (cachedData) {
-      logger.debug(`Cache hit: ${key}`);
-      return res.json(JSON.parse(cachedData));
+const cache =
+  (ttl = 300) =>
+  async (req, res, next) => {
+    // Only cache GET requests
+    if (req.method !== "GET") {
+      return next();
     }
 
-    // Store original res.json function
-    const originalJson = res.json.bind(res);
+    const key = `cache:${req.originalUrl}`;
 
-    // Override res.json to cache the response
-    res.json = (data) => {
-      redis.setex(key, ttl, JSON.stringify(data))
-        .catch((err) => logger.error('Cache set error:', err));
+    try {
+      // Check if cached data exists
+      const cachedData = await redis.get(key);
 
-      return originalJson(data);
-    };
+      if (cachedData) {
+        logger.debug(`Cache hit: ${key}`);
+        return res.json(JSON.parse(cachedData));
+      }
 
-    next();
-  } catch (error) {
-    logger.error('Cache middleware error:', error);
-    next();
-  }
-};
+      // Store original res.json function
+      const originalJson = res.json.bind(res);
+
+      // Override res.json to cache the response
+      res.json = (data) => {
+        redis
+          .setex(key, ttl, JSON.stringify(data))
+          .catch((err) => logger.error("Cache set error:", err));
+
+        return originalJson(data);
+      };
+
+      next();
+    } catch (error) {
+      logger.error("Cache middleware error:", error);
+      next();
+    }
+  };
 
 /**
  * Clear cache by pattern
@@ -52,7 +55,7 @@ const clearCache = async (pattern) => {
       logger.info(`Cleared ${keys.length} cache keys matching: ${pattern}`);
     }
   } catch (error) {
-    logger.error('Clear cache error:', error);
+    logger.error("Clear cache error:", error);
   }
 };
 

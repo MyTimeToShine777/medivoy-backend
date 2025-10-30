@@ -1,4 +1,4 @@
-const { SUPPORTED_LOCALES, DEFAULT_LOCALE } = require('../constants/locales');
+const { SUPPORTED_LOCALES, DEFAULT_LOCALE } = require("../constants/locales");
 
 /**
  * Locale middleware - Detect and set user language
@@ -9,10 +9,10 @@ const localeMiddleware = (req, res, next) => {
 
   // Check header
   if (!locale) {
-    const acceptLanguage = req.headers['accept-language'];
+    const acceptLanguage = req.headers["accept-language"];
     if (acceptLanguage) {
-      const languages = acceptLanguage.split(',');
-      const primaryLang = languages[0].split('-')[0].split(';')[0];
+      const languages = acceptLanguage.split(",");
+      const primaryLang = languages[0].split("-")[0].split(";")[0];
       locale = primaryLang;
     }
   }

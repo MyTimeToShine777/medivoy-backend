@@ -1,14 +1,16 @@
-const ImageKit = require('imagekit');
-const logger = require('../utils/logger');
-const path = require('path');
-const fs = require('fs').promises;
+const ImageKit = require("imagekit");
+const logger = require("../utils/logger");
+const path = require("path");
+const fs = require("fs").promises;
 
 class ImageKitService {
   constructor() {
     // Initialize ImageKit client
-    if (process.env.IMAGEKIT_PUBLIC_KEY
-        && process.env.IMAGEKIT_PRIVATE_KEY
-        && process.env.IMAGEKIT_URL_ENDPOINT) {
+    if (
+      process.env.IMAGEKIT_PUBLIC_KEY &&
+      process.env.IMAGEKIT_PRIVATE_KEY &&
+      process.env.IMAGEKIT_URL_ENDPOINT
+    ) {
       this.imagekit = new ImageKit({
         publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
         privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
@@ -16,13 +18,15 @@ class ImageKitService {
       });
       this.isConfigured = true;
     } else {
-      logger.warn('ImageKit credentials not configured. Image upload service will not work.');
+      logger.warn(
+        "ImageKit credentials not configured. Image upload service will not work.",
+      );
       this.imagekit = null;
       this.isConfigured = false;
     }
 
-    this.defaultFolder = '/medivoy';
-    this.allowedFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'pdf'];
+    this.defaultFolder = "/medivoy";
+    this.allowedFormats = ["jpg", "jpeg", "png", "gif", "webp", "svg", "pdf"];
     this.maxFileSize = 10 * 1024 * 1024; // 10MB
   }
 
@@ -35,18 +39,20 @@ class ImageKitService {
   async uploadFile(file, options = {}) {
     try {
       if (!this.isConfigured) {
-        throw new Error('ImageKit service not configured');
+        throw new Error("ImageKit service not configured");
       }
 
       // Validate file
       if (!file) {
-        throw new Error('No file provided');
+        throw new Error("No file provided");
       }
 
       // Check file size
       const fileSize = file.size || file.buffer?.length || 0;
       if (fileSize > this.maxFileSize) {
-        throw new Error(`File size exceeds maximum allowed size of ${this.maxFileSize / (1024 * 1024)}MB`);
+        throw new Error(
+          `File size exceeds maximum allowed size of ${this.maxFileSize / (1024 * 1024)}MB`,
+        );
       }
 
       // Prepare upload parameters
@@ -56,7 +62,12 @@ class ImageKitService {
         folder: options.folder || this.defaultFolder,
         useUniqueFileName: options.useUniqueFileName !== false,
         tags: options.tags || [],
-        responseFields: options.responseFields || ['tags', 'customCoordinates', 'isPrivateFile', 'metadata'],
+        responseFields: options.responseFields || [
+          "tags",
+          "customCoordinates",
+          "isPrivateFile",
+          "metadata",
+        ],
       };
 
       // Add custom metadata if provided
@@ -67,7 +78,7 @@ class ImageKitService {
       // Upload to ImageKit
       const result = await this.imagekit.upload(uploadParams);
 
-      logger.info('File uploaded to ImageKit:', result.fileId);
+      logger.info("File uploaded to ImageKit:", result.fileId);
 
       return {
         success: true,
@@ -84,7 +95,7 @@ class ImageKitService {
         metadata: result.metadata,
       };
     } catch (error) {
-      logger.error('ImageKit upload error:', error);
+      logger.error("ImageKit upload error:", error);
       throw error;
     }
   }
@@ -98,17 +109,22 @@ class ImageKitService {
   async uploadMultipleFiles(files, options = {}) {
     try {
       if (!Array.isArray(files) || files.length === 0) {
-        throw new Error('No files provided');
+        throw new Error("No files provided");
       }
 
-      const uploadPromises = files.map((file) => this.uploadFile(file, options));
+      const uploadPromises = files.map((file) =>
+        this.uploadFile(file, options),
+      );
       const results = await Promise.allSettled(uploadPromises);
 
       return results.map((result, index) => {
-        if (result.status === 'fulfilled') {
+        if (result.status === "fulfilled") {
           return result.value;
         }
-        logger.error(`File upload failed for ${files[index].originalname}:`, result.reason);
+        logger.error(
+          `File upload failed for ${files[index].originalname}:`,
+          result.reason,
+        );
         return {
           success: false,
           fileName: files[index].originalname,
@@ -116,7 +132,7 @@ class ImageKitService {
         };
       });
     } catch (error) {
-      logger.error('Multiple files upload error:', error);
+      logger.error("Multiple files upload error:", error);
       throw error;
     }
   }
@@ -129,14 +145,14 @@ class ImageKitService {
   async deleteFile(fileId) {
     try {
       if (!this.isConfigured) {
-        throw new Error('ImageKit service not configured');
+        throw new Error("ImageKit service not configured");
       }
 
       await this.imagekit.deleteFile(fileId);
-      logger.info('File deleted from ImageKit:', fileId);
+      logger.info("File deleted from ImageKit:", fileId);
       return true;
     } catch (error) {
-      logger.error('ImageKit delete error:', error);
+      logger.error("ImageKit delete error:", error);
       throw error;
     }
   }
@@ -149,7 +165,7 @@ class ImageKitService {
   async deleteMultipleFiles(fileIds) {
     try {
       if (!Array.isArray(fileIds) || fileIds.length === 0) {
-        throw new Error('No file IDs provided');
+        throw new Error("No file IDs provided");
       }
 
       const deletePromises = fileIds.map((fileId) => this.deleteFile(fileId));
@@ -157,11 +173,11 @@ class ImageKitService {
 
       return results.map((result, index) => ({
         fileId: fileIds[index],
-        success: result.status === 'fulfilled',
-        error: result.status === 'rejected' ? result.reason.message : null,
+        success: result.status === "fulfilled",
+        error: result.status === "rejected" ? result.reason.message : null,
       }));
     } catch (error) {
-      logger.error('Multiple files deletion error:', error);
+      logger.error("Multiple files deletion error:", error);
       throw error;
     }
   }
@@ -174,13 +190,13 @@ class ImageKitService {
   async getFileDetails(fileId) {
     try {
       if (!this.isConfigured) {
-        throw new Error('ImageKit service not configured');
+        throw new Error("ImageKit service not configured");
       }
 
       const result = await this.imagekit.getFileDetails(fileId);
       return result;
     } catch (error) {
-      logger.error('ImageKit get file details error:', error);
+      logger.error("ImageKit get file details error:", error);
       throw error;
     }
   }
@@ -193,13 +209,13 @@ class ImageKitService {
   async listFiles(options = {}) {
     try {
       if (!this.isConfigured) {
-        throw new Error('ImageKit service not configured');
+        throw new Error("ImageKit service not configured");
       }
 
       const listParams = {
         skip: options.skip || 0,
         limit: options.limit || 100,
-        searchQuery: options.searchQuery || '',
+        searchQuery: options.searchQuery || "",
         tags: options.tags || [],
         path: options.path || this.defaultFolder,
       };
@@ -207,7 +223,7 @@ class ImageKitService {
       const result = await this.imagekit.listFiles(listParams);
       return result;
     } catch (error) {
-      logger.error('ImageKit list files error:', error);
+      logger.error("ImageKit list files error:", error);
       throw error;
     }
   }
@@ -221,7 +237,7 @@ class ImageKitService {
   async updateFileDetails(fileId, updates) {
     try {
       if (!this.isConfigured) {
-        throw new Error('ImageKit service not configured');
+        throw new Error("ImageKit service not configured");
       }
 
       const updateParams = {
@@ -230,10 +246,10 @@ class ImageKitService {
       };
 
       const result = await this.imagekit.updateFileDetails(updateParams);
-      logger.info('File details updated in ImageKit:', fileId);
+      logger.info("File details updated in ImageKit:", fileId);
       return result;
     } catch (error) {
-      logger.error('ImageKit update file details error:', error);
+      logger.error("ImageKit update file details error:", error);
       throw error;
     }
   }
@@ -247,7 +263,7 @@ class ImageKitService {
   getUrl(path, transformations = {}) {
     try {
       if (!this.isConfigured) {
-        throw new Error('ImageKit service not configured');
+        throw new Error("ImageKit service not configured");
       }
 
       const url = this.imagekit.url({
@@ -257,7 +273,7 @@ class ImageKitService {
 
       return url;
     } catch (error) {
-      logger.error('ImageKit get URL error:', error);
+      logger.error("ImageKit get URL error:", error);
       throw error;
     }
   }
@@ -273,7 +289,7 @@ class ImageKitService {
     return this.getUrl(path, {
       width,
       height,
-      crop: 'at_max',
+      crop: "at_max",
       quality: 80,
     });
   }
@@ -287,7 +303,7 @@ class ImageKitService {
   getOptimizedUrl(path, options = {}) {
     const transformations = {
       quality: options.quality || 80,
-      format: options.format || 'auto',
+      format: options.format || "auto",
       ...options,
     };
 
@@ -302,14 +318,14 @@ class ImageKitService {
   async purgeCache(url) {
     try {
       if (!this.isConfigured) {
-        throw new Error('ImageKit service not configured');
+        throw new Error("ImageKit service not configured");
       }
 
       const result = await this.imagekit.purgeCache(url);
-      logger.info('Cache purged for URL:', url);
+      logger.info("Cache purged for URL:", url);
       return result;
     } catch (error) {
-      logger.error('ImageKit purge cache error:', error);
+      logger.error("ImageKit purge cache error:", error);
       throw error;
     }
   }
@@ -321,13 +337,13 @@ class ImageKitService {
   getAuthenticationParameters() {
     try {
       if (!this.isConfigured) {
-        throw new Error('ImageKit service not configured');
+        throw new Error("ImageKit service not configured");
       }
 
       const authParams = this.imagekit.getAuthenticationParameters();
       return authParams;
     } catch (error) {
-      logger.error('ImageKit get authentication parameters error:', error);
+      logger.error("ImageKit get authentication parameters error:", error);
       throw error;
     }
   }
@@ -338,10 +354,10 @@ class ImageKitService {
    * @param {string} parentFolderPath - Parent folder path
    * @returns {Promise<Object>} - Created folder details
    */
-  async createFolder(folderName, parentFolderPath = '/') {
+  async createFolder(folderName, parentFolderPath = "/") {
     try {
       if (!this.isConfigured) {
-        throw new Error('ImageKit service not configured');
+        throw new Error("ImageKit service not configured");
       }
 
       const result = await this.imagekit.createFolder({
@@ -349,10 +365,10 @@ class ImageKitService {
         parentFolderPath,
       });
 
-      logger.info('Folder created in ImageKit:', folderName);
+      logger.info("Folder created in ImageKit:", folderName);
       return result;
     } catch (error) {
-      logger.error('ImageKit create folder error:', error);
+      logger.error("ImageKit create folder error:", error);
       throw error;
     }
   }
@@ -365,14 +381,14 @@ class ImageKitService {
   async deleteFolder(folderPath) {
     try {
       if (!this.isConfigured) {
-        throw new Error('ImageKit service not configured');
+        throw new Error("ImageKit service not configured");
       }
 
       await this.imagekit.deleteFolder(folderPath);
-      logger.info('Folder deleted from ImageKit:', folderPath);
+      logger.info("Folder deleted from ImageKit:", folderPath);
       return true;
     } catch (error) {
-      logger.error('ImageKit delete folder error:', error);
+      logger.error("ImageKit delete folder error:", error);
       throw error;
     }
   }

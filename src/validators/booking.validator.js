@@ -1,4 +1,4 @@
-const Joi = require('joi');
+const Joi = require("joi");
 
 const createBookingSchema = Joi.object({
   patient_id: Joi.string().uuid().required(),
@@ -16,21 +16,23 @@ const updateBookingSchema = Joi.object({
 });
 
 const updateBookingStatusSchema = Joi.object({
-  status: Joi.string().valid(
-    'requested',
-    'under_review',
-    'accepted',
-    'rejected',
-    'awaiting_medical_details',
-    'quotation_sent',
-    'confirmed',
-    'payment_completed',
-    'invoice_sent',
-    'travel_arrangement',
-    'in_treatment',
-    'completed',
-    'feedback_received',
-  ).required(),
+  status: Joi.string()
+    .valid(
+      "requested",
+      "under_review",
+      "accepted",
+      "rejected",
+      "awaiting_medical_details",
+      "quotation_sent",
+      "confirmed",
+      "payment_completed",
+      "invoice_sent",
+      "travel_arrangement",
+      "in_treatment",
+      "completed",
+      "feedback_received",
+    )
+    .required(),
   notes: Joi.string().optional(),
 });
 

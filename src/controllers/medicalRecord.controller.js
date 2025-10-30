@@ -1,16 +1,23 @@
-const MedicalRecord = require('../models/MedicalRecord.model');
-const { successResponse, errorResponse } = require('../utils/response');
-const logger = require('../utils/logger');
+const MedicalRecord = require("../models/MedicalRecord.model");
+const { successResponse, errorResponse } = require("../utils/response");
+const logger = require("../utils/logger");
+const { handleDatabaseError } = require("../utils/databaseErrorHandler");
 
 class MedicalRecordController {
   /**
-   async getAllMedicalRecords(req, res) {\n     try {\n       const { page = 1, limit = 10, recordType, patientId } = req.query;\n\n       // Build where clause\n       const where = {};\n       if (recordType) where.recordType = recordType;\n       if (patientId) where.patientId = patientId;\n\n       // Get medical records with pagination\n       const medicalRecords = await MedicalRecord.findAndCountAll({\n         where,\n         limit: parseInt(limit, 10),\n         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),\n         order: [["recordDate", "DESC"]],\n       });\n\n       return successResponse(res, {\n         message: "Medical records retrieved successfully",\n         data: medicalRecords.rows,\n         pagination: {\n           currentPage: parseInt(page, 10),\n           totalPages: Math.ceil(medicalRecords.count / parseInt(limit, 10)),\n           totalRecords: medicalRecords.count,\n         },\n       });\n     } catch (error) {\n       logger.error("Get all medical records error:", error);\n       return errorResponse(res, {\n         message: "Failed to retrieve medical records",\n         error: error.message,\n       }, 500);\n     }\n   }\n
+   static async getAllMedicalRecords(req, res) {\n     try {\n       const { page = 1, limit = 10, recordType, patientId } = req.query;\n\n       // Build where clause\n       const where = {};\n       if (recordType) where.recordType = recordType;\n       if (patientId) where.patientId = patientId;\n\n       // Get medical records with pagination\n       const medicalRecords = await MedicalRecord.findAndCountAll({\n         where,\n         limit: parseInt(limit, 10),\n         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),\n         order: [["recordDate", "DESC"]],\n       });\n\n       return successResponse(res, {\n         message: "Medical records retrieved successfully",\n         data: medicalRecords.rows,\n         pagination: {\n           currentPage: parseInt(page, 10),\n           totalPages: Math.ceil(medicalRecords.count / parseInt(limit, 10)),\n           totalRecords: medicalRecords.count,\n         },\n       });\n     } catch (error) {\n       logger.error("Get all medical records error:", error);\n       return errorResponse(res, {\n         message: "Failed to retrieve medical records",\n         error: error.message,\n       }, 500);\n     }\n   }\n
    * Create a new medical record
    */
-  async createMedicalRecord(req, res) {
+  static async createMedicalRecord(req, res) {
     try {
       const {
-        patientId, doctorId, hospitalId, recordType, recordDate, notes, fileUrl,
+        patientId,
+        doctorId,
+        hospitalId,
+        recordType,
+        recordDate,
+        notes,
+        fileUrl,
       } = req.body;
 
       // Create medical record
@@ -24,23 +31,23 @@ class MedicalRecordController {
         fileUrl,
       });
 
-      return successResponse(res, {
-        message: 'Medical record created successfully',
-        data: medicalRecord,
-      }, 201);
+      return successResponse(
+        res,
+        {
+          message: "Medical record created successfully",
+          data: medicalRecord,
+        },
+        201,
+      );
     } catch (error) {
-      logger.error('Create medical record error:', error);
-      return errorResponse(res, {
-        message: 'Failed to create medical record',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Get medical record by ID
    */
-  async getMedicalRecord(req, res) {
+  static async getMedicalRecord(req, res) {
     try {
       const { id } = req.params;
 
@@ -48,41 +55,43 @@ class MedicalRecordController {
       const medicalRecord = await MedicalRecord.findByPk(id);
 
       if (!medicalRecord) {
-        return errorResponse(res, {
-          message: 'Medical record not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Medical record not found",
+          },
+          404,
+        );
       }
 
       return successResponse(res, {
-        message: 'Medical record retrieved successfully',
+        message: "Medical record retrieved successfully",
         data: medicalRecord,
       });
     } catch (error) {
-      logger.error('Get medical record error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve medical record',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Update medical record
    */
-  async updateMedicalRecord(req, res) {
+  static async updateMedicalRecord(req, res) {
     try {
       const { id } = req.params;
-      const {
-        recordType, recordDate, notes, fileUrl,
-      } = req.body;
+      const { recordType, recordDate, notes, fileUrl } = req.body;
 
       // Find medical record
       const medicalRecord = await MedicalRecord.findByPk(id);
 
       if (!medicalRecord) {
-        return errorResponse(res, {
-          message: 'Medical record not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Medical record not found",
+          },
+          404,
+        );
       }
 
       // Update medical record
@@ -94,22 +103,18 @@ class MedicalRecordController {
       });
 
       return successResponse(res, {
-        message: 'Medical record updated successfully',
+        message: "Medical record updated successfully",
         data: medicalRecord,
       });
     } catch (error) {
-      logger.error('Update medical record error:', error);
-      return errorResponse(res, {
-        message: 'Failed to update medical record',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Delete medical record
    */
-  async deleteMedicalRecord(req, res) {
+  static async deleteMedicalRecord(req, res) {
     try {
       const { id } = req.params;
 
@@ -117,30 +122,30 @@ class MedicalRecordController {
       const medicalRecord = await MedicalRecord.findByPk(id);
 
       if (!medicalRecord) {
-        return errorResponse(res, {
-          message: 'Medical record not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Medical record not found",
+          },
+          404,
+        );
       }
 
       // Delete medical record
       await medicalRecord.destroy();
 
       return successResponse(res, {
-        message: 'Medical record deleted successfully',
+        message: "Medical record deleted successfully",
       });
     } catch (error) {
-      logger.error('Delete medical record error:', error);
-      return errorResponse(res, {
-        message: 'Failed to delete medical record',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Get all medical records for a patient
    */
-  async getPatientMedicalRecords(req, res) {
+  static async getPatientMedicalRecords(req, res) {
     try {
       const { patientId } = req.params;
       const { page = 1, limit = 10, recordType } = req.query;
@@ -154,11 +159,11 @@ class MedicalRecordController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['recordDate', 'DESC']],
+        order: [["recordDate", "DESC"]],
       });
 
       return successResponse(res, {
-        message: 'Medical records retrieved successfully',
+        message: "Medical records retrieved successfully",
         data: medicalRecords.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -167,13 +172,9 @@ class MedicalRecordController {
         },
       });
     } catch (error) {
-      logger.error('Get patient medical records error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve medical records',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 }
 
-module.exports = new MedicalRecordController();
+module.exports = MedicalRecordController;

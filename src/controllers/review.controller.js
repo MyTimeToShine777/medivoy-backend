@@ -1,15 +1,21 @@
-const Review = require('../models/Review.model');
-const { successResponse, errorResponse } = require('../utils/response');
-const logger = require('../utils/logger');
+const Review = require("../models/Review.model");
+const { successResponse, errorResponse } = require("../utils/response");
+const { handleDatabaseError } = require("../utils/databaseErrorHandler");
 
 class ReviewController {
   /**
    * Create a new review
    */
-  async createReview(req, res) {
+  static async createReview(req, res) {
     try {
       const {
-        bookingId, patientId, doctorId, hospitalId, rating, comment, isVerified,
+        bookingId,
+        patientId,
+        doctorId,
+        hospitalId,
+        rating,
+        comment,
+        isVerified,
       } = req.body;
 
       // Create review
@@ -23,23 +29,23 @@ class ReviewController {
         isVerified,
       });
 
-      return successResponse(res, {
-        message: 'Review created successfully',
-        data: review,
-      }, 201);
+      return successResponse(
+        res,
+        {
+          message: "Review created successfully",
+          data: review,
+        },
+        201,
+      );
     } catch (error) {
-      logger.error('Create review error:', error);
-      return errorResponse(res, {
-        message: 'Failed to create review',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Get review by ID
    */
-  async getReview(req, res) {
+  static async getReview(req, res) {
     try {
       const { id } = req.params;
 
@@ -47,28 +53,28 @@ class ReviewController {
       const review = await Review.findByPk(id);
 
       if (!review) {
-        return errorResponse(res, {
-          message: 'Review not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Review not found",
+          },
+          404,
+        );
       }
 
       return successResponse(res, {
-        message: 'Review retrieved successfully',
+        message: "Review retrieved successfully",
         data: review,
       });
     } catch (error) {
-      logger.error('Get review error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve review',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Update review
    */
-  async updateReview(req, res) {
+  static async updateReview(req, res) {
     try {
       const { id } = req.params;
       const { rating, comment } = req.body;
@@ -77,9 +83,13 @@ class ReviewController {
       const review = await Review.findByPk(id);
 
       if (!review) {
-        return errorResponse(res, {
-          message: 'Review not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Review not found",
+          },
+          404,
+        );
       }
 
       // Update review
@@ -89,22 +99,18 @@ class ReviewController {
       });
 
       return successResponse(res, {
-        message: 'Review updated successfully',
+        message: "Review updated successfully",
         data: review,
       });
     } catch (error) {
-      logger.error('Update review error:', error);
-      return errorResponse(res, {
-        message: 'Failed to update review',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Delete review
    */
-  async deleteReview(req, res) {
+  static async deleteReview(req, res) {
     try {
       const { id } = req.params;
 
@@ -112,33 +118,37 @@ class ReviewController {
       const review = await Review.findByPk(id);
 
       if (!review) {
-        return errorResponse(res, {
-          message: 'Review not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Review not found",
+          },
+          404,
+        );
       }
 
       // Delete review
       await review.destroy();
 
       return successResponse(res, {
-        message: 'Review deleted successfully',
+        message: "Review deleted successfully",
       });
     } catch (error) {
-      logger.error('Delete review error:', error);
-      return errorResponse(res, {
-        message: 'Failed to delete review',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Get all reviews
    */
-  async getAllReviews(req, res) {
+  static async getAllReviews(req, res) {
     try {
       const {
-        page = 1, limit = 10, doctorId, hospitalId, minRating,
+        page = 1,
+        limit = 10,
+        doctorId,
+        hospitalId,
+        minRating,
       } = req.query;
 
       // Build where clause
@@ -152,11 +162,11 @@ class ReviewController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       return successResponse(res, {
-        message: 'Reviews retrieved successfully',
+        message: "Reviews retrieved successfully",
         data: reviews.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -165,18 +175,14 @@ class ReviewController {
         },
       });
     } catch (error) {
-      logger.error('Get all reviews error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve reviews',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Get average rating for doctor/hospital
    */
-  async getAverageRating(req, res) {
+  static async getAverageRating(req, res) {
     try {
       const { doctorId, hospitalId } = req.query;
 
@@ -189,34 +195,30 @@ class ReviewController {
       const result = await Review.findOne({
         where,
         attributes: [
-          [Sequelize.fn('AVG', Sequelize.col('rating')), 'averageRating'],
-          [Sequelize.fn('COUNT', Sequelize.col('id')), 'totalReviews'],
+          [Sequelize.fn("AVG", Sequelize.col("rating")), "averageRating"],
+          [Sequelize.fn("COUNT", Sequelize.col("id")), "totalReviews"],
         ],
       });
 
-      const averageRating = result.get('averageRating');
-      const totalReviews = result.get('totalReviews');
+      const averageRating = result.get("averageRating");
+      const totalReviews = result.get("totalReviews");
 
       return successResponse(res, {
-        message: 'Average rating calculated successfully',
+        message: "Average rating calculated successfully",
         data: {
           averageRating: parseFloat(averageRating).toFixed(1),
           totalReviews: parseInt(totalReviews, 10),
         },
       });
     } catch (error) {
-      logger.error('Get average rating error:', error);
-      return errorResponse(res, {
-        message: 'Failed to calculate average rating',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Verify review (admin only)
    */
-  async verifyReview(req, res) {
+  static async verifyReview(req, res) {
     try {
       const { id } = req.params;
 
@@ -224,46 +226,50 @@ class ReviewController {
       const review = await Review.findByPk(id);
 
       if (!review) {
-        return errorResponse(res, {
-          message: 'Review not found',
-          code: 'REVIEW_NOT_FOUND',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Review not found",
+            code: "REVIEW_NOT_FOUND",
+          },
+          404,
+        );
       }
 
       // Update review verification status
       await review.update({ is_verified: true });
 
       return successResponse(res, {
-        message: 'Review verified successfully',
+        message: "Review verified successfully",
         data: review,
       });
     } catch (error) {
-      logger.error('Verify review error:', error);
-      return errorResponse(res, {
-        message: 'Failed to verify review',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Get reviews by entity (doctor, hospital, treatment)
    */
-  async getReviewsByEntity(req, res) {
+  static async getReviewsByEntity(req, res) {
     try {
       const { entityType, entityId } = req.params;
       const { page = 1, limit = 10 } = req.query;
 
       // Build where clause based on entity type
       const where = {};
-      if (entityType === 'doctor') where.doctor_id = entityId;
-      else if (entityType === 'hospital') where.hospital_id = entityId;
-      else if (entityType === 'treatment') where.treatment_id = entityId;
+      if (entityType === "doctor") where.doctor_id = entityId;
+      else if (entityType === "hospital") where.hospital_id = entityId;
+      else if (entityType === "treatment") where.treatment_id = entityId;
       else {
-        return errorResponse(res, {
-          message: 'Invalid entity type',
-          code: 'INVALID_ENTITY_TYPE',
-        }, 400);
+        return errorResponse(
+          res,
+          {
+            message: "Invalid entity type",
+            code: "INVALID_ENTITY_TYPE",
+          },
+          400,
+        );
       }
 
       // Get reviews with pagination
@@ -271,11 +277,11 @@ class ReviewController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['created_at', 'DESC']],
+        order: [["created_at", "DESC"]],
       });
 
       return successResponse(res, {
-        message: 'Reviews retrieved successfully',
+        message: "Reviews retrieved successfully",
         data: reviews.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -284,13 +290,9 @@ class ReviewController {
         },
       });
     } catch (error) {
-      logger.error('Get reviews by entity error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve reviews',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 }
 
-module.exports = new ReviewController();
+module.exports = ReviewController;

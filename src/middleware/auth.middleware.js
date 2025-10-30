@@ -1,7 +1,7 @@
-const jwt = require('jsonwebtoken');
-const config = require('../config');
-const User = require('../models/User.model');
-const logger = require('../utils/logger');
+const jwt = require("jsonwebtoken");
+const config = require("../config");
+const User = require("../models/User.model");
+const logger = require("../utils/logger");
 
 /**
  * Authentication middleware to verify JWT tokens
@@ -9,22 +9,22 @@ const logger = require('../utils/logger');
 const authMiddleware = async (req, res, next) => {
   try {
     // Get token from header
-    const authHeader = req.header('Authorization');
+    const authHeader = req.header("Authorization");
     if (!authHeader) {
       return res.status(401).json({
         success: false,
-        message: 'No authorization header provided',
-        code: 'AUTH_NO_TOKEN',
+        message: "No authorization header provided",
+        code: "AUTH_NO_TOKEN",
       });
     }
 
     // Check if token is in Bearer format
-    const tokenParts = authHeader.split(' ');
-    if (tokenParts[0] !== 'Bearer' || !tokenParts[1]) {
+    const tokenParts = authHeader.split(" ");
+    if (tokenParts[0] !== "Bearer" || !tokenParts[1]) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid authorization header format',
-        code: 'AUTH_INVALID_TOKEN_FORMAT',
+        message: "Invalid authorization header format",
+        code: "AUTH_INVALID_TOKEN_FORMAT",
       });
     }
 
@@ -38,8 +38,8 @@ const authMiddleware = async (req, res, next) => {
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'User not found',
-        code: 'AUTH_USER_NOT_FOUND',
+        message: "User not found",
+        code: "AUTH_USER_NOT_FOUND",
       });
     }
 
@@ -47,28 +47,28 @@ const authMiddleware = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    logger.error('Authentication error:', error);
+    logger.error("Authentication error:", error);
 
-    if (error.name === 'TokenExpiredError') {
+    if (error.name === "TokenExpiredError") {
       return res.status(401).json({
         success: false,
-        message: 'Token has expired',
-        code: 'AUTH_TOKEN_EXPIRED',
+        message: "Token has expired",
+        code: "AUTH_TOKEN_EXPIRED",
       });
     }
 
-    if (error.name === 'JsonWebTokenError') {
+    if (error.name === "JsonWebTokenError") {
       return res.status(401).json({
         success: false,
-        message: 'Invalid token',
-        code: 'AUTH_TOKEN_INVALID',
+        message: "Invalid token",
+        code: "AUTH_TOKEN_INVALID",
       });
     }
 
     return res.status(500).json({
       success: false,
-      message: 'Authentication failed',
-      code: 'AUTH_FAILED',
+      message: "Authentication failed",
+      code: "AUTH_FAILED",
       error: error.message,
     });
   }

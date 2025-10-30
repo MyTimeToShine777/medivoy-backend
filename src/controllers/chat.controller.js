@@ -3,14 +3,14 @@
  * Handles chat conversations and messaging
  */
 
-const { Op } = require('sequelize');
+const { Op } = require("sequelize");
 const {
   ChatConversation,
   ChatMessage,
   User,
   Booking,
   Appointment,
-} = require('../models');
+} = require("../models");
 
 /**
  * Create a new conversation
@@ -48,13 +48,13 @@ exports.createConversation = async (req, res) => {
     if (existingConversation) {
       return res.json({
         success: true,
-        message: 'Conversation already exists',
+        message: "Conversation already exists",
         data: existingConversation,
       });
     }
 
     const conversation = await ChatConversation.create({
-      conversation_type: conversation_type || 'patient_doctor',
+      conversation_type: conversation_type || "patient_doctor",
       participant_1_id,
       participant_1_type,
       participant_2_id,
@@ -71,23 +71,23 @@ exports.createConversation = async (req, res) => {
         include: [
           {
             model: User,
-            as: 'participant1',
-            attributes: ['id', 'first_name', 'last_name', 'email'],
+            as: "participant1",
+            attributes: ["id", "first_name", "last_name", "email"],
           },
           {
             model: User,
-            as: 'participant2',
-            attributes: ['id', 'first_name', 'last_name', 'email'],
+            as: "participant2",
+            attributes: ["id", "first_name", "last_name", "email"],
           },
           {
             model: Booking,
-            as: 'booking',
-            attributes: ['id', 'booking_number', 'status'],
+            as: "booking",
+            attributes: ["id", "booking_number", "status"],
           },
           {
             model: Appointment,
-            as: 'appointment',
-            attributes: ['id', 'appointment_date', 'status'],
+            as: "appointment",
+            attributes: ["id", "appointment_date", "status"],
           },
         ],
       },
@@ -95,14 +95,14 @@ exports.createConversation = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'Conversation created successfully',
+      message: "Conversation created successfully",
       data: conversationWithDetails,
     });
   } catch (error) {
-    console.error('Error creating conversation:', error);
+    console.error("Error creating conversation:", error);
     res.status(500).json({
       success: false,
-      message: 'Error creating conversation',
+      message: "Error creating conversation",
       error: error.message,
     });
   }
@@ -124,11 +124,11 @@ exports.getUserConversations = async (req, res) => {
         is_active: true,
         [Op.or]: [
           {
-            is_archived_participant_1: isArchived === 'true',
+            is_archived_participant_1: isArchived === "true",
             participant_1_id: userId,
           },
           {
-            is_archived_participant_2: isArchived === 'true',
+            is_archived_participant_2: isArchived === "true",
             participant_2_id: userId,
           },
         ],
@@ -136,26 +136,26 @@ exports.getUserConversations = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'participant1',
-          attributes: ['id', 'first_name', 'last_name', 'email'],
+          as: "participant1",
+          attributes: ["id", "first_name", "last_name", "email"],
         },
         {
           model: User,
-          as: 'participant2',
-          attributes: ['id', 'first_name', 'last_name', 'email'],
+          as: "participant2",
+          attributes: ["id", "first_name", "last_name", "email"],
         },
         {
           model: Booking,
-          as: 'booking',
-          attributes: ['id', 'booking_number', 'status'],
+          as: "booking",
+          attributes: ["id", "booking_number", "status"],
         },
         {
           model: Appointment,
-          as: 'appointment',
-          attributes: ['id', 'appointment_date', 'status'],
+          as: "appointment",
+          attributes: ["id", "appointment_date", "status"],
         },
       ],
-      order: [['last_message_at', 'DESC']],
+      order: [["last_message_at", "DESC"]],
       limit: parseInt(limit, 10),
       offset: parseInt(offset, 10),
     });
@@ -171,10 +171,10 @@ exports.getUserConversations = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching conversations:', error);
+    console.error("Error fetching conversations:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching conversations',
+      message: "Error fetching conversations",
       error: error.message,
     });
   }
@@ -191,23 +191,23 @@ exports.getConversationById = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'participant1',
-          attributes: ['id', 'first_name', 'last_name', 'email'],
+          as: "participant1",
+          attributes: ["id", "first_name", "last_name", "email"],
         },
         {
           model: User,
-          as: 'participant2',
-          attributes: ['id', 'first_name', 'last_name', 'email'],
+          as: "participant2",
+          attributes: ["id", "first_name", "last_name", "email"],
         },
         {
           model: Booking,
-          as: 'booking',
-          attributes: ['id', 'booking_number', 'status'],
+          as: "booking",
+          attributes: ["id", "booking_number", "status"],
         },
         {
           model: Appointment,
-          as: 'appointment',
-          attributes: ['id', 'appointment_date', 'status'],
+          as: "appointment",
+          attributes: ["id", "appointment_date", "status"],
         },
       ],
     });
@@ -215,7 +215,7 @@ exports.getConversationById = async (req, res) => {
     if (!conversation) {
       return res.status(404).json({
         success: false,
-        message: 'Conversation not found',
+        message: "Conversation not found",
       });
     }
 
@@ -224,10 +224,10 @@ exports.getConversationById = async (req, res) => {
       data: conversation,
     });
   } catch (error) {
-    console.error('Error fetching conversation:', error);
+    console.error("Error fetching conversation:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching conversation',
+      message: "Error fetching conversation",
       error: error.message,
     });
   }
@@ -258,26 +258,26 @@ exports.sendMessage = async (req, res) => {
     if (!conversation) {
       return res.status(404).json({
         success: false,
-        message: 'Conversation not found',
+        message: "Conversation not found",
       });
     }
 
     // Validate sender is part of conversation
     if (
-      sender_id !== conversation.participant_1_id
-      && sender_id !== conversation.participant_2_id
+      sender_id !== conversation.participant_1_id &&
+      sender_id !== conversation.participant_2_id
     ) {
       return res.status(403).json({
         success: false,
-        message: 'Sender is not part of this conversation',
+        message: "Sender is not part of this conversation",
       });
     }
 
     const message = await ChatMessage.create({
       conversation_id,
       sender_id,
-      sender_type: sender_type || 'patient',
-      message_type: message_type || 'text',
+      sender_type: sender_type || "patient",
+      message_type: message_type || "text",
       message_content,
       file_url,
       file_name,
@@ -292,46 +292,46 @@ exports.sendMessage = async (req, res) => {
 
     // Update conversation last message
     await conversation.update({
-      last_message: message_content || 'File attachment',
+      last_message: message_content || "File attachment",
       last_message_at: new Date(),
       last_message_by: sender_id,
       // Increment unread count for the other participant
       ...(sender_id === conversation.participant_1_id
         ? {
-          unread_count_participant_2:
+            unread_count_participant_2:
               conversation.unread_count_participant_2 + 1,
-        }
+          }
         : {
-          unread_count_participant_1:
+            unread_count_participant_1:
               conversation.unread_count_participant_1 + 1,
-        }),
+          }),
     });
 
     const messageWithDetails = await ChatMessage.findByPk(message.id, {
       include: [
         {
           model: User,
-          as: 'sender',
-          attributes: ['id', 'first_name', 'last_name', 'email'],
+          as: "sender",
+          attributes: ["id", "first_name", "last_name", "email"],
         },
         {
           model: ChatMessage,
-          as: 'replyToMessage',
-          attributes: ['id', 'message_content', 'sender_id'],
+          as: "replyToMessage",
+          attributes: ["id", "message_content", "sender_id"],
         },
       ],
     });
 
     res.status(201).json({
       success: true,
-      message: 'Message sent successfully',
+      message: "Message sent successfully",
       data: messageWithDetails,
     });
   } catch (error) {
-    console.error('Error sending message:', error);
+    console.error("Error sending message:", error);
     res.status(500).json({
       success: false,
-      message: 'Error sending message',
+      message: "Error sending message",
       error: error.message,
     });
   }
@@ -357,16 +357,16 @@ exports.getConversationMessages = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'sender',
-          attributes: ['id', 'first_name', 'last_name', 'email'],
+          as: "sender",
+          attributes: ["id", "first_name", "last_name", "email"],
         },
         {
           model: ChatMessage,
-          as: 'replyToMessage',
-          attributes: ['id', 'message_content', 'sender_id'],
+          as: "replyToMessage",
+          attributes: ["id", "message_content", "sender_id"],
         },
       ],
-      order: [['created_at', 'DESC']],
+      order: [["created_at", "DESC"]],
       limit: parseInt(limit, 10),
       offset: parseInt(offset, 10),
     });
@@ -382,10 +382,10 @@ exports.getConversationMessages = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching messages:', error);
+    console.error("Error fetching messages:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching messages',
+      message: "Error fetching messages",
       error: error.message,
     });
   }
@@ -403,7 +403,7 @@ exports.markMessagesAsRead = async (req, res) => {
     if (!conversation) {
       return res.status(404).json({
         success: false,
-        message: 'Conversation not found',
+        message: "Conversation not found",
       });
     }
 
@@ -428,13 +428,13 @@ exports.markMessagesAsRead = async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Messages marked as read',
+      message: "Messages marked as read",
     });
   } catch (error) {
-    console.error('Error marking messages as read:', error);
+    console.error("Error marking messages as read:", error);
     res.status(500).json({
       success: false,
-      message: 'Error marking messages as read',
+      message: "Error marking messages as read",
       error: error.message,
     });
   }
@@ -452,7 +452,7 @@ exports.deleteMessage = async (req, res) => {
     if (!message) {
       return res.status(404).json({
         success: false,
-        message: 'Message not found',
+        message: "Message not found",
       });
     }
 
@@ -460,25 +460,25 @@ exports.deleteMessage = async (req, res) => {
     if (message.sender_id !== userId) {
       return res.status(403).json({
         success: false,
-        message: 'You can only delete your own messages',
+        message: "You can only delete your own messages",
       });
     }
 
     await message.update({
       is_deleted: true,
       deleted_at: new Date(),
-      message_content: 'This message has been deleted',
+      message_content: "This message has been deleted",
     });
 
     res.json({
       success: true,
-      message: 'Message deleted successfully',
+      message: "Message deleted successfully",
     });
   } catch (error) {
-    console.error('Error deleting message:', error);
+    console.error("Error deleting message:", error);
     res.status(500).json({
       success: false,
-      message: 'Error deleting message',
+      message: "Error deleting message",
       error: error.message,
     });
   }
@@ -496,7 +496,7 @@ exports.toggleArchiveConversation = async (req, res) => {
     if (!conversation) {
       return res.status(404).json({
         success: false,
-        message: 'Conversation not found',
+        message: "Conversation not found",
       });
     }
 
@@ -508,19 +508,19 @@ exports.toggleArchiveConversation = async (req, res) => {
     } else {
       return res.status(403).json({
         success: false,
-        message: 'User is not part of this conversation',
+        message: "User is not part of this conversation",
       });
     }
 
     res.json({
       success: true,
-      message: archive ? 'Conversation archived' : 'Conversation unarchived',
+      message: archive ? "Conversation archived" : "Conversation unarchived",
     });
   } catch (error) {
-    console.error('Error toggling archive:', error);
+    console.error("Error toggling archive:", error);
     res.status(500).json({
       success: false,
-      message: 'Error toggling archive status',
+      message: "Error toggling archive status",
       error: error.message,
     });
   }
@@ -539,11 +539,11 @@ exports.getUnreadCount = async (req, res) => {
         is_active: true,
       },
       attributes: [
-        'id',
-        'participant_1_id',
-        'participant_2_id',
-        'unread_count_participant_1',
-        'unread_count_participant_2',
+        "id",
+        "participant_1_id",
+        "participant_2_id",
+        "unread_count_participant_1",
+        "unread_count_participant_2",
       ],
     });
 
@@ -572,10 +572,10 @@ exports.getUnreadCount = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching unread count:', error);
+    console.error("Error fetching unread count:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching unread count',
+      message: "Error fetching unread count",
       error: error.message,
     });
   }

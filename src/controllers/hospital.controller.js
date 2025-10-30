@@ -1,12 +1,13 @@
-const Hospital = require('../models/Hospital.model');
-const { successResponse, errorResponse } = require('../utils/response');
-const logger = require('../utils/logger');
+const Hospital = require("../models/Hospital.model");
+const { successResponse, errorResponse } = require("../utils/response");
+const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const CacheUtil = require("../utils/cache");
 
 class HospitalController {
   /**
    * Create a new hospital
    */
-  async createHospital(req, res) {
+  static async createHospital(req, res) {
     try {
       const {
         userId,
@@ -34,28 +35,20 @@ class HospitalController {
       return successResponse(
         res,
         {
-          message: 'Hospital created successfully',
+          message: "Hospital created successfully",
           data: hospital,
         },
         201,
       );
     } catch (error) {
-      logger.error('Create hospital error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to create hospital',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to create hospital");
     }
   }
 
   /**
    * Get hospital by ID
    */
-  async getHospital(req, res) {
+  static async getHospital(req, res) {
     try {
       const { id } = req.params;
 
@@ -66,33 +59,25 @@ class HospitalController {
         return errorResponse(
           res,
           {
-            message: 'Hospital not found',
+            message: "Hospital not found",
           },
           404,
         );
       }
 
       return successResponse(res, {
-        message: 'Hospital retrieved successfully',
+        message: "Hospital retrieved successfully",
         data: hospital,
       });
     } catch (error) {
-      logger.error('Get hospital error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to retrieve hospital',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to retrieve hospital");
     }
   }
 
   /**
    * Update hospital
    */
-  async updateHospital(req, res) {
+  static async updateHospital(req, res) {
     try {
       const { id } = req.params;
       const {
@@ -113,7 +98,7 @@ class HospitalController {
         return errorResponse(
           res,
           {
-            message: 'Hospital not found',
+            message: "Hospital not found",
           },
           404,
         );
@@ -132,26 +117,18 @@ class HospitalController {
       });
 
       return successResponse(res, {
-        message: 'Hospital updated successfully',
+        message: "Hospital updated successfully",
         data: hospital,
       });
     } catch (error) {
-      logger.error('Update hospital error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to update hospital',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to update hospital");
     }
   }
 
   /**
    * Delete hospital
    */
-  async deleteHospital(req, res) {
+  static async deleteHospital(req, res) {
     try {
       const { id } = req.params;
 
@@ -162,7 +139,7 @@ class HospitalController {
         return errorResponse(
           res,
           {
-            message: 'Hospital not found',
+            message: "Hospital not found",
           },
           404,
         );
@@ -172,45 +149,35 @@ class HospitalController {
       await hospital.destroy();
 
       return successResponse(res, {
-        message: 'Hospital deleted successfully',
+        message: "Hospital deleted successfully",
       });
     } catch (error) {
-      logger.error('Delete hospital error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to delete hospital',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to delete hospital");
     }
   }
 
   /**
    * Get all hospitals
    */
-  async getAllHospitals(req, res) {
+  static async getAllHospitals(req, res) {
     try {
-      const {
-        page = 1, limit = 10, isVerified, isActive,
-      } = req.query;
+      const { page = 1, limit = 10, isVerified, isActive } = req.query;
 
       // Build where clause
       const where = {};
-      if (isVerified !== undefined) where.isVerified = isVerified === 'true';
-      if (isActive !== undefined) where.isActive = isActive === 'true';
+      if (isVerified !== undefined) where.isVerified = isVerified === "true";
+      if (isActive !== undefined) where.isActive = isActive === "true";
 
       // Get hospitals with pagination
       const hospitals = await Hospital.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       return successResponse(res, {
-        message: 'Hospitals retrieved successfully',
+        message: "Hospitals retrieved successfully",
         data: hospitals.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -219,22 +186,14 @@ class HospitalController {
         },
       });
     } catch (error) {
-      logger.error('Get all hospitals error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to retrieve hospitals',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to retrieve hospitals");
     }
   }
 
   /**
    * Add doctor to hospital
    */
-  async addDoctor(req, res) {
+  static async addDoctor(req, res) {
     try {
       const { id } = req.params;
       const { doctorId } = req.body;
@@ -246,7 +205,7 @@ class HospitalController {
         return errorResponse(
           res,
           {
-            message: 'Hospital not found',
+            message: "Hospital not found",
           },
           404,
         );
@@ -257,17 +216,13 @@ class HospitalController {
       // await HospitalDoctor.create({ hospitalId: id, doctorId });
 
       return successResponse(res, {
-        message: 'Doctor added to hospital successfully',
+        message: "Doctor added to hospital successfully",
       });
     } catch (error) {
-      logger.error('Add doctor to hospital error:', error);
-      return errorResponse(
+      return handleDatabaseError(
+        error,
         res,
-        {
-          message: 'Failed to add doctor to hospital',
-          error: error.message,
-        },
-        500,
+        "Failed to add doctor to hospital",
       );
     }
   }
@@ -275,7 +230,7 @@ class HospitalController {
   /**
    * Remove doctor from hospital
    */
-  async removeDoctor(req, res) {
+  static async removeDoctor(req, res) {
     try {
       const { id } = req.params;
       const { doctorId } = req.body;
@@ -287,7 +242,7 @@ class HospitalController {
         return errorResponse(
           res,
           {
-            message: 'Hospital not found',
+            message: "Hospital not found",
           },
           404,
         );
@@ -298,17 +253,13 @@ class HospitalController {
       // await HospitalDoctor.destroy({ where: { hospitalId: id, doctorId } });
 
       return successResponse(res, {
-        message: 'Doctor removed from hospital successfully',
+        message: "Doctor removed from hospital successfully",
       });
     } catch (error) {
-      logger.error('Remove doctor from hospital error:', error);
-      return errorResponse(
+      return handleDatabaseError(
+        error,
         res,
-        {
-          message: 'Failed to remove doctor from hospital',
-          error: error.message,
-        },
-        500,
+        "Failed to remove doctor from hospital",
       );
     }
   }
@@ -316,7 +267,7 @@ class HospitalController {
   /**
    * Add treatment to hospital
    */
-  async addTreatment(req, res) {
+  static async addTreatment(req, res) {
     try {
       const { id } = req.params;
       const { treatmentId } = req.body;
@@ -328,7 +279,7 @@ class HospitalController {
         return errorResponse(
           res,
           {
-            message: 'Hospital not found',
+            message: "Hospital not found",
           },
           404,
         );
@@ -339,17 +290,13 @@ class HospitalController {
       // await HospitalTreatment.create({ hospitalId: id, treatmentId });
 
       return successResponse(res, {
-        message: 'Treatment added to hospital successfully',
+        message: "Treatment added to hospital successfully",
       });
     } catch (error) {
-      logger.error('Add treatment to hospital error:', error);
-      return errorResponse(
+      return handleDatabaseError(
+        error,
         res,
-        {
-          message: 'Failed to add treatment to hospital',
-          error: error.message,
-        },
-        500,
+        "Failed to add treatment to hospital",
       );
     }
   }
@@ -357,7 +304,7 @@ class HospitalController {
   /**
    * Verify hospital
    */
-  async verifyHospital(req, res) {
+  static async verifyHospital(req, res) {
     try {
       const { id } = req.params;
 
@@ -368,7 +315,7 @@ class HospitalController {
         return errorResponse(
           res,
           {
-            message: 'Hospital not found',
+            message: "Hospital not found",
           },
           404,
         );
@@ -378,21 +325,13 @@ class HospitalController {
       await hospital.update({ isVerified: true });
 
       return successResponse(res, {
-        message: 'Hospital verified successfully',
+        message: "Hospital verified successfully",
         data: hospital,
       });
     } catch (error) {
-      logger.error('Verify hospital error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to verify hospital',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to verify hospital");
     }
   }
 }
 
-module.exports = new HospitalController();
+module.exports = HospitalController;

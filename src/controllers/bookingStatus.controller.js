@@ -3,7 +3,7 @@
  * Handles booking status management and history tracking
  */
 
-const { Op } = require('sequelize');
+const { Op } = require("sequelize");
 const {
   Booking,
   BookingStatusHistory,
@@ -11,25 +11,25 @@ const {
   Hospital,
   Treatment,
   User,
-} = require('../models');
+} = require("../models");
 
 /**
  * Valid status transitions
  */
 const VALID_TRANSITIONS = {
-  requested: ['under_review', 'rejected', 'cancelled'],
-  under_review: ['accepted', 'rejected', 'cancelled'],
-  accepted: ['quotation_sent', 'cancelled'],
-  quotation_sent: ['payment_details', 'cancelled'],
-  payment_details: ['confirmation_sent', 'cancelled'],
-  confirmation_sent: ['payment_received', 'cancelled'],
-  payment_received: ['confirmation_completed', 'cancelled'],
-  confirmation_completed: ['invoice_sent', 'cancelled'],
-  invoice_sent: ['travel_arrangements', 'cancelled'],
-  travel_arrangements: ['consultation_scheduled', 'cancelled'],
-  consultation_scheduled: ['in_progress', 'cancelled'],
-  in_progress: ['completed', 'cancelled'],
-  completed: ['feedback_received'],
+  requested: ["under_review", "rejected", "cancelled"],
+  under_review: ["accepted", "rejected", "cancelled"],
+  accepted: ["quotation_sent", "cancelled"],
+  quotation_sent: ["payment_details", "cancelled"],
+  payment_details: ["confirmation_sent", "cancelled"],
+  confirmation_sent: ["payment_received", "cancelled"],
+  payment_received: ["confirmation_completed", "cancelled"],
+  confirmation_completed: ["invoice_sent", "cancelled"],
+  invoice_sent: ["travel_arrangements", "cancelled"],
+  travel_arrangements: ["consultation_scheduled", "cancelled"],
+  consultation_scheduled: ["in_progress", "cancelled"],
+  in_progress: ["completed", "cancelled"],
+  completed: ["feedback_received"],
   feedback_received: [],
   rejected: [],
   cancelled: [],
@@ -41,16 +41,15 @@ const VALID_TRANSITIONS = {
 exports.updateBookingStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      status, sub_status, reason, notes, changed_by, changed_by_type,
-    } = req.body;
+    const { status, sub_status, reason, notes, changed_by, changed_by_type } =
+      req.body;
 
     // Get booking
     const booking = await Booking.findByPk(id);
     if (!booking) {
       return res.status(404).json({
         success: false,
-        message: 'Booking not found',
+        message: "Booking not found",
       });
     }
 
@@ -67,7 +66,7 @@ exports.updateBookingStatus = async (req, res) => {
     if (!VALID_TRANSITIONS[currentStatus].includes(status)) {
       return res.status(400).json({
         success: false,
-        message: `Cannot transition from ${currentStatus} to ${status}. Valid transitions: ${VALID_TRANSITIONS[currentStatus].join(', ')}`,
+        message: `Cannot transition from ${currentStatus} to ${status}. Valid transitions: ${VALID_TRANSITIONS[currentStatus].join(", ")}`,
       });
     }
 
@@ -75,19 +74,19 @@ exports.updateBookingStatus = async (req, res) => {
     await booking.update({
       status,
       sub_status,
-      ...(status === 'cancelled' && {
+      ...(status === "cancelled" && {
         cancellation_reason: reason,
         cancelled_by: changed_by,
         cancelled_at: new Date(),
       }),
-      ...(status === 'accepted'
-        && !booking.confirmed_date && {
-        confirmed_date: new Date(),
-      }),
-      ...(status === 'completed'
-        && !booking.completion_date && {
-        completion_date: new Date(),
-      }),
+      ...(status === "accepted" &&
+        !booking.confirmed_date && {
+          confirmed_date: new Date(),
+        }),
+      ...(status === "completed" &&
+        !booking.completion_date && {
+          completion_date: new Date(),
+        }),
     });
 
     // Create status history record
@@ -96,35 +95,35 @@ exports.updateBookingStatus = async (req, res) => {
       from_status: currentStatus,
       to_status: status,
       changed_by,
-      changed_by_type: changed_by_type || 'system',
+      changed_by_type: changed_by_type || "system",
       reason,
       notes,
       ip_address: req.ip,
-      user_agent: req.get('user-agent'),
+      user_agent: req.get("user-agent"),
     });
 
     const updatedBooking = await Booking.findByPk(id, {
       include: [
         {
           model: Patient,
-          as: 'patient',
-          include: [{ model: User, as: 'user' }],
+          as: "patient",
+          include: [{ model: User, as: "user" }],
         },
-        { model: Hospital, as: 'hospital' },
-        { model: Treatment, as: 'treatment' },
+        { model: Hospital, as: "hospital" },
+        { model: Treatment, as: "treatment" },
       ],
     });
 
     res.json({
       success: true,
-      message: 'Booking status updated successfully',
+      message: "Booking status updated successfully",
       data: updatedBooking,
     });
   } catch (error) {
-    console.error('Error updating booking status:', error);
+    console.error("Error updating booking status:", error);
     res.status(500).json({
       success: false,
-      message: 'Error updating booking status',
+      message: "Error updating booking status",
       error: error.message,
     });
   }
@@ -141,7 +140,7 @@ exports.getBookingStatusHistory = async (req, res) => {
     if (!booking) {
       return res.status(404).json({
         success: false,
-        message: 'Booking not found',
+        message: "Booking not found",
       });
     }
 
@@ -150,11 +149,11 @@ exports.getBookingStatusHistory = async (req, res) => {
       include: [
         {
           model: User,
-          as: 'changedBy',
-          attributes: ['id', 'first_name', 'last_name', 'email'],
+          as: "changedBy",
+          attributes: ["id", "first_name", "last_name", "email"],
         },
       ],
-      order: [['created_at', 'DESC']],
+      order: [["created_at", "DESC"]],
     });
 
     res.json({
@@ -166,10 +165,10 @@ exports.getBookingStatusHistory = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching booking status history:', error);
+    console.error("Error fetching booking status history:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching booking status history',
+      message: "Error fetching booking status history",
       error: error.message,
     });
   }
@@ -187,7 +186,7 @@ exports.assignCoordinator = async (req, res) => {
     if (!booking) {
       return res.status(404).json({
         success: false,
-        message: 'Booking not found',
+        message: "Booking not found",
       });
     }
 
@@ -196,7 +195,7 @@ exports.assignCoordinator = async (req, res) => {
     if (!coordinator) {
       return res.status(404).json({
         success: false,
-        message: 'Coordinator not found',
+        message: "Coordinator not found",
       });
     }
 
@@ -209,33 +208,33 @@ exports.assignCoordinator = async (req, res) => {
       from_status: booking.status,
       to_status: booking.status,
       changed_by: coordinator_id,
-      changed_by_type: 'staff',
-      reason: 'Coordinator assigned',
-      notes: `Coordinator changed from ${previousCoordinator || 'none'} to ${coordinator_id}`,
+      changed_by_type: "staff",
+      reason: "Coordinator assigned",
+      notes: `Coordinator changed from ${previousCoordinator || "none"} to ${coordinator_id}`,
       ip_address: req.ip,
-      user_agent: req.get('user-agent'),
+      user_agent: req.get("user-agent"),
     });
 
     const updatedBooking = await Booking.findByPk(id, {
       include: [
         {
           model: User,
-          as: 'coordinator',
-          attributes: ['id', 'first_name', 'last_name', 'email'],
+          as: "coordinator",
+          attributes: ["id", "first_name", "last_name", "email"],
         },
       ],
     });
 
     res.json({
       success: true,
-      message: 'Coordinator assigned successfully',
+      message: "Coordinator assigned successfully",
       data: updatedBooking,
     });
   } catch (error) {
-    console.error('Error assigning coordinator:', error);
+    console.error("Error assigning coordinator:", error);
     res.status(500).json({
       success: false,
-      message: 'Error assigning coordinator',
+      message: "Error assigning coordinator",
       error: error.message,
     });
   }
@@ -247,9 +246,7 @@ exports.assignCoordinator = async (req, res) => {
 exports.getBookingsByStatus = async (req, res) => {
   try {
     const { status } = req.params;
-    const {
-      page = 1, limit = 10, hospitalId, coordinatorId,
-    } = req.query;
+    const { page = 1, limit = 10, hospitalId, coordinatorId } = req.query;
 
     const offset = (page - 1) * limit;
     const whereClause = { status };
@@ -262,22 +259,22 @@ exports.getBookingsByStatus = async (req, res) => {
       include: [
         {
           model: Patient,
-          as: 'patient',
-          include: [{ model: User, as: 'user' }],
+          as: "patient",
+          include: [{ model: User, as: "user" }],
         },
         {
           model: Hospital,
-          as: 'hospital',
-          attributes: ['id', 'name', 'city', 'country'],
+          as: "hospital",
+          attributes: ["id", "name", "city", "country"],
         },
-        { model: Treatment, as: 'treatment', attributes: ['id', 'name'] },
+        { model: Treatment, as: "treatment", attributes: ["id", "name"] },
         {
           model: User,
-          as: 'coordinator',
-          attributes: ['id', 'first_name', 'last_name'],
+          as: "coordinator",
+          attributes: ["id", "first_name", "last_name"],
         },
       ],
-      order: [['created_at', 'DESC']],
+      order: [["created_at", "DESC"]],
       limit: parseInt(limit, 10),
       offset: parseInt(offset, 10),
     });
@@ -293,10 +290,10 @@ exports.getBookingsByStatus = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching bookings by status:', error);
+    console.error("Error fetching bookings by status:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching bookings by status',
+      message: "Error fetching bookings by status",
       error: error.message,
     });
   }
@@ -313,7 +310,7 @@ exports.getValidTransitions = async (req, res) => {
     if (!booking) {
       return res.status(404).json({
         success: false,
-        message: 'Booking not found',
+        message: "Booking not found",
       });
     }
 
@@ -327,10 +324,10 @@ exports.getValidTransitions = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching valid transitions:', error);
+    console.error("Error fetching valid transitions:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching valid transitions',
+      message: "Error fetching valid transitions",
       error: error.message,
     });
   }
@@ -341,14 +338,13 @@ exports.getValidTransitions = async (req, res) => {
  */
 exports.bulkUpdateStatus = async (req, res) => {
   try {
-    const {
-      booking_ids, status, reason, notes, changed_by, changed_by_type,
-    } = req.body;
+    const { booking_ids, status, reason, notes, changed_by, changed_by_type } =
+      req.body;
 
     if (!Array.isArray(booking_ids) || booking_ids.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'booking_ids array is required',
+        message: "booking_ids array is required",
       });
     }
 
@@ -363,7 +359,7 @@ exports.bulkUpdateStatus = async (req, res) => {
         if (!booking) {
           results.failed.push({
             booking_id: bookingId,
-            reason: 'Booking not found',
+            reason: "Booking not found",
           });
           continue;
         }
@@ -388,11 +384,11 @@ exports.bulkUpdateStatus = async (req, res) => {
           from_status: currentStatus,
           to_status: status,
           changed_by,
-          changed_by_type: changed_by_type || 'system',
+          changed_by_type: changed_by_type || "system",
           reason,
           notes,
           ip_address: req.ip,
-          user_agent: req.get('user-agent'),
+          user_agent: req.get("user-agent"),
         });
 
         results.success.push(bookingId);
@@ -407,10 +403,10 @@ exports.bulkUpdateStatus = async (req, res) => {
       data: results,
     });
   } catch (error) {
-    console.error('Error bulk updating status:', error);
+    console.error("Error bulk updating status:", error);
     res.status(500).json({
       success: false,
-      message: 'Error bulk updating status',
+      message: "Error bulk updating status",
       error: error.message,
     });
   }
@@ -434,13 +430,13 @@ exports.getStatusStatistics = async (req, res) => {
     const statusCounts = await Booking.findAll({
       where: whereClause,
       attributes: [
-        'status',
+        "status",
         [
-          require('sequelize').fn('COUNT', require('sequelize').col('id')),
-          'count',
+          require("sequelize").fn("COUNT", require("sequelize").col("id")),
+          "count",
         ],
       ],
-      group: ['status'],
+      group: ["status"],
       raw: true,
     });
 
@@ -464,10 +460,10 @@ exports.getStatusStatistics = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('Error fetching status statistics:', error);
+    console.error("Error fetching status statistics:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching status statistics',
+      message: "Error fetching status statistics",
       error: error.message,
     });
   }

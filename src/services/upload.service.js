@@ -1,5 +1,5 @@
-const Media = require('../models/Media.model');
-const logger = require('../utils/logger');
+const Media = require("../models/Media.model");
+const logger = require("../utils/logger");
 
 class UploadService {
   /**
@@ -10,7 +10,7 @@ class UploadService {
       const media = await Media.create(data);
       return media;
     } catch (error) {
-      logger.error('Create media service error:', error);
+      logger.error("Create media service error:", error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class UploadService {
       const media = await Media.findByPk(id);
       return media;
     } catch (error) {
-      logger.error('Get media by ID service error:', error);
+      logger.error("Get media by ID service error:", error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class UploadService {
     try {
       const media = await Media.findByPk(id);
       if (!media) {
-        throw new Error('Media not found');
+        throw new Error("Media not found");
       }
 
       await media.update(data);
       return media;
     } catch (error) {
-      logger.error('Update media service error:', error);
+      logger.error("Update media service error:", error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class UploadService {
     try {
       const media = await Media.findByPk(id);
       if (!media) {
-        throw new Error('Media not found');
+        throw new Error("Media not found");
       }
 
       await media.destroy();
       return true;
     } catch (error) {
-      logger.error('Delete media service error:', error);
+      logger.error("Delete media service error:", error);
       throw error;
     }
   }
@@ -78,12 +78,12 @@ class UploadService {
         },
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       return media;
     } catch (error) {
-      logger.error('Get entity media service error:', error);
+      logger.error("Get entity media service error:", error);
       throw error;
     }
   }

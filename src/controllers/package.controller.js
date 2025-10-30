@@ -1,15 +1,22 @@
-const Package = require('../models/Package.model');
-const { successResponse, errorResponse } = require('../utils/response');
-const logger = require('../utils/logger');
+const Package = require("../models/Package.model");
+const { successResponse, errorResponse } = require("../utils/response");
+const { handleDatabaseError } = require("../utils/databaseErrorHandler");
 
 class PackageController {
   /**
    * Create a new package
    */
-  async createPackage(req, res) {
+  static async createPackage(req, res) {
     try {
       const {
-        name, description, treatmentId, hospitalId, duration, price, currency, isActive,
+        name,
+        description,
+        treatmentId,
+        hospitalId,
+        duration,
+        price,
+        currency,
+        isActive,
       } = req.body;
 
       // Create package
@@ -24,23 +31,23 @@ class PackageController {
         isActive,
       });
 
-      return successResponse(res, {
-        message: 'Package created successfully',
-        data: pkg,
-      }, 201);
+      return successResponse(
+        res,
+        {
+          message: "Package created successfully",
+          data: pkg,
+        },
+        201,
+      );
     } catch (error) {
-      logger.error('Create package error:', error);
-      return errorResponse(res, {
-        message: 'Failed to create package',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Get package by ID
    */
-  async getPackage(req, res) {
+  static async getPackage(req, res) {
     try {
       const { id } = req.params;
 
@@ -48,41 +55,44 @@ class PackageController {
       const pkg = await Package.findByPk(id);
 
       if (!pkg) {
-        return errorResponse(res, {
-          message: 'Package not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Package not found",
+          },
+          404,
+        );
       }
 
       return successResponse(res, {
-        message: 'Package retrieved successfully',
+        message: "Package retrieved successfully",
         data: pkg,
       });
     } catch (error) {
-      logger.error('Get package error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve package',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Update package
    */
-  async updatePackage(req, res) {
+  static async updatePackage(req, res) {
     try {
       const { id } = req.params;
-      const {
-        name, description, duration, price, currency, isActive,
-      } = req.body;
+      const { name, description, duration, price, currency, isActive } =
+        req.body;
 
       // Find package
       const pkg = await Package.findByPk(id);
 
       if (!pkg) {
-        return errorResponse(res, {
-          message: 'Package not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Package not found",
+          },
+          404,
+        );
       }
 
       // Update package
@@ -96,22 +106,18 @@ class PackageController {
       });
 
       return successResponse(res, {
-        message: 'Package updated successfully',
+        message: "Package updated successfully",
         data: pkg,
       });
     } catch (error) {
-      logger.error('Update package error:', error);
-      return errorResponse(res, {
-        message: 'Failed to update package',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Delete package
    */
-  async deletePackage(req, res) {
+  static async deletePackage(req, res) {
     try {
       const { id } = req.params;
 
@@ -119,51 +125,55 @@ class PackageController {
       const pkg = await Package.findByPk(id);
 
       if (!pkg) {
-        return errorResponse(res, {
-          message: 'Package not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Package not found",
+          },
+          404,
+        );
       }
 
       // Delete package
       await pkg.destroy();
 
       return successResponse(res, {
-        message: 'Package deleted successfully',
+        message: "Package deleted successfully",
       });
     } catch (error) {
-      logger.error('Delete package error:', error);
-      return errorResponse(res, {
-        message: 'Failed to delete package',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Get all packages
    */
-  async getAllPackages(req, res) {
+  static async getAllPackages(req, res) {
     try {
       const {
-        page = 1, limit = 10, treatmentId, hospitalId, isActive,
+        page = 1,
+        limit = 10,
+        treatmentId,
+        hospitalId,
+        isActive,
       } = req.query;
 
       // Build where clause
       const where = {};
       if (treatmentId) where.treatmentId = treatmentId;
       if (hospitalId) where.hospitalId = hospitalId;
-      if (isActive !== undefined) where.isActive = isActive === 'true';
+      if (isActive !== undefined) where.isActive = isActive === "true";
 
       // Get packages with pagination
       const packages = await Package.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       return successResponse(res, {
-        message: 'Packages retrieved successfully',
+        message: "Packages retrieved successfully",
         data: packages.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -172,13 +182,9 @@ class PackageController {
         },
       });
     } catch (error) {
-      logger.error('Get all packages error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve packages',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 }
 
-module.exports = new PackageController();
+module.exports = PackageController;

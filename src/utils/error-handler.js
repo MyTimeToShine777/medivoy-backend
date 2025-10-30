@@ -12,44 +12,44 @@ class AppError extends Error {
 }
 
 class ValidationError extends AppError {
-  constructor(message = 'Validation failed') {
+  constructor(message = "Validation failed") {
     super(message, 400);
-    this.name = 'ValidationError';
+    this.name = "ValidationError";
   }
 }
 
 class UnauthorizedError extends AppError {
-  constructor(message = 'Unauthorized access') {
+  constructor(message = "Unauthorized access") {
     super(message, 401);
-    this.name = 'UnauthorizedError';
+    this.name = "UnauthorizedError";
   }
 }
 
 class ForbiddenError extends AppError {
-  constructor(message = 'Access forbidden') {
+  constructor(message = "Access forbidden") {
     super(message, 403);
-    this.name = 'ForbiddenError';
+    this.name = "ForbiddenError";
   }
 }
 
 class NotFoundError extends AppError {
-  constructor(message = 'Resource not found') {
+  constructor(message = "Resource not found") {
     super(message, 404);
-    this.name = 'NotFoundError';
+    this.name = "NotFoundError";
   }
 }
 
 class ConflictError extends AppError {
-  constructor(message = 'Resource conflict') {
+  constructor(message = "Resource conflict") {
     super(message, 409);
-    this.name = 'ConflictError';
+    this.name = "ConflictError";
   }
 }
 
 class InternalServerError extends AppError {
-  constructor(message = 'Internal server error') {
+  constructor(message = "Internal server error") {
     super(message, 500);
-    this.name = 'InternalServerError';
+    this.name = "InternalServerError";
   }
 }
 

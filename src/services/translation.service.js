@@ -1,5 +1,5 @@
-const Translation = require('../models/Translation.model');
-const logger = require('../utils/logger');
+const Translation = require("../models/Translation.model");
+const logger = require("../utils/logger");
 
 class TranslationService {
   /**
@@ -10,7 +10,7 @@ class TranslationService {
       const translation = await Translation.create(data);
       return translation;
     } catch (error) {
-      logger.error('Create translation service error:', error);
+      logger.error("Create translation service error:", error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class TranslationService {
       const translation = await Translation.findByPk(id);
       return translation;
     } catch (error) {
-      logger.error('Get translation by ID service error:', error);
+      logger.error("Get translation by ID service error:", error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class TranslationService {
     try {
       const translation = await Translation.findByPk(id);
       if (!translation) {
-        throw new Error('Translation not found');
+        throw new Error("Translation not found");
       }
 
       await translation.update(data);
       return translation;
     } catch (error) {
-      logger.error('Update translation service error:', error);
+      logger.error("Update translation service error:", error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class TranslationService {
     try {
       const translation = await Translation.findByPk(id);
       if (!translation) {
-        throw new Error('Translation not found');
+        throw new Error("Translation not found");
       }
 
       await translation.destroy();
       return true;
     } catch (error) {
-      logger.error('Delete translation service error:', error);
+      logger.error("Delete translation service error:", error);
       throw error;
     }
   }
@@ -75,12 +75,12 @@ class TranslationService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['key', 'ASC']],
+        order: [["key", "ASC"]],
       });
 
       return translations;
     } catch (error) {
-      logger.error('Get all translations service error:', error);
+      logger.error("Get all translations service error:", error);
       throw error;
     }
   }
@@ -95,7 +95,7 @@ class TranslationService {
       });
       return translation;
     } catch (error) {
-      logger.error('Get translation by key and language service error:', error);
+      logger.error("Get translation by key and language service error:", error);
       throw error;
     }
   }

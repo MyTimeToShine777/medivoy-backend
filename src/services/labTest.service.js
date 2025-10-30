@@ -1,5 +1,5 @@
-const LabTest = require('../models/LabTest.model');
-const logger = require('../utils/logger');
+const LabTest = require("../models/LabTest.model");
+const logger = require("../utils/logger");
 
 class LabTestService {
   /**
@@ -10,7 +10,7 @@ class LabTestService {
       const labTest = await LabTest.create(data);
       return labTest;
     } catch (error) {
-      logger.error('Create lab test service error:', error);
+      logger.error("Create lab test service error:", error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class LabTestService {
       const labTest = await LabTest.findByPk(id);
       return labTest;
     } catch (error) {
-      logger.error('Get lab test by ID service error:', error);
+      logger.error("Get lab test by ID service error:", error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class LabTestService {
     try {
       const labTest = await LabTest.findByPk(id);
       if (!labTest) {
-        throw new Error('Lab test not found');
+        throw new Error("Lab test not found");
       }
 
       await labTest.update(data);
       return labTest;
     } catch (error) {
-      logger.error('Update lab test service error:', error);
+      logger.error("Update lab test service error:", error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class LabTestService {
     try {
       const labTest = await LabTest.findByPk(id);
       if (!labTest) {
-        throw new Error('Lab test not found');
+        throw new Error("Lab test not found");
       }
 
       await labTest.destroy();
       return true;
     } catch (error) {
-      logger.error('Delete lab test service error:', error);
+      logger.error("Delete lab test service error:", error);
       throw error;
     }
   }
@@ -75,12 +75,12 @@ class LabTestService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       return labTests;
     } catch (error) {
-      logger.error('Get all lab tests service error:', error);
+      logger.error("Get all lab tests service error:", error);
       throw error;
     }
   }

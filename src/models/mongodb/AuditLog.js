@@ -4,7 +4,7 @@ const auditLogSchema = new mongoose.Schema({
   user_id: {
     type: Number,
     required: true,
-    index: true
+    index: true,
   },
   action: {
     type: String,
@@ -15,57 +15,57 @@ const auditLogSchema = new mongoose.Schema({
       'password_reset', 'email_verification',
       'payment', 'booking', 'appointment',
       'upload', 'download', 'export',
-      'admin_action', 'system_action'
-    ]
+      'admin_action', 'system_action',
+    ],
   },
   resource_type: {
     type: String,
     required: true,
-    index: true
+    index: true,
   },
   resource_id: {
     type: Number,
-    index: true
+    index: true,
   },
   changes: {
     type: mongoose.Schema.Types.Mixed,
-    default: {}
+    default: {},
   },
   old_values: {
     type: mongoose.Schema.Types.Mixed,
-    default: {}
+    default: {},
   },
   new_values: {
     type: mongoose.Schema.Types.Mixed,
-    default: {}
+    default: {},
   },
   ip_address: {
     type: String,
-    required: true
+    required: true,
   },
   user_agent: {
-    type: String
+    type: String,
   },
   status: {
     type: String,
     enum: ['success', 'failure', 'error'],
-    default: 'success'
+    default: 'success',
   },
   error_message: {
-    type: String
+    type: String,
   },
   metadata: {
     type: mongoose.Schema.Types.Mixed,
-    default: {}
+    default: {},
   },
   timestamp: {
     type: Date,
     default: Date.now,
-    index: true
-  }
+    index: true,
+  },
 }, {
   timestamps: true,
-  collection: 'audit_logs'
+  collection: 'audit_logs',
 });
 
 // Indexes for better query performance
@@ -78,7 +78,7 @@ auditLogSchema.index({ timestamp: -1 });
 auditLogSchema.index({ timestamp: 1 }, { expireAfterSeconds: 7776000 }); // 90 days
 
 // Static methods
-auditLogSchema.statics.log = async function(data) {
+auditLogSchema.statics.log = async function (data) {
   try {
     const log = new this(data);
     await log.save();
@@ -90,14 +90,14 @@ auditLogSchema.statics.log = async function(data) {
   }
 };
 
-auditLogSchema.statics.getUserLogs = async function(userId, options = {}) {
+auditLogSchema.statics.getUserLogs = async function (userId, options = {}) {
   const {
     limit = 50,
     skip = 0,
     action = null,
     resourceType = null,
     startDate = null,
-    endDate = null
+    endDate = null,
   } = options;
 
   const query = { user_id: userId };
@@ -117,12 +117,12 @@ auditLogSchema.statics.getUserLogs = async function(userId, options = {}) {
     .lean();
 };
 
-auditLogSchema.statics.getResourceLogs = async function(resourceType, resourceId, options = {}) {
+auditLogSchema.statics.getResourceLogs = async function (resourceType, resourceId, options = {}) {
   const { limit = 50, skip = 0 } = options;
 
   return this.find({
     resource_type: resourceType,
-    resource_id: resourceId
+    resource_id: resourceId,
   })
     .sort({ timestamp: -1 })
     .limit(limit)
@@ -130,31 +130,31 @@ auditLogSchema.statics.getResourceLogs = async function(resourceType, resourceId
     .lean();
 };
 
-auditLogSchema.statics.getActionStats = async function(startDate, endDate) {
+auditLogSchema.statics.getActionStats = async function (startDate, endDate) {
   return this.aggregate([
     {
       $match: {
         timestamp: {
           $gte: new Date(startDate),
-          $lte: new Date(endDate)
-        }
-      }
+          $lte: new Date(endDate),
+        },
+      },
     },
     {
       $group: {
         _id: '$action',
         count: { $sum: 1 },
         success: {
-          $sum: { $cond: [{ $eq: ['$status', 'success'] }, 1, 0] }
+          $sum: { $cond: [{ $eq: ['$status', 'success'] }, 1, 0] },
         },
         failure: {
-          $sum: { $cond: [{ $eq: ['$status', 'failure'] }, 1, 0] }
-        }
-      }
+          $sum: { $cond: [{ $eq: ['$status', 'failure'] }, 1, 0] },
+        },
+      },
     },
     {
-      $sort: { count: -1 }
-    }
+      $sort: { count: -1 },
+    },
   ]);
 };
 

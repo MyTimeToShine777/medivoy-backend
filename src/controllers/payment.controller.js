@@ -1,15 +1,20 @@
-const Payment = require('../models/Payment.model');
-const { successResponse, errorResponse } = require('../utils/response');
-const logger = require('../utils/logger');
+const Payment = require("../models/Payment.model");
+const { successResponse, errorResponse } = require("../utils/response");
+const { handleDatabaseError } = require("../utils/databaseErrorHandler");
 
 class PaymentController {
   /**
    * Create a new payment
    */
-  async createPayment(req, res) {
+  static async createPayment(req, res) {
     try {
       const {
-        bookingId, patientId, amount, currency, paymentMethod, transactionId,
+        bookingId,
+        patientId,
+        amount,
+        currency,
+        paymentMethod,
+        transactionId,
       } = req.body;
 
       // Create payment
@@ -22,23 +27,23 @@ class PaymentController {
         transactionId,
       });
 
-      return successResponse(res, {
-        message: 'Payment created successfully',
-        data: payment,
-      }, 201);
+      return successResponse(
+        res,
+        {
+          message: "Payment created successfully",
+          data: payment,
+        },
+        201,
+      );
     } catch (error) {
-      logger.error('Create payment error:', error);
-      return errorResponse(res, {
-        message: 'Failed to create payment',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Get payment by ID
    */
-  async getPayment(req, res) {
+  static async getPayment(req, res) {
     try {
       const { id } = req.params;
 
@@ -46,28 +51,28 @@ class PaymentController {
       const payment = await Payment.findByPk(id);
 
       if (!payment) {
-        return errorResponse(res, {
-          message: 'Payment not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Payment not found",
+          },
+          404,
+        );
       }
 
       return successResponse(res, {
-        message: 'Payment retrieved successfully',
+        message: "Payment retrieved successfully",
         data: payment,
       });
     } catch (error) {
-      logger.error('Get payment error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve payment',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Update payment
    */
-  async updatePayment(req, res) {
+  static async updatePayment(req, res) {
     try {
       const { id } = req.params;
       const { status, transactionId } = req.body;
@@ -76,9 +81,13 @@ class PaymentController {
       const payment = await Payment.findByPk(id);
 
       if (!payment) {
-        return errorResponse(res, {
-          message: 'Payment not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Payment not found",
+          },
+          404,
+        );
       }
 
       // Update payment
@@ -88,22 +97,18 @@ class PaymentController {
       });
 
       return successResponse(res, {
-        message: 'Payment updated successfully',
+        message: "Payment updated successfully",
         data: payment,
       });
     } catch (error) {
-      logger.error('Update payment error:', error);
-      return errorResponse(res, {
-        message: 'Failed to update payment',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Delete payment
    */
-  async deletePayment(req, res) {
+  static async deletePayment(req, res) {
     try {
       const { id } = req.params;
 
@@ -111,34 +116,32 @@ class PaymentController {
       const payment = await Payment.findByPk(id);
 
       if (!payment) {
-        return errorResponse(res, {
-          message: 'Payment not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Payment not found",
+          },
+          404,
+        );
       }
 
       // Delete payment
       await payment.destroy();
 
       return successResponse(res, {
-        message: 'Payment deleted successfully',
+        message: "Payment deleted successfully",
       });
     } catch (error) {
-      logger.error('Delete payment error:', error);
-      return errorResponse(res, {
-        message: 'Failed to delete payment',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Get all payments
    */
-  async getAllPayments(req, res) {
+  static async getAllPayments(req, res) {
     try {
-      const {
-        page = 1, limit = 10, status, patientId,
-      } = req.query;
+      const { page = 1, limit = 10, status, patientId } = req.query;
 
       // Build where clause
       const where = {};
@@ -150,11 +153,11 @@ class PaymentController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       return successResponse(res, {
-        message: 'Payments retrieved successfully',
+        message: "Payments retrieved successfully",
         data: payments.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -163,18 +166,14 @@ class PaymentController {
         },
       });
     } catch (error) {
-      logger.error('Get all payments error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve payments',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Process payment refund
    */
-  async processRefund(req, res) {
+  static async processRefund(req, res) {
     try {
       const { id } = req.params;
       const { refundAmount, refundReason } = req.body;
@@ -183,9 +182,13 @@ class PaymentController {
       const payment = await Payment.findByPk(id);
 
       if (!payment) {
-        return errorResponse(res, {
-          message: 'Payment not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Payment not found",
+          },
+          404,
+        );
       }
 
       // Process refund
@@ -197,21 +200,17 @@ class PaymentController {
         refundAmount,
         refundReason,
         refundTransactionId,
-        status: 'refunded',
+        status: "refunded",
       });
 
       return successResponse(res, {
-        message: 'Payment refund processed successfully',
+        message: "Payment refund processed successfully",
         data: payment,
       });
     } catch (error) {
-      logger.error('Process payment refund error:', error);
-      return errorResponse(res, {
-        message: 'Failed to process payment refund',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 }
 
-module.exports = new PaymentController();
+module.exports = PaymentController;

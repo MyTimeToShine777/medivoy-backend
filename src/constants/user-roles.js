@@ -2,10 +2,10 @@
 
 module.exports = {
   // User roles
-  ADMIN: 'admin',
-  DOCTOR: 'doctor',
-  PATIENT: 'patient',
-  HOSPITAL_ADMIN: 'hospital_admin',
+  ADMIN: "admin",
+  DOCTOR: "doctor",
+  PATIENT: "patient",
+  HOSPITAL_ADMIN: "hospital_admin",
 
   // Role hierarchy
   ROLE_HIERARCHY: {
@@ -16,16 +16,16 @@ module.exports = {
   },
 
   // Permissions
-  PERMISSION_READ: 'read',
-  PERMISSION_WRITE: 'write',
-  PERMISSION_UPDATE: 'update',
-  PERMISSION_DELETE: 'delete',
+  PERMISSION_READ: "read",
+  PERMISSION_WRITE: "write",
+  PERMISSION_UPDATE: "update",
+  PERMISSION_DELETE: "delete",
 
   // Default permissions by role
   DEFAULT_PERMISSIONS: {
-    admin: ['read', 'write', 'update', 'delete'],
-    hospital_admin: ['read', 'write', 'update'],
-    doctor: ['read', 'write', 'update'],
-    patient: ['read', 'write'],
+    admin: ["read", "write", "update", "delete"],
+    hospital_admin: ["read", "write", "update"],
+    doctor: ["read", "write", "update"],
+    patient: ["read", "write"],
   },
 };

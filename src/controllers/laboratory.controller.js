@@ -1,16 +1,14 @@
-const Laboratory = require('../models/Laboratory.model');
-const { successResponse, errorResponse } = require('../utils/response');
-const logger = require('../utils/logger');
+const Laboratory = require("../models/Laboratory.model");
+const { successResponse, errorResponse } = require("../utils/response");
+const { handleDatabaseError } = require("../utils/databaseErrorHandler");
 
 class LaboratoryController {
   /**
    * Create a new laboratory
    */
-  async createLaboratory(req, res) {
+  static async createLaboratory(req, res) {
     try {
-      const {
-        name, address, phone, email, licenseNumber, isActive,
-      } = req.body;
+      const { name, address, phone, email, licenseNumber, isActive } = req.body;
 
       // Create laboratory
       const laboratory = await Laboratory.create({
@@ -25,28 +23,20 @@ class LaboratoryController {
       return successResponse(
         res,
         {
-          message: 'Laboratory created successfully',
+          message: "Laboratory created successfully",
           data: laboratory,
         },
         201,
       );
     } catch (error) {
-      logger.error('Create laboratory error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to create laboratory',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to create laboratory");
     }
   }
 
   /**
    * Get laboratory by ID
    */
-  async getLaboratory(req, res) {
+  static async getLaboratory(req, res) {
     try {
       const { id } = req.params;
 
@@ -57,38 +47,28 @@ class LaboratoryController {
         return errorResponse(
           res,
           {
-            message: 'Laboratory not found',
+            message: "Laboratory not found",
           },
           404,
         );
       }
 
       return successResponse(res, {
-        message: 'Laboratory retrieved successfully',
+        message: "Laboratory retrieved successfully",
         data: laboratory,
       });
     } catch (error) {
-      logger.error('Get laboratory error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to retrieve laboratory',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to retrieve laboratory");
     }
   }
 
   /**
    * Update laboratory
    */
-  async updateLaboratory(req, res) {
+  static async updateLaboratory(req, res) {
     try {
       const { id } = req.params;
-      const {
-        name, address, phone, email, licenseNumber, isActive,
-      } = req.body;
+      const { name, address, phone, email, licenseNumber, isActive } = req.body;
 
       // Find laboratory
       const laboratory = await Laboratory.findByPk(id);
@@ -97,7 +77,7 @@ class LaboratoryController {
         return errorResponse(
           res,
           {
-            message: 'Laboratory not found',
+            message: "Laboratory not found",
           },
           404,
         );
@@ -114,26 +94,18 @@ class LaboratoryController {
       });
 
       return successResponse(res, {
-        message: 'Laboratory updated successfully',
+        message: "Laboratory updated successfully",
         data: laboratory,
       });
     } catch (error) {
-      logger.error('Update laboratory error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to update laboratory',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to update laboratory");
     }
   }
 
   /**
    * Delete laboratory
    */
-  async deleteLaboratory(req, res) {
+  static async deleteLaboratory(req, res) {
     try {
       const { id } = req.params;
 
@@ -144,7 +116,7 @@ class LaboratoryController {
         return errorResponse(
           res,
           {
-            message: 'Laboratory not found',
+            message: "Laboratory not found",
           },
           404,
         );
@@ -154,42 +126,34 @@ class LaboratoryController {
       await laboratory.destroy();
 
       return successResponse(res, {
-        message: 'Laboratory deleted successfully',
+        message: "Laboratory deleted successfully",
       });
     } catch (error) {
-      logger.error('Delete laboratory error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to delete laboratory',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to delete laboratory");
     }
   }
 
   /**
    * Get all laboratories
    */
-  async getAllLaboratories(req, res) {
+  static async getAllLaboratories(req, res) {
     try {
       const { page = 1, limit = 10, isActive } = req.query;
 
       // Build where clause
       const where = {};
-      if (isActive !== undefined) where.isActive = isActive === 'true';
+      if (isActive !== undefined) where.isActive = isActive === "true";
 
       // Get laboratories with pagination
       const laboratories = await Laboratory.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       return successResponse(res, {
-        message: 'Laboratories retrieved successfully',
+        message: "Laboratories retrieved successfully",
         data: laboratories.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -198,17 +162,9 @@ class LaboratoryController {
         },
       });
     } catch (error) {
-      logger.error('Get all laboratories error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to retrieve laboratories',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to retrieve laboratories");
     }
   }
 }
 
-module.exports = new LaboratoryController();
+module.exports = LaboratoryController;

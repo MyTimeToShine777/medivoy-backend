@@ -1,16 +1,22 @@
-const multer = require('multer');
-const path = require('path');
-const { ValidationError } = require('../utils/error-handler');
-const { ALLOWED_MIME_TYPES, MAX_FILE_SIZES } = require('../constants/file-types');
+const multer = require("multer");
+const path = require("path");
+const { ValidationError } = require("../utils/error-handler");
+const {
+  ALLOWED_MIME_TYPES,
+  MAX_FILE_SIZES,
+} = require("../constants/file-types");
 
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/');
+    cb(null, "uploads/");
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-    cb(null, `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`);
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(
+      null,
+      `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`,
+    );
   },
 });
 
@@ -36,7 +42,8 @@ const upload = multer({
 const uploadSingle = (fieldName) => upload.single(fieldName);
 
 // Upload multiple files
-const uploadMultiple = (fieldName, maxCount = 10) => upload.array(fieldName, maxCount);
+const uploadMultiple = (fieldName, maxCount = 10) =>
+  upload.array(fieldName, maxCount);
 
 // Upload fields
 const uploadFields = (fields) => upload.fields(fields);

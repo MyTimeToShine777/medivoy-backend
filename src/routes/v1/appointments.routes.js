@@ -5,7 +5,53 @@ const authorize = require('../../middleware/authorize.middleware');
 
 const router = express.Router();
 
-// Create appointment (patients, doctors, hospital admins)
+/**
+ * @swagger
+ * /appointments:
+ *   post:
+ *     summary: Create a new appointment
+ *     tags: [Appointments]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - patientId
+ *               - doctorId
+ *               - scheduledAt
+ *             properties:
+ *               patientId:
+ *                 type: integer
+ *                 description: Patient ID
+ *               doctorId:
+ *                 type: integer
+ *                 description: Doctor ID
+ *               hospitalId:
+ *                 type: integer
+ *                 description: Hospital ID (optional)
+ *               scheduledAt:
+ *                 type: string
+ *                 format: date-time
+ *                 description: Scheduled appointment date and time
+ *               notes:
+ *                 type: string
+ *                 description: Additional notes for the appointment
+ *     responses:
+ *       201:
+ *         $ref: '#/components/responses/Created'
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
 router.post(
   '/',
   auth,

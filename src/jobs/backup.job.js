@@ -1,10 +1,10 @@
-const { backupQueue } = require('./queue');
-const { exec } = require('child_process');
-const { promisify } = require('util');
-const path = require('path');
-const fs = require('fs').promises;
-const logger = require('../utils/logger');
-const config = require('../config');
+const { backupQueue } = require("./queue");
+const { exec } = require("child_process");
+const { promisify } = require("util");
+const path = require("path");
+const fs = require("fs").promises;
+const logger = require("../utils/logger");
+const config = require("../config");
 
 const execAsync = promisify(exec);
 
@@ -13,18 +13,18 @@ backupQueue.process(async (job) => {
   const { type, data } = job.data;
 
   try {
-    logger.info('Processing backup job', { type, jobId: job.id });
+    logger.info("Processing backup job", { type, jobId: job.id });
 
     switch (type) {
-      case 'database':
+      case "database":
         await backupDatabase(data);
         break;
 
-      case 'files':
+      case "files":
         await backupFiles(data);
         break;
 
-      case 'full':
+      case "full":
         await fullBackup(data);
         break;
 
@@ -32,18 +32,22 @@ backupQueue.process(async (job) => {
         throw new Error(`Unknown backup type: ${type}`);
     }
 
-    logger.info('Backup job completed successfully', { type, jobId: job.id });
+    logger.info("Backup job completed successfully", { type, jobId: job.id });
     return { success: true, type };
   } catch (error) {
-    logger.error('Backup job failed', { type, jobId: job.id, error: error.message });
+    logger.error("Backup job failed", {
+      type,
+      jobId: job.id,
+      error: error.message,
+    });
     throw error;
   }
 });
 
 // Backup PostgreSQL database
 const backupDatabase = async (data) => {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const backupDir = path.join(__dirname, '../../backups/database');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const backupDir = path.join(__dirname, "../../backups/database");
   const backupFile = path.join(backupDir, `medivoy_db_${timestamp}.sql`);
 
   try {
@@ -57,7 +61,7 @@ const backupDatabase = async (data) => {
       env: { ...process.env, PGPASSWORD: config.database.password },
     });
 
-    logger.info('Database backup created', { backupFile });
+    logger.info("Database backup created", { backupFile });
 
     // Optional: Upload to cloud storage (S3, etc.)
     // await uploadToCloudStorage(backupFile);
@@ -67,17 +71,17 @@ const backupDatabase = async (data) => {
 
     return { success: true, backupFile };
   } catch (error) {
-    logger.error('Database backup failed', { error: error.message });
+    logger.error("Database backup failed", { error: error.message });
     throw error;
   }
 };
 
 // Backup uploaded files
 const backupFiles = async (data) => {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const backupDir = path.join(__dirname, '../../backups/files');
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const backupDir = path.join(__dirname, "../../backups/files");
   const backupFile = path.join(backupDir, `medivoy_files_${timestamp}.tar.gz`);
-  const uploadsDir = path.join(__dirname, '../../uploads');
+  const uploadsDir = path.join(__dirname, "../../uploads");
 
   try {
     // Create backup directory if it doesn't exist
@@ -87,7 +91,7 @@ const backupFiles = async (data) => {
     const command = `tar -czf ${backupFile} -C ${uploadsDir} .`;
     await execAsync(command);
 
-    logger.info('Files backup created', { backupFile });
+    logger.info("Files backup created", { backupFile });
 
     // Optional: Upload to cloud storage
     // await uploadToCloudStorage(backupFile);
@@ -97,7 +101,7 @@ const backupFiles = async (data) => {
 
     return { success: true, backupFile };
   } catch (error) {
-    logger.error('Files backup failed', { error: error.message });
+    logger.error("Files backup failed", { error: error.message });
     throw error;
   }
 };
@@ -113,10 +117,10 @@ const fullBackup = async (data) => {
     results.database = await backupDatabase(data);
     results.files = await backupFiles(data);
 
-    logger.info('Full backup completed', results);
+    logger.info("Full backup completed", results);
     return results;
   } catch (error) {
-    logger.error('Full backup failed', { error: error.message });
+    logger.error("Full backup failed", { error: error.message });
     throw error;
   }
 };
@@ -135,11 +139,11 @@ const cleanupOldBackups = async (backupDir, daysToKeep) => {
 
       if (age > maxAge) {
         await fs.unlink(filePath);
-        logger.info('Deleted old backup file', { file });
+        logger.info("Deleted old backup file", { file });
       }
     }
   } catch (error) {
-    logger.error('Failed to cleanup old backups', { error: error.message });
+    logger.error("Failed to cleanup old backups", { error: error.message });
   }
 };
 
@@ -147,15 +151,15 @@ const cleanupOldBackups = async (backupDir, daysToKeep) => {
 const scheduleDailyBackup = () => {
   // Run backup every day at 2 AM
   backupQueue.add(
-    { type: 'full', data: {} },
+    { type: "full", data: {} },
     {
       repeat: {
-        cron: '0 2 * * *', // 2 AM every day
+        cron: "0 2 * * *", // 2 AM every day
       },
     },
   );
 
-  logger.info('Daily backup scheduled');
+  logger.info("Daily backup scheduled");
 };
 
 // Add backup job to queue
@@ -169,10 +173,13 @@ const addBackupJob = async (type, data = {}, options = {}) => {
       },
     );
 
-    logger.info('Backup job added to queue', { type, jobId: job.id });
+    logger.info("Backup job added to queue", { type, jobId: job.id });
     return job;
   } catch (error) {
-    logger.error('Failed to add backup job to queue', { type, error: error.message });
+    logger.error("Failed to add backup job to queue", {
+      type,
+      error: error.message,
+    });
     throw error;
   }
 };

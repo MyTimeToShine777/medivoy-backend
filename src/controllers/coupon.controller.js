@@ -1,12 +1,12 @@
-const Coupon = require('../models/Coupon.model');
-const { successResponse, errorResponse } = require('../utils/response');
-const logger = require('../utils/logger');
+const Coupon = require("../models/Coupon.model");
+const { successResponse, errorResponse } = require("../utils/response");
+const { handleDatabaseError } = require("../utils/databaseErrorHandler");
 
 class CouponController {
   /**
    * Create a new coupon
    */
-  async createCoupon(req, res) {
+  static async createCoupon(req, res) {
     try {
       const {
         code,
@@ -32,28 +32,20 @@ class CouponController {
       return successResponse(
         res,
         {
-          message: 'Coupon created successfully',
+          message: "Coupon created successfully",
           data: coupon,
         },
         201,
       );
     } catch (error) {
-      logger.error('Create coupon error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to create coupon',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to create coupon");
     }
   }
 
   /**
    * Get coupon by ID
    */
-  async getCoupon(req, res) {
+  static async getCoupon(req, res) {
     try {
       const { id } = req.params;
 
@@ -64,33 +56,25 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: 'Coupon not found',
+            message: "Coupon not found",
           },
           404,
         );
       }
 
       return successResponse(res, {
-        message: 'Coupon retrieved successfully',
+        message: "Coupon retrieved successfully",
         data: coupon,
       });
     } catch (error) {
-      logger.error('Get coupon error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to retrieve coupon',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to retrieve coupon");
     }
   }
 
   /**
    * Get all coupons
    */
-  async getAllCoupons(req, res) {
+  static async getAllCoupons(req, res) {
     try {
       const { page = 1, limit = 10 } = req.query;
 
@@ -98,11 +82,11 @@ class CouponController {
       const coupons = await Coupon.findAndCountAll({
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       return successResponse(res, {
-        message: 'Coupons retrieved successfully',
+        message: "Coupons retrieved successfully",
         data: coupons.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -111,22 +95,14 @@ class CouponController {
         },
       });
     } catch (error) {
-      logger.error('Get all coupons error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to retrieve coupons',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to retrieve coupons");
     }
   }
 
   /**
    * Validate coupon
    */
-  async validateCoupon(req, res) {
+  static async validateCoupon(req, res) {
     try {
       const { code } = req.params;
 
@@ -137,7 +113,7 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: 'Coupon not found',
+            message: "Coupon not found",
           },
           404,
         );
@@ -149,7 +125,7 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: 'Coupon is not yet valid',
+            message: "Coupon is not yet valid",
           },
           400,
         );
@@ -159,7 +135,7 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: 'Coupon has expired',
+            message: "Coupon has expired",
           },
           400,
         );
@@ -169,33 +145,25 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: 'Coupon has reached maximum uses',
+            message: "Coupon has reached maximum uses",
           },
           400,
         );
       }
 
       return successResponse(res, {
-        message: 'Coupon is valid',
+        message: "Coupon is valid",
         data: coupon,
       });
     } catch (error) {
-      logger.error('Validate coupon error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to validate coupon',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to validate coupon");
     }
   }
 
   /**
    * Apply coupon
    */
-  async applyCoupon(req, res) {
+  static async applyCoupon(req, res) {
     try {
       const { code } = req.params;
 
@@ -206,7 +174,7 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: 'Coupon not found',
+            message: "Coupon not found",
           },
           404,
         );
@@ -218,7 +186,7 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: 'Coupon is not yet valid',
+            message: "Coupon is not yet valid",
           },
           400,
         );
@@ -228,7 +196,7 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: 'Coupon has expired',
+            message: "Coupon has expired",
           },
           400,
         );
@@ -238,36 +206,28 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: 'Coupon has reached maximum uses',
+            message: "Coupon has reached maximum uses",
           },
           400,
         );
       }
 
       // Increment used count
-      await coupon.increment('usedCount');
+      await coupon.increment("usedCount");
 
       return successResponse(res, {
-        message: 'Coupon applied successfully',
+        message: "Coupon applied successfully",
         data: coupon,
       });
     } catch (error) {
-      logger.error('Apply coupon error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to apply coupon',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to apply coupon");
     }
   }
 
   /**
    * Update coupon
    */
-  async updateCoupon(req, res) {
+  static async updateCoupon(req, res) {
     try {
       const { id } = req.params;
       const {
@@ -286,7 +246,7 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: 'Coupon not found',
+            message: "Coupon not found",
           },
           404,
         );
@@ -303,26 +263,18 @@ class CouponController {
       });
 
       return successResponse(res, {
-        message: 'Coupon updated successfully',
+        message: "Coupon updated successfully",
         data: coupon,
       });
     } catch (error) {
-      logger.error('Update coupon error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to update coupon',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to update coupon");
     }
   }
 
   /**
    * Delete coupon
    */
-  async deleteCoupon(req, res) {
+  static async deleteCoupon(req, res) {
     try {
       const { id } = req.params;
 
@@ -333,7 +285,7 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: 'Coupon not found',
+            message: "Coupon not found",
           },
           404,
         );
@@ -343,20 +295,12 @@ class CouponController {
       await coupon.destroy();
 
       return successResponse(res, {
-        message: 'Coupon deleted successfully',
+        message: "Coupon deleted successfully",
       });
     } catch (error) {
-      logger.error('Delete coupon error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to delete coupon',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to delete coupon");
     }
   }
 }
 
-module.exports = new CouponController();
+module.exports = CouponController;

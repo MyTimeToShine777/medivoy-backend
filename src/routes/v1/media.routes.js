@@ -1,4 +1,5 @@
 const express = require('express');
+
 const router = express.Router();
 const multer = require('multer');
 const mediaController = require('../../controllers/media.controller');
@@ -53,6 +54,44 @@ router.get('/:fileId', auth, mediaController.getFileDetails);
  * @desc    List files
  * @access  Private
  */
+
+/**
+ * @swagger
+ * /media:
+ *   get:
+ *     summary: Get all Media
+ *     tags: [Media]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - $ref: '#/components/parameters/pageParam'
+ *       - $ref: '#/components/parameters/limitParam'
+ *       - $ref: '#/components/parameters/searchParam'
+ *       - $ref: '#/components/parameters/sortParam'
+ *     responses:
+ *       200:
+ *         description: Media retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Media'
+ *                 pagination:
+ *                   $ref: '#/components/schemas/Pagination'
+ *       401:
+ *         $ref: '#/components/responses/Unauthorized'
+ *       403:
+ *         $ref: '#/components/responses/Forbidden'
+ *       500:
+ *         $ref: '#/components/responses/ServerError'
+ */
+
 router.get('/', auth, mediaController.listFiles);
 
 /**

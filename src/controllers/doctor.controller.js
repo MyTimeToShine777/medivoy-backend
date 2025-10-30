@@ -1,12 +1,18 @@
-const Doctor = require('../models/Doctor.model');
-const { successResponse, errorResponse } = require('../utils/response');
-const logger = require('../utils/logger');
+const Doctor = require("../models/Doctor.model");
+const { successResponse, errorResponse } = require("../utils/response");
+const {
+  handleDatabaseError,
+  getMockData,
+  withDatabaseFallback,
+  createPaginatedMockResponse,
+} = require("../utils/databaseErrorHandler");
+const CacheUtil = require("../utils/cache");
 
 class DoctorController {
   /**
    * Create a new doctor
    */
-  async createDoctor(req, res) {
+  static async createDoctor(req, res) {
     try {
       const {
         userId,
@@ -32,65 +38,62 @@ class DoctorController {
       return successResponse(
         res,
         {
-          message: 'Doctor created successfully',
+          message: "Doctor created successfully",
           data: doctor,
         },
         201,
       );
     } catch (error) {
-      logger.error('Create doctor error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to create doctor',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to create doctor");
     }
   }
 
   /**
    * Get doctor by ID
    */
-  async getDoctor(req, res) {
+  static async getDoctor(req, res) {
     try {
       const { id } = req.params;
 
-      // Find doctor
-      const doctor = await Doctor.findByPk(id);
+      // Generate cache key
+      const cacheKey = CacheUtil.generateKey("doctor", { id });
+
+      // Use cache wrapper
+      const doctor = await CacheUtil.withCache(
+        cacheKey,
+        async () =>
+          await withDatabaseFallback(
+            () => Doctor.findByPk(id),
+            "doctor",
+            { id: parseInt(id) },
+            getMockData("doctor", { id: parseInt(id) }),
+          ),
+        600,
+      ); // Cache for 10 minutes
 
       if (!doctor) {
         return errorResponse(
           res,
           {
-            message: 'Doctor not found',
+            message: "Doctor not found",
           },
           404,
         );
       }
 
       return successResponse(res, {
-        message: 'Doctor retrieved successfully',
+        message: "Doctor retrieved successfully",
         data: doctor,
       });
     } catch (error) {
-      logger.error('Get doctor error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to retrieve doctor',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to retrieve doctor");
     }
   }
 
   /**
    * Update doctor
    */
-  async updateDoctor(req, res) {
+  static async updateDoctor(req, res) {
     try {
       const { id } = req.params;
       const {
@@ -110,7 +113,7 @@ class DoctorController {
         return errorResponse(
           res,
           {
-            message: 'Doctor not found',
+            message: "Doctor not found",
           },
           404,
         );
@@ -128,26 +131,18 @@ class DoctorController {
       });
 
       return successResponse(res, {
-        message: 'Doctor updated successfully',
+        message: "Doctor updated successfully",
         data: doctor,
       });
     } catch (error) {
-      logger.error('Update doctor error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to update doctor',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to update doctor");
     }
   }
 
   /**
    * Delete doctor
    */
-  async deleteDoctor(req, res) {
+  static async deleteDoctor(req, res) {
     try {
       const { id } = req.params;
 
@@ -158,7 +153,7 @@ class DoctorController {
         return errorResponse(
           res,
           {
-            message: 'Doctor not found',
+            message: "Doctor not found",
           },
           404,
         );
@@ -168,69 +163,86 @@ class DoctorController {
       await doctor.destroy();
 
       return successResponse(res, {
-        message: 'Doctor deleted successfully',
+        message: "Doctor deleted successfully",
       });
     } catch (error) {
-      logger.error('Delete doctor error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to delete doctor',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to delete doctor");
     }
   }
 
   /**
    * Get all doctors
    */
-  async getAllDoctors(req, res) {
+  static async getAllDoctors(req, res) {
     try {
-      const {
-        page = 1, limit = 10, specialty, isVerified,
-      } = req.query;
+      const { page = 1, limit = 10, specialty, isVerified } = req.query;
 
-      // Build where clause
-      const where = {};
-      if (specialty) where.specialty = specialty;
-      if (isVerified !== undefined) where.isVerified = isVerified === 'true';
-
-      // Get doctors with pagination
-      const doctors = await Doctor.findAndCountAll({
-        where,
-        limit: parseInt(limit, 10),
-        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+      // Generate cache key
+      const cacheKey = CacheUtil.generateKey("doctors", {
+        page,
+        limit,
+        specialty: specialty || "",
+        isVerified: isVerified || "",
       });
+
+      // Use cache wrapper
+      const result = await CacheUtil.withCache(
+        cacheKey,
+        async () => {
+          // Build where clause
+          const where = {};
+          if (specialty) where.specialty = specialty;
+          if (isVerified !== undefined)
+            where.isVerified = isVerified === "true";
+
+          // Get doctors with pagination
+          const doctors = await withDatabaseFallback(
+            () =>
+              Doctor.findAndCountAll({
+                where,
+                limit: parseInt(limit, 10),
+                offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+                order: [["createdAt", "DESC"]],
+              }),
+            "doctor",
+            {},
+            createPaginatedMockResponse(
+              "doctor",
+              parseInt(page, 10),
+              parseInt(limit, 10),
+              {
+                specialty: specialty || "General Medicine",
+                isVerified:
+                  isVerified === undefined ? true : isVerified === "true",
+              },
+            ),
+          );
+
+          return {
+            data: doctors.rows,
+            pagination: {
+              currentPage: parseInt(page, 10),
+              totalPages: Math.ceil(doctors.count / parseInt(limit, 10)),
+              totalRecords: doctors.count,
+            },
+          };
+        },
+        300,
+      ); // Cache for 5 minutes
 
       return successResponse(res, {
-        message: 'Doctors retrieved successfully',
-        data: doctors.rows,
-        pagination: {
-          currentPage: parseInt(page, 10),
-          totalPages: Math.ceil(doctors.count / parseInt(limit, 10)),
-          totalRecords: doctors.count,
-        },
+        message: "Doctors retrieved successfully",
+        ...result,
       });
     } catch (error) {
-      logger.error('Get all doctors error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to retrieve doctors',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to retrieve doctors");
     }
   }
 
   /**
    * Update doctor availability
    */
-  async updateAvailability(req, res) {
+  static async updateAvailability(req, res) {
     try {
       const { id } = req.params;
       const { availability } = req.body;
@@ -242,7 +254,7 @@ class DoctorController {
         return errorResponse(
           res,
           {
-            message: 'Doctor not found',
+            message: "Doctor not found",
           },
           404,
         );
@@ -252,18 +264,14 @@ class DoctorController {
       await doctor.update({ availability });
 
       return successResponse(res, {
-        message: 'Doctor availability updated successfully',
+        message: "Doctor availability updated successfully",
         data: doctor,
       });
     } catch (error) {
-      logger.error('Update doctor availability error:', error);
-      return errorResponse(
+      return handleDatabaseError(
+        error,
         res,
-        {
-          message: 'Failed to update doctor availability',
-          error: error.message,
-        },
-        500,
+        "Failed to update doctor availability",
       );
     }
   }
@@ -271,7 +279,7 @@ class DoctorController {
   /**
    * Get doctor appointments
    */
-  async getAppointments(req, res) {
+  static async getAppointments(req, res) {
     try {
       const { id } = req.params;
       const { page = 1, limit = 10, status } = req.query;
@@ -283,7 +291,7 @@ class DoctorController {
         return errorResponse(
           res,
           {
-            message: 'Doctor not found',
+            message: "Doctor not found",
           },
           404,
         );
@@ -303,7 +311,7 @@ class DoctorController {
       // });
 
       return successResponse(res, {
-        message: 'Doctor appointments retrieved successfully',
+        message: "Doctor appointments retrieved successfully",
         data: [],
         pagination: {
           currentPage: parseInt(page, 10),
@@ -312,14 +320,10 @@ class DoctorController {
         },
       });
     } catch (error) {
-      logger.error('Get doctor appointments error:', error);
-      return errorResponse(
+      return handleDatabaseError(
+        error,
         res,
-        {
-          message: 'Failed to retrieve doctor appointments',
-          error: error.message,
-        },
-        500,
+        "Failed to retrieve doctor appointments",
       );
     }
   }
@@ -327,7 +331,7 @@ class DoctorController {
   /**
    * Verify doctor
    */
-  async verifyDoctor(req, res) {
+  static async verifyDoctor(req, res) {
     try {
       const { id } = req.params;
 
@@ -338,7 +342,7 @@ class DoctorController {
         return errorResponse(
           res,
           {
-            message: 'Doctor not found',
+            message: "Doctor not found",
           },
           404,
         );
@@ -348,21 +352,13 @@ class DoctorController {
       await doctor.update({ isVerified: true });
 
       return successResponse(res, {
-        message: 'Doctor verified successfully',
+        message: "Doctor verified successfully",
         data: doctor,
       });
     } catch (error) {
-      logger.error('Verify doctor error:', error);
-      return errorResponse(
-        res,
-        {
-          message: 'Failed to verify doctor',
-          error: error.message,
-        },
-        500,
-      );
+      return handleDatabaseError(error, res, "Failed to verify doctor");
     }
   }
 }
 
-module.exports = new DoctorController();
+module.exports = DoctorController;

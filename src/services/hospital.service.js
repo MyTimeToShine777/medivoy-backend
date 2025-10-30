@@ -1,5 +1,5 @@
-const Hospital = require('../models/Hospital.model');
-const logger = require('../utils/logger');
+const Hospital = require("../models/Hospital.model");
+const logger = require("../utils/logger");
 
 class HospitalService {
   /**
@@ -10,7 +10,7 @@ class HospitalService {
       const hospital = await Hospital.create(data);
       return hospital;
     } catch (error) {
-      logger.error('Create hospital service error:', error);
+      logger.error("Create hospital service error:", error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class HospitalService {
       const hospital = await Hospital.findByPk(id);
       return hospital;
     } catch (error) {
-      logger.error('Get hospital by ID service error:', error);
+      logger.error("Get hospital by ID service error:", error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class HospitalService {
     try {
       const hospital = await Hospital.findByPk(id);
       if (!hospital) {
-        throw new Error('Hospital not found');
+        throw new Error("Hospital not found");
       }
 
       await hospital.update(data);
       return hospital;
     } catch (error) {
-      logger.error('Update hospital service error:', error);
+      logger.error("Update hospital service error:", error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class HospitalService {
     try {
       const hospital = await Hospital.findByPk(id);
       if (!hospital) {
-        throw new Error('Hospital not found');
+        throw new Error("Hospital not found");
       }
 
       await hospital.destroy();
       return true;
     } catch (error) {
-      logger.error('Delete hospital service error:', error);
+      logger.error("Delete hospital service error:", error);
       throw error;
     }
   }
@@ -75,12 +75,12 @@ class HospitalService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       return hospitals;
     } catch (error) {
-      logger.error('Get all hospitals service error:', error);
+      logger.error("Get all hospitals service error:", error);
       throw error;
     }
   }
@@ -92,13 +92,13 @@ class HospitalService {
     try {
       const hospital = await Hospital.findByPk(id);
       if (!hospital) {
-        throw new Error('Hospital not found');
+        throw new Error("Hospital not found");
       }
 
       await hospital.update({ isVerified: true });
       return hospital;
     } catch (error) {
-      logger.error('Verify hospital service error:', error);
+      logger.error("Verify hospital service error:", error);
       throw error;
     }
   }

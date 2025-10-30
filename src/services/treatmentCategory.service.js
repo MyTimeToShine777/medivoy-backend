@@ -1,5 +1,5 @@
-const TreatmentCategory = require('../models/TreatmentCategory.model');
-const logger = require('../utils/logger');
+const TreatmentCategory = require("../models/TreatmentCategory.model");
+const logger = require("../utils/logger");
 
 class TreatmentCategoryService {
   /**
@@ -10,7 +10,7 @@ class TreatmentCategoryService {
       const treatmentCategory = await TreatmentCategory.create(data);
       return treatmentCategory;
     } catch (error) {
-      logger.error('Create treatment category service error:', error);
+      logger.error("Create treatment category service error:", error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class TreatmentCategoryService {
       const treatmentCategory = await TreatmentCategory.findByPk(id);
       return treatmentCategory;
     } catch (error) {
-      logger.error('Get treatment category by ID service error:', error);
+      logger.error("Get treatment category by ID service error:", error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class TreatmentCategoryService {
     try {
       const treatmentCategory = await TreatmentCategory.findByPk(id);
       if (!treatmentCategory) {
-        throw new Error('Treatment category not found');
+        throw new Error("Treatment category not found");
       }
 
       await treatmentCategory.update(data);
       return treatmentCategory;
     } catch (error) {
-      logger.error('Update treatment category service error:', error);
+      logger.error("Update treatment category service error:", error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class TreatmentCategoryService {
     try {
       const treatmentCategory = await TreatmentCategory.findByPk(id);
       if (!treatmentCategory) {
-        throw new Error('Treatment category not found');
+        throw new Error("Treatment category not found");
       }
 
       await treatmentCategory.destroy();
       return true;
     } catch (error) {
-      logger.error('Delete treatment category service error:', error);
+      logger.error("Delete treatment category service error:", error);
       throw error;
     }
   }
@@ -75,12 +75,15 @@ class TreatmentCategoryService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['sortOrder', 'ASC'], ['createdAt', 'DESC']],
+        order: [
+          ["sortOrder", "ASC"],
+          ["createdAt", "DESC"],
+        ],
       });
 
       return treatmentCategories;
     } catch (error) {
-      logger.error('Get all treatment categories service error:', error);
+      logger.error("Get all treatment categories service error:", error);
       throw error;
     }
   }

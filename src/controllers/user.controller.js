@@ -1,16 +1,18 @@
-const User = require('../models/User.model');
-const { successResponse, errorResponse } = require('../utils/response');
-const logger = require('../utils/logger');
+const User = require("../models/User.model");
+const { successResponse, errorResponse } = require("../utils/response");
+const {
+  handleDatabaseError,
+  withDatabaseFallback,
+  createPaginatedMockResponse,
+} = require("../utils/databaseErrorHandler");
 
 class UserController {
   /**
    * Create a new user
    */
-  async createUser(req, res) {
+  static async createUser(req, res) {
     try {
-      const {
-        email, firstName, lastName, role, phone, isVerified,
-      } = req.body;
+      const { email, firstName, lastName, role, phone, isVerified } = req.body;
 
       // Create user
       const user = await User.create({
@@ -22,23 +24,23 @@ class UserController {
         isVerified,
       });
 
-      return successResponse(res, {
-        message: 'User created successfully',
-        data: user,
-      }, 201);
+      return successResponse(
+        res,
+        {
+          message: "User created successfully",
+          data: user,
+        },
+        201,
+      );
     } catch (error) {
-      logger.error('Create user error:', error);
-      return errorResponse(res, {
-        message: 'Failed to create user',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, "Failed to create user");
     }
   }
 
   /**
    * Get user by ID
    */
-  async getUser(req, res) {
+  static async getUser(req, res) {
     try {
       const { id } = req.params;
 
@@ -46,13 +48,17 @@ class UserController {
       const user = await User.findByPk(id);
 
       if (!user) {
-        return errorResponse(res, {
-          message: 'User not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "User not found",
+          },
+          404,
+        );
       }
 
       return successResponse(res, {
-        message: 'User retrieved successfully',
+        message: "User retrieved successfully",
         data: {
           id: user.id,
           email: user.email,
@@ -67,31 +73,29 @@ class UserController {
         },
       });
     } catch (error) {
-      logger.error('Get user error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve user',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, "Failed to retrieve user");
     }
   }
 
   /**
    * Update user
    */
-  async updateUser(req, res) {
+  static async updateUser(req, res) {
     try {
       const { id } = req.params;
-      const {
-        firstName, lastName, role, phone, isVerified,
-      } = req.body;
+      const { firstName, lastName, role, phone, isVerified } = req.body;
 
       // Find user
       const user = await User.findByPk(id);
 
       if (!user) {
-        return errorResponse(res, {
-          message: 'User not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "User not found",
+          },
+          404,
+        );
       }
 
       // Update user
@@ -104,7 +108,7 @@ class UserController {
       });
 
       return successResponse(res, {
-        message: 'User updated successfully',
+        message: "User updated successfully",
         data: {
           id: user.id,
           email: user.email,
@@ -119,18 +123,14 @@ class UserController {
         },
       });
     } catch (error) {
-      logger.error('Update user error:', error);
-      return errorResponse(res, {
-        message: 'Failed to update user',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, "Failed to update user");
     }
   }
 
   /**
    * Delete user
    */
-  async deleteUser(req, res) {
+  static async deleteUser(req, res) {
     try {
       const { id } = req.params;
 
@@ -138,50 +138,54 @@ class UserController {
       const user = await User.findByPk(id);
 
       if (!user) {
-        return errorResponse(res, {
-          message: 'User not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "User not found",
+          },
+          404,
+        );
       }
 
       // Delete user
       await user.destroy();
 
       return successResponse(res, {
-        message: 'User deleted successfully',
+        message: "User deleted successfully",
       });
     } catch (error) {
-      logger.error('Delete user error:', error);
-      return errorResponse(res, {
-        message: 'Failed to delete user',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, "Failed to delete user");
     }
   }
 
   /**
    * Get all users
    */
-  async getAllUsers(req, res) {
+  static async getAllUsers(req, res) {
     try {
-      const {
-        page = 1, limit = 10, role, isVerified,
-      } = req.query;
+      const { page = 1, limit = 10, role, isVerified } = req.query;
 
       // Build where clause
       const where = {};
       if (role) where.role = role;
-      if (isVerified !== undefined) where.isVerified = isVerified === 'true';
+      if (isVerified !== undefined) where.isVerified = isVerified === "true";
 
-      // Get users with pagination
-      const users = await User.findAndCountAll({
-        where,
-        limit: parseInt(limit, 10),
-        offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
-      });
+      // Get users with pagination (with database fallback)
+      const users = await withDatabaseFallback(
+        async () =>
+          await User.findAndCountAll({
+            where,
+            limit: parseInt(limit, 10),
+            offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
+            order: [["createdAt", "DESC"]],
+          }),
+        "user",
+        {},
+        createPaginatedMockResponse("user", page, limit, role ? { role } : {}),
+      );
 
       return successResponse(res, {
-        message: 'Users retrieved successfully',
+        message: "Users retrieved successfully",
         data: users.rows.map((user) => ({
           id: user.id,
           email: user.email,
@@ -201,18 +205,14 @@ class UserController {
         },
       });
     } catch (error) {
-      logger.error('Get all users error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve users',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, "Failed to retrieve users");
     }
   }
 
   /**
    * Verify user
    */
-  async verifyUser(req, res) {
+  static async verifyUser(req, res) {
     try {
       const { id } = req.params;
 
@@ -220,16 +220,20 @@ class UserController {
       const user = await User.findByPk(id);
 
       if (!user) {
-        return errorResponse(res, {
-          message: 'User not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "User not found",
+          },
+          404,
+        );
       }
 
       // Verify user
       await user.update({ isVerified: true });
 
       return successResponse(res, {
-        message: 'User verified successfully',
+        message: "User verified successfully",
         data: {
           id: user.id,
           email: user.email,
@@ -244,13 +248,9 @@ class UserController {
         },
       });
     } catch (error) {
-      logger.error('Verify user error:', error);
-      return errorResponse(res, {
-        message: 'Failed to verify user',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, "Failed to verify user");
     }
   }
 }
 
-module.exports = new UserController();
+module.exports = UserController;

@@ -1,12 +1,13 @@
-const crypto = require('crypto');
-const slugify = require('slugify');
+const crypto = require("crypto");
+const slugify = require("slugify");
 
 /**
  * Generate random string
  * @param {Number} length - Length of string
  * @returns {String} Random string
  */
-const generateRandomString = (length = 32) => crypto.randomBytes(length).toString('hex');
+const generateRandomString = (length = 32) =>
+  crypto.randomBytes(length).toString("hex");
 
 /**
  * Generate booking number
@@ -15,9 +16,11 @@ const generateRandomString = (length = 32) => crypto.randomBytes(length).toStrin
 const generateBookingNumber = () => {
   const date = new Date();
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const random = Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, "0");
   return `BK${year}${month}${day}${random}`;
 };
 
@@ -28,9 +31,11 @@ const generateBookingNumber = () => {
 const generateAppointmentNumber = () => {
   const date = new Date();
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const random = Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, "0");
   return `AP${year}${month}${day}${random}`;
 };
 
@@ -41,9 +46,11 @@ const generateAppointmentNumber = () => {
 const generateInvoiceNumber = () => {
   const date = new Date();
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const random = Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, "0");
   return `INV${year}${month}${day}${random}`;
 };
 
@@ -54,9 +61,11 @@ const generateInvoiceNumber = () => {
 const generateTicketNumber = () => {
   const date = new Date();
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  const random = Math.floor(Math.random() * 1000)
+    .toString()
+    .padStart(3, "0");
   return `TKT${year}${month}${day}${random}`;
 };
 
@@ -65,11 +74,12 @@ const generateTicketNumber = () => {
  * @param {String} text - Text to slugify
  * @returns {String} Slug
  */
-const generateSlug = (text) => slugify(text, {
-  lower: true,
-  strict: true,
-  remove: /[*+~.()'"!:@]/g,
-});
+const generateSlug = (text) =>
+  slugify(text, {
+    lower: true,
+    strict: true,
+    remove: /[*+~.()'"!:@]/g,
+  });
 
 /**
  * Generate unique slug with counter
@@ -133,10 +143,10 @@ const formatPaginationResponse = (total, page, limit) => {
  * @returns {String} Sanitized input
  */
 const sanitizeInput = (input) => {
-  if (typeof input !== 'string') return input;
+  if (typeof input !== "string") return input;
 
   return input
-    .replace(/[<>]/g, '') // Remove < and >
+    .replace(/[<>]/g, "") // Remove < and >
     .trim();
 };
 
@@ -146,10 +156,11 @@ const sanitizeInput = (input) => {
  * @param {String} currency - Currency code
  * @returns {String} Formatted currency
  */
-const formatCurrency = (amount, currency = 'USD') => new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency,
-}).format(amount);
+const formatCurrency = (amount, currency = "USD") =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+  }).format(amount);
 
 /**
  * Calculate age from date of birth
@@ -162,7 +173,10 @@ const calculateAge = (dateOfBirth) => {
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
 
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
     age--;
   }
 
@@ -179,7 +193,7 @@ const maskSensitiveData = (data, visibleChars = 4) => {
   if (!data || data.length <= visibleChars) return data;
 
   const visible = data.slice(-visibleChars);
-  const masked = '*'.repeat(data.length - visibleChars);
+  const masked = "*".repeat(data.length - visibleChars);
 
   return masked + visible;
 };
@@ -190,8 +204,8 @@ const maskSensitiveData = (data, visibleChars = 4) => {
  * @returns {String} OTP
  */
 const generateOTP = (length = 6) => {
-  const digits = '0123456789';
-  let otp = '';
+  const digits = "0123456789";
+  let otp = "";
 
   for (let i = 0; i < length; i++) {
     otp += digits[Math.floor(Math.random() * digits.length)];

@@ -9,7 +9,7 @@ const router = express.Router();
 router.post(
   '/',
   auth,
-   // Get all medical records (admin, doctor, hospital_admin)\n   router.get(\n     "/",\n     auth,\n     authorize(["admin", "doctor", "hospital_admin"]),\n     medicalRecordController.getAllMedicalRecords,\n   );
+  // Get all medical records (admin, doctor, hospital_admin)\n   router.get(\n     "/",\n     auth,\n     authorize(["admin", "doctor", "hospital_admin"]),\n     medicalRecordController.getAllMedicalRecords,\n   );
   authorize(['admin', 'doctor', 'hospital_admin']),
   medicalRecordController.createMedicalRecord,
 );

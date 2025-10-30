@@ -1,7 +1,7 @@
-const Treatment = require('../models/Treatment.model');
-const TreatmentCategory = require('../models/TreatmentCategory.model');
-const TreatmentSubcategory = require('../models/TreatmentSubcategory.model');
-const logger = require('../utils/logger');
+const Treatment = require("../models/Treatment.model");
+const TreatmentCategory = require("../models/TreatmentCategory.model");
+const TreatmentSubcategory = require("../models/TreatmentSubcategory.model");
+const logger = require("../utils/logger");
 
 class TreatmentService {
   /**
@@ -12,7 +12,7 @@ class TreatmentService {
       const treatment = await Treatment.create(data);
       return treatment;
     } catch (error) {
-      logger.error('Create treatment service error:', error);
+      logger.error("Create treatment service error:", error);
       throw error;
     }
   }
@@ -26,19 +26,19 @@ class TreatmentService {
         include: [
           {
             model: TreatmentCategory,
-            as: 'category',
-            attributes: ['id', 'name', 'slug'],
+            as: "category",
+            attributes: ["id", "name", "slug"],
           },
           {
             model: TreatmentSubcategory,
-            as: 'subcategory',
-            attributes: ['id', 'name', 'slug'],
+            as: "subcategory",
+            attributes: ["id", "name", "slug"],
           },
         ],
       });
       return treatment;
     } catch (error) {
-      logger.error('Get treatment by ID service error:', error);
+      logger.error("Get treatment by ID service error:", error);
       throw error;
     }
   }
@@ -50,13 +50,13 @@ class TreatmentService {
     try {
       const treatment = await Treatment.findByPk(id);
       if (!treatment) {
-        throw new Error('Treatment not found');
+        throw new Error("Treatment not found");
       }
 
       await treatment.update(data);
       return treatment;
     } catch (error) {
-      logger.error('Update treatment service error:', error);
+      logger.error("Update treatment service error:", error);
       throw error;
     }
   }
@@ -68,13 +68,13 @@ class TreatmentService {
     try {
       const treatment = await Treatment.findByPk(id);
       if (!treatment) {
-        throw new Error('Treatment not found');
+        throw new Error("Treatment not found");
       }
 
       await treatment.destroy();
       return true;
     } catch (error) {
-      logger.error('Delete treatment service error:', error);
+      logger.error("Delete treatment service error:", error);
       throw error;
     }
   }
@@ -90,12 +90,12 @@ class TreatmentService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       return treatments;
     } catch (error) {
-      logger.error('Get all treatments service error:', error);
+      logger.error("Get all treatments service error:", error);
       throw error;
     }
   }

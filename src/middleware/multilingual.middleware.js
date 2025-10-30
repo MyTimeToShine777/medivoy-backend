@@ -1,6 +1,6 @@
-const googleTranslateService = require('../services/googleTranslate.service');
-const { addTranslationJob } = require('../workers/translation.worker');
-const logger = require('../utils/logger');
+const googleTranslateService = require("../services/googleTranslate.service");
+const { addTranslationJob } = require("../workers/translation.worker");
+const logger = require("../utils/logger");
 
 /**
  * Middleware to detect language and trigger translation
@@ -10,7 +10,7 @@ const detectAndTranslate = (modelName, fields) => async (req, res, next) => {
   try {
     // Check if auto-translation is enabled
     const autoTranslate = req.body.autoTranslate !== false;
-    const targetLanguage = req.body.targetLanguage || 'en';
+    const targetLanguage = req.body.targetLanguage || "en";
 
     if (!autoTranslate) {
       return next();
@@ -19,21 +19,24 @@ const detectAndTranslate = (modelName, fields) => async (req, res, next) => {
     // Detect language from the first field
     let detectedLanguage = null;
     for (const field of fields) {
-      if (req.body[field] && typeof req.body[field] === 'string') {
-        detectedLanguage = await googleTranslateService.detectLanguage(req.body[field]);
+      if (req.body[field] && typeof req.body[field] === "string") {
+        detectedLanguage = await googleTranslateService.detectLanguage(
+          req.body[field],
+        );
         break;
       }
     }
 
     // Store detected language in request
     req.detectedLanguage = detectedLanguage;
-    req.needsTranslation = detectedLanguage && detectedLanguage !== targetLanguage;
+    req.needsTranslation =
+      detectedLanguage && detectedLanguage !== targetLanguage;
     req.translationFields = fields;
     req.targetLanguage = targetLanguage;
 
     next();
   } catch (error) {
-    logger.error('Language detection middleware error:', error);
+    logger.error("Language detection middleware error:", error);
     // Don't fail the request, just log the error
     next();
   }
@@ -61,13 +64,13 @@ const queueTranslation = (modelName) => async (req, res, next) => {
     // Add job info to response
     res.locals.translationJob = {
       jobId: job.jobId,
-      status: 'queued',
-      message: 'Translation job queued successfully',
+      status: "queued",
+      message: "Translation job queued successfully",
     };
 
     next();
   } catch (error) {
-    logger.error('Queue translation middleware error:', error);
+    logger.error("Queue translation middleware error:", error);
     // Don't fail the request, just log the error
     next();
   }
@@ -77,71 +80,75 @@ const queueTranslation = (modelName) => async (req, res, next) => {
  * Middleware to translate request body immediately (synchronous)
  * Use this when you need immediate translation before saving
  */
-const translateImmediately = (fields, targetLanguage = 'en') => async (req, res, next) => {
-  try {
-    // Check if immediate translation is requested
-    const immediateTranslate = req.body.immediateTranslate === true;
+const translateImmediately =
+  (fields, targetLanguage = "en") =>
+  async (req, res, next) => {
+    try {
+      // Check if immediate translation is requested
+      const immediateTranslate = req.body.immediateTranslate === true;
 
-    if (!immediateTranslate) {
-      return next();
-    }
-
-    // Detect source language
-    let sourceLanguage = null;
-    for (const field of fields) {
-      if (req.body[field] && typeof req.body[field] === 'string') {
-        sourceLanguage = await googleTranslateService.detectLanguage(req.body[field]);
-        break;
+      if (!immediateTranslate) {
+        return next();
       }
-    }
 
-    // If already in target language, skip translation
-    if (sourceLanguage === targetLanguage) {
-      return next();
-    }
-
-    // Translate fields
-    const textsToTranslate = [];
-    const fieldMap = [];
-
-    for (const field of fields) {
-      if (req.body[field] && typeof req.body[field] === 'string') {
-        textsToTranslate.push(req.body[field]);
-        fieldMap.push(field);
+      // Detect source language
+      let sourceLanguage = null;
+      for (const field of fields) {
+        if (req.body[field] && typeof req.body[field] === "string") {
+          sourceLanguage = await googleTranslateService.detectLanguage(
+            req.body[field],
+          );
+          break;
+        }
       }
+
+      // If already in target language, skip translation
+      if (sourceLanguage === targetLanguage) {
+        return next();
+      }
+
+      // Translate fields
+      const textsToTranslate = [];
+      const fieldMap = [];
+
+      for (const field of fields) {
+        if (req.body[field] && typeof req.body[field] === "string") {
+          textsToTranslate.push(req.body[field]);
+          fieldMap.push(field);
+        }
+      }
+
+      if (textsToTranslate.length === 0) {
+        return next();
+      }
+
+      // Perform batch translation
+      const translations = await googleTranslateService.translateBatch(
+        textsToTranslate,
+        targetLanguage,
+        sourceLanguage,
+      );
+
+      // Update request body with translations
+      translations.forEach((translation, index) => {
+        const field = fieldMap[index];
+        req.body[`${field}_original`] = translation.originalText;
+        req.body[field] = translation.translatedText;
+        req.body[`${field}_language`] = translation.sourceLanguage;
+      });
+
+      // Add translation metadata
+      req.body.translatedFrom = sourceLanguage;
+      req.body.translatedTo = targetLanguage;
+      req.body.translatedAt = new Date();
+
+      next();
+    } catch (error) {
+      logger.error("Immediate translation middleware error:", error);
+      // Don't fail the request, just log the error
+      next();
     }
-
-    if (textsToTranslate.length === 0) {
-      return next();
-    }
-
-    // Perform batch translation
-    const translations = await googleTranslateService.translateBatch(
-      textsToTranslate,
-      targetLanguage,
-      sourceLanguage,
-    );
-
-    // Update request body with translations
-    translations.forEach((translation, index) => {
-      const field = fieldMap[index];
-      req.body[`${field}_original`] = translation.originalText;
-      req.body[field] = translation.translatedText;
-      req.body[`${field}_language`] = translation.sourceLanguage;
-    });
-
-    // Add translation metadata
-    req.body.translatedFrom = sourceLanguage;
-    req.body.translatedTo = targetLanguage;
-    req.body.translatedAt = new Date();
-
-    next();
-  } catch (error) {
-    logger.error('Immediate translation middleware error:', error);
-    // Don't fail the request, just log the error
-    next();
-  }
-};
+  };
 
 /**
  * Middleware to add language preference to user context
@@ -149,16 +156,17 @@ const translateImmediately = (fields, targetLanguage = 'en') => async (req, res,
 const setLanguagePreference = (req, res, next) => {
   try {
     // Get language from query, header, or user profile
-    const language = req.query.lang
-      || req.headers['accept-language']?.split(',')[0]?.split('-')[0]
-      || req.user?.preferredLanguage
-      || 'en';
+    const language =
+      req.query.lang ||
+      req.headers["accept-language"]?.split(",")[0]?.split("-")[0] ||
+      req.user?.preferredLanguage ||
+      "en";
 
     req.preferredLanguage = language;
     next();
   } catch (error) {
-    logger.error('Set language preference middleware error:', error);
-    req.preferredLanguage = 'en';
+    logger.error("Set language preference middleware error:", error);
+    req.preferredLanguage = "en";
     next();
   }
 };
@@ -172,33 +180,44 @@ const translateResponse = (fields) => async (req, res, next) => {
 
     res.json = async function (data) {
       // Check if translation is needed
-      const targetLanguage = req.preferredLanguage || 'en';
+      const targetLanguage = req.preferredLanguage || "en";
 
-      if (!data || targetLanguage === 'en') {
+      if (!data || targetLanguage === "en") {
         return originalJson(data);
       }
 
       // Translate data if it's an object or array
-      if (typeof data === 'object') {
+      if (typeof data === "object") {
         if (Array.isArray(data)) {
           // Translate array of objects
           const translatedData = await Promise.all(
             data.map((item) => translateObject(item, fields, targetLanguage)),
           );
           return originalJson(translatedData);
-        } if (data.data) {
+        }
+        if (data.data) {
           // Translate data property
           if (Array.isArray(data.data)) {
             data.data = await Promise.all(
-              data.data.map((item) => translateObject(item, fields, targetLanguage)),
+              data.data.map((item) =>
+                translateObject(item, fields, targetLanguage),
+              ),
             );
           } else {
-            data.data = await translateObject(data.data, fields, targetLanguage);
+            data.data = await translateObject(
+              data.data,
+              fields,
+              targetLanguage,
+            );
           }
           return originalJson(data);
         }
         // Translate single object
-        const translatedData = await translateObject(data, fields, targetLanguage);
+        const translatedData = await translateObject(
+          data,
+          fields,
+          targetLanguage,
+        );
         return originalJson(translatedData);
       }
 
@@ -207,7 +226,7 @@ const translateResponse = (fields) => async (req, res, next) => {
 
     next();
   } catch (error) {
-    logger.error('Translate response middleware error:', error);
+    logger.error("Translate response middleware error:", error);
     next();
   }
 };
@@ -216,7 +235,7 @@ const translateResponse = (fields) => async (req, res, next) => {
  * Helper function to translate object fields
  */
 async function translateObject(obj, fields, targetLanguage) {
-  if (!obj || typeof obj !== 'object') {
+  if (!obj || typeof obj !== "object") {
     return obj;
   }
 
@@ -226,7 +245,7 @@ async function translateObject(obj, fields, targetLanguage) {
 
   // Collect texts to translate
   for (const field of fields) {
-    if (obj[field] && typeof obj[field] === 'string') {
+    if (obj[field] && typeof obj[field] === "string") {
       textsToTranslate.push(obj[field]);
       fieldMap.push(field);
     }
@@ -251,7 +270,7 @@ async function translateObject(obj, fields, targetLanguage) {
       }
     });
   } catch (error) {
-    logger.error('Object translation error:', error);
+    logger.error("Object translation error:", error);
   }
 
   return result;

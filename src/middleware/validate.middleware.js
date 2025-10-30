@@ -1,5 +1,5 @@
-const { validationResult } = require('express-validator');
-const { ValidationError } = require('../utils/error-handler');
+const { validationResult } = require("express-validator");
+const { ValidationError } = require("../utils/error-handler");
 
 /**
  * Validation middleware - Check express-validator results
@@ -14,7 +14,7 @@ const validate = (req, res, next) => {
       value: error.value,
     }));
 
-    throw new ValidationError('Validation failed', formattedErrors);
+    throw new ValidationError("Validation failed", formattedErrors);
   }
 
   next();
@@ -25,29 +25,31 @@ const validate = (req, res, next) => {
  * @param {Object} schema - Joi schema
  * @param {String} property - Property to validate (body, query, params)
  */
-const validateJoi = (schema, property = 'body') => (req, res, next) => {
-  const { error, value } = schema.validate(req[property], {
-    abortEarly: false,
-    stripUnknown: true,
-  });
+const validateJoi =
+  (schema, property = "body") =>
+  (req, res, next) => {
+    const { error, value } = schema.validate(req[property], {
+      abortEarly: false,
+      stripUnknown: true,
+    });
 
-  if (error) {
-    const formattedErrors = error.details.map((detail) => ({
-      field: detail.path.join('.'),
-      message: detail.message,
-      type: detail.type,
-    }));
+    if (error) {
+      const formattedErrors = error.details.map((detail) => ({
+        field: detail.path.join("."),
+        message: detail.message,
+        type: detail.type,
+      }));
 
-    const validationError = new ValidationError('Validation failed');
-    validationError.errors = formattedErrors;
+      const validationError = new ValidationError("Validation failed");
+      validationError.errors = formattedErrors;
 
-    return next(validationError);
-  }
+      return next(validationError);
+    }
 
-  // Replace request property with validated value
-  req[property] = value;
-  next();
-};
+    // Replace request property with validated value
+    req[property] = value;
+    next();
+  };
 
 module.exports = {
   validate,

@@ -3,6 +3,7 @@
  */
 
 const express = require('express');
+
 const router = express.Router();
 const auditLogController = require('../../controllers/auditLog.controller');
 const authenticate = require('../../middleware/auth.middleware');

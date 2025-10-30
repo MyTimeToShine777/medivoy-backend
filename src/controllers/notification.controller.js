@@ -1,16 +1,14 @@
-const Notification = require('../models/Notification.model');
-const { successResponse, errorResponse } = require('../utils/response');
-const logger = require('../utils/logger');
+const Notification = require("../models/Notification.model");
+const { successResponse, errorResponse } = require("../utils/response");
+const { handleDatabaseError } = require("../utils/databaseErrorHandler");
 
 class NotificationController {
   /**
    * Create a new notification
    */
-  async createNotification(req, res) {
+  static async createNotification(req, res) {
     try {
-      const {
-        userId, title, message, type, priority, isRead,
-      } = req.body;
+      const { userId, title, message, type, priority, isRead } = req.body;
 
       // Create notification
       const notification = await Notification.create({
@@ -22,23 +20,23 @@ class NotificationController {
         isRead,
       });
 
-      return successResponse(res, {
-        message: 'Notification created successfully',
-        data: notification,
-      }, 201);
+      return successResponse(
+        res,
+        {
+          message: "Notification created successfully",
+          data: notification,
+        },
+        201,
+      );
     } catch (error) {
-      logger.error('Create notification error:', error);
-      return errorResponse(res, {
-        message: 'Failed to create notification',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Get notification by ID
    */
-  async getNotification(req, res) {
+  static async getNotification(req, res) {
     try {
       const { id } = req.params;
 
@@ -46,41 +44,43 @@ class NotificationController {
       const notification = await Notification.findByPk(id);
 
       if (!notification) {
-        return errorResponse(res, {
-          message: 'Notification not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Notification not found",
+          },
+          404,
+        );
       }
 
       return successResponse(res, {
-        message: 'Notification retrieved successfully',
+        message: "Notification retrieved successfully",
         data: notification,
       });
     } catch (error) {
-      logger.error('Get notification error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve notification',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Update notification
    */
-  async updateNotification(req, res) {
+  static async updateNotification(req, res) {
     try {
       const { id } = req.params;
-      const {
-        title, message, type, priority, isRead,
-      } = req.body;
+      const { title, message, type, priority, isRead } = req.body;
 
       // Find notification
       const notification = await Notification.findByPk(id);
 
       if (!notification) {
-        return errorResponse(res, {
-          message: 'Notification not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Notification not found",
+          },
+          404,
+        );
       }
 
       // Update notification
@@ -93,22 +93,18 @@ class NotificationController {
       });
 
       return successResponse(res, {
-        message: 'Notification updated successfully',
+        message: "Notification updated successfully",
         data: notification,
       });
     } catch (error) {
-      logger.error('Update notification error:', error);
-      return errorResponse(res, {
-        message: 'Failed to update notification',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Delete notification
    */
-  async deleteNotification(req, res) {
+  static async deleteNotification(req, res) {
     try {
       const { id } = req.params;
 
@@ -116,39 +112,37 @@ class NotificationController {
       const notification = await Notification.findByPk(id);
 
       if (!notification) {
-        return errorResponse(res, {
-          message: 'Notification not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Notification not found",
+          },
+          404,
+        );
       }
 
       // Delete notification
       await notification.destroy();
 
       return successResponse(res, {
-        message: 'Notification deleted successfully',
+        message: "Notification deleted successfully",
       });
     } catch (error) {
-      logger.error('Delete notification error:', error);
-      return errorResponse(res, {
-        message: 'Failed to delete notification',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Get all notifications for a user
    */
-  async getUserNotifications(req, res) {
+  static async getUserNotifications(req, res) {
     try {
       const { userId } = req.params;
-      const {
-        page = 1, limit = 10, isRead, type,
-      } = req.query;
+      const { page = 1, limit = 10, isRead, type } = req.query;
 
       // Build where clause
       const where = { userId };
-      if (isRead !== undefined) where.isRead = isRead === 'true';
+      if (isRead !== undefined) where.isRead = isRead === "true";
       if (type) where.type = type;
 
       // Get notifications with pagination
@@ -156,11 +150,11 @@ class NotificationController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [['createdAt', 'DESC']],
+        order: [["createdAt", "DESC"]],
       });
 
       return successResponse(res, {
-        message: 'Notifications retrieved successfully',
+        message: "Notifications retrieved successfully",
         data: notifications.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -169,18 +163,14 @@ class NotificationController {
         },
       });
     } catch (error) {
-      logger.error('Get user notifications error:', error);
-      return errorResponse(res, {
-        message: 'Failed to retrieve notifications',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 
   /**
    * Mark notification as read
    */
-  async markAsRead(req, res) {
+  static async markAsRead(req, res) {
     try {
       const { id } = req.params;
 
@@ -188,26 +178,26 @@ class NotificationController {
       const notification = await Notification.findByPk(id);
 
       if (!notification) {
-        return errorResponse(res, {
-          message: 'Notification not found',
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: "Notification not found",
+          },
+          404,
+        );
       }
 
       // Update notification as read
       await notification.update({ isRead: true });
 
       return successResponse(res, {
-        message: 'Notification marked as read successfully',
+        message: "Notification marked as read successfully",
         data: notification,
       });
     } catch (error) {
-      logger.error('Mark notification as read error:', error);
-      return errorResponse(res, {
-        message: 'Failed to mark notification as read',
-        error: error.message,
-      }, 500);
+      return handleDatabaseError(error, res, $1);
     }
   }
 }
 
-module.exports = new NotificationController();
+module.exports = NotificationController;
