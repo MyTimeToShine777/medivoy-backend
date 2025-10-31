@@ -2,6 +2,23 @@
 
 Complete healthcare management system backend built with Node.js, Express, PostgreSQL, MongoDB, and Redis.
 
+## 🌐 Live API Documentation
+
+**📚 Swagger API Docs:** https://3000-d3911e85-31b9-4b01-9734-b7792b2ea6a4.proxy.daytona.works/api-docs/
+
+Interactive API documentation with all 287 endpoints across 40 categories including:
+- Authentication & Authorization
+- Patient Management
+- Doctor & Hospital Management
+- Appointments & Bookings
+- Medical Records & Prescriptions
+- Payments & Insurance
+- Lab Tests & Results
+- Reviews & Ratings
+- Notifications & Chat
+- Video Consultations
+- And much more!
+
 ## 📋 Table of Contents
 
 - [Features](#features)
