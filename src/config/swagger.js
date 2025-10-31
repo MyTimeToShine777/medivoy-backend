@@ -46,7 +46,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
         description: "Development server",
       },
       {
-        url: `https://5000-d3911e85-31b9-4b01-9734-b7792b2ea6a4.proxy.daytona.works/api/${config.apiVersion}`,
+        url: `https://3000-d3911e85-31b9-4b01-9734-b7792b2ea6a4.proxy.daytona.works/api/${config.apiVersion}`,
         description: "Public sandbox server",
       },
       {
@@ -190,7 +190,12 @@ Authorization: Bearer YOUR_JWT_TOKEN
       },
     ],
   },
-  apis: ["./src/routes/v1/*.js", "./src/routes/**/*.js", "./src/models/*.js"],
+  apis: [
+      "./src/routes/v1/*.js", 
+      "./src/routes/**/*.js", 
+      "./src/models/*.js",
+      "./src/routes/v1/comprehensive-swagger-docs.js"
+    ],
 };
 
 const swaggerSpec = swaggerJsdoc(options);
