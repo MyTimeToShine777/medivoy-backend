@@ -1,8 +1,4 @@
-const swaggerJsdoc = require('swagger-jsdoc');
-const swaggerUi = require('swagger-ui-express');
-
-// Comprehensive OpenAPI specification with all 287 endpoints
-const openApiSpec = {
+{
   "openapi": "3.0.0",
   "info": {
     "title": "Medivoy Healthcare API - Enhanced Documentation",
@@ -36527,17 +36523,4 @@ const openApiSpec = {
       "x-endpoint-count": 7
     }
   ]
-};
-
-const options = {
-  definition: openApiSpec,
-  apis: ['./src/routes/v1/*.routes.js'], // This will scan for additional @swagger annotations
-};
-
-const specs = swaggerJsdoc(options);
-
-module.exports = {
-  specs,
-  serve: swaggerUi.serve,
-  setup: swaggerUi.setup
-};
+}
