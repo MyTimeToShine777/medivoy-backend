@@ -132,7 +132,7 @@ class UploadController {
       }
 
       // Delete media file from storage
-      // Note: This would require integrating with Cloudinary or file system
+      // Note: This would require integrating with ImageKit.io or file system
       // await deleteFile(media.filePath);
 
       // Delete media record
