@@ -48,11 +48,11 @@ module.exports = {
   // Bcrypt
   bcryptSaltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS || "12", 10),
 
-  // Cloudinary
-  cloudinary: {
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
-    apiKey: process.env.CLOUDINARY_API_KEY || "",
-    apiSecret: process.env.CLOUDINARY_API_SECRET || "",
+  // ImageKit.io
+  imagekit: {
+    publicKey: process.env.IMAGEKIT_PUBLIC_KEY || "",
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "",
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT || "",
   },
 
   // Email (SMTP)
