@@ -53,7 +53,10 @@ router.get('/doctor/:doctorId', doctorScheduleController.getDoctorSchedules);
  *     security:
  *       - bearerAuth: []
  */
-router.get('/doctor/:doctorId/available-slots', doctorScheduleController.getAvailableSlots);
+router.get(
+  '/doctor/:doctorId/available-slots',
+  doctorScheduleController.getAvailableSlots
+);
 
 /**
  * @swagger

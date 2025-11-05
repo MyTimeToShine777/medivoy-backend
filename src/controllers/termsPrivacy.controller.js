@@ -3,41 +3,41 @@
  * Handles terms and conditions and privacy policy management
  */
 
-const { Op } = require("sequelize");
+const { Op } = require('sequelize');
 const {
   TermsConditions,
   PrivacyPolicy,
   UserAcceptance,
   User,
-} = require("../models");
+} = require('../models');
 
 /**
  * Get all terms and conditions versions
  */
 exports.getAllTerms = async (req, res) => {
   try {
-    const { language = "en", isActive, isPublished } = req.query;
+    const { language = 'en', isActive, isPublished } = req.query;
 
     const whereClause = { language };
-    if (isActive !== undefined) whereClause.is_active = isActive === "true";
+    if (isActive !== undefined) whereClause.is_active = isActive === 'true';
     if (isPublished !== undefined)
-      whereClause.is_published = isPublished === "true";
+      whereClause.is_published = isPublished === 'true';
 
     const terms = await TermsConditions.findAll({
       where: whereClause,
       include: [
         {
           model: User,
-          as: "createdBy",
-          attributes: ["id", "first_name", "last_name"],
+          as: 'createdBy',
+          attributes: ['id', 'first_name', 'last_name'],
         },
         {
           model: User,
-          as: "publishedBy",
-          attributes: ["id", "first_name", "last_name"],
+          as: 'publishedBy',
+          attributes: ['id', 'first_name', 'last_name'],
         },
       ],
-      order: [["effective_date", "DESC"]],
+      order: [['effective_date', 'DESC']],
     });
 
     res.json({
@@ -45,10 +45,10 @@ exports.getAllTerms = async (req, res) => {
       data: terms,
     });
   } catch (error) {
-    console.error("Error fetching terms:", error);
+    console.error('Error fetching terms:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching terms and conditions",
+      message: 'Error fetching terms and conditions',
       error: error.message,
     });
   }
@@ -59,7 +59,7 @@ exports.getAllTerms = async (req, res) => {
  */
 exports.getActiveTerms = async (req, res) => {
   try {
-    const { language = "en" } = req.query;
+    const { language = 'en' } = req.query;
 
     const terms = await TermsConditions.findOne({
       where: {
@@ -72,7 +72,7 @@ exports.getActiveTerms = async (req, res) => {
     if (!terms) {
       return res.status(404).json({
         success: false,
-        message: "No active terms and conditions found",
+        message: 'No active terms and conditions found',
       });
     }
 
@@ -81,10 +81,10 @@ exports.getActiveTerms = async (req, res) => {
       data: terms,
     });
   } catch (error) {
-    console.error("Error fetching active terms:", error);
+    console.error('Error fetching active terms:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching active terms",
+      message: 'Error fetching active terms',
       error: error.message,
     });
   }
@@ -111,7 +111,7 @@ exports.createTerms = async (req, res) => {
       version,
       title,
       content,
-      language: language || "en",
+      language: language || 'en',
       effective_date: effective_date || new Date(),
       summary,
       change_log,
@@ -123,14 +123,14 @@ exports.createTerms = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Terms and conditions created successfully",
+      message: 'Terms and conditions created successfully',
       data: terms,
     });
   } catch (error) {
-    console.error("Error creating terms:", error);
+    console.error('Error creating terms:', error);
     res.status(500).json({
       success: false,
-      message: "Error creating terms and conditions",
+      message: 'Error creating terms and conditions',
       error: error.message,
     });
   }
@@ -148,7 +148,7 @@ exports.updateTerms = async (req, res) => {
     if (!terms) {
       return res.status(404).json({
         success: false,
-        message: "Terms and conditions not found",
+        message: 'Terms and conditions not found',
       });
     }
 
@@ -156,14 +156,14 @@ exports.updateTerms = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Terms and conditions updated successfully",
+      message: 'Terms and conditions updated successfully',
       data: terms,
     });
   } catch (error) {
-    console.error("Error updating terms:", error);
+    console.error('Error updating terms:', error);
     res.status(500).json({
       success: false,
-      message: "Error updating terms and conditions",
+      message: 'Error updating terms and conditions',
       error: error.message,
     });
   }
@@ -181,7 +181,7 @@ exports.publishTerms = async (req, res) => {
     if (!terms) {
       return res.status(404).json({
         success: false,
-        message: "Terms and conditions not found",
+        message: 'Terms and conditions not found',
       });
     }
 
@@ -194,7 +194,7 @@ exports.publishTerms = async (req, res) => {
           is_active: true,
           id: { [Op.ne]: id },
         },
-      },
+      }
     );
 
     await terms.update({
@@ -206,14 +206,14 @@ exports.publishTerms = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Terms and conditions published successfully",
+      message: 'Terms and conditions published successfully',
       data: terms,
     });
   } catch (error) {
-    console.error("Error publishing terms:", error);
+    console.error('Error publishing terms:', error);
     res.status(500).json({
       success: false,
-      message: "Error publishing terms and conditions",
+      message: 'Error publishing terms and conditions',
       error: error.message,
     });
   }
@@ -224,28 +224,28 @@ exports.publishTerms = async (req, res) => {
  */
 exports.getAllPrivacyPolicies = async (req, res) => {
   try {
-    const { language = "en", isActive, isPublished } = req.query;
+    const { language = 'en', isActive, isPublished } = req.query;
 
     const whereClause = { language };
-    if (isActive !== undefined) whereClause.is_active = isActive === "true";
+    if (isActive !== undefined) whereClause.is_active = isActive === 'true';
     if (isPublished !== undefined)
-      whereClause.is_published = isPublished === "true";
+      whereClause.is_published = isPublished === 'true';
 
     const policies = await PrivacyPolicy.findAll({
       where: whereClause,
       include: [
         {
           model: User,
-          as: "createdBy",
-          attributes: ["id", "first_name", "last_name"],
+          as: 'createdBy',
+          attributes: ['id', 'first_name', 'last_name'],
         },
         {
           model: User,
-          as: "publishedBy",
-          attributes: ["id", "first_name", "last_name"],
+          as: 'publishedBy',
+          attributes: ['id', 'first_name', 'last_name'],
         },
       ],
-      order: [["effective_date", "DESC"]],
+      order: [['effective_date', 'DESC']],
     });
 
     res.json({
@@ -253,10 +253,10 @@ exports.getAllPrivacyPolicies = async (req, res) => {
       data: policies,
     });
   } catch (error) {
-    console.error("Error fetching privacy policies:", error);
+    console.error('Error fetching privacy policies:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching privacy policies",
+      message: 'Error fetching privacy policies',
       error: error.message,
     });
   }
@@ -267,7 +267,7 @@ exports.getAllPrivacyPolicies = async (req, res) => {
  */
 exports.getActivePrivacyPolicy = async (req, res) => {
   try {
-    const { language = "en" } = req.query;
+    const { language = 'en' } = req.query;
 
     const policy = await PrivacyPolicy.findOne({
       where: {
@@ -280,7 +280,7 @@ exports.getActivePrivacyPolicy = async (req, res) => {
     if (!policy) {
       return res.status(404).json({
         success: false,
-        message: "No active privacy policy found",
+        message: 'No active privacy policy found',
       });
     }
 
@@ -289,10 +289,10 @@ exports.getActivePrivacyPolicy = async (req, res) => {
       data: policy,
     });
   } catch (error) {
-    console.error("Error fetching active privacy policy:", error);
+    console.error('Error fetching active privacy policy:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching active privacy policy",
+      message: 'Error fetching active privacy policy',
       error: error.message,
     });
   }
@@ -319,7 +319,7 @@ exports.createPrivacyPolicy = async (req, res) => {
       version,
       title,
       content,
-      language: language || "en",
+      language: language || 'en',
       effective_date: effective_date || new Date(),
       summary,
       change_log,
@@ -331,14 +331,14 @@ exports.createPrivacyPolicy = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Privacy policy created successfully",
+      message: 'Privacy policy created successfully',
       data: policy,
     });
   } catch (error) {
-    console.error("Error creating privacy policy:", error);
+    console.error('Error creating privacy policy:', error);
     res.status(500).json({
       success: false,
-      message: "Error creating privacy policy",
+      message: 'Error creating privacy policy',
       error: error.message,
     });
   }
@@ -356,7 +356,7 @@ exports.updatePrivacyPolicy = async (req, res) => {
     if (!policy) {
       return res.status(404).json({
         success: false,
-        message: "Privacy policy not found",
+        message: 'Privacy policy not found',
       });
     }
 
@@ -364,14 +364,14 @@ exports.updatePrivacyPolicy = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Privacy policy updated successfully",
+      message: 'Privacy policy updated successfully',
       data: policy,
     });
   } catch (error) {
-    console.error("Error updating privacy policy:", error);
+    console.error('Error updating privacy policy:', error);
     res.status(500).json({
       success: false,
-      message: "Error updating privacy policy",
+      message: 'Error updating privacy policy',
       error: error.message,
     });
   }
@@ -389,7 +389,7 @@ exports.publishPrivacyPolicy = async (req, res) => {
     if (!policy) {
       return res.status(404).json({
         success: false,
-        message: "Privacy policy not found",
+        message: 'Privacy policy not found',
       });
     }
 
@@ -402,7 +402,7 @@ exports.publishPrivacyPolicy = async (req, res) => {
           is_active: true,
           id: { [Op.ne]: id },
         },
-      },
+      }
     );
 
     await policy.update({
@@ -414,14 +414,14 @@ exports.publishPrivacyPolicy = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Privacy policy published successfully",
+      message: 'Privacy policy published successfully',
       data: policy,
     });
   } catch (error) {
-    console.error("Error publishing privacy policy:", error);
+    console.error('Error publishing privacy policy:', error);
     res.status(500).json({
       success: false,
-      message: "Error publishing privacy policy",
+      message: 'Error publishing privacy policy',
       error: error.message,
     });
   }
@@ -452,26 +452,26 @@ exports.recordAcceptance = async (req, res) => {
     });
 
     // Update acceptance count
-    if (document_type === "terms_conditions") {
-      await TermsConditions.increment("total_acceptances", {
+    if (document_type === 'terms_conditions') {
+      await TermsConditions.increment('total_acceptances', {
         where: { id: document_id },
       });
-    } else if (document_type === "privacy_policy") {
-      await PrivacyPolicy.increment("total_acceptances", {
+    } else if (document_type === 'privacy_policy') {
+      await PrivacyPolicy.increment('total_acceptances', {
         where: { id: document_id },
       });
     }
 
     res.status(201).json({
       success: true,
-      message: "Acceptance recorded successfully",
+      message: 'Acceptance recorded successfully',
       data: acceptance,
     });
   } catch (error) {
-    console.error("Error recording acceptance:", error);
+    console.error('Error recording acceptance:', error);
     res.status(500).json({
       success: false,
-      message: "Error recording acceptance",
+      message: 'Error recording acceptance',
       error: error.message,
     });
   }
@@ -486,7 +486,7 @@ exports.getUserAcceptances = async (req, res) => {
 
     const acceptances = await UserAcceptance.findAll({
       where: { user_id: userId },
-      order: [["accepted_at", "DESC"]],
+      order: [['accepted_at', 'DESC']],
     });
 
     res.json({
@@ -494,10 +494,10 @@ exports.getUserAcceptances = async (req, res) => {
       data: acceptances,
     });
   } catch (error) {
-    console.error("Error fetching user acceptances:", error);
+    console.error('Error fetching user acceptances:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching user acceptances",
+      message: 'Error fetching user acceptances',
       error: error.message,
     });
   }
@@ -509,18 +509,18 @@ exports.getUserAcceptances = async (req, res) => {
 exports.checkUserAcceptance = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { documentType, language = "en" } = req.query;
+    const { documentType, language = 'en' } = req.query;
 
     let latestVersion;
-    if (documentType === "terms_conditions") {
+    if (documentType === 'terms_conditions') {
       latestVersion = await TermsConditions.findOne({
         where: { language, is_active: true, is_published: true },
-        attributes: ["id", "version"],
+        attributes: ['id', 'version'],
       });
-    } else if (documentType === "privacy_policy") {
+    } else if (documentType === 'privacy_policy') {
       latestVersion = await PrivacyPolicy.findOne({
         where: { language, is_active: true, is_published: true },
-        attributes: ["id", "version"],
+        attributes: ['id', 'version'],
       });
     }
 
@@ -552,10 +552,10 @@ exports.checkUserAcceptance = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error checking user acceptance:", error);
+    console.error('Error checking user acceptance:', error);
     res.status(500).json({
       success: false,
-      message: "Error checking user acceptance",
+      message: 'Error checking user acceptance',
       error: error.message,
     });
   }
@@ -573,7 +573,7 @@ exports.getTermsPrivacyById = async (req, res) => {
     if (!item) {
       return res.status(404).json({
         success: false,
-        message: "Terms/Privacy not found",
+        message: 'Terms/Privacy not found',
       });
     }
 
@@ -584,7 +584,7 @@ exports.getTermsPrivacyById = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error fetching terms/privacy",
+      message: 'Error fetching terms/privacy',
       error: error.message,
     });
   }
@@ -602,7 +602,7 @@ exports.deleteTermsPrivacy = async (req, res) => {
     if (!item) {
       return res.status(404).json({
         success: false,
-        message: "Terms/Privacy not found",
+        message: 'Terms/Privacy not found',
       });
     }
 
@@ -610,12 +610,12 @@ exports.deleteTermsPrivacy = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Terms/Privacy deleted successfully",
+      message: 'Terms/Privacy deleted successfully',
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error deleting terms/privacy",
+      message: 'Error deleting terms/privacy',
       error: error.message,
     });
   }

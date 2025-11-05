@@ -1,5 +1,5 @@
-const Laboratory = require("../models/Laboratory.model");
-const logger = require("../utils/logger");
+const Laboratory = require('../models/Laboratory.model');
+const logger = require('../utils/logger');
 
 class LaboratoryService {
   /**
@@ -10,7 +10,7 @@ class LaboratoryService {
       const laboratory = await Laboratory.create(data);
       return laboratory;
     } catch (error) {
-      logger.error("Create laboratory service error:", error);
+      logger.error('Create laboratory service error:', error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class LaboratoryService {
       const laboratory = await Laboratory.findByPk(id);
       return laboratory;
     } catch (error) {
-      logger.error("Get laboratory by ID service error:", error);
+      logger.error('Get laboratory by ID service error:', error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class LaboratoryService {
     try {
       const laboratory = await Laboratory.findByPk(id);
       if (!laboratory) {
-        throw new Error("Laboratory not found");
+        throw new Error('Laboratory not found');
       }
 
       await laboratory.update(data);
       return laboratory;
     } catch (error) {
-      logger.error("Update laboratory service error:", error);
+      logger.error('Update laboratory service error:', error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class LaboratoryService {
     try {
       const laboratory = await Laboratory.findByPk(id);
       if (!laboratory) {
-        throw new Error("Laboratory not found");
+        throw new Error('Laboratory not found');
       }
 
       await laboratory.destroy();
       return true;
     } catch (error) {
-      logger.error("Delete laboratory service error:", error);
+      logger.error('Delete laboratory service error:', error);
       throw error;
     }
   }
@@ -75,12 +75,12 @@ class LaboratoryService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return laboratories;
     } catch (error) {
-      logger.error("Get all laboratories service error:", error);
+      logger.error('Get all laboratories service error:', error);
       throw error;
     }
   }

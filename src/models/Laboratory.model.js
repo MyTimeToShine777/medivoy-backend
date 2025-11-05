@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Laboratory = sequelize.define(
-  "Laboratory",
+  'Laboratory',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -15,7 +15,7 @@ const Laboratory = sequelize.define(
     },
     hospital_id: {
       type: DataTypes.INTEGER,
-      references: { model: "hospitals", key: "id" },
+      references: { model: 'hospitals', key: 'id' },
     },
     type: {
       type: DataTypes.STRING(100),
@@ -44,10 +44,10 @@ const Laboratory = sequelize.define(
     },
   },
   {
-    tableName: "laboratories",
+    tableName: 'laboratories',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = Laboratory;

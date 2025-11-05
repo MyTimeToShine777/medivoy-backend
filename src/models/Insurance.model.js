@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Insurance = sequelize.define(
-  "Insurance",
+  'Insurance',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -18,7 +18,7 @@ const Insurance = sequelize.define(
       allowNull: false,
     },
     plan_type: {
-      type: DataTypes.ENUM("basic", "comprehensive", "premium"),
+      type: DataTypes.ENUM('basic', 'comprehensive', 'premium'),
       allowNull: false,
     },
     coverage_amount: {
@@ -58,10 +58,10 @@ const Insurance = sequelize.define(
     },
   },
   {
-    tableName: "insurance_providers",
+    tableName: 'insurance_providers',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = Insurance;

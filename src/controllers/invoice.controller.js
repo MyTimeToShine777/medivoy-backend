@@ -1,6 +1,6 @@
-const Invoice = require("../models/Invoice.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const Invoice = require('../models/Invoice.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class InvoiceController {
   /**
@@ -24,13 +24,13 @@ class InvoiceController {
       return successResponse(
         res,
         {
-          message: "Invoice created successfully",
+          message: 'Invoice created successfully',
           data: invoice,
         },
-        201,
+        201
       );
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to create invoice");
+      return handleDatabaseError(error, res, 'Failed to create invoice');
     }
   }
 
@@ -48,18 +48,18 @@ class InvoiceController {
         return errorResponse(
           res,
           {
-            message: "Invoice not found",
+            message: 'Invoice not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Invoice retrieved successfully",
+        message: 'Invoice retrieved successfully',
         data: invoice,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve invoice");
+      return handleDatabaseError(error, res, 'Failed to retrieve invoice');
     }
   }
 
@@ -80,11 +80,11 @@ class InvoiceController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Invoices retrieved successfully",
+        message: 'Invoices retrieved successfully',
         data: invoices.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -93,7 +93,7 @@ class InvoiceController {
         },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve invoices");
+      return handleDatabaseError(error, res, 'Failed to retrieve invoices');
     }
   }
 
@@ -112,10 +112,10 @@ class InvoiceController {
         return errorResponse(
           res,
           {
-            message: "Invoice not found",
-            code: "INVOICE_NOT_FOUND",
+            message: 'Invoice not found',
+            code: 'INVOICE_NOT_FOUND',
           },
-          404,
+          404
         );
       }
 
@@ -123,11 +123,11 @@ class InvoiceController {
       await invoice.update(updateData);
 
       return successResponse(res, {
-        message: "Invoice updated successfully",
+        message: 'Invoice updated successfully',
         data: invoice,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to update invoice");
+      return handleDatabaseError(error, res, 'Failed to update invoice');
     }
   }
 
@@ -145,10 +145,10 @@ class InvoiceController {
         return errorResponse(
           res,
           {
-            message: "Invoice not found",
-            code: "INVOICE_NOT_FOUND",
+            message: 'Invoice not found',
+            code: 'INVOICE_NOT_FOUND',
           },
-          404,
+          404
         );
       }
 
@@ -156,10 +156,10 @@ class InvoiceController {
       await invoice.destroy();
 
       return successResponse(res, {
-        message: "Invoice deleted successfully",
+        message: 'Invoice deleted successfully',
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to delete invoice");
+      return handleDatabaseError(error, res, 'Failed to delete invoice');
     }
   }
 
@@ -177,21 +177,21 @@ class InvoiceController {
         return errorResponse(
           res,
           {
-            message: "Invoice not found",
-            code: "INVOICE_NOT_FOUND",
+            message: 'Invoice not found',
+            code: 'INVOICE_NOT_FOUND',
           },
-          404,
+          404
         );
       }
 
       // TODO: Implement PDF generation logic here
       // For now, return success message
       return successResponse(res, {
-        message: "Invoice PDF generation not yet implemented",
+        message: 'Invoice PDF generation not yet implemented',
         data: invoice,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to generate invoice PDF");
+      return handleDatabaseError(error, res, 'Failed to generate invoice PDF');
     }
   }
 }

@@ -10,7 +10,7 @@ router.post(
   '/',
   auth,
   authorize(['admin', 'patient', 'hospital_admin']),
-  paymentController.createPayment,
+  paymentController.createPayment
 );
 
 // Get payment by ID (authd users)
@@ -18,23 +18,18 @@ router.get(
   '/:id',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
-  paymentController.getPayment,
+  paymentController.getPayment
 );
 
 // Update payment (admin only)
-router.put(
-  '/:id',
-  auth,
-  authorize(['admin']),
-  paymentController.updatePayment,
-);
+router.put('/:id', auth, authorize(['admin']), paymentController.updatePayment);
 
 // Delete payment (admin only)
 router.delete(
   '/:id',
   auth,
   authorize(['admin']),
-  paymentController.deletePayment,
+  paymentController.deletePayment
 );
 
 // Get all payments (admin, hospital admins)
@@ -42,7 +37,7 @@ router.get(
   '/',
   auth,
   authorize(['admin', 'hospital_admin']),
-  paymentController.getAllPayments,
+  paymentController.getAllPayments
 );
 
 module.exports = router;

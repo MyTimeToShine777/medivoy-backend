@@ -1,4 +1,4 @@
-const Joi = require("joi");
+const Joi = require('joi');
 
 const createHospitalSchema = Joi.object({
   name: Joi.string().min(2).max(200).required(),

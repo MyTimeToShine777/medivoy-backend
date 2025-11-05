@@ -1,5 +1,5 @@
-const FAQ = require("../models/FAQ.model");
-const logger = require("../utils/logger");
+const FAQ = require('../models/FAQ.model');
+const logger = require('../utils/logger');
 
 class FAQService {
   /**
@@ -10,7 +10,7 @@ class FAQService {
       const faq = await FAQ.create(data);
       return faq;
     } catch (error) {
-      logger.error("Create FAQ service error:", error);
+      logger.error('Create FAQ service error:', error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class FAQService {
       const faq = await FAQ.findByPk(id);
       return faq;
     } catch (error) {
-      logger.error("Get FAQ by ID service error:", error);
+      logger.error('Get FAQ by ID service error:', error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class FAQService {
     try {
       const faq = await FAQ.findByPk(id);
       if (!faq) {
-        throw new Error("FAQ not found");
+        throw new Error('FAQ not found');
       }
 
       await faq.update(data);
       return faq;
     } catch (error) {
-      logger.error("Update FAQ service error:", error);
+      logger.error('Update FAQ service error:', error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class FAQService {
     try {
       const faq = await FAQ.findByPk(id);
       if (!faq) {
-        throw new Error("FAQ not found");
+        throw new Error('FAQ not found');
       }
 
       await faq.destroy();
       return true;
     } catch (error) {
-      logger.error("Delete FAQ service error:", error);
+      logger.error('Delete FAQ service error:', error);
       throw error;
     }
   }
@@ -76,14 +76,14 @@ class FAQService {
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [
-          ["sortOrder", "ASC"],
-          ["createdAt", "DESC"],
+          ['sortOrder', 'ASC'],
+          ['createdAt', 'DESC'],
         ],
       });
 
       return faqs;
     } catch (error) {
-      logger.error("Get all FAQs service error:", error);
+      logger.error('Get all FAQs service error:', error);
       throw error;
     }
   }
@@ -100,14 +100,14 @@ class FAQService {
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [
-          ["sortOrder", "ASC"],
-          ["createdAt", "DESC"],
+          ['sortOrder', 'ASC'],
+          ['createdAt', 'DESC'],
         ],
       });
 
       return faqs;
     } catch (error) {
-      logger.error("Get FAQs by category service error:", error);
+      logger.error('Get FAQs by category service error:', error);
       throw error;
     }
   }

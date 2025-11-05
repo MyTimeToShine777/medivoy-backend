@@ -6,19 +6,14 @@ const authorize = require('../../middleware/authorize.middleware');
 const router = express.Router();
 
 // Create patient (admin only)
-router.post(
-  '/',
-  auth,
-  authorize(['admin']),
-  patientController.createPatient,
-);
+router.post('/', auth, authorize(['admin']), patientController.createPatient);
 
 // Get patient by ID (authd users)
 router.get(
   '/:id',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
-  patientController.getPatient,
+  patientController.getPatient
 );
 
 // Update patient (patients themselves, admin)
@@ -26,7 +21,7 @@ router.put(
   '/:id',
   auth,
   authorize(['admin', 'patient']),
-  patientController.updatePatient,
+  patientController.updatePatient
 );
 
 // Delete patient (admin only)
@@ -34,7 +29,7 @@ router.delete(
   '/:id',
   auth,
   authorize(['admin']),
-  patientController.deletePatient,
+  patientController.deletePatient
 );
 
 // Get all patients (admin, doctors, hospital admins)
@@ -42,7 +37,7 @@ router.get(
   '/',
   auth,
   authorize(['admin', 'doctor', 'hospital_admin']),
-  patientController.getAllPatients,
+  patientController.getAllPatients
 );
 
 module.exports = router;

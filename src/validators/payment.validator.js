@@ -1,11 +1,11 @@
-const Joi = require("joi");
+const Joi = require('joi');
 
 const createPaymentSchema = Joi.object({
   booking_id: Joi.string().uuid().required(),
   amount: Joi.number().positive().required(),
   currency: Joi.string().length(3).uppercase().required(),
   payment_method: Joi.string()
-    .valid("stripe", "razorpay", "bank_transfer")
+    .valid('stripe', 'razorpay', 'bank_transfer')
     .required(),
 });
 

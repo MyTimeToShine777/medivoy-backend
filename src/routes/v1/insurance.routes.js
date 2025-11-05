@@ -10,7 +10,7 @@ router.post(
   '/',
   auth,
   authorize(['admin']),
-  insuranceController.createInsurance,
+  insuranceController.createInsurance
 );
 
 // Get insurance provider by ID (authd users)
@@ -18,7 +18,7 @@ router.get(
   '/:id',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
-  insuranceController.getInsurance,
+  insuranceController.getInsurance
 );
 
 // Update insurance provider (admin only)
@@ -26,7 +26,7 @@ router.put(
   '/:id',
   auth,
   authorize(['admin']),
-  insuranceController.updateInsurance,
+  insuranceController.updateInsurance
 );
 
 // Delete insurance provider (admin only)
@@ -34,7 +34,7 @@ router.delete(
   '/:id',
   auth,
   authorize(['admin']),
-  insuranceController.deleteInsurance,
+  insuranceController.deleteInsurance
 );
 
 // Get all insurance providers (authd users)
@@ -42,7 +42,7 @@ router.get(
   '/',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
-  insuranceController.getAllInsurance,
+  insuranceController.getAllInsurance
 );
 
 module.exports = router;

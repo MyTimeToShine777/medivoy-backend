@@ -41,7 +41,10 @@ router.get('/public', systemSettingsController.getPublicSettings);
  *     security:
  *       - bearerAuth: []
  */
-router.get('/category/:category', systemSettingsController.getSettingsByCategory);
+router.get(
+  '/category/:category',
+  systemSettingsController.getSettingsByCategory
+);
 
 /**
  * @swagger
@@ -109,5 +112,5 @@ router.put('/bulk', systemSettingsController.bulkUpdateSettings);
  */
 router.put('/key/:key/reset', systemSettingsController.resetSettingToDefault);
 
-router.get('/:id', auth, authorize("admin"), systemSettingsController.getById);
+router.get('/:id', auth, authorize('admin'), systemSettingsController.getById);
 module.exports = router;

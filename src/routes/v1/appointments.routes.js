@@ -56,7 +56,7 @@ router.post(
   '/',
   auth,
   authorize(['patient', 'doctor', 'hospital_admin']),
-  appointmentController.createAppointment,
+  appointmentController.createAppointment
 );
 
 // Get appointment by ID (authd users)
@@ -64,7 +64,7 @@ router.get(
   '/:id',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
-  appointmentController.getAppointment,
+  appointmentController.getAppointment
 );
 
 // Update appointment (doctors, hospital admins, admin)
@@ -72,7 +72,7 @@ router.put(
   '/:id',
   auth,
   authorize(['admin', 'doctor', 'hospital_admin']),
-  appointmentController.updateAppointment,
+  appointmentController.updateAppointment
 );
 
 // Update appointment status (doctors, hospital admins, admin)
@@ -80,7 +80,7 @@ router.patch(
   '/:id/status',
   auth,
   authorize(['admin', 'doctor', 'hospital_admin']),
-  appointmentController.updateAppointmentStatus,
+  appointmentController.updateAppointmentStatus
 );
 
 // Get all appointments (admin, hospital admins)
@@ -88,7 +88,7 @@ router.get(
   '/',
   auth,
   authorize(['admin', 'hospital_admin']),
-  appointmentController.getAllAppointments,
+  appointmentController.getAllAppointments
 );
 
 // Get patient appointments (patients)
@@ -96,17 +96,18 @@ router.get(
   '/patient/:patientId',
   auth,
   authorize(['admin', 'patient', 'hospital_admin']),
-  appointmentController.getPatientAppointments,
+  appointmentController.getPatientAppointments
 );
 
 // Get doctor appointments (doctors)
 router.delete('/:id', auth, appointmentController.delete);
 
 // Get doctor appointments
-router.get('/doctor/:doctorId',
+router.get(
+  '/doctor/:doctorId',
   auth,
   authorize(['admin', 'doctor', 'hospital_admin']),
-  appointmentController.getDoctorAppointments,
+  appointmentController.getDoctorAppointments
 );
 
 module.exports = router;

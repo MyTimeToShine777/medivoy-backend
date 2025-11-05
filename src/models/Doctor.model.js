@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Doctor = sequelize.define(
-  "Doctor",
+  'Doctor',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -14,10 +14,10 @@ const Doctor = sequelize.define(
       allowNull: false,
       unique: true,
       references: {
-        model: "users",
-        key: "id",
+        model: 'users',
+        key: 'id',
       },
-      onDelete: "CASCADE",
+      onDelete: 'CASCADE',
     },
     specialty: {
       type: DataTypes.STRING(200),
@@ -63,10 +63,10 @@ const Doctor = sequelize.define(
     },
   },
   {
-    tableName: "doctors",
+    tableName: 'doctors',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = Doctor;

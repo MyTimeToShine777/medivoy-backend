@@ -1,17 +1,17 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { validationResult } = require("express-validator");
-const User = require("../models/User.model");
-const Patient = require("../models/Patient.model");
-const Doctor = require("../models/Doctor.model");
-const Hospital = require("../models/Hospital.model");
-const { generateAccessToken, generateRefreshToken } = require("../utils/jwt");
-const config = require("../config");
-const logger = require("../utils/logger");
-const { sendWelcomeEmail } = require("../services/email.service");
-const RefreshToken = require("../models/RefreshToken.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const { validationResult } = require('express-validator');
+const User = require('../models/User.model');
+const Patient = require('../models/Patient.model');
+const Doctor = require('../models/Doctor.model');
+const Hospital = require('../models/Hospital.model');
+const { generateAccessToken, generateRefreshToken } = require('../utils/jwt');
+const config = require('../config');
+const logger = require('../utils/logger');
+const { sendWelcomeEmail } = require('../services/email.service');
+const RefreshToken = require('../models/RefreshToken.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class AuthController {
   /**
@@ -25,10 +25,10 @@ class AuthController {
         return errorResponse(
           res,
           {
-            message: "Validation failed",
+            message: 'Validation failed',
             errors: errors.array(),
           },
-          400,
+          400
         );
       }
 
@@ -41,7 +41,7 @@ class AuthController {
       } catch (dbError) {
         // Database not available, proceed with mock registration
         logger.warn(
-          "Database not available, proceeding with mock registration",
+          'Database not available, proceeding with mock registration'
         );
       }
 
@@ -49,10 +49,10 @@ class AuthController {
         return errorResponse(
           res,
           {
-            message: "User with this email already exists",
-            code: "USER_EMAIL_EXISTS",
+            message: 'User with this email already exists',
+            code: 'USER_EMAIL_EXISTS',
           },
-          409,
+          409
         );
       }
 
@@ -62,7 +62,7 @@ class AuthController {
 
       // Check if email verification is disabled
       const emailVerificationDisabled =
-        process.env.EMAIL_VERIFICATION_DISABLED === "true";
+        process.env.EMAIL_VERIFICATION_DISABLED === 'true';
 
       // Create user (with error handling for no database)
       let user;
@@ -78,7 +78,7 @@ class AuthController {
         });
 
         // Create role-specific profile
-        if (role === "patient") {
+        if (role === 'patient') {
           await Patient.create({
             userId: user.id,
             dateOfBirth: null,
@@ -86,14 +86,14 @@ class AuthController {
             bloodType: null,
             emergencyContact: null,
           });
-        } else if (role === "doctor") {
+        } else if (role === 'doctor') {
           await Doctor.create({
             userId: user.id,
             specialty: null,
             licenseNumber: null,
             yearsOfExperience: null,
           });
-        } else if (role === "hospital_admin") {
+        } else if (role === 'hospital_admin') {
           await Hospital.create({
             userId: user.id,
             name: null,
@@ -111,7 +111,7 @@ class AuthController {
       } catch (dbError) {
         // Database not available, create mock user for testing
         logger.warn(
-          "Database not available, proceeding with mock registration",
+          'Database not available, proceeding with mock registration'
         );
         user = {
           id: Math.floor(Math.random() * 1000000),
@@ -133,7 +133,7 @@ class AuthController {
         try {
           await sendWelcomeEmail(user.email, user.firstName);
         } catch (emailError) {
-          logger.warn("Email service not available, continuing without email");
+          logger.warn('Email service not available, continuing without email');
         }
       }
 
@@ -142,8 +142,8 @@ class AuthController {
         res,
         {
           message: emailVerificationDisabled
-            ? "User registered and logged in successfully"
-            : "User registered successfully",
+            ? 'User registered and logged in successfully'
+            : 'User registered successfully',
           data: {
             user: {
               id: user.id,
@@ -156,10 +156,10 @@ class AuthController {
             refreshToken,
           },
         },
-        201,
+        201
       );
     } catch (error) {
-      return handleDatabaseError(error, res, "Registration failed");
+      return handleDatabaseError(error, res, 'Registration failed');
     }
   }
 
@@ -171,10 +171,10 @@ class AuthController {
         return errorResponse(
           res,
           {
-            message: "Validation failed",
+            message: 'Validation failed',
             errors: errors.array(),
           },
-          400,
+          400
         );
       }
 
@@ -186,25 +186,25 @@ class AuthController {
         user = await User.findOne({ where: { email } });
       } catch (dbError) {
         // Database not available, check if this is the test user we registered
-        logger.warn("Database not available, checking mock user");
-        if (email === "testuser@example.com" && password === "Password123!") {
+        logger.warn('Database not available, checking mock user');
+        if (email === 'testuser@example.com' && password === 'Password123!') {
           // Return mock login for the test user
           const mockUser = {
             id: 13297,
-            email: "testuser@example.com",
-            firstName: "Test",
-            lastName: "User",
-            role: "patient",
+            email: 'testuser@example.com',
+            firstName: 'Test',
+            lastName: 'User',
+            role: 'patient',
             isVerified: true, // Auto-verified since email verification is disabled
             password:
-              "$2a$12$87hKZ2rj3kNwmctb3gICEOXJ7YN.EotpIlgdqfXfvfbz.zCkX7vm.", // Hashed version of "Password123!"
+              '$2a$12$87hKZ2rj3kNwmctb3gICEOXJ7YN.EotpIlgdqfXfvfbz.zCkX7vm.', // Hashed version of "Password123!"
           };
 
           const accessToken = generateAccessToken(mockUser);
           const refreshToken = generateRefreshToken(mockUser);
 
           return successResponse(res, {
-            message: "Login successful",
+            message: 'Login successful',
             data: {
               user: {
                 id: mockUser.id,
@@ -221,20 +221,20 @@ class AuthController {
         return errorResponse(
           res,
           {
-            message: "Invalid credentials",
-            code: "AUTH_INVALID_CREDENTIALS",
+            message: 'Invalid credentials',
+            code: 'AUTH_INVALID_CREDENTIALS',
           },
-          401,
+          401
         );
       }
       if (!user) {
         return errorResponse(
           res,
           {
-            message: "Invalid credentials",
-            code: "AUTH_INVALID_CREDENTIALS",
+            message: 'Invalid credentials',
+            code: 'AUTH_INVALID_CREDENTIALS',
           },
-          401,
+          401
         );
       }
 
@@ -244,10 +244,10 @@ class AuthController {
         return errorResponse(
           res,
           {
-            message: "Invalid credentials",
-            code: "AUTH_INVALID_CREDENTIALS",
+            message: 'Invalid credentials',
+            code: 'AUTH_INVALID_CREDENTIALS',
           },
-          401,
+          401
         );
       }
 
@@ -256,10 +256,10 @@ class AuthController {
         return errorResponse(
           res,
           {
-            message: "Please verify your account",
-            code: "AUTH_ACCOUNT_NOT_VERIFIED",
+            message: 'Please verify your account',
+            code: 'AUTH_ACCOUNT_NOT_VERIFIED',
           },
-          401,
+          401
         );
       }
 
@@ -275,7 +275,7 @@ class AuthController {
 
       // Return success response
       return successResponse(res, {
-        message: "Login successful",
+        message: 'Login successful',
         data: {
           user: {
             id: user.id,
@@ -289,7 +289,7 @@ class AuthController {
         },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Login failed");
+      return handleDatabaseError(error, res, 'Login failed');
     }
   }
 
@@ -309,10 +309,10 @@ class AuthController {
         return errorResponse(
           res,
           {
-            message: "Invalid refresh token",
-            code: "AUTH_TOKEN_INVALID",
+            message: 'Invalid refresh token',
+            code: 'AUTH_TOKEN_INVALID',
           },
-          401,
+          401
         );
       }
 
@@ -328,10 +328,10 @@ class AuthController {
         return errorResponse(
           res,
           {
-            message: "Invalid refresh token",
-            code: "AUTH_TOKEN_INVALID",
+            message: 'Invalid refresh token',
+            code: 'AUTH_TOKEN_INVALID',
           },
-          401,
+          401
         );
       }
 
@@ -342,19 +342,19 @@ class AuthController {
       // Update refresh token in database
       await RefreshToken.update(
         { token: newRefreshToken },
-        { where: { userId: user.id } },
+        { where: { userId: user.id } }
       );
 
       // Return success response
       return successResponse(res, {
-        message: "Token refreshed successfully",
+        message: 'Token refreshed successfully',
         data: {
           accessToken: newAccessToken,
           refreshToken: newRefreshToken,
         },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Token refresh failed");
+      return handleDatabaseError(error, res, 'Token refresh failed');
     }
   }
 
@@ -372,10 +372,10 @@ class AuthController {
 
       // Return success response
       return successResponse(res, {
-        message: "Logout successful",
+        message: 'Logout successful',
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Logout failed");
+      return handleDatabaseError(error, res, 'Logout failed');
     }
   }
 
@@ -388,7 +388,7 @@ class AuthController {
 
       // Return success response
       return successResponse(res, {
-        message: "Profile retrieved successfully",
+        message: 'Profile retrieved successfully',
         data: {
           user: {
             id: user.id,
@@ -404,7 +404,7 @@ class AuthController {
         },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve profile");
+      return handleDatabaseError(error, res, 'Failed to retrieve profile');
     }
   }
 
@@ -426,7 +426,7 @@ class AuthController {
 
       // Return success response
       return successResponse(res, {
-        message: "Profile updated successfully",
+        message: 'Profile updated successfully',
         data: {
           user: {
             id: user.id,
@@ -443,7 +443,7 @@ class AuthController {
         },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to update profile");
+      return handleDatabaseError(error, res, 'Failed to update profile');
     }
   }
 
@@ -460,16 +460,16 @@ class AuthController {
         return errorResponse(
           res,
           {
-            message: "User not found",
-            code: "USER_NOT_FOUND",
+            message: 'User not found',
+            code: 'USER_NOT_FOUND',
           },
-          404,
+          404
         );
       }
 
       // Generate reset token
       const resetToken = jwt.sign({ id: user.id }, config.jwt.secret, {
-        expiresIn: "1h",
+        expiresIn: '1h',
       });
 
       // Save reset token
@@ -480,13 +480,13 @@ class AuthController {
 
       // Return success response
       return successResponse(res, {
-        message: "Password reset instructions sent to your email",
+        message: 'Password reset instructions sent to your email',
       });
     } catch (error) {
       return handleDatabaseError(
         error,
         res,
-        "Failed to process password reset request",
+        'Failed to process password reset request'
       );
     }
   }
@@ -507,10 +507,10 @@ class AuthController {
         return errorResponse(
           res,
           {
-            message: "Invalid or expired token",
-            code: "AUTH_TOKEN_INVALID",
+            message: 'Invalid or expired token',
+            code: 'AUTH_TOKEN_INVALID',
           },
-          400,
+          400
         );
       }
 
@@ -526,10 +526,10 @@ class AuthController {
 
       // Return success response
       return successResponse(res, {
-        message: "Password reset successfully",
+        message: 'Password reset successfully',
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to reset password");
+      return handleDatabaseError(error, res, 'Failed to reset password');
     }
   }
 
@@ -547,26 +547,26 @@ class AuthController {
         return errorResponse(
           res,
           {
-            message: "User not found",
-            code: "USER_NOT_FOUND",
+            message: 'User not found',
+            code: 'USER_NOT_FOUND',
           },
-          404,
+          404
         );
       }
 
       // Verify current password
       const isPasswordValid = await bcrypt.compare(
         current_password,
-        user.password,
+        user.password
       );
       if (!isPasswordValid) {
         return errorResponse(
           res,
           {
-            message: "Current password is incorrect",
-            code: "INVALID_PASSWORD",
+            message: 'Current password is incorrect',
+            code: 'INVALID_PASSWORD',
           },
-          400,
+          400
         );
       }
 
@@ -580,10 +580,10 @@ class AuthController {
       logger.info(`Password changed for user: ${user.email}`);
 
       return successResponse(res, {
-        message: "Password changed successfully",
+        message: 'Password changed successfully',
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to change password");
+      return handleDatabaseError(error, res, 'Failed to change password');
     }
   }
 
@@ -603,17 +603,17 @@ class AuthController {
         return errorResponse(
           res,
           {
-            message: "Invalid or expired token",
-            code: "AUTH_TOKEN_INVALID",
+            message: 'Invalid or expired token',
+            code: 'AUTH_TOKEN_INVALID',
           },
-          400,
+          400
         );
       }
 
       // Check if already verified
       if (user.is_verified) {
         return successResponse(res, {
-          message: "Email already verified",
+          message: 'Email already verified',
         });
       }
 
@@ -626,10 +626,10 @@ class AuthController {
       logger.info(`Email verified for user: ${user.email}`);
 
       return successResponse(res, {
-        message: "Email verified successfully",
+        message: 'Email verified successfully',
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to verify email");
+      return handleDatabaseError(error, res, 'Failed to verify email');
     }
   }
 
@@ -646,17 +646,17 @@ class AuthController {
         return errorResponse(
           res,
           {
-            message: "User not found",
-            code: "USER_NOT_FOUND",
+            message: 'User not found',
+            code: 'USER_NOT_FOUND',
           },
-          404,
+          404
         );
       }
 
       // Check if already verified
       if (user.is_verified) {
         return successResponse(res, {
-          message: "Email already verified",
+          message: 'Email already verified',
         });
       }
 
@@ -664,26 +664,26 @@ class AuthController {
       const verificationToken = jwt.sign(
         { id: user.id, email: user.email },
         config.jwt.secret,
-        { expiresIn: "24h" },
+        { expiresIn: '24h' }
       );
 
       // Send verification email
       await EmailService.sendVerificationEmail(
         user.email,
         verificationToken,
-        user.first_name,
+        user.first_name
       );
 
       logger.info(`Verification email resent to: ${user.email}`);
 
       return successResponse(res, {
-        message: "Verification email sent successfully",
+        message: 'Verification email sent successfully',
       });
     } catch (error) {
       return handleDatabaseError(
         error,
         res,
-        "Failed to resend verification email",
+        'Failed to resend verification email'
       );
     }
   }

@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const PasswordReset = sequelize.define(
-  "PasswordReset",
+  'PasswordReset',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -11,7 +11,7 @@ const PasswordReset = sequelize.define(
     },
     user_id: {
       type: DataTypes.INTEGER,
-      references: { model: "users", key: "id" },
+      references: { model: 'users', key: 'id' },
     },
     token: {
       type: DataTypes.STRING(255),
@@ -27,11 +27,11 @@ const PasswordReset = sequelize.define(
     },
   },
   {
-    tableName: "password_resets",
+    tableName: 'password_resets',
     timestamps: true,
     underscored: true,
     updatedAt: false,
-  },
+  }
 );
 
 module.exports = PasswordReset;

@@ -1,5 +1,5 @@
-const redis = require("../config/redis");
-const logger = require("../utils/logger");
+const redis = require('../config/redis');
+const logger = require('../utils/logger');
 
 class CacheService {
   /**
@@ -10,7 +10,7 @@ class CacheService {
       const value = await redis.get(key);
       return value ? JSON.parse(value) : null;
     } catch (error) {
-      logger.error("Cache get error:", error);
+      logger.error('Cache get error:', error);
       throw error;
     }
   }
@@ -28,7 +28,7 @@ class CacheService {
       }
       return true;
     } catch (error) {
-      logger.error("Cache set error:", error);
+      logger.error('Cache set error:', error);
       throw error;
     }
   }
@@ -41,7 +41,7 @@ class CacheService {
       await redis.del(key);
       return true;
     } catch (error) {
-      logger.error("Cache delete error:", error);
+      logger.error('Cache delete error:', error);
       throw error;
     }
   }
@@ -57,7 +57,7 @@ class CacheService {
       }
       return true;
     } catch (error) {
-      logger.error("Cache clear pattern error:", error);
+      logger.error('Cache clear pattern error:', error);
       throw error;
     }
   }

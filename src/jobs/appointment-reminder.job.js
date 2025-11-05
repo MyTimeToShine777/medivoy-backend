@@ -1,9 +1,9 @@
-const { Op } = require("sequelize");
-const { notificationQueue } = require("./queue");
-const { Appointment, User, Doctor } = require("../models");
-const { addEmailJob } = require("./email.job");
-const { addSMSJob } = require("./sms.job");
-const logger = require("../utils/logger");
+const { Op } = require('sequelize');
+const { notificationQueue } = require('./queue');
+const { Appointment, User, Doctor } = require('../models');
+const { addEmailJob } = require('./email.job');
+const { addSMSJob } = require('./sms.job');
+const logger = require('../utils/logger');
 
 // Send appointment reminders
 const sendAppointmentReminders = async () => {
@@ -22,23 +22,23 @@ const sendAppointmentReminders = async () => {
           [Op.between]: [tomorrow, endOfTomorrow],
         },
         status: {
-          [Op.in]: ["confirmed", "awaiting_consultation"],
+          [Op.in]: ['confirmed', 'awaiting_consultation'],
         },
       },
       include: [
         {
           model: User,
-          as: "patient",
-          attributes: ["id", "email", "phone", "first_name", "last_name"],
+          as: 'patient',
+          attributes: ['id', 'email', 'phone', 'first_name', 'last_name'],
         },
         {
           model: Doctor,
-          as: "doctor",
+          as: 'doctor',
           include: [
             {
               model: User,
-              as: "user",
-              attributes: ["first_name", "last_name"],
+              as: 'user',
+              attributes: ['first_name', 'last_name'],
             },
           ],
         },
@@ -53,7 +53,7 @@ const sendAppointmentReminders = async () => {
         const doctorName = `${appointment.doctor.user.first_name} ${appointment.doctor.user.last_name}`;
 
         // Send email reminder
-        await addEmailJob("appointment_reminder", {
+        await addEmailJob('appointment_reminder', {
           email: appointment.patient.email,
           appointment: {
             id: appointment.id,
@@ -66,7 +66,7 @@ const sendAppointmentReminders = async () => {
 
         // Send SMS reminder if phone number exists
         if (appointment.patient.phone) {
-          await addSMSJob("appointment_reminder", {
+          await addSMSJob('appointment_reminder', {
             phone: appointment.patient.phone,
             doctorName,
             appointmentDate: appointment.appointment_date.toLocaleDateString(),
@@ -75,26 +75,26 @@ const sendAppointmentReminders = async () => {
 
         // Send in-app notification
         await notificationQueue.add({
-          type: "in_app",
+          type: 'in_app',
           data: {
             user_id: appointment.patient_id,
-            title: "Appointment Reminder",
+            title: 'Appointment Reminder',
             message: `You have an appointment with Dr. ${doctorName} tomorrow at ${appointment.start_time}`,
-            type: "appointment",
-            channel: "in_app",
-            priority: "high",
+            type: 'appointment',
+            channel: 'in_app',
+            priority: 'high',
             data: {
               appointment_id: appointment.id,
             },
           },
         });
 
-        logger.info("Appointment reminder sent", {
+        logger.info('Appointment reminder sent', {
           appointmentId: appointment.id,
           patientId: appointment.patient_id,
         });
       } catch (error) {
-        logger.error("Failed to send appointment reminder", {
+        logger.error('Failed to send appointment reminder', {
           appointmentId: appointment.id,
           error: error.message,
         });
@@ -103,7 +103,7 @@ const sendAppointmentReminders = async () => {
 
     return { success: true, remindersSent: appointments.length };
   } catch (error) {
-    logger.error("Failed to send appointment reminders", {
+    logger.error('Failed to send appointment reminders', {
       error: error.message,
     });
     throw error;
@@ -128,23 +128,23 @@ const sendImmediateReminders = async () => {
           ],
         },
         status: {
-          [Op.in]: ["confirmed", "awaiting_consultation"],
+          [Op.in]: ['confirmed', 'awaiting_consultation'],
         },
       },
       include: [
         {
           model: User,
-          as: "patient",
-          attributes: ["id", "email", "phone", "first_name", "last_name"],
+          as: 'patient',
+          attributes: ['id', 'email', 'phone', 'first_name', 'last_name'],
         },
         {
           model: Doctor,
-          as: "doctor",
+          as: 'doctor',
           include: [
             {
               model: User,
-              as: "user",
-              attributes: ["first_name", "last_name"],
+              as: 'user',
+              attributes: ['first_name', 'last_name'],
             },
           ],
         },
@@ -159,19 +159,19 @@ const sendImmediateReminders = async () => {
 
         // Send SMS reminder
         if (appointment.patient.phone) {
-          await addSMSJob("appointment_reminder", {
+          await addSMSJob('appointment_reminder', {
             phone: appointment.patient.phone,
             doctorName,
-            appointmentDate: "in 1 hour",
+            appointmentDate: 'in 1 hour',
           });
         }
 
         // Send push notification
         await notificationQueue.add({
-          type: "push",
+          type: 'push',
           data: {
             userId: appointment.patient_id,
-            title: "Appointment Starting Soon",
+            title: 'Appointment Starting Soon',
             message: `Your appointment with Dr. ${doctorName} starts in 1 hour`,
             data: {
               appointment_id: appointment.id,
@@ -179,12 +179,12 @@ const sendImmediateReminders = async () => {
           },
         });
 
-        logger.info("Immediate appointment reminder sent", {
+        logger.info('Immediate appointment reminder sent', {
           appointmentId: appointment.id,
           patientId: appointment.patient_id,
         });
       } catch (error) {
-        logger.error("Failed to send immediate appointment reminder", {
+        logger.error('Failed to send immediate appointment reminder', {
           appointmentId: appointment.id,
           error: error.message,
         });
@@ -193,7 +193,7 @@ const sendImmediateReminders = async () => {
 
     return { success: true, remindersSent: appointments.length };
   } catch (error) {
-    logger.error("Failed to send immediate appointment reminders", {
+    logger.error('Failed to send immediate appointment reminders', {
       error: error.message,
     });
     throw error;
@@ -202,10 +202,10 @@ const sendImmediateReminders = async () => {
 
 // Schedule appointment reminder jobs
 const scheduleAppointmentReminders = () => {
-  const Queue = require("bull");
-  const config = require("../config");
+  const Queue = require('bull');
+  const config = require('../config');
 
-  const reminderQueue = new Queue("appointment-reminders", {
+  const reminderQueue = new Queue('appointment-reminders', {
     redis: {
       host: config.redis.host,
       port: config.redis.port,
@@ -215,38 +215,38 @@ const scheduleAppointmentReminders = () => {
 
   // Send daily reminders at 9 AM
   reminderQueue.add(
-    "daily-reminders",
+    'daily-reminders',
     {},
     {
       repeat: {
-        cron: "0 9 * * *", // 9 AM every day
+        cron: '0 9 * * *', // 9 AM every day
       },
-    },
+    }
   );
 
   // Check for immediate reminders every 30 minutes
   reminderQueue.add(
-    "immediate-reminders",
+    'immediate-reminders',
     {},
     {
       repeat: {
-        cron: "*/30 * * * *", // Every 30 minutes
+        cron: '*/30 * * * *', // Every 30 minutes
       },
-    },
+    }
   );
 
   // Process reminder jobs
   reminderQueue.process(
-    "daily-reminders",
-    async (job) => await sendAppointmentReminders(),
+    'daily-reminders',
+    async (job) => await sendAppointmentReminders()
   );
 
   reminderQueue.process(
-    "immediate-reminders",
-    async (job) => await sendImmediateReminders(),
+    'immediate-reminders',
+    async (job) => await sendImmediateReminders()
   );
 
-  logger.info("Appointment reminder jobs scheduled");
+  logger.info('Appointment reminder jobs scheduled');
 };
 
 module.exports = {

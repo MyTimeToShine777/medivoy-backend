@@ -1,7 +1,7 @@
-const MedicalRecord = require("../models/MedicalRecord.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const logger = require("../utils/logger");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const MedicalRecord = require('../models/MedicalRecord.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const logger = require('../utils/logger');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class MedicalRecordController {
   /**
@@ -34,10 +34,10 @@ class MedicalRecordController {
       return successResponse(
         res,
         {
-          message: "Medical record created successfully",
+          message: 'Medical record created successfully',
           data: medicalRecord,
         },
-        201,
+        201
       );
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -58,14 +58,14 @@ class MedicalRecordController {
         return errorResponse(
           res,
           {
-            message: "Medical record not found",
+            message: 'Medical record not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Medical record retrieved successfully",
+        message: 'Medical record retrieved successfully',
         data: medicalRecord,
       });
     } catch (error) {
@@ -88,9 +88,9 @@ class MedicalRecordController {
         return errorResponse(
           res,
           {
-            message: "Medical record not found",
+            message: 'Medical record not found',
           },
-          404,
+          404
         );
       }
 
@@ -103,7 +103,7 @@ class MedicalRecordController {
       });
 
       return successResponse(res, {
-        message: "Medical record updated successfully",
+        message: 'Medical record updated successfully',
         data: medicalRecord,
       });
     } catch (error) {
@@ -125,9 +125,9 @@ class MedicalRecordController {
         return errorResponse(
           res,
           {
-            message: "Medical record not found",
+            message: 'Medical record not found',
           },
-          404,
+          404
         );
       }
 
@@ -135,7 +135,7 @@ class MedicalRecordController {
       await medicalRecord.destroy();
 
       return successResponse(res, {
-        message: "Medical record deleted successfully",
+        message: 'Medical record deleted successfully',
       });
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -159,11 +159,11 @@ class MedicalRecordController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["recordDate", "DESC"]],
+        order: [['recordDate', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Medical records retrieved successfully",
+        message: 'Medical records retrieved successfully',
         data: medicalRecords.rows,
         pagination: {
           currentPage: parseInt(page, 10),

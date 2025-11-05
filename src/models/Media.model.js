@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Media = sequelize.define(
-  "Media",
+  'Media',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -29,15 +29,15 @@ const Media = sequelize.define(
     },
     uploaded_by_user_id: {
       type: DataTypes.INTEGER,
-      references: { model: "users", key: "id" },
+      references: { model: 'users', key: 'id' },
     },
   },
   {
-    tableName: "media",
+    tableName: 'media',
     timestamps: true,
     underscored: true,
     updatedAt: false,
-  },
+  }
 );
 
 module.exports = Media;

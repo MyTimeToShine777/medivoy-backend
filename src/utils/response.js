@@ -14,7 +14,7 @@
 const successResponse = (res, options, statusCode = 200) => {
   const response = {
     success: true,
-    message: options.message || "Success",
+    message: options.message || 'Success',
     ...(options.data && { data: options.data }),
     ...(options.pagination && { pagination: options.pagination }),
   };
@@ -35,7 +35,7 @@ const successResponse = (res, options, statusCode = 200) => {
 const errorResponse = (res, options, statusCode = 500) => {
   const response = {
     success: false,
-    message: options.message || "An error occurred",
+    message: options.message || 'An error occurred',
     ...(options.code && { code: options.code }),
     ...(options.error && { error: options.error }),
     ...(options.errors && { errors: options.errors }),
@@ -58,7 +58,7 @@ const paginatedResponse = (res, options, statusCode = 200) => {
 
   return res.status(statusCode).json({
     success: true,
-    message: options.message || "Success",
+    message: options.message || 'Success',
     data: options.data,
     pagination: {
       currentPage: pagination.currentPage,

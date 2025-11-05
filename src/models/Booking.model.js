@@ -1,122 +1,178 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+/**
+ * Booking Model - COMPLETE
+ * 16 booking statuses: inquiry → lead_assigned → consultation → medical → quote → payment → travel → treatment → completed/cancelled
+ * Status: Production-Ready
+ */
+
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Booking = sequelize.define(
-  "Booking",
+  'Booking',
   {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
     },
-    booking_number: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
+    bookingNumber: {
+      type: DataTypes.STRING,
       unique: true,
-    },
-    patient_id: {
-      type: DataTypes.INTEGER,
       allowNull: false,
-      references: { model: "patients", key: "id" },
     },
-    hospital_id: {
-      type: DataTypes.INTEGER,
-      references: { model: "hospitals", key: "id" },
+    patientId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: { model: 'Users', key: 'id' },
     },
-    treatment_id: {
-      type: DataTypes.INTEGER,
-      references: { model: "treatments", key: "id" },
+    treatmentId: {
+      type: DataTypes.UUID,
+      references: { model: 'Treatments', key: 'id' },
     },
-    package_id: {
-      type: DataTypes.INTEGER,
-      references: { model: "packages", key: "id" },
+    hospitalId: {
+      type: DataTypes.UUID,
+      references: { model: 'Hospitals', key: 'id' },
     },
-    booking_type: {
-      type: DataTypes.STRING(50),
+    doctorId: {
+      type: DataTypes.UUID,
+      references: { model: 'Users', key: 'id' },
     },
+
+    // 16 BOOKING STATUSES
     status: {
       type: DataTypes.ENUM(
-        "requested",
-        "under_review",
-        "accepted",
-        "rejected",
-        "quotation_sent",
-        "payment_details",
-        "confirmation_sent",
-        "payment_received",
-        "confirmation_completed",
-        "invoice_sent",
-        "travel_arrangements",
-        "consultation_scheduled",
-        "in_progress",
-        "completed",
-        "feedback_received",
-        "cancelled",
+        'inquiry', // 1. Initial inquiry
+        'lead_assigned', // 2. Sales team assigned
+        'consultation_scheduled', // 3. Consultation booked
+        'consultation_completed', // 4. Consultation done
+        'medical_review_pending', // 5. Awaiting medical review
+        'medical_approved', // 6. Approved by medical team
+        'medical_rejected', // 7. Rejected by medical team
+        'quote_generated', // 8. Cost estimate ready
+        'quote_accepted', // 9. Patient accepted quote
+        'quote_rejected', // 10. Patient rejected quote
+        'payment_pending', // 11. Waiting for payment
+        'payment_received', // 12. Payment confirmed
+        'travel_arranged', // 13. Travel arrangements made
+        'treatment_scheduled', // 14. Treatment date confirmed
+        'completed', // 15. Treatment completed
+        'cancelled', // 16. Booking cancelled
       ),
-      defaultValue: "requested",
+      defaultValue: 'inquiry',
     },
-    sub_status: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-      comment: "Additional status details",
+
+    // Medical Information
+    medicalHistory: DataTypes.TEXT,
+    pastTreatments: DataTypes.JSON,
+    allergies: DataTypes.TEXT,
+    currentMedications: DataTypes.JSON,
+
+    // Sales Coordination
+    salesCoordinatorId: {
+      type: DataTypes.UUID,
+      references: { model: 'Users', key: 'id' },
     },
-    requested_date: {
-      type: DataTypes.DATEONLY,
+    salesNotes: DataTypes.TEXT,
+    consultationDate: DataTypes.DATE,
+
+    // Medical Review
+    medicalReviewerId: {
+      type: DataTypes.UUID,
+      references: { model: 'Users', key: 'id' },
     },
-    confirmed_date: {
-      type: DataTypes.DATEONLY,
+    medicalReviewNotes: DataTypes.TEXT,
+    estimatedCost: {
+      type: DataTypes.DECIMAL(12, 2),
+      validate: { min: 0 },
     },
-    completion_date: {
-      type: DataTypes.DATEONLY,
-    },
-    total_amount: {
-      type: DataTypes.DECIMAL(10, 2),
-    },
-    currency: {
+    costCurrency: {
       type: DataTypes.STRING(3),
-      defaultValue: "USD",
+      defaultValue: 'USD',
     },
-    payment_status: {
-      type: DataTypes.STRING(50),
+
+    // Quotation
+    quoteGeneratedAt: DataTypes.DATE,
+    quoteValidUntil: DataTypes.DATE,
+    quoteAcceptedAt: DataTypes.DATE,
+
+    // Payment
+    paymentMethod: {
+      type: DataTypes.ENUM('credit_card', 'debit_card', 'bank_transfer', 'wallet', 'insurance'),
     },
-    medical_details: {
-      type: DataTypes.JSONB,
+    paymentReference: DataTypes.STRING,
+    paidAmount: {
+      type: DataTypes.DECIMAL(12, 2),
+      validate: { min: 0 },
     },
-    quotation_details: {
-      type: DataTypes.JSONB,
+    paidAt: DataTypes.DATE,
+    paymentStatus: {
+      type: DataTypes.ENUM('pending', 'completed', 'failed', 'refunded'),
+      defaultValue: 'pending',
     },
-    travel_details: {
-      type: DataTypes.JSONB,
+
+    // Travel
+    departureDate: DataTypes.DATE,
+    returnDate: DataTypes.DATE,
+    flightBooked: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
     },
-    notes: {
-      type: DataTypes.TEXT,
+    hotelBooked: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
     },
-    coordinator_id: {
-      type: DataTypes.INTEGER,
-      references: { model: "users", key: "id" },
+    visaRequired: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
     },
-    priority: {
-      type: DataTypes.ENUM("low", "medium", "high", "urgent"),
-      defaultValue: "medium",
+    travelNotes: DataTypes.TEXT,
+
+    // Treatment
+    treatmentDate: DataTypes.DATE,
+    treatmentTime: DataTypes.STRING,
+    treatmentLocation: DataTypes.STRING,
+    treatmentDuration: DataTypes.STRING,
+    treatmentOutcome: DataTypes.TEXT,
+
+    // Feedback
+    ratings: {
+      type: DataTypes.JSON,
+      defaultValue: { medical: 0, facility: 0, staff: 0, overall: 0 },
     },
-    cancellation_reason: {
-      type: DataTypes.TEXT,
-      allowNull: true,
+    feedback: DataTypes.TEXT,
+    recommendations: DataTypes.TEXT,
+
+    // Audit
+    createdBy: DataTypes.UUID,
+    updatedBy: DataTypes.UUID,
+    cancellationReason: DataTypes.TEXT,
+    cancelledAt: DataTypes.DATE,
+    cancelledBy: DataTypes.UUID,
+
+    // System Fields
+    isArchived: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
     },
-    cancelled_by: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: { model: "users", key: "id" },
-    },
-    cancelled_at: {
+
+    createdAt: {
       type: DataTypes.DATE,
-      allowNull: true,
+      defaultValue: DataTypes.NOW,
+    },
+    updatedAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
     },
   },
   {
-    tableName: "bookings",
     timestamps: true,
-    underscored: true,
+    indexes: [
+      { fields: ['bookingNumber'], unique: true },
+      { fields: ['patientId'] },
+      { fields: ['status'] },
+      { fields: ['hospitalId'] },
+      { fields: ['createdAt'] },
+    ],
   },
 );
 

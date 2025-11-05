@@ -1,5 +1,5 @@
-const Insurance = require("../models/Insurance.model");
-const logger = require("../utils/logger");
+const Insurance = require('../models/Insurance.model');
+const logger = require('../utils/logger');
 
 class InsuranceService {
   /**
@@ -10,7 +10,7 @@ class InsuranceService {
       const insurance = await Insurance.create(data);
       return insurance;
     } catch (error) {
-      logger.error("Create insurance service error:", error);
+      logger.error('Create insurance service error:', error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class InsuranceService {
       const insurance = await Insurance.findByPk(id);
       return insurance;
     } catch (error) {
-      logger.error("Get insurance by ID service error:", error);
+      logger.error('Get insurance by ID service error:', error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class InsuranceService {
     try {
       const insurance = await Insurance.findByPk(id);
       if (!insurance) {
-        throw new Error("Insurance provider not found");
+        throw new Error('Insurance provider not found');
       }
 
       await insurance.update(data);
       return insurance;
     } catch (error) {
-      logger.error("Update insurance service error:", error);
+      logger.error('Update insurance service error:', error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class InsuranceService {
     try {
       const insurance = await Insurance.findByPk(id);
       if (!insurance) {
-        throw new Error("Insurance provider not found");
+        throw new Error('Insurance provider not found');
       }
 
       await insurance.destroy();
       return true;
     } catch (error) {
-      logger.error("Delete insurance service error:", error);
+      logger.error('Delete insurance service error:', error);
       throw error;
     }
   }
@@ -75,12 +75,12 @@ class InsuranceService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return insurances;
     } catch (error) {
-      logger.error("Get all insurances service error:", error);
+      logger.error('Get all insurances service error:', error);
       throw error;
     }
   }

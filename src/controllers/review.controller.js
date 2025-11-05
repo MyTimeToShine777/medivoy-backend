@@ -1,6 +1,6 @@
-const Review = require("../models/Review.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const Review = require('../models/Review.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class ReviewController {
   /**
@@ -32,10 +32,10 @@ class ReviewController {
       return successResponse(
         res,
         {
-          message: "Review created successfully",
+          message: 'Review created successfully',
           data: review,
         },
-        201,
+        201
       );
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -56,14 +56,14 @@ class ReviewController {
         return errorResponse(
           res,
           {
-            message: "Review not found",
+            message: 'Review not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Review retrieved successfully",
+        message: 'Review retrieved successfully',
         data: review,
       });
     } catch (error) {
@@ -86,9 +86,9 @@ class ReviewController {
         return errorResponse(
           res,
           {
-            message: "Review not found",
+            message: 'Review not found',
           },
-          404,
+          404
         );
       }
 
@@ -99,7 +99,7 @@ class ReviewController {
       });
 
       return successResponse(res, {
-        message: "Review updated successfully",
+        message: 'Review updated successfully',
         data: review,
       });
     } catch (error) {
@@ -121,9 +121,9 @@ class ReviewController {
         return errorResponse(
           res,
           {
-            message: "Review not found",
+            message: 'Review not found',
           },
-          404,
+          404
         );
       }
 
@@ -131,7 +131,7 @@ class ReviewController {
       await review.destroy();
 
       return successResponse(res, {
-        message: "Review deleted successfully",
+        message: 'Review deleted successfully',
       });
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -162,11 +162,11 @@ class ReviewController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Reviews retrieved successfully",
+        message: 'Reviews retrieved successfully',
         data: reviews.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -195,16 +195,16 @@ class ReviewController {
       const result = await Review.findOne({
         where,
         attributes: [
-          [Sequelize.fn("AVG", Sequelize.col("rating")), "averageRating"],
-          [Sequelize.fn("COUNT", Sequelize.col("id")), "totalReviews"],
+          [Sequelize.fn('AVG', Sequelize.col('rating')), 'averageRating'],
+          [Sequelize.fn('COUNT', Sequelize.col('id')), 'totalReviews'],
         ],
       });
 
-      const averageRating = result.get("averageRating");
-      const totalReviews = result.get("totalReviews");
+      const averageRating = result.get('averageRating');
+      const totalReviews = result.get('totalReviews');
 
       return successResponse(res, {
-        message: "Average rating calculated successfully",
+        message: 'Average rating calculated successfully',
         data: {
           averageRating: parseFloat(averageRating).toFixed(1),
           totalReviews: parseInt(totalReviews, 10),
@@ -229,10 +229,10 @@ class ReviewController {
         return errorResponse(
           res,
           {
-            message: "Review not found",
-            code: "REVIEW_NOT_FOUND",
+            message: 'Review not found',
+            code: 'REVIEW_NOT_FOUND',
           },
-          404,
+          404
         );
       }
 
@@ -240,7 +240,7 @@ class ReviewController {
       await review.update({ is_verified: true });
 
       return successResponse(res, {
-        message: "Review verified successfully",
+        message: 'Review verified successfully',
         data: review,
       });
     } catch (error) {
@@ -258,17 +258,17 @@ class ReviewController {
 
       // Build where clause based on entity type
       const where = {};
-      if (entityType === "doctor") where.doctor_id = entityId;
-      else if (entityType === "hospital") where.hospital_id = entityId;
-      else if (entityType === "treatment") where.treatment_id = entityId;
+      if (entityType === 'doctor') where.doctor_id = entityId;
+      else if (entityType === 'hospital') where.hospital_id = entityId;
+      else if (entityType === 'treatment') where.treatment_id = entityId;
       else {
         return errorResponse(
           res,
           {
-            message: "Invalid entity type",
-            code: "INVALID_ENTITY_TYPE",
+            message: 'Invalid entity type',
+            code: 'INVALID_ENTITY_TYPE',
           },
-          400,
+          400
         );
       }
 
@@ -277,11 +277,11 @@ class ReviewController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["created_at", "DESC"]],
+        order: [['created_at', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Reviews retrieved successfully",
+        message: 'Reviews retrieved successfully',
         data: reviews.rows,
         pagination: {
           currentPage: parseInt(page, 10),

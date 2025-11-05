@@ -1,10 +1,10 @@
-const User = require("../models/User.model");
-const { successResponse, errorResponse } = require("../utils/response");
+const User = require('../models/User.model');
+const { successResponse, errorResponse } = require('../utils/response');
 const {
   handleDatabaseError,
   withDatabaseFallback,
   createPaginatedMockResponse,
-} = require("../utils/databaseErrorHandler");
+} = require('../utils/databaseErrorHandler');
 
 class UserController {
   /**
@@ -27,13 +27,13 @@ class UserController {
       return successResponse(
         res,
         {
-          message: "User created successfully",
+          message: 'User created successfully',
           data: user,
         },
-        201,
+        201
       );
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to create user");
+      return handleDatabaseError(error, res, 'Failed to create user');
     }
   }
 
@@ -51,14 +51,14 @@ class UserController {
         return errorResponse(
           res,
           {
-            message: "User not found",
+            message: 'User not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "User retrieved successfully",
+        message: 'User retrieved successfully',
         data: {
           id: user.id,
           email: user.email,
@@ -73,7 +73,7 @@ class UserController {
         },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve user");
+      return handleDatabaseError(error, res, 'Failed to retrieve user');
     }
   }
 
@@ -92,9 +92,9 @@ class UserController {
         return errorResponse(
           res,
           {
-            message: "User not found",
+            message: 'User not found',
           },
-          404,
+          404
         );
       }
 
@@ -108,7 +108,7 @@ class UserController {
       });
 
       return successResponse(res, {
-        message: "User updated successfully",
+        message: 'User updated successfully',
         data: {
           id: user.id,
           email: user.email,
@@ -123,7 +123,7 @@ class UserController {
         },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to update user");
+      return handleDatabaseError(error, res, 'Failed to update user');
     }
   }
 
@@ -141,9 +141,9 @@ class UserController {
         return errorResponse(
           res,
           {
-            message: "User not found",
+            message: 'User not found',
           },
-          404,
+          404
         );
       }
 
@@ -151,10 +151,10 @@ class UserController {
       await user.destroy();
 
       return successResponse(res, {
-        message: "User deleted successfully",
+        message: 'User deleted successfully',
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to delete user");
+      return handleDatabaseError(error, res, 'Failed to delete user');
     }
   }
 
@@ -168,7 +168,7 @@ class UserController {
       // Build where clause
       const where = {};
       if (role) where.role = role;
-      if (isVerified !== undefined) where.isVerified = isVerified === "true";
+      if (isVerified !== undefined) where.isVerified = isVerified === 'true';
 
       // Get users with pagination (with database fallback)
       const users = await withDatabaseFallback(
@@ -177,15 +177,15 @@ class UserController {
             where,
             limit: parseInt(limit, 10),
             offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-            order: [["createdAt", "DESC"]],
+            order: [['createdAt', 'DESC']],
           }),
-        "user",
+        'user',
         {},
-        createPaginatedMockResponse("user", page, limit, role ? { role } : {}),
+        createPaginatedMockResponse('user', page, limit, role ? { role } : {})
       );
 
       return successResponse(res, {
-        message: "Users retrieved successfully",
+        message: 'Users retrieved successfully',
         data: users.rows.map((user) => ({
           id: user.id,
           email: user.email,
@@ -205,7 +205,7 @@ class UserController {
         },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve users");
+      return handleDatabaseError(error, res, 'Failed to retrieve users');
     }
   }
 
@@ -223,9 +223,9 @@ class UserController {
         return errorResponse(
           res,
           {
-            message: "User not found",
+            message: 'User not found',
           },
-          404,
+          404
         );
       }
 
@@ -233,7 +233,7 @@ class UserController {
       await user.update({ isVerified: true });
 
       return successResponse(res, {
-        message: "User verified successfully",
+        message: 'User verified successfully',
         data: {
           id: user.id,
           email: user.email,
@@ -248,7 +248,7 @@ class UserController {
         },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to verify user");
+      return handleDatabaseError(error, res, 'Failed to verify user');
     }
   }
 }

@@ -29,11 +29,7 @@ const router = express.Router();
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.post(
-  '/register',
-  authValidation.register,
-  authController.register,
-);
+router.post('/register', authValidation.register, authController.register);
 
 /**
  * @swagger
@@ -60,11 +56,7 @@ router.post(
  *       500:
  *         $ref: '#/components/responses/ServerError'
  */
-router.post(
-  '/login',
-  authValidation.login,
-  authController.login,
-);
+router.post('/login', authValidation.login, authController.login);
 
 /**
  * @swagger
@@ -108,11 +100,7 @@ router.post('/logout', authController.logout);
  *       401:
  *         $ref: '#/components/responses/Unauthorized'
  */
-router.post(
-  '/refresh',
-  authValidation.refresh,
-  authController.refresh,
-);
+router.post('/refresh', authValidation.refresh, authController.refresh);
 
 /**
  * @swagger
@@ -167,7 +155,7 @@ router.get('/profile', authController.getProfile);
 router.put(
   '/profile',
   authValidation.updateProfile,
-  authController.updateProfile,
+  authController.updateProfile
 );
 
 /**
@@ -203,7 +191,7 @@ router.put(
 router.put(
   '/change-password',
   authValidation.changePassword,
-  authController.changePassword,
+  authController.changePassword
 );
 
 /**
@@ -234,7 +222,7 @@ router.put(
 router.post(
   '/forgot-password',
   authValidation.forgotPassword,
-  authController.forgotPassword,
+  authController.forgotPassword
 );
 
 /**
@@ -268,7 +256,7 @@ router.post(
 router.post(
   '/reset-password',
   authValidation.resetPassword,
-  authController.resetPassword,
+  authController.resetPassword
 );
 
 /**
@@ -298,7 +286,7 @@ router.post(
 router.post(
   '/verify-email',
   authValidation.verifyEmail,
-  authController.verifyEmail,
+  authController.verifyEmail
 );
 
 /**
@@ -329,7 +317,7 @@ router.post(
 router.post(
   '/resend-verification',
   authValidation.resendVerification,
-  authController.resendVerification,
+  authController.resendVerification
 );
 
 module.exports = router;

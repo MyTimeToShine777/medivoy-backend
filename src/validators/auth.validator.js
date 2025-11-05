@@ -1,5 +1,5 @@
-const Joi = require("joi");
-const { validateJoi } = require("../middleware/validate.middleware");
+const Joi = require('joi');
+const { validateJoi } = require('../middleware/validate.middleware');
 
 const registerSchema = Joi.object({
   email: Joi.string().email().required(),
@@ -8,11 +8,11 @@ const registerSchema = Joi.object({
     .required()
     .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
     .message(
-      "Password must contain uppercase, lowercase, number and special character",
+      'Password must contain uppercase, lowercase, number and special character'
     ),
   first_name: Joi.string().min(2).max(50).required(),
   last_name: Joi.string().min(2).max(50).required(),
-  role: Joi.string().valid("patient", "doctor", "hospital_admin").required(),
+  role: Joi.string().valid('patient', 'doctor', 'hospital_admin').required(),
   phone: Joi.string()
     .pattern(/^\+?[1-9]\d{1,14}$/)
     .optional(),
@@ -50,7 +50,7 @@ const updateProfileSchema = Joi.object({
     .pattern(/^\+?[1-9]\d{1,14}$/)
     .optional(),
   date_of_birth: Joi.date().optional(),
-  gender: Joi.string().valid("male", "female", "other").optional(),
+  gender: Joi.string().valid('male', 'female', 'other').optional(),
   address: Joi.string().optional(),
   city: Joi.string().optional(),
   state: Joi.string().optional(),
@@ -71,13 +71,13 @@ const resendVerificationSchema = Joi.object({
 });
 
 module.exports = {
-  register: validateJoi(registerSchema, "body"),
-  login: validateJoi(loginSchema, "body"),
-  forgotPassword: validateJoi(forgotPasswordSchema, "body"),
-  resetPassword: validateJoi(resetPasswordSchema, "body"),
-  changePassword: validateJoi(changePasswordSchema, "body"),
-  updateProfile: validateJoi(updateProfileSchema, "body"),
-  refresh: validateJoi(refreshSchema, "body"),
-  verifyEmail: validateJoi(verifyEmailSchema, "body"),
-  resendVerification: validateJoi(resendVerificationSchema, "body"),
+  register: validateJoi(registerSchema, 'body'),
+  login: validateJoi(loginSchema, 'body'),
+  forgotPassword: validateJoi(forgotPasswordSchema, 'body'),
+  resetPassword: validateJoi(resetPasswordSchema, 'body'),
+  changePassword: validateJoi(changePasswordSchema, 'body'),
+  updateProfile: validateJoi(updateProfileSchema, 'body'),
+  refresh: validateJoi(refreshSchema, 'body'),
+  verifyEmail: validateJoi(verifyEmailSchema, 'body'),
+  resendVerification: validateJoi(resendVerificationSchema, 'body'),
 };

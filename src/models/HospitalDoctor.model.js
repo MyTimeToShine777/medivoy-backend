@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const HospitalDoctor = sequelize.define(
-  "HospitalDoctor",
+  'HospitalDoctor',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -12,14 +12,14 @@ const HospitalDoctor = sequelize.define(
     hospital_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: { model: "hospitals", key: "id" },
-      onDelete: "CASCADE",
+      references: { model: 'hospitals', key: 'id' },
+      onDelete: 'CASCADE',
     },
     doctor_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: { model: "doctors", key: "id" },
-      onDelete: "CASCADE",
+      references: { model: 'doctors', key: 'id' },
+      onDelete: 'CASCADE',
     },
     department: {
       type: DataTypes.STRING(100),
@@ -36,16 +36,16 @@ const HospitalDoctor = sequelize.define(
     },
   },
   {
-    tableName: "hospital_doctors",
+    tableName: 'hospital_doctors',
     timestamps: true,
     underscored: true,
     indexes: [
       {
         unique: true,
-        fields: ["hospital_id", "doctor_id"],
+        fields: ['hospital_id', 'doctor_id'],
       },
     ],
-  },
+  }
 );
 
 module.exports = HospitalDoctor;

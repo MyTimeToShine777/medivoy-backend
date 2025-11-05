@@ -1,5 +1,5 @@
-const Appointment = require("../models/Appointment.model");
-const logger = require("../utils/logger");
+const Appointment = require('../models/Appointment.model');
+const logger = require('../utils/logger');
 
 class AppointmentService {
   /**
@@ -10,7 +10,7 @@ class AppointmentService {
       const appointment = await Appointment.create(data);
       return appointment;
     } catch (error) {
-      logger.error("Create appointment service error:", error);
+      logger.error('Create appointment service error:', error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class AppointmentService {
       const appointment = await Appointment.findByPk(id);
       return appointment;
     } catch (error) {
-      logger.error("Get appointment by ID service error:", error);
+      logger.error('Get appointment by ID service error:', error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class AppointmentService {
     try {
       const appointment = await Appointment.findByPk(id);
       if (!appointment) {
-        throw new Error("Appointment not found");
+        throw new Error('Appointment not found');
       }
 
       await appointment.update(data);
       return appointment;
     } catch (error) {
-      logger.error("Update appointment service error:", error);
+      logger.error('Update appointment service error:', error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class AppointmentService {
     try {
       const appointment = await Appointment.findByPk(id);
       if (!appointment) {
-        throw new Error("Appointment not found");
+        throw new Error('Appointment not found');
       }
 
       await appointment.destroy();
       return true;
     } catch (error) {
-      logger.error("Delete appointment service error:", error);
+      logger.error('Delete appointment service error:', error);
       throw error;
     }
   }
@@ -75,12 +75,12 @@ class AppointmentService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return appointments;
     } catch (error) {
-      logger.error("Get all appointments service error:", error);
+      logger.error('Get all appointments service error:', error);
       throw error;
     }
   }
@@ -92,13 +92,13 @@ class AppointmentService {
     try {
       const appointment = await Appointment.findByPk(id);
       if (!appointment) {
-        throw new Error("Appointment not found");
+        throw new Error('Appointment not found');
       }
 
       await appointment.update({ status });
       return appointment;
     } catch (error) {
-      logger.error("Update appointment status service error:", error);
+      logger.error('Update appointment status service error:', error);
       throw error;
     }
   }

@@ -1,6 +1,6 @@
-const Notification = require("../models/Notification.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const Notification = require('../models/Notification.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class NotificationController {
   /**
@@ -23,10 +23,10 @@ class NotificationController {
       return successResponse(
         res,
         {
-          message: "Notification created successfully",
+          message: 'Notification created successfully',
           data: notification,
         },
-        201,
+        201
       );
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -47,14 +47,14 @@ class NotificationController {
         return errorResponse(
           res,
           {
-            message: "Notification not found",
+            message: 'Notification not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Notification retrieved successfully",
+        message: 'Notification retrieved successfully',
         data: notification,
       });
     } catch (error) {
@@ -77,9 +77,9 @@ class NotificationController {
         return errorResponse(
           res,
           {
-            message: "Notification not found",
+            message: 'Notification not found',
           },
-          404,
+          404
         );
       }
 
@@ -93,7 +93,7 @@ class NotificationController {
       });
 
       return successResponse(res, {
-        message: "Notification updated successfully",
+        message: 'Notification updated successfully',
         data: notification,
       });
     } catch (error) {
@@ -115,9 +115,9 @@ class NotificationController {
         return errorResponse(
           res,
           {
-            message: "Notification not found",
+            message: 'Notification not found',
           },
-          404,
+          404
         );
       }
 
@@ -125,7 +125,7 @@ class NotificationController {
       await notification.destroy();
 
       return successResponse(res, {
-        message: "Notification deleted successfully",
+        message: 'Notification deleted successfully',
       });
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -142,7 +142,7 @@ class NotificationController {
 
       // Build where clause
       const where = { userId };
-      if (isRead !== undefined) where.isRead = isRead === "true";
+      if (isRead !== undefined) where.isRead = isRead === 'true';
       if (type) where.type = type;
 
       // Get notifications with pagination
@@ -150,11 +150,11 @@ class NotificationController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Notifications retrieved successfully",
+        message: 'Notifications retrieved successfully',
         data: notifications.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -181,9 +181,9 @@ class NotificationController {
         return errorResponse(
           res,
           {
-            message: "Notification not found",
+            message: 'Notification not found',
           },
-          404,
+          404
         );
       }
 
@@ -191,7 +191,7 @@ class NotificationController {
       await notification.update({ isRead: true });
 
       return successResponse(res, {
-        message: "Notification marked as read successfully",
+        message: 'Notification marked as read successfully',
         data: notification,
       });
     } catch (error) {
@@ -210,12 +210,12 @@ class NotificationController {
       const { count, rows } = await Notification.findAndCountAll({
         limit: parseInt(limit),
         offset: parseInt(offset),
-        order: [["created_at", "DESC"]],
-        include: [{ model: User, as: "user" }],
+        order: [['created_at', 'DESC']],
+        include: [{ model: User, as: 'user' }],
       });
 
       return successResponse(res, {
-        message: "Notifications retrieved successfully",
+        message: 'Notifications retrieved successfully',
         data: rows,
         pagination: {
           total: count,
@@ -228,7 +228,7 @@ class NotificationController {
       return handleDatabaseError(
         error,
         res,
-        "Failed to retrieve notifications",
+        'Failed to retrieve notifications'
       );
     }
   }

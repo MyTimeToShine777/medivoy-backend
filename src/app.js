@@ -10,15 +10,18 @@ const swaggerUi = require('swagger-ui-express');
 const config = require('./config');
 const loggerMiddleware = require('./middleware/logger.middleware');
 const { apiLimiter } = require('./middleware/rate-limit.middleware');
+const { checkQueuesHealth } = require('./jobs/queue');
+
+
 const {
-  securityMiddleware,
-  corsMiddleware,
-  apiSecurityMiddleware,
-  requestSizeLimiter,
+    securityMiddleware,
+    corsMiddleware,
+    apiSecurityMiddleware,
+    requestSizeLimiter,
 } = require('./middleware/security.middleware');
 const {
-  errorMiddleware,
-  notFoundHandler,
+    errorMiddleware,
+    notFoundHandler,
 } = require('./middleware/error.middleware');
 const routes = require('./routes');
 const swaggerSpec = require('./config/swagger');
@@ -32,20 +35,20 @@ const app = express();
 
 // Helmet - Security headers
 app.use(
-  helmet({
-    contentSecurityPolicy: config.env === 'production',
-    crossOriginEmbedderPolicy: config.env === 'production',
-  }),
+    helmet({
+        contentSecurityPolicy: config.env === 'production',
+        crossOriginEmbedderPolicy: config.env === 'production',
+    }),
 );
 
 // CORS - Cross-Origin Resource Sharing
 app.use(
-  cors({
-    origin: config.cors.origin,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  }),
+    cors({
+        origin: config.cors.origin,
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization'],
+    }),
 );
 // Enhanced Security Middleware\n  app.use(securityMiddleware);\n  \n  // Custom CORS Middleware\n  app.use(corsMiddleware);\n  \n  // API Security Headers\n  app.use(apiSecurityMiddleware);\n  \n  // Request Size Limiter\n  app.use(requestSizeLimiter);
 
@@ -60,7 +63,7 @@ app.use(compression());
 // ============================================================================
 
 if (config.env === 'development') {
-  app.use(loggerMiddleware);
+    app.use(loggerMiddleware);
 }
 
 // ============================================================================
@@ -69,28 +72,45 @@ if (config.env === 'development') {
 
 app.use('/api', apiLimiter);
 
+// This endpoint for admin monitoring
+app.get('/api/v1/admin/queues/health', async(req, res) => {
+    try {
+        const health = await checkQueuesHealth();
+        res.json({
+            success: true,
+            health,
+            timestamp: new Date().toISOString(),
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            error: error.message,
+        });
+    }
+});
+
 // ============================================================================
 // HEALTH CHECK
 // ============================================================================
 
 app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: config.env,
-    version: '1.0.0',
-  });
+    res.json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: config.env,
+        version: '1.0.0',
+    });
 });
 
 // Root endpoint
 app.get('/', (req, res) => {
-  res.json({
-    message: 'Medivoy Healthcare API',
-    version: '1.0.0',
-    documentation: '/api-docs',
-    health: '/health',
-  });
+    res.json({
+        message: 'Medivoy Healthcare API',
+        version: '1.0.0',
+        documentation: '/api-docs',
+        health: '/health',
+    });
 });
 
 // ============================================================================
@@ -98,15 +118,15 @@ app.get('/', (req, res) => {
 // ============================================================================
 
 if (config.swagger.enabled) {
-  app.use(
-    '/api-docs',
-    swaggerUi.serve,
-    swaggerUi.setup(swaggerSpec, {
-      explorer: true,
-      customCss: '.swagger-ui .topbar { display: none }',
-      customSiteTitle: 'Medivoy API Documentation',
-    }),
-  );
+    app.use(
+        '/api-docs',
+        swaggerUi.serve,
+        swaggerUi.setup(swaggerSpec, {
+            explorer: true,
+            customCss: '.swagger-ui .topbar { display: none }',
+            customSiteTitle: 'Medivoy API Documentation',
+        }),
+    );
 }
 
 // ============================================================================

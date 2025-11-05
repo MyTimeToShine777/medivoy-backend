@@ -54,7 +54,10 @@ router.get('/user/:userId', auditLogController.getUserActivityLogs);
  *     security:
  *       - bearerAuth: []
  */
-router.get('/entity/:entityType/:entityId', auditLogController.getEntityAuditTrail);
+router.get(
+  '/entity/:entityType/:entityId',
+  auditLogController.getEntityAuditTrail
+);
 
 /**
  * @swagger

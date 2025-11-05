@@ -1,5 +1,5 @@
-const WebsiteContent = require("../models/WebsiteContent.model");
-const logger = require("../utils/logger");
+const WebsiteContent = require('../models/WebsiteContent.model');
+const logger = require('../utils/logger');
 
 class WebsiteContentService {
   /**
@@ -10,7 +10,7 @@ class WebsiteContentService {
       const websiteContent = await WebsiteContent.create(data);
       return websiteContent;
     } catch (error) {
-      logger.error("Create website content service error:", error);
+      logger.error('Create website content service error:', error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class WebsiteContentService {
       const websiteContent = await WebsiteContent.findByPk(id);
       return websiteContent;
     } catch (error) {
-      logger.error("Get website content by ID service error:", error);
+      logger.error('Get website content by ID service error:', error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class WebsiteContentService {
     try {
       const websiteContent = await WebsiteContent.findByPk(id);
       if (!websiteContent) {
-        throw new Error("Website content not found");
+        throw new Error('Website content not found');
       }
 
       await websiteContent.update(data);
       return websiteContent;
     } catch (error) {
-      logger.error("Update website content service error:", error);
+      logger.error('Update website content service error:', error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class WebsiteContentService {
     try {
       const websiteContent = await WebsiteContent.findByPk(id);
       if (!websiteContent) {
-        throw new Error("Website content not found");
+        throw new Error('Website content not found');
       }
 
       await websiteContent.destroy();
       return true;
     } catch (error) {
-      logger.error("Delete website content service error:", error);
+      logger.error('Delete website content service error:', error);
       throw error;
     }
   }
@@ -75,12 +75,12 @@ class WebsiteContentService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return websiteContent;
     } catch (error) {
-      logger.error("Get all website content service error:", error);
+      logger.error('Get all website content service error:', error);
       throw error;
     }
   }
@@ -95,7 +95,7 @@ class WebsiteContentService {
       });
       return websiteContent;
     } catch (error) {
-      logger.error("Get website content by slug service error:", error);
+      logger.error('Get website content by slug service error:', error);
       throw error;
     }
   }

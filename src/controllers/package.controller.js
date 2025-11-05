@@ -1,6 +1,6 @@
-const Package = require("../models/Package.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const Package = require('../models/Package.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class PackageController {
   /**
@@ -34,10 +34,10 @@ class PackageController {
       return successResponse(
         res,
         {
-          message: "Package created successfully",
+          message: 'Package created successfully',
           data: pkg,
         },
-        201,
+        201
       );
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -58,14 +58,14 @@ class PackageController {
         return errorResponse(
           res,
           {
-            message: "Package not found",
+            message: 'Package not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Package retrieved successfully",
+        message: 'Package retrieved successfully',
         data: pkg,
       });
     } catch (error) {
@@ -89,9 +89,9 @@ class PackageController {
         return errorResponse(
           res,
           {
-            message: "Package not found",
+            message: 'Package not found',
           },
-          404,
+          404
         );
       }
 
@@ -106,7 +106,7 @@ class PackageController {
       });
 
       return successResponse(res, {
-        message: "Package updated successfully",
+        message: 'Package updated successfully',
         data: pkg,
       });
     } catch (error) {
@@ -128,9 +128,9 @@ class PackageController {
         return errorResponse(
           res,
           {
-            message: "Package not found",
+            message: 'Package not found',
           },
-          404,
+          404
         );
       }
 
@@ -138,7 +138,7 @@ class PackageController {
       await pkg.destroy();
 
       return successResponse(res, {
-        message: "Package deleted successfully",
+        message: 'Package deleted successfully',
       });
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -162,18 +162,18 @@ class PackageController {
       const where = {};
       if (treatmentId) where.treatmentId = treatmentId;
       if (hospitalId) where.hospitalId = hospitalId;
-      if (isActive !== undefined) where.isActive = isActive === "true";
+      if (isActive !== undefined) where.isActive = isActive === 'true';
 
       // Get packages with pagination
       const packages = await Package.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Packages retrieved successfully",
+        message: 'Packages retrieved successfully',
         data: packages.rows,
         pagination: {
           currentPage: parseInt(page, 10),

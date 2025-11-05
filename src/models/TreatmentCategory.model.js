@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const TreatmentCategory = sequelize.define(
-  "TreatmentCategory",
+  'TreatmentCategory',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -37,10 +37,10 @@ const TreatmentCategory = sequelize.define(
     },
   },
   {
-    tableName: "treatment_categories",
+    tableName: 'treatment_categories',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = TreatmentCategory;

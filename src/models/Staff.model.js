@@ -3,11 +3,11 @@
  * Represents staff members (coordinators, administrators, support staff)
  */
 
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Staff = sequelize.define(
-  "Staff",
+  'Staff',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -18,22 +18,22 @@ const Staff = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "users",
-        key: "id",
+        model: 'users',
+        key: 'id',
       },
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     },
     staff_type: {
       type: DataTypes.ENUM(
-        "coordinator",
-        "administrator",
-        "support",
-        "manager",
-        "medical_staff",
+        'coordinator',
+        'administrator',
+        'support',
+        'manager',
+        'medical_staff'
       ),
       allowNull: false,
-      defaultValue: "support",
+      defaultValue: 'support',
     },
     employee_id: {
       type: DataTypes.STRING(50),
@@ -52,11 +52,11 @@ const Staff = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: "hospitals",
-        key: "id",
+        model: 'hospitals',
+        key: 'id',
       },
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE',
     },
     specialization: {
       type: DataTypes.STRING(200),
@@ -76,24 +76,24 @@ const Staff = sequelize.define(
       allowNull: true,
     },
     employment_status: {
-      type: DataTypes.ENUM("active", "inactive", "on_leave", "terminated"),
+      type: DataTypes.ENUM('active', 'inactive', 'on_leave', 'terminated'),
       allowNull: false,
-      defaultValue: "active",
+      defaultValue: 'active',
     },
     work_schedule: {
       type: DataTypes.JSON,
       allowNull: true,
-      comment: "Working hours and days",
+      comment: 'Working hours and days',
     },
     assigned_regions: {
       type: DataTypes.JSON,
       allowNull: true,
-      comment: "Countries/regions assigned to this staff member",
+      comment: 'Countries/regions assigned to this staff member',
     },
     languages: {
       type: DataTypes.JSON,
       allowNull: true,
-      comment: "Languages spoken by staff",
+      comment: 'Languages spoken by staff',
     },
     contact_number: {
       type: DataTypes.STRING(20),
@@ -102,7 +102,7 @@ const Staff = sequelize.define(
     emergency_contact: {
       type: DataTypes.JSON,
       allowNull: true,
-      comment: "Emergency contact details",
+      comment: 'Emergency contact details',
     },
     address: {
       type: DataTypes.TEXT,
@@ -123,7 +123,7 @@ const Staff = sequelize.define(
     commission_rate: {
       type: DataTypes.DECIMAL(5, 2),
       allowNull: true,
-      comment: "Commission percentage for coordinators",
+      comment: 'Commission percentage for coordinators',
     },
     performance_rating: {
       type: DataTypes.DECIMAL(3, 2),
@@ -147,7 +147,7 @@ const Staff = sequelize.define(
     permissions: {
       type: DataTypes.JSON,
       allowNull: true,
-      comment: "Custom permissions for this staff member",
+      comment: 'Custom permissions for this staff member',
     },
     notes: {
       type: DataTypes.TEXT,
@@ -178,27 +178,27 @@ const Staff = sequelize.define(
     },
   },
   {
-    tableName: "staff",
+    tableName: 'staff',
     timestamps: true,
     underscored: true,
     indexes: [
       {
-        fields: ["user_id"],
+        fields: ['user_id'],
       },
       {
-        fields: ["hospital_id"],
+        fields: ['hospital_id'],
       },
       {
-        fields: ["staff_type"],
+        fields: ['staff_type'],
       },
       {
-        fields: ["employment_status"],
+        fields: ['employment_status'],
       },
       {
-        fields: ["employee_id"],
+        fields: ['employee_id'],
       },
     ],
-  },
+  }
 );
 
 module.exports = Staff;

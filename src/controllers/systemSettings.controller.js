@@ -3,8 +3,8 @@
  * Handles system configuration and settings management
  */
 
-const { Op } = require("sequelize");
-const { SystemSettings, User } = require("../models");
+const { Op } = require('sequelize');
+const { SystemSettings, User } = require('../models');
 
 /**
  * Get all settings
@@ -15,20 +15,20 @@ exports.getAllSettings = async (req, res) => {
 
     const whereClause = {};
     if (category) whereClause.category = category;
-    if (isPublic !== undefined) whereClause.is_public = isPublic === "true";
+    if (isPublic !== undefined) whereClause.is_public = isPublic === 'true';
 
     const settings = await SystemSettings.findAll({
       where: whereClause,
       include: [
         {
           model: User,
-          as: "updatedBy",
-          attributes: ["id", "first_name", "last_name", "email"],
+          as: 'updatedBy',
+          attributes: ['id', 'first_name', 'last_name', 'email'],
         },
       ],
       order: [
-        ["category", "ASC"],
-        ["setting_key", "ASC"],
+        ['category', 'ASC'],
+        ['setting_key', 'ASC'],
       ],
     });
 
@@ -37,10 +37,10 @@ exports.getAllSettings = async (req, res) => {
       data: settings,
     });
   } catch (error) {
-    console.error("Error fetching settings:", error);
+    console.error('Error fetching settings:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching settings",
+      message: 'Error fetching settings',
       error: error.message,
     });
   }
@@ -58,8 +58,8 @@ exports.getSettingByKey = async (req, res) => {
       include: [
         {
           model: User,
-          as: "updatedBy",
-          attributes: ["id", "first_name", "last_name", "email"],
+          as: 'updatedBy',
+          attributes: ['id', 'first_name', 'last_name', 'email'],
         },
       ],
     });
@@ -67,7 +67,7 @@ exports.getSettingByKey = async (req, res) => {
     if (!setting) {
       return res.status(404).json({
         success: false,
-        message: "Setting not found",
+        message: 'Setting not found',
       });
     }
 
@@ -76,10 +76,10 @@ exports.getSettingByKey = async (req, res) => {
       data: setting,
     });
   } catch (error) {
-    console.error("Error fetching setting:", error);
+    console.error('Error fetching setting:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching setting",
+      message: 'Error fetching setting',
       error: error.message,
     });
   }
@@ -97,11 +97,11 @@ exports.getSettingsByCategory = async (req, res) => {
       include: [
         {
           model: User,
-          as: "updatedBy",
-          attributes: ["id", "first_name", "last_name"],
+          as: 'updatedBy',
+          attributes: ['id', 'first_name', 'last_name'],
         },
       ],
-      order: [["setting_key", "ASC"]],
+      order: [['setting_key', 'ASC']],
     });
 
     res.json({
@@ -109,10 +109,10 @@ exports.getSettingsByCategory = async (req, res) => {
       data: settings,
     });
   } catch (error) {
-    console.error("Error fetching settings by category:", error);
+    console.error('Error fetching settings by category:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching settings by category",
+      message: 'Error fetching settings by category',
       error: error.message,
     });
   }
@@ -140,8 +140,8 @@ exports.upsertSetting = async (req, res) => {
       {
         setting_key,
         setting_value,
-        setting_type: setting_type || "string",
-        category: category || "general",
+        setting_type: setting_type || 'string',
+        category: category || 'general',
         description,
         is_public: is_public !== undefined ? is_public : false,
         is_encrypted: is_encrypted !== undefined ? is_encrypted : false,
@@ -151,7 +151,7 @@ exports.upsertSetting = async (req, res) => {
       },
       {
         returning: true,
-      },
+      }
     );
 
     const settingWithDetails = await SystemSettings.findOne({
@@ -159,8 +159,8 @@ exports.upsertSetting = async (req, res) => {
       include: [
         {
           model: User,
-          as: "updatedBy",
-          attributes: ["id", "first_name", "last_name", "email"],
+          as: 'updatedBy',
+          attributes: ['id', 'first_name', 'last_name', 'email'],
         },
       ],
     });
@@ -168,15 +168,15 @@ exports.upsertSetting = async (req, res) => {
     res.status(created ? 201 : 200).json({
       success: true,
       message: created
-        ? "Setting created successfully"
-        : "Setting updated successfully",
+        ? 'Setting created successfully'
+        : 'Setting updated successfully',
       data: settingWithDetails,
     });
   } catch (error) {
-    console.error("Error upserting setting:", error);
+    console.error('Error upserting setting:', error);
     res.status(500).json({
       success: false,
-      message: "Error saving setting",
+      message: 'Error saving setting',
       error: error.message,
     });
   }
@@ -197,7 +197,7 @@ exports.updateSettingValue = async (req, res) => {
     if (!setting) {
       return res.status(404).json({
         success: false,
-        message: "Setting not found",
+        message: 'Setting not found',
       });
     }
 
@@ -211,22 +211,22 @@ exports.updateSettingValue = async (req, res) => {
       include: [
         {
           model: User,
-          as: "updatedBy",
-          attributes: ["id", "first_name", "last_name", "email"],
+          as: 'updatedBy',
+          attributes: ['id', 'first_name', 'last_name', 'email'],
         },
       ],
     });
 
     res.json({
       success: true,
-      message: "Setting value updated successfully",
+      message: 'Setting value updated successfully',
       data: updatedSetting,
     });
   } catch (error) {
-    console.error("Error updating setting value:", error);
+    console.error('Error updating setting value:', error);
     res.status(500).json({
       success: false,
-      message: "Error updating setting value",
+      message: 'Error updating setting value',
       error: error.message,
     });
   }
@@ -246,7 +246,7 @@ exports.deleteSetting = async (req, res) => {
     if (!setting) {
       return res.status(404).json({
         success: false,
-        message: "Setting not found",
+        message: 'Setting not found',
       });
     }
 
@@ -254,13 +254,13 @@ exports.deleteSetting = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Setting deleted successfully",
+      message: 'Setting deleted successfully',
     });
   } catch (error) {
-    console.error("Error deleting setting:", error);
+    console.error('Error deleting setting:', error);
     res.status(500).json({
       success: false,
-      message: "Error deleting setting",
+      message: 'Error deleting setting',
       error: error.message,
     });
   }
@@ -274,11 +274,11 @@ exports.getPublicSettings = async (req, res) => {
     const settings = await SystemSettings.findAll({
       where: { is_public: true },
       attributes: [
-        "setting_key",
-        "setting_value",
-        "setting_type",
-        "category",
-        "description",
+        'setting_key',
+        'setting_value',
+        'setting_type',
+        'category',
+        'description',
       ],
     });
 
@@ -298,10 +298,10 @@ exports.getPublicSettings = async (req, res) => {
       data: settingsObject,
     });
   } catch (error) {
-    console.error("Error fetching public settings:", error);
+    console.error('Error fetching public settings:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching public settings",
+      message: 'Error fetching public settings',
       error: error.message,
     });
   }
@@ -317,7 +317,7 @@ exports.bulkUpdateSettings = async (req, res) => {
     if (!Array.isArray(settings) || settings.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Settings array is required",
+        message: 'Settings array is required',
       });
     }
 
@@ -337,7 +337,7 @@ exports.bulkUpdateSettings = async (req, res) => {
         if (!setting) {
           results.failed.push({
             setting_key,
-            reason: "Setting not found",
+            reason: 'Setting not found',
           });
           continue;
         }
@@ -362,10 +362,10 @@ exports.bulkUpdateSettings = async (req, res) => {
       data: results,
     });
   } catch (error) {
-    console.error("Error bulk updating settings:", error);
+    console.error('Error bulk updating settings:', error);
     res.status(500).json({
       success: false,
-      message: "Error bulk updating settings",
+      message: 'Error bulk updating settings',
       error: error.message,
     });
   }
@@ -386,14 +386,14 @@ exports.resetSettingToDefault = async (req, res) => {
     if (!setting) {
       return res.status(404).json({
         success: false,
-        message: "Setting not found",
+        message: 'Setting not found',
       });
     }
 
     if (!setting.default_value) {
       return res.status(400).json({
         success: false,
-        message: "No default value defined for this setting",
+        message: 'No default value defined for this setting',
       });
     }
 
@@ -404,14 +404,14 @@ exports.resetSettingToDefault = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Setting reset to default value",
+      message: 'Setting reset to default value',
       data: setting,
     });
   } catch (error) {
-    console.error("Error resetting setting:", error);
+    console.error('Error resetting setting:', error);
     res.status(500).json({
       success: false,
-      message: "Error resetting setting",
+      message: 'Error resetting setting',
       error: error.message,
     });
   }
@@ -429,7 +429,7 @@ exports.getSystemSettingById = async (req, res) => {
     if (!setting) {
       return res.status(404).json({
         success: false,
-        message: "System setting not found",
+        message: 'System setting not found',
       });
     }
 
@@ -440,7 +440,7 @@ exports.getSystemSettingById = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error fetching system setting",
+      message: 'Error fetching system setting',
       error: error.message,
     });
   }

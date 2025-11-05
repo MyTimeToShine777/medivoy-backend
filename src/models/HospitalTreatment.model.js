@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const HospitalTreatment = sequelize.define(
-  "HospitalTreatment",
+  'HospitalTreatment',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -12,21 +12,21 @@ const HospitalTreatment = sequelize.define(
     hospital_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: { model: "hospitals", key: "id" },
-      onDelete: "CASCADE",
+      references: { model: 'hospitals', key: 'id' },
+      onDelete: 'CASCADE',
     },
     treatment_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: { model: "treatments", key: "id" },
-      onDelete: "CASCADE",
+      references: { model: 'treatments', key: 'id' },
+      onDelete: 'CASCADE',
     },
     base_price: {
       type: DataTypes.DECIMAL(10, 2),
     },
     currency: {
       type: DataTypes.STRING(3),
-      defaultValue: "USD",
+      defaultValue: 'USD',
     },
     duration_days: {
       type: DataTypes.INTEGER,
@@ -49,10 +49,10 @@ const HospitalTreatment = sequelize.define(
     },
   },
   {
-    tableName: "hospital_treatments",
+    tableName: 'hospital_treatments',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = HospitalTreatment;

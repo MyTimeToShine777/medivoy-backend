@@ -26,7 +26,12 @@ router.post('/upload', auth, upload.single('file'), mediaController.uploadFile);
  * @desc    Upload multiple files
  * @access  Private
  */
-router.post('/upload-multiple', auth, upload.array('files', 10), mediaController.uploadMultipleFiles);
+router.post(
+  '/upload-multiple',
+  auth,
+  upload.array('files', 10),
+  mediaController.uploadMultipleFiles
+);
 
 /**
  * @route   DELETE /api/v1/media/:fileId
@@ -127,7 +132,12 @@ router.post('/optimize', auth, mediaController.getOptimizedUrl);
  * @desc    Purge cache
  * @access  Private (Admin only)
  */
-router.post('/purge-cache', auth, authorize(['admin']), mediaController.purgeCache);
+router.post(
+  '/purge-cache',
+  auth,
+  authorize(['admin']),
+  mediaController.purgeCache
+);
 
 /**
  * @route   GET /api/v1/media/auth/params
@@ -148,7 +158,12 @@ router.post('/folder', auth, mediaController.createFolder);
  * @desc    Delete folder
  * @access  Private (Admin only)
  */
-router.delete('/folder', auth, authorize(['admin']), mediaController.deleteFolder);
+router.delete(
+  '/folder',
+  auth,
+  authorize(['admin']),
+  mediaController.deleteFolder
+);
 
 router.get('/:id', auth, mediaController.getMediaById);
 module.exports = router;

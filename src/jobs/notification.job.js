@@ -1,28 +1,28 @@
-const { notificationQueue } = require("./queue");
-const notificationService = require("../services/notification.service");
-const logger = require("../utils/logger");
+const { notificationQueue } = require('./queue');
+const notificationService = require('../services/notification.service');
+const logger = require('../utils/logger');
 
 // Process notification jobs
 notificationQueue.process(async (job) => {
   const { type, data } = job.data;
 
   try {
-    logger.info("Processing notification job", { type, jobId: job.id });
+    logger.info('Processing notification job', { type, jobId: job.id });
 
     switch (type) {
-      case "push":
+      case 'push':
         await sendPushNotification(data);
         break;
 
-      case "in_app":
+      case 'in_app':
         await notificationService.create(data);
         break;
 
-      case "bulk":
+      case 'bulk':
         await sendBulkNotifications(data);
         break;
 
-      case "scheduled":
+      case 'scheduled':
         await sendScheduledNotification(data);
         break;
 
@@ -30,13 +30,13 @@ notificationQueue.process(async (job) => {
         throw new Error(`Unknown notification type: ${type}`);
     }
 
-    logger.info("Notification job completed successfully", {
+    logger.info('Notification job completed successfully', {
       type,
       jobId: job.id,
     });
     return { success: true, type };
   } catch (error) {
-    logger.error("Notification job failed", {
+    logger.error('Notification job failed', {
       type,
       jobId: job.id,
       error: error.message,
@@ -48,7 +48,7 @@ notificationQueue.process(async (job) => {
 // Send push notification (Firebase Cloud Messaging)
 const sendPushNotification = async (data) => {
   // TODO: Implement actual Firebase push notification
-  logger.info("Sending push notification", data);
+  logger.info('Sending push notification', data);
 
   const { userId, title, message, data: notificationData } = data;
 
@@ -71,7 +71,7 @@ const sendBulkNotifications = async (data) => {
       message,
       type,
       channel,
-    }),
+    })
   );
 
   return Promise.all(promises);
@@ -105,13 +105,13 @@ const addNotificationJob = async (type, data, options = {}) => {
         priority: options.priority || 5,
         delay: options.delay || 0,
         ...options,
-      },
+      }
     );
 
-    logger.info("Notification job added to queue", { type, jobId: job.id });
+    logger.info('Notification job added to queue', { type, jobId: job.id });
     return job;
   } catch (error) {
-    logger.error("Failed to add notification job to queue", {
+    logger.error('Failed to add notification job to queue', {
       type,
       error: error.message,
     });

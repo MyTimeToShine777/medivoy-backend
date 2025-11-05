@@ -32,12 +32,7 @@ const router = express.Router();
  *         $ref: '#/components/responses/ServerError'
  */
 // Create doctor (admin only)
-router.post(
-  '/',
-  auth,
-  authorize(['admin']),
-  doctorController.createDoctor,
-);
+router.post('/', auth, authorize(['admin']), doctorController.createDoctor);
 
 /**
  * @swagger
@@ -66,17 +61,14 @@ router.post(
  *         $ref: '#/components/responses/ServerError'
  */
 // Get doctor by ID (public endpoint)
-router.get(
-  '/:id',
-  doctorController.getDoctor,
-);
+router.get('/:id', doctorController.getDoctor);
 
 // Update doctor (doctors themselves, admin)
 router.put(
   '/:id',
   auth,
   authorize(['admin', 'doctor']),
-  doctorController.updateDoctor,
+  doctorController.updateDoctor
 );
 
 // Delete doctor (admin only)
@@ -84,7 +76,7 @@ router.delete(
   '/:id',
   auth,
   authorize(['admin']),
-  doctorController.deleteDoctor,
+  doctorController.deleteDoctor
 );
 
 /**
@@ -119,17 +111,14 @@ router.delete(
  *         $ref: '#/components/responses/ServerError'
  */
 // Get all doctors (public endpoint)
-router.get(
-  '/',
-  doctorController.getAllDoctors,
-);
+router.get('/', doctorController.getAllDoctors);
 
 // Verify doctor (admin only)
 router.patch(
   '/:id/verify',
   auth,
   authorize(['admin']),
-  doctorController.verifyDoctor,
+  doctorController.verifyDoctor
 );
 
 module.exports = router;

@@ -1,5 +1,5 @@
-const Review = require("../models/Review.model");
-const logger = require("../utils/logger");
+const Review = require('../models/Review.model');
+const logger = require('../utils/logger');
 
 class ReviewService {
   /**
@@ -10,7 +10,7 @@ class ReviewService {
       const review = await Review.create(data);
       return review;
     } catch (error) {
-      logger.error("Create review service error:", error);
+      logger.error('Create review service error:', error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class ReviewService {
       const review = await Review.findByPk(id);
       return review;
     } catch (error) {
-      logger.error("Get review by ID service error:", error);
+      logger.error('Get review by ID service error:', error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class ReviewService {
     try {
       const review = await Review.findByPk(id);
       if (!review) {
-        throw new Error("Review not found");
+        throw new Error('Review not found');
       }
 
       await review.update(data);
       return review;
     } catch (error) {
-      logger.error("Update review service error:", error);
+      logger.error('Update review service error:', error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class ReviewService {
     try {
       const review = await Review.findByPk(id);
       if (!review) {
-        throw new Error("Review not found");
+        throw new Error('Review not found');
       }
 
       await review.destroy();
       return true;
     } catch (error) {
-      logger.error("Delete review service error:", error);
+      logger.error('Delete review service error:', error);
       throw error;
     }
   }
@@ -75,12 +75,12 @@ class ReviewService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return reviews;
     } catch (error) {
-      logger.error("Get all reviews service error:", error);
+      logger.error('Get all reviews service error:', error);
       throw error;
     }
   }
@@ -92,13 +92,13 @@ class ReviewService {
     try {
       const review = await Review.findByPk(id);
       if (!review) {
-        throw new Error("Review not found");
+        throw new Error('Review not found');
       }
 
       await review.update({ isVerified: true });
       return review;
     } catch (error) {
-      logger.error("Verify review service error:", error);
+      logger.error('Verify review service error:', error);
       throw error;
     }
   }

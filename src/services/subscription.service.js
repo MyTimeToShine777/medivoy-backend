@@ -1,6 +1,6 @@
-const Subscription = require("../models/Subscription.model");
-const SubscriptionPlan = require("../models/SubscriptionPlan.model");
-const logger = require("../utils/logger");
+const Subscription = require('../models/Subscription.model');
+const SubscriptionPlan = require('../models/SubscriptionPlan.model');
+const logger = require('../utils/logger');
 
 class SubscriptionService {
   /**
@@ -11,7 +11,7 @@ class SubscriptionService {
       // Find subscription plan
       const plan = await SubscriptionPlan.findByPk(data.planId);
       if (!plan) {
-        throw new Error("Subscription plan not found");
+        throw new Error('Subscription plan not found');
       }
 
       // Add plan details to subscription data
@@ -25,7 +25,7 @@ class SubscriptionService {
       const subscription = await Subscription.create(subscriptionData);
       return subscription;
     } catch (error) {
-      logger.error("Create subscription service error:", error);
+      logger.error('Create subscription service error:', error);
       throw error;
     }
   }
@@ -38,7 +38,7 @@ class SubscriptionService {
       const subscription = await Subscription.findByPk(id);
       return subscription;
     } catch (error) {
-      logger.error("Get subscription by ID service error:", error);
+      logger.error('Get subscription by ID service error:', error);
       throw error;
     }
   }
@@ -50,13 +50,13 @@ class SubscriptionService {
     try {
       const subscription = await Subscription.findByPk(id);
       if (!subscription) {
-        throw new Error("Subscription not found");
+        throw new Error('Subscription not found');
       }
 
       await subscription.update(data);
       return subscription;
     } catch (error) {
-      logger.error("Update subscription service error:", error);
+      logger.error('Update subscription service error:', error);
       throw error;
     }
   }
@@ -68,13 +68,13 @@ class SubscriptionService {
     try {
       const subscription = await Subscription.findByPk(id);
       if (!subscription) {
-        throw new Error("Subscription not found");
+        throw new Error('Subscription not found');
       }
 
       await subscription.destroy();
       return true;
     } catch (error) {
-      logger.error("Delete subscription service error:", error);
+      logger.error('Delete subscription service error:', error);
       throw error;
     }
   }
@@ -91,12 +91,12 @@ class SubscriptionService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return subscriptions;
     } catch (error) {
-      logger.error("Get user subscriptions service error:", error);
+      logger.error('Get user subscriptions service error:', error);
       throw error;
     }
   }
@@ -108,7 +108,7 @@ class SubscriptionService {
     try {
       const subscription = await Subscription.findByPk(id);
       if (!subscription) {
-        throw new Error("Subscription not found");
+        throw new Error('Subscription not found');
       }
 
       await subscription.update({
@@ -118,7 +118,7 @@ class SubscriptionService {
 
       return subscription;
     } catch (error) {
-      logger.error("Cancel subscription service error:", error);
+      logger.error('Cancel subscription service error:', error);
       throw error;
     }
   }

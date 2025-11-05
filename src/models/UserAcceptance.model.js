@@ -3,11 +3,11 @@
  * Tracks user acceptance of terms and privacy policies
  */
 
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const UserAcceptance = sequelize.define(
-  "UserAcceptance",
+  'UserAcceptance',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -18,25 +18,25 @@ const UserAcceptance = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "users",
-        key: "id",
+        model: 'users',
+        key: 'id',
       },
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     },
     document_type: {
-      type: DataTypes.ENUM("terms_conditions", "privacy_policy"),
+      type: DataTypes.ENUM('terms_conditions', 'privacy_policy'),
       allowNull: false,
     },
     document_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      comment: "ID of the terms or privacy policy document",
+      comment: 'ID of the terms or privacy policy document',
     },
     version: {
       type: DataTypes.STRING(20),
       allowNull: false,
-      comment: "Version accepted",
+      comment: 'Version accepted',
     },
     accepted_at: {
       type: DataTypes.DATE,
@@ -57,22 +57,22 @@ const UserAcceptance = sequelize.define(
     },
   },
   {
-    tableName: "user_acceptances",
+    tableName: 'user_acceptances',
     timestamps: false,
     underscored: true,
     indexes: [
       {
-        fields: ["user_id", "document_type", "version"],
+        fields: ['user_id', 'document_type', 'version'],
         unique: true,
       },
       {
-        fields: ["user_id"],
+        fields: ['user_id'],
       },
       {
-        fields: ["document_type", "document_id"],
+        fields: ['document_type', 'document_id'],
       },
     ],
-  },
+  }
 );
 
 module.exports = UserAcceptance;

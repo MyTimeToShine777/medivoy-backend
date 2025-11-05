@@ -3,7 +3,7 @@
  * Provides consistent error handling and mock data fallbacks for database operations
  */
 
-const logger = require("./logger");
+const logger = require('./logger');
 
 /**
  * Handles database errors with appropriate responses
@@ -11,59 +11,59 @@ const logger = require("./logger");
 const handleDatabaseError = (
   error,
   res,
-  customMessage = "Database operation failed",
+  customMessage = 'Database operation failed'
 ) => {
-  logger.error("Database error:", error);
+  logger.error('Database error:', error);
 
   // Check for specific database connection errors
   if (
-    error.code === "ECONNREFUSED" ||
-    error.message.includes("connect ECONNREFUSED") ||
-    error.message.includes("Connection refused")
+    error.code === 'ECONNREFUSED' ||
+    error.message.includes('connect ECONNREFUSED') ||
+    error.message.includes('Connection refused')
   ) {
     return res.status(503).json({
       success: false,
-      message: "Database service unavailable. Please try again later.",
-      error: "SERVICE_UNAVAILABLE",
+      message: 'Database service unavailable. Please try again later.',
+      error: 'SERVICE_UNAVAILABLE',
     });
   }
 
   // Check for timeout errors
-  if (error.code === "ETIMEDOUT" || error.message.includes("timeout")) {
+  if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
     return res.status(504).json({
       success: false,
-      message: "Database request timed out. Please try again.",
-      error: "TIMEOUT_ERROR",
+      message: 'Database request timed out. Please try again.',
+      error: 'TIMEOUT_ERROR',
     });
   }
 
   // Check for validation errors
   if (
-    error.name === "SequelizeValidationError" ||
-    error.name === "ValidationError"
+    error.name === 'SequelizeValidationError' ||
+    error.name === 'ValidationError'
   ) {
     return res.status(400).json({
       success: false,
-      message: "Validation failed",
+      message: 'Validation failed',
       error: error.message,
       details: error.errors,
     });
   }
 
   // Check for unique constraint violations
-  if (error.name === "SequelizeUniqueConstraintError") {
+  if (error.name === 'SequelizeUniqueConstraintError') {
     return res.status(409).json({
       success: false,
-      message: "Record already exists",
+      message: 'Record already exists',
       error: error.message,
     });
   }
 
   // Check for foreign key constraint violations
-  if (error.name === "SequelizeForeignKeyConstraintError") {
+  if (error.name === 'SequelizeForeignKeyConstraintError') {
     return res.status(400).json({
       success: false,
-      message: "Referenced record does not exist",
+      message: 'Referenced record does not exist',
       error: error.message,
     });
   }
@@ -73,9 +73,9 @@ const handleDatabaseError = (
     success: false,
     message: customMessage,
     error:
-      process.env.NODE_ENV === "development"
+      process.env.NODE_ENV === 'development'
         ? error.message
-        : "Internal server error",
+        : 'Internal server error',
   });
 };
 
@@ -90,10 +90,10 @@ const getMockData = (type, overrides = {}) => {
     user: {
       id: baseId,
       email: `user${baseId}@example.com`,
-      firstName: "John",
-      lastName: "Doe",
-      role: "patient",
-      phone: "+1234567890",
+      firstName: 'John',
+      lastName: 'Doe',
+      role: 'patient',
+      phone: '+1234567890',
       isVerified: true,
       createdAt: baseDate,
       updatedAt: baseDate,
@@ -102,10 +102,10 @@ const getMockData = (type, overrides = {}) => {
     patient: {
       id: baseId,
       userId: baseId,
-      dateOfBirth: "1990-01-01",
-      gender: "male",
-      bloodType: "O+",
-      emergencyContact: "+1234567890",
+      dateOfBirth: '1990-01-01',
+      gender: 'male',
+      bloodType: 'O+',
+      emergencyContact: '+1234567890',
       createdAt: baseDate,
       updatedAt: baseDate,
       ...overrides,
@@ -113,7 +113,7 @@ const getMockData = (type, overrides = {}) => {
     doctor: {
       id: baseId,
       userId: baseId,
-      specialty: "General Medicine",
+      specialty: 'General Medicine',
       licenseNumber: `DOC${baseId}`,
       yearsOfExperience: 5,
       isVerified: true,
@@ -124,9 +124,9 @@ const getMockData = (type, overrides = {}) => {
     hospital: {
       id: baseId,
       userId: baseId,
-      name: "General Hospital",
-      address: "123 Medical St, Health City",
-      phone: "+1234567890",
+      name: 'General Hospital',
+      address: '123 Medical St, Health City',
+      phone: '+1234567890',
       licenseNumber: `HOS${baseId}`,
       isVerified: true,
       createdAt: baseDate,
@@ -137,19 +137,19 @@ const getMockData = (type, overrides = {}) => {
       id: baseId,
       doctorId: baseId,
       patientId: baseId,
-      date: "2024-12-01",
-      time: "10:00",
-      status: "scheduled",
-      notes: "Regular checkup",
+      date: '2024-12-01',
+      time: '10:00',
+      status: 'scheduled',
+      notes: 'Regular checkup',
       createdAt: baseDate,
       updatedAt: baseDate,
       ...overrides,
     },
     treatment: {
       id: baseId,
-      name: "General Consultation",
-      description: "General medical consultation and examination",
-      category: "General",
+      name: 'General Consultation',
+      description: 'General medical consultation and examination',
+      category: 'General',
       price: 100.0,
       duration: 30,
       isActive: true,
@@ -161,9 +161,9 @@ const getMockData = (type, overrides = {}) => {
       id: baseId,
       patientId: baseId,
       doctorId: baseId,
-      recordType: "Consultation",
-      recordDate: "2024-11-01",
-      notes: "Patient consultation notes",
+      recordType: 'Consultation',
+      recordDate: '2024-11-01',
+      notes: 'Patient consultation notes',
       isPrivate: false,
       createdAt: baseDate,
       updatedAt: baseDate,
@@ -173,9 +173,9 @@ const getMockData = (type, overrides = {}) => {
       id: baseId,
       patientId: baseId,
       doctorId: baseId,
-      medications: "Paracetamol 500mg",
-      dosage: "Twice daily",
-      instructions: "Take with food",
+      medications: 'Paracetamol 500mg',
+      dosage: 'Twice daily',
+      instructions: 'Take with food',
       isActive: true,
       createdAt: baseDate,
       updatedAt: baseDate,
@@ -184,9 +184,9 @@ const getMockData = (type, overrides = {}) => {
     notification: {
       id: baseId,
       userId: baseId,
-      title: "Appointment Reminder",
-      message: "You have an appointment tomorrow at 10:00 AM",
-      type: "appointment",
+      title: 'Appointment Reminder',
+      message: 'You have an appointment tomorrow at 10:00 AM',
+      type: 'appointment',
       isRead: false,
       createdAt: baseDate,
       updatedAt: baseDate,
@@ -195,10 +195,10 @@ const getMockData = (type, overrides = {}) => {
     booking: {
       id: baseId,
       patientId: baseId,
-      service: "General Consultation",
-      date: "2024-12-01",
-      time: "10:00",
-      status: "confirmed",
+      service: 'General Consultation',
+      date: '2024-12-01',
+      time: '10:00',
+      status: 'confirmed',
       totalPrice: 100.0,
       createdAt: baseDate,
       updatedAt: baseDate,
@@ -208,9 +208,9 @@ const getMockData = (type, overrides = {}) => {
       id: baseId,
       patientId: baseId,
       amount: 100.0,
-      currency: "USD",
-      method: "credit_card",
-      status: "completed",
+      currency: 'USD',
+      method: 'credit_card',
+      status: 'completed',
       transactionId: `TXN${baseId}`,
       createdAt: baseDate,
       updatedAt: baseDate,
@@ -221,7 +221,7 @@ const getMockData = (type, overrides = {}) => {
       patientId: baseId,
       doctorId: baseId,
       rating: 5,
-      comment: "Excellent service and care",
+      comment: 'Excellent service and care',
       isApproved: true,
       createdAt: baseDate,
       updatedAt: baseDate,
@@ -229,9 +229,9 @@ const getMockData = (type, overrides = {}) => {
     },
     insurance: {
       id: baseId,
-      provider: "Health Insurance Co.",
+      provider: 'Health Insurance Co.',
       policyNumber: `POL${baseId}`,
-      coverage: "Full medical coverage",
+      coverage: 'Full medical coverage',
       isActive: true,
       createdAt: baseDate,
       updatedAt: baseDate,
@@ -239,9 +239,9 @@ const getMockData = (type, overrides = {}) => {
     },
     laboratory: {
       id: baseId,
-      name: "Diagnostic Laboratory",
-      address: "456 Lab Street, Test City",
-      phone: "+1234567890",
+      name: 'Diagnostic Laboratory',
+      address: '456 Lab Street, Test City',
+      phone: '+1234567890',
       isVerified: true,
       createdAt: baseDate,
       updatedAt: baseDate,
@@ -249,10 +249,10 @@ const getMockData = (type, overrides = {}) => {
     },
     labTest: {
       id: baseId,
-      name: "Complete Blood Count",
-      description: "Complete blood count test",
+      name: 'Complete Blood Count',
+      description: 'Complete blood count test',
       price: 50.0,
-      category: "Hematology",
+      category: 'Hematology',
       isActive: true,
       createdAt: baseDate,
       updatedAt: baseDate,
@@ -260,11 +260,11 @@ const getMockData = (type, overrides = {}) => {
     },
     package: {
       id: baseId,
-      name: "Health Checkup Package",
-      description: "Complete health checkup for adults",
+      name: 'Health Checkup Package',
+      description: 'Complete health checkup for adults',
       price: 200.0,
       duration: 60,
-      tests: ["Blood Test", "Urine Test", "X-Ray"],
+      tests: ['Blood Test', 'Urine Test', 'X-Ray'],
       isActive: true,
       createdAt: baseDate,
       updatedAt: baseDate,
@@ -273,10 +273,10 @@ const getMockData = (type, overrides = {}) => {
     subscription: {
       id: baseId,
       userId: baseId,
-      plan: "premium",
-      status: "active",
-      startDate: "2024-01-01",
-      endDate: "2024-12-31",
+      plan: 'premium',
+      status: 'active',
+      startDate: '2024-01-01',
+      endDate: '2024-12-31',
       price: 50.0,
       createdAt: baseDate,
       updatedAt: baseDate,
@@ -286,21 +286,21 @@ const getMockData = (type, overrides = {}) => {
       id: baseId,
       code: `SAVE${baseId}`,
       discount: 10,
-      type: "percentage",
+      type: 'percentage',
       isActive: true,
       maxUses: 100,
       usedCount: 0,
-      expiresAt: "2024-12-31",
+      expiresAt: '2024-12-31',
       createdAt: baseDate,
       updatedAt: baseDate,
       ...overrides,
     },
     faq: {
       id: baseId,
-      question: "What services do you offer?",
+      question: 'What services do you offer?',
       answer:
-        "We offer comprehensive healthcare services including consultations, treatments, and more.",
-      category: "General",
+        'We offer comprehensive healthcare services including consultations, treatments, and more.',
+      category: 'General',
       isActive: true,
       createdAt: baseDate,
       updatedAt: baseDate,
@@ -309,9 +309,9 @@ const getMockData = (type, overrides = {}) => {
     doctorSchedule: {
       id: baseId,
       doctorId: baseId,
-      dayOfWeek: "Monday",
-      startTime: "09:00",
-      endTime: "17:00",
+      dayOfWeek: 'Monday',
+      startTime: '09:00',
+      endTime: '17:00',
       isAvailable: true,
       createdAt: baseDate,
       updatedAt: baseDate,
@@ -319,10 +319,10 @@ const getMockData = (type, overrides = {}) => {
     },
     staff: {
       id: baseId,
-      name: "Jane Smith",
-      role: "Nurse",
-      department: "Emergency",
-      phone: "+1234567890",
+      name: 'Jane Smith',
+      role: 'Nurse',
+      department: 'Emergency',
+      phone: '+1234567890',
       email: `staff${baseId}@hospital.com`,
       isActive: true,
       createdAt: baseDate,
@@ -332,11 +332,11 @@ const getMockData = (type, overrides = {}) => {
     media: {
       id: baseId,
       filename: `image_${baseId}.jpg`,
-      originalName: "medical_image.jpg",
-      mimeType: "image/jpeg",
+      originalName: 'medical_image.jpg',
+      mimeType: 'image/jpeg',
       size: 1024000,
       url: `https://example.com/images/${baseId}.jpg`,
-      entityType: "medical_record",
+      entityType: 'medical_record',
       entityId: baseId,
       createdAt: baseDate,
       updatedAt: baseDate,
@@ -344,10 +344,10 @@ const getMockData = (type, overrides = {}) => {
     },
     termsPrivacy: {
       id: baseId,
-      type: "terms",
-      title: "Terms and Conditions",
-      content: "Terms and conditions content...",
-      version: "1.0",
+      type: 'terms',
+      title: 'Terms and Conditions',
+      content: 'Terms and conditions content...',
+      version: '1.0',
       isActive: true,
       isPublished: true,
       createdAt: baseDate,
@@ -366,16 +366,16 @@ const withDatabaseFallback = async (
   databaseOperation,
   mockDataType,
   mockOverrides = {},
-  fallbackData = null,
+  fallbackData = null
 ) => {
   try {
     return await databaseOperation();
   } catch (error) {
     // If it's a connection error, return mock data
     if (
-      error.code === "ECONNREFUSED" ||
-      error.message.includes("connect ECONNREFUSED") ||
-      error.message.includes("Connection refused")
+      error.code === 'ECONNREFUSED' ||
+      error.message.includes('connect ECONNREFUSED') ||
+      error.message.includes('Connection refused')
     ) {
       logger.warn(`Database unavailable, returning mock ${mockDataType} data`);
       return getMockData(mockDataType, mockOverrides);
@@ -392,14 +392,14 @@ const createPaginatedMockResponse = (
   dataType,
   page = 1,
   limit = 10,
-  overrides = {},
+  overrides = {}
 ) => {
   const items = [];
   const totalRecords = limit * 3; // Mock 3 pages of data
 
   for (let i = 0; i < Math.min(limit, totalRecords - (page - 1) * limit); i++) {
     items.push(
-      getMockData(dataType, { ...overrides, id: (page - 1) * limit + i + 1 }),
+      getMockData(dataType, { ...overrides, id: (page - 1) * limit + i + 1 })
     );
   }
 

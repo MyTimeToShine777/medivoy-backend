@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const TreatmentSubcategory = sequelize.define(
-  "TreatmentSubcategory",
+  'TreatmentSubcategory',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -13,10 +13,10 @@ const TreatmentSubcategory = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "treatment_categories",
-        key: "id",
+        model: 'treatment_categories',
+        key: 'id',
       },
-      onDelete: "CASCADE",
+      onDelete: 'CASCADE',
     },
     name: {
       type: DataTypes.STRING(255),
@@ -45,16 +45,16 @@ const TreatmentSubcategory = sequelize.define(
     },
   },
   {
-    tableName: "treatment_subcategories",
+    tableName: 'treatment_subcategories',
     timestamps: true,
     underscored: true,
     indexes: [
       {
         unique: true,
-        fields: ["category_id", "slug"],
+        fields: ['category_id', 'slug'],
       },
     ],
-  },
+  }
 );
 
 module.exports = TreatmentSubcategory;

@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Notification = sequelize.define(
-  "Notification",
+  'Notification',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -11,7 +11,7 @@ const Notification = sequelize.define(
     },
     user_id: {
       type: DataTypes.INTEGER,
-      references: { model: "users", key: "id" },
+      references: { model: 'users', key: 'id' },
     },
     title: {
       type: DataTypes.STRING(255),
@@ -41,10 +41,10 @@ const Notification = sequelize.define(
     },
   },
   {
-    tableName: "notifications",
+    tableName: 'notifications',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = Notification;

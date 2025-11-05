@@ -1,6 +1,6 @@
-const WebsiteContent = require("../models/WebsiteContent.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const WebsiteContent = require('../models/WebsiteContent.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class WebsiteContentController {
   /**
@@ -32,10 +32,10 @@ class WebsiteContentController {
       return successResponse(
         res,
         {
-          message: "Website content created successfully",
+          message: 'Website content created successfully',
           data: websiteContent,
         },
-        201,
+        201
       );
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -56,14 +56,14 @@ class WebsiteContentController {
         return errorResponse(
           res,
           {
-            message: "Website content not found",
+            message: 'Website content not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Website content retrieved successfully",
+        message: 'Website content retrieved successfully',
         data: websiteContent,
       });
     } catch (error) {
@@ -94,9 +94,9 @@ class WebsiteContentController {
         return errorResponse(
           res,
           {
-            message: "Website content not found",
+            message: 'Website content not found',
           },
-          404,
+          404
         );
       }
 
@@ -112,7 +112,7 @@ class WebsiteContentController {
       });
 
       return successResponse(res, {
-        message: "Website content updated successfully",
+        message: 'Website content updated successfully',
         data: websiteContent,
       });
     } catch (error) {
@@ -134,9 +134,9 @@ class WebsiteContentController {
         return errorResponse(
           res,
           {
-            message: "Website content not found",
+            message: 'Website content not found',
           },
-          404,
+          404
         );
       }
 
@@ -144,7 +144,7 @@ class WebsiteContentController {
       await websiteContent.destroy();
 
       return successResponse(res, {
-        message: "Website content deleted successfully",
+        message: 'Website content deleted successfully',
       });
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -161,18 +161,18 @@ class WebsiteContentController {
       // Build where clause
       const where = {};
       if (contentType) where.contentType = contentType;
-      if (isActive !== undefined) where.isActive = isActive === "true";
+      if (isActive !== undefined) where.isActive = isActive === 'true';
 
       // Get website content with pagination
       const contents = await WebsiteContent.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Website content retrieved successfully",
+        message: 'Website content retrieved successfully',
         data: contents.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -201,14 +201,14 @@ class WebsiteContentController {
         return errorResponse(
           res,
           {
-            message: "Website content not found",
+            message: 'Website content not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Website content retrieved successfully",
+        message: 'Website content retrieved successfully',
         data: websiteContent,
       });
     } catch (error) {

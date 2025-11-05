@@ -1,6 +1,6 @@
-const Laboratory = require("../models/Laboratory.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const Laboratory = require('../models/Laboratory.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class LaboratoryController {
   /**
@@ -23,13 +23,13 @@ class LaboratoryController {
       return successResponse(
         res,
         {
-          message: "Laboratory created successfully",
+          message: 'Laboratory created successfully',
           data: laboratory,
         },
-        201,
+        201
       );
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to create laboratory");
+      return handleDatabaseError(error, res, 'Failed to create laboratory');
     }
   }
 
@@ -47,18 +47,18 @@ class LaboratoryController {
         return errorResponse(
           res,
           {
-            message: "Laboratory not found",
+            message: 'Laboratory not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Laboratory retrieved successfully",
+        message: 'Laboratory retrieved successfully',
         data: laboratory,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve laboratory");
+      return handleDatabaseError(error, res, 'Failed to retrieve laboratory');
     }
   }
 
@@ -77,9 +77,9 @@ class LaboratoryController {
         return errorResponse(
           res,
           {
-            message: "Laboratory not found",
+            message: 'Laboratory not found',
           },
-          404,
+          404
         );
       }
 
@@ -94,11 +94,11 @@ class LaboratoryController {
       });
 
       return successResponse(res, {
-        message: "Laboratory updated successfully",
+        message: 'Laboratory updated successfully',
         data: laboratory,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to update laboratory");
+      return handleDatabaseError(error, res, 'Failed to update laboratory');
     }
   }
 
@@ -116,9 +116,9 @@ class LaboratoryController {
         return errorResponse(
           res,
           {
-            message: "Laboratory not found",
+            message: 'Laboratory not found',
           },
-          404,
+          404
         );
       }
 
@@ -126,10 +126,10 @@ class LaboratoryController {
       await laboratory.destroy();
 
       return successResponse(res, {
-        message: "Laboratory deleted successfully",
+        message: 'Laboratory deleted successfully',
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to delete laboratory");
+      return handleDatabaseError(error, res, 'Failed to delete laboratory');
     }
   }
 
@@ -142,18 +142,18 @@ class LaboratoryController {
 
       // Build where clause
       const where = {};
-      if (isActive !== undefined) where.isActive = isActive === "true";
+      if (isActive !== undefined) where.isActive = isActive === 'true';
 
       // Get laboratories with pagination
       const laboratories = await Laboratory.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Laboratories retrieved successfully",
+        message: 'Laboratories retrieved successfully',
         data: laboratories.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -162,7 +162,7 @@ class LaboratoryController {
         },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve laboratories");
+      return handleDatabaseError(error, res, 'Failed to retrieve laboratories');
     }
   }
 }

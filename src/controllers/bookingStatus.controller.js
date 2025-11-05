@@ -1,6 +1,6 @@
-const BookingStatus = require("../models/BookingStatus.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const BookingStatus = require('../models/BookingStatus.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class BookingStatusController {
   /**
@@ -12,11 +12,15 @@ class BookingStatusController {
       const { status, notes, updatedBy } = req.body;
 
       const bookingStatus = await BookingStatus.findByPk(id);
-      
+
       if (!bookingStatus) {
-        return errorResponse(res, {
-          message: "Booking status not found",
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: 'Booking status not found',
+          },
+          404
+        );
       }
 
       await bookingStatus.update({
@@ -26,11 +30,11 @@ class BookingStatusController {
       });
 
       return successResponse(res, {
-        message: "Booking status updated successfully",
+        message: 'Booking status updated successfully',
         data: bookingStatus,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "bookingStatus");
+      return handleDatabaseError(error, res, 'bookingStatus');
     }
   }
 
@@ -42,19 +46,23 @@ class BookingStatusController {
       const { id } = req.params;
 
       const bookingStatus = await BookingStatus.findByPk(id);
-      
+
       if (!bookingStatus) {
-        return errorResponse(res, {
-          message: "Booking status not found",
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: 'Booking status not found',
+          },
+          404
+        );
       }
 
       return successResponse(res, {
-        message: "Booking status history retrieved successfully",
+        message: 'Booking status history retrieved successfully',
         data: bookingStatus,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "bookingStatus");
+      return handleDatabaseError(error, res, 'bookingStatus');
     }
   }
 
@@ -67,11 +75,15 @@ class BookingStatusController {
       const { coordinatorId } = req.body;
 
       const bookingStatus = await BookingStatus.findByPk(id);
-      
+
       if (!bookingStatus) {
-        return errorResponse(res, {
-          message: "Booking status not found",
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: 'Booking status not found',
+          },
+          404
+        );
       }
 
       await bookingStatus.update({
@@ -79,11 +91,11 @@ class BookingStatusController {
       });
 
       return successResponse(res, {
-        message: "Coordinator assigned successfully",
+        message: 'Coordinator assigned successfully',
         data: bookingStatus,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "bookingStatus");
+      return handleDatabaseError(error, res, 'bookingStatus');
     }
   }
 
@@ -104,11 +116,11 @@ class BookingStatusController {
       };
 
       return successResponse(res, {
-        message: "Valid transitions retrieved successfully",
+        message: 'Valid transitions retrieved successfully',
         data: transitions,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "bookingStatus");
+      return handleDatabaseError(error, res, 'bookingStatus');
     }
   }
 
@@ -124,11 +136,11 @@ class BookingStatusController {
         where: { status },
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Bookings retrieved successfully",
+        message: 'Bookings retrieved successfully',
         data: bookingStatuses.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -137,7 +149,7 @@ class BookingStatusController {
         },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "bookingStatus");
+      return handleDatabaseError(error, res, 'bookingStatus');
     }
   }
 
@@ -158,11 +170,11 @@ class BookingStatusController {
       );
 
       return successResponse(res, {
-        message: "Bulk update completed successfully",
+        message: 'Bulk update completed successfully',
         data: { updatedCount: updatedCount[0] },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "bookingStatus");
+      return handleDatabaseError(error, res, 'bookingStatus');
     }
   }
 
@@ -174,17 +186,23 @@ class BookingStatusController {
       const statistics = await BookingStatus.findAll({
         attributes: [
           'status',
-          [BookingStatus.sequelize.fn('COUNT', BookingStatus.sequelize.col('id')), 'count'],
+          [
+            BookingStatus.sequelize.fn(
+              'COUNT',
+              BookingStatus.sequelize.col('id')
+            ),
+            'count',
+          ],
         ],
         group: ['status'],
       });
 
       return successResponse(res, {
-        message: "Statistics retrieved successfully",
+        message: 'Statistics retrieved successfully',
         data: statistics,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "bookingStatus");
+      return handleDatabaseError(error, res, 'bookingStatus');
     }
   }
 
@@ -198,11 +216,11 @@ class BookingStatusController {
       const bookingStatuses = await BookingStatus.findAndCountAll({
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Booking statuses retrieved successfully",
+        message: 'Booking statuses retrieved successfully',
         data: bookingStatuses.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -211,7 +229,7 @@ class BookingStatusController {
         },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "bookingStatus");
+      return handleDatabaseError(error, res, 'bookingStatus');
     }
   }
 
@@ -223,20 +241,24 @@ class BookingStatusController {
       const { id } = req.params;
 
       const bookingStatus = await BookingStatus.findByPk(id);
-      
+
       if (!bookingStatus) {
-        return errorResponse(res, {
-          message: "Booking status not found",
-        }, 404);
+        return errorResponse(
+          res,
+          {
+            message: 'Booking status not found',
+          },
+          404
+        );
       }
 
       await bookingStatus.destroy();
 
       return successResponse(res, {
-        message: "Booking status deleted successfully",
+        message: 'Booking status deleted successfully',
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "bookingStatus");
+      return handleDatabaseError(error, res, 'bookingStatus');
     }
   }
 }

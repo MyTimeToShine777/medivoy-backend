@@ -1,6 +1,6 @@
-const LabTest = require("../models/LabTest.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const LabTest = require('../models/LabTest.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class LabTestController {
   /**
@@ -22,13 +22,13 @@ class LabTestController {
       return successResponse(
         res,
         {
-          message: "Lab test created successfully",
+          message: 'Lab test created successfully',
           data: labTest,
         },
-        201,
+        201
       );
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to create lab test");
+      return handleDatabaseError(error, res, 'Failed to create lab test');
     }
   }
 
@@ -46,18 +46,18 @@ class LabTestController {
         return errorResponse(
           res,
           {
-            message: "Lab test not found",
+            message: 'Lab test not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Lab test retrieved successfully",
+        message: 'Lab test retrieved successfully',
         data: labTest,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve lab test");
+      return handleDatabaseError(error, res, 'Failed to retrieve lab test');
     }
   }
 
@@ -76,9 +76,9 @@ class LabTestController {
         return errorResponse(
           res,
           {
-            message: "Lab test not found",
+            message: 'Lab test not found',
           },
-          404,
+          404
         );
       }
 
@@ -91,11 +91,11 @@ class LabTestController {
       });
 
       return successResponse(res, {
-        message: "Lab test updated successfully",
+        message: 'Lab test updated successfully',
         data: labTest,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to update lab test");
+      return handleDatabaseError(error, res, 'Failed to update lab test');
     }
   }
 
@@ -113,9 +113,9 @@ class LabTestController {
         return errorResponse(
           res,
           {
-            message: "Lab test not found",
+            message: 'Lab test not found',
           },
-          404,
+          404
         );
       }
 
@@ -123,10 +123,10 @@ class LabTestController {
       await labTest.destroy();
 
       return successResponse(res, {
-        message: "Lab test deleted successfully",
+        message: 'Lab test deleted successfully',
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to delete lab test");
+      return handleDatabaseError(error, res, 'Failed to delete lab test');
     }
   }
 
@@ -140,18 +140,18 @@ class LabTestController {
       // Build where clause
       const where = {};
       if (laboratoryId) where.laboratoryId = laboratoryId;
-      if (isActive !== undefined) where.isActive = isActive === "true";
+      if (isActive !== undefined) where.isActive = isActive === 'true';
 
       // Get lab tests with pagination
       const labTests = await LabTest.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Lab tests retrieved successfully",
+        message: 'Lab tests retrieved successfully',
         data: labTests.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -160,7 +160,7 @@ class LabTestController {
         },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve lab tests");
+      return handleDatabaseError(error, res, 'Failed to retrieve lab tests');
     }
   }
 }

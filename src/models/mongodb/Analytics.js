@@ -1,44 +1,47 @@
 const mongoose = require('mongoose');
 
-const analyticsSchema = new mongoose.Schema({
-  date: {
-    type: Date,
-    required: true,
-    index: true,
+const analyticsSchema = new mongoose.Schema(
+  {
+    date: {
+      type: Date,
+      required: true,
+      index: true,
+    },
+    type: {
+      type: String,
+      required: true,
+      enum: [
+        'daily_stats',
+        'monthly_report',
+        'user_activity',
+        'revenue_analysis',
+        'performance_metrics',
+        'booking_stats',
+        'appointment_stats',
+        'payment_stats',
+        'user_engagement',
+        'system_health',
+      ],
+      index: true,
+    },
+    data: {
+      type: mongoose.Schema.Types.Mixed,
+      required: true,
+    },
+    userId: {
+      type: Number,
+      index: true,
+    },
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
   },
-  type: {
-    type: String,
-    required: true,
-    enum: [
-      'daily_stats',
-      'monthly_report',
-      'user_activity',
-      'revenue_analysis',
-      'performance_metrics',
-      'booking_stats',
-      'appointment_stats',
-      'payment_stats',
-      'user_engagement',
-      'system_health',
-    ],
-    index: true,
-  },
-  data: {
-    type: mongoose.Schema.Types.Mixed,
-    required: true,
-  },
-  userId: {
-    type: Number,
-    index: true,
-  },
-  metadata: {
-    type: mongoose.Schema.Types.Mixed,
-    default: {},
-  },
-}, {
-  timestamps: true,
-  collection: 'analytics',
-});
+  {
+    timestamps: true,
+    collection: 'analytics',
+  }
+);
 
 // Compound indexes for better query performance
 analyticsSchema.index({ type: 1, date: -1 });
@@ -66,7 +69,7 @@ analyticsSchema.statics.recordDailyStats = async function (date, stats) {
     {
       upsert: true,
       new: true,
-    },
+    }
   );
 };
 
@@ -87,7 +90,7 @@ analyticsSchema.statics.recordMonthlyReport = async function (date, report) {
     {
       upsert: true,
       new: true,
-    },
+    }
   );
 };
 
@@ -117,7 +120,10 @@ analyticsSchema.statics.getDailyStats = async function (startDate, endDate) {
     .lean();
 };
 
-analyticsSchema.statics.getMonthlyReports = async function (startDate, endDate) {
+analyticsSchema.statics.getMonthlyReports = async function (
+  startDate,
+  endDate
+) {
   return this.find({
     type: 'monthly_report',
     date: {
@@ -129,10 +135,11 @@ analyticsSchema.statics.getMonthlyReports = async function (startDate, endDate) 
     .lean();
 };
 
-analyticsSchema.statics.getUserActivity = async function (userId, options = {}) {
-  const {
-    limit = 100, skip = 0, startDate = null, endDate = null,
-  } = options;
+analyticsSchema.statics.getUserActivity = async function (
+  userId,
+  options = {}
+) {
+  const { limit = 100, skip = 0, startDate = null, endDate = null } = options;
 
   const query = {
     type: 'user_activity',
@@ -145,14 +152,13 @@ analyticsSchema.statics.getUserActivity = async function (userId, options = {}) 
     if (endDate) query.date.$lte = new Date(endDate);
   }
 
-  return this.find(query)
-    .sort({ date: -1 })
-    .limit(limit)
-    .skip(skip)
-    .lean();
+  return this.find(query).sort({ date: -1 }).limit(limit).skip(skip).lean();
 };
 
-analyticsSchema.statics.getRevenueAnalysis = async function (startDate, endDate) {
+analyticsSchema.statics.getRevenueAnalysis = async function (
+  startDate,
+  endDate
+) {
   return this.find({
     type: 'revenue_analysis',
     date: {
@@ -164,7 +170,10 @@ analyticsSchema.statics.getRevenueAnalysis = async function (startDate, endDate)
     .lean();
 };
 
-analyticsSchema.statics.getPerformanceMetrics = async function (startDate, endDate) {
+analyticsSchema.statics.getPerformanceMetrics = async function (
+  startDate,
+  endDate
+) {
   return this.find({
     type: 'performance_metrics',
     date: {
@@ -176,7 +185,11 @@ analyticsSchema.statics.getPerformanceMetrics = async function (startDate, endDa
     .lean();
 };
 
-analyticsSchema.statics.aggregateByType = async function (type, startDate, endDate) {
+analyticsSchema.statics.aggregateByType = async function (
+  type,
+  startDate,
+  endDate
+) {
   return this.aggregate([
     {
       $match: {
@@ -205,10 +218,7 @@ analyticsSchema.statics.aggregateByType = async function (type, startDate, endDa
 };
 
 analyticsSchema.statics.getLatestByType = async function (type, limit = 10) {
-  return this.find({ type })
-    .sort({ date: -1 })
-    .limit(limit)
-    .lean();
+  return this.find({ type }).sort({ date: -1 }).limit(limit).lean();
 };
 
 const Analytics = mongoose.model('Analytics', analyticsSchema);

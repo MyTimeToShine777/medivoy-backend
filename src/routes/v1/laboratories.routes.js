@@ -10,7 +10,7 @@ router.post(
   '/',
   auth,
   authorize(['admin']),
-  laboratoryController.createLaboratory,
+  laboratoryController.createLaboratory
 );
 
 // Get laboratory by ID (authd users)
@@ -18,7 +18,7 @@ router.get(
   '/:id',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
-  laboratoryController.getLaboratory,
+  laboratoryController.getLaboratory
 );
 
 // Update laboratory (admin only)
@@ -26,7 +26,7 @@ router.put(
   '/:id',
   auth,
   authorize(['admin']),
-  laboratoryController.updateLaboratory,
+  laboratoryController.updateLaboratory
 );
 
 // Delete laboratory (admin only)
@@ -34,7 +34,7 @@ router.delete(
   '/:id',
   auth,
   authorize(['admin']),
-  laboratoryController.deleteLaboratory,
+  laboratoryController.deleteLaboratory
 );
 
 // Get all laboratories (authd users)
@@ -42,7 +42,7 @@ router.get(
   '/',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
-  laboratoryController.getAllLaboratories,
+  laboratoryController.getAllLaboratories
 );
 
 module.exports = router;

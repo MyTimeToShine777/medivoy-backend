@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Review = sequelize.define(
-  "Review",
+  'Review',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -11,23 +11,23 @@ const Review = sequelize.define(
     },
     patient_id: {
       type: DataTypes.INTEGER,
-      references: { model: "patients", key: "id" },
+      references: { model: 'patients', key: 'id' },
     },
     doctor_id: {
       type: DataTypes.INTEGER,
-      references: { model: "doctors", key: "id" },
+      references: { model: 'doctors', key: 'id' },
     },
     hospital_id: {
       type: DataTypes.INTEGER,
-      references: { model: "hospitals", key: "id" },
+      references: { model: 'hospitals', key: 'id' },
     },
     appointment_id: {
       type: DataTypes.INTEGER,
-      references: { model: "appointments", key: "id" },
+      references: { model: 'appointments', key: 'id' },
     },
     booking_id: {
       type: DataTypes.INTEGER,
-      references: { model: "bookings", key: "id" },
+      references: { model: 'bookings', key: 'id' },
     },
     rating: {
       type: DataTypes.INTEGER,
@@ -50,10 +50,10 @@ const Review = sequelize.define(
     },
   },
   {
-    tableName: "reviews",
+    tableName: 'reviews',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = Review;

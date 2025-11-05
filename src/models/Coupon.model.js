@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Coupon = sequelize.define(
-  "Coupon",
+  'Coupon',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -45,10 +45,10 @@ const Coupon = sequelize.define(
     },
   },
   {
-    tableName: "coupons",
+    tableName: 'coupons',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = Coupon;

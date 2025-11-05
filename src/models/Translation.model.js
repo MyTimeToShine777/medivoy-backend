@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Translation = sequelize.define(
-  "Translation",
+  'Translation',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -30,10 +30,10 @@ const Translation = sequelize.define(
     },
   },
   {
-    tableName: "translations",
+    tableName: 'translations',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = Translation;

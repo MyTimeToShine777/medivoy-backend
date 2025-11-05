@@ -1,7 +1,7 @@
-const TreatmentCategory = require("../models/TreatmentCategory.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { generateSlug } = require("../utils/helpers");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const TreatmentCategory = require('../models/TreatmentCategory.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { generateSlug } = require('../utils/helpers');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class TreatmentCategoryController {
   /**
@@ -27,10 +27,10 @@ class TreatmentCategoryController {
       return successResponse(
         res,
         {
-          message: "Treatment category created successfully",
+          message: 'Treatment category created successfully',
           data: treatmentCategory,
         },
-        201,
+        201
       );
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -51,14 +51,14 @@ class TreatmentCategoryController {
         return errorResponse(
           res,
           {
-            message: "Treatment category not found",
+            message: 'Treatment category not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Treatment category retrieved successfully",
+        message: 'Treatment category retrieved successfully',
         data: treatmentCategory,
       });
     } catch (error) {
@@ -81,9 +81,9 @@ class TreatmentCategoryController {
         return errorResponse(
           res,
           {
-            message: "Treatment category not found",
+            message: 'Treatment category not found',
           },
-          404,
+          404
         );
       }
 
@@ -103,7 +103,7 @@ class TreatmentCategoryController {
       await treatmentCategory.update(updateData);
 
       return successResponse(res, {
-        message: "Treatment category updated successfully",
+        message: 'Treatment category updated successfully',
         data: treatmentCategory,
       });
     } catch (error) {
@@ -125,9 +125,9 @@ class TreatmentCategoryController {
         return errorResponse(
           res,
           {
-            message: "Treatment category not found",
+            message: 'Treatment category not found',
           },
-          404,
+          404
         );
       }
 
@@ -135,7 +135,7 @@ class TreatmentCategoryController {
       await treatmentCategory.destroy();
 
       return successResponse(res, {
-        message: "Treatment category deleted successfully",
+        message: 'Treatment category deleted successfully',
       });
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -151,7 +151,7 @@ class TreatmentCategoryController {
 
       // Build where clause
       const where = {};
-      if (isActive !== undefined) where.isActive = isActive === "true";
+      if (isActive !== undefined) where.isActive = isActive === 'true';
 
       // Get treatment categories with pagination
       const treatmentCategories = await TreatmentCategory.findAndCountAll({
@@ -159,18 +159,18 @@ class TreatmentCategoryController {
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [
-          ["sort_order", "ASC"],
-          ["name", "ASC"],
+          ['sort_order', 'ASC'],
+          ['name', 'ASC'],
         ],
       });
 
       return successResponse(res, {
-        message: "Treatment categories retrieved successfully",
+        message: 'Treatment categories retrieved successfully',
         data: treatmentCategories.rows,
         pagination: {
           currentPage: parseInt(page, 10),
           totalPages: Math.ceil(
-            treatmentCategories.count / parseInt(limit, 10),
+            treatmentCategories.count / parseInt(limit, 10)
           ),
           totalRecords: treatmentCategories.count,
         },

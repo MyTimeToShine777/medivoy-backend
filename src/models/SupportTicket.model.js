@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const SupportTicket = sequelize.define(
-  "SupportTicket",
+  'SupportTicket',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -16,7 +16,7 @@ const SupportTicket = sequelize.define(
     },
     user_id: {
       type: DataTypes.INTEGER,
-      references: { model: "users", key: "id" },
+      references: { model: 'users', key: 'id' },
     },
     subject: {
       type: DataTypes.STRING(255),
@@ -32,11 +32,11 @@ const SupportTicket = sequelize.define(
     },
     status: {
       type: DataTypes.STRING(50),
-      defaultValue: "open",
+      defaultValue: 'open',
     },
     assigned_to_user_id: {
       type: DataTypes.INTEGER,
-      references: { model: "users", key: "id" },
+      references: { model: 'users', key: 'id' },
     },
     sla_due_date: {
       type: DataTypes.DATE,
@@ -49,10 +49,10 @@ const SupportTicket = sequelize.define(
     },
   },
   {
-    tableName: "support_tickets",
+    tableName: 'support_tickets',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = SupportTicket;

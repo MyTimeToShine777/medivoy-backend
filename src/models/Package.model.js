@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Package = sequelize.define(
-  "Package",
+  'Package',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -27,7 +27,7 @@ const Package = sequelize.define(
     },
     currency: {
       type: DataTypes.STRING(3),
-      defaultValue: "USD",
+      defaultValue: 'USD',
     },
     inclusions: {
       type: DataTypes.JSONB,
@@ -59,10 +59,10 @@ const Package = sequelize.define(
     },
   },
   {
-    tableName: "packages",
+    tableName: 'packages',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = Package;

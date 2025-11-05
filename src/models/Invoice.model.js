@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Invoice = sequelize.define(
-  "Invoice",
+  'Invoice',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -16,19 +16,19 @@ const Invoice = sequelize.define(
     },
     booking_id: {
       type: DataTypes.INTEGER,
-      references: { model: "bookings", key: "id" },
+      references: { model: 'bookings', key: 'id' },
     },
     appointment_id: {
       type: DataTypes.INTEGER,
-      references: { model: "appointments", key: "id" },
+      references: { model: 'appointments', key: 'id' },
     },
     patient_id: {
       type: DataTypes.INTEGER,
-      references: { model: "patients", key: "id" },
+      references: { model: 'patients', key: 'id' },
     },
     hospital_id: {
       type: DataTypes.INTEGER,
-      references: { model: "hospitals", key: "id" },
+      references: { model: 'hospitals', key: 'id' },
     },
     total_amount: {
       type: DataTypes.DECIMAL(10, 2),
@@ -44,7 +44,7 @@ const Invoice = sequelize.define(
     },
     currency: {
       type: DataTypes.STRING(3),
-      defaultValue: "USD",
+      defaultValue: 'USD',
     },
     line_items: {
       type: DataTypes.JSONB,
@@ -60,14 +60,14 @@ const Invoice = sequelize.define(
     },
     status: {
       type: DataTypes.STRING(50),
-      defaultValue: "draft",
+      defaultValue: 'draft',
     },
   },
   {
-    tableName: "invoices",
+    tableName: 'invoices',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = Invoice;

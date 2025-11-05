@@ -1,6 +1,6 @@
-const { validationResult } = require("express-validator");
-const imagekitService = require("../services/imagekit.service");
-const logger = require("../utils/logger");
+const { validationResult } = require('express-validator');
+const imagekitService = require('../services/imagekit.service');
+const logger = require('../utils/logger');
 
 /**
  * Upload single file
@@ -18,14 +18,14 @@ exports.uploadFile = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: "No file provided",
+        message: 'No file provided',
       });
     }
 
     const options = {
-      folder: req.body.folder || "/medivoy",
-      tags: req.body.tags ? req.body.tags.split(",") : [],
-      useUniqueFileName: req.body.useUniqueFileName !== "false",
+      folder: req.body.folder || '/medivoy',
+      tags: req.body.tags ? req.body.tags.split(',') : [],
+      useUniqueFileName: req.body.useUniqueFileName !== 'false',
       customMetadata: req.body.customMetadata
         ? JSON.parse(req.body.customMetadata)
         : undefined,
@@ -35,14 +35,14 @@ exports.uploadFile = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "File uploaded successfully",
+      message: 'File uploaded successfully',
       data: result,
     });
   } catch (error) {
-    logger.error("Upload file controller error:", error);
+    logger.error('Upload file controller error:', error);
     res.status(500).json({
       success: false,
-      message: "Failed to upload file",
+      message: 'Failed to upload file',
       error: error.message,
     });
   }
@@ -64,14 +64,14 @@ exports.uploadMultipleFiles = async (req, res) => {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "No files provided",
+        message: 'No files provided',
       });
     }
 
     const options = {
-      folder: req.body.folder || "/medivoy",
-      tags: req.body.tags ? req.body.tags.split(",") : [],
-      useUniqueFileName: req.body.useUniqueFileName !== "false",
+      folder: req.body.folder || '/medivoy',
+      tags: req.body.tags ? req.body.tags.split(',') : [],
+      useUniqueFileName: req.body.useUniqueFileName !== 'false',
       customMetadata: req.body.customMetadata
         ? JSON.parse(req.body.customMetadata)
         : undefined,
@@ -79,7 +79,7 @@ exports.uploadMultipleFiles = async (req, res) => {
 
     const results = await imagekitService.uploadMultipleFiles(
       req.files,
-      options,
+      options
     );
 
     const successCount = results.filter((r) => r.success).length;
@@ -91,10 +91,10 @@ exports.uploadMultipleFiles = async (req, res) => {
       data: results,
     });
   } catch (error) {
-    logger.error("Upload multiple files controller error:", error);
+    logger.error('Upload multiple files controller error:', error);
     res.status(500).json({
       success: false,
-      message: "Failed to upload files",
+      message: 'Failed to upload files',
       error: error.message,
     });
   }
@@ -110,7 +110,7 @@ exports.deleteFile = async (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        message: "File ID is required",
+        message: 'File ID is required',
       });
     }
 
@@ -118,13 +118,13 @@ exports.deleteFile = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "File deleted successfully",
+      message: 'File deleted successfully',
     });
   } catch (error) {
-    logger.error("Delete file controller error:", error);
+    logger.error('Delete file controller error:', error);
     res.status(500).json({
       success: false,
-      message: "Failed to delete file",
+      message: 'Failed to delete file',
       error: error.message,
     });
   }
@@ -140,7 +140,7 @@ exports.deleteMultipleFiles = async (req, res) => {
     if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "File IDs array is required",
+        message: 'File IDs array is required',
       });
     }
 
@@ -155,10 +155,10 @@ exports.deleteMultipleFiles = async (req, res) => {
       data: results,
     });
   } catch (error) {
-    logger.error("Delete multiple files controller error:", error);
+    logger.error('Delete multiple files controller error:', error);
     res.status(500).json({
       success: false,
-      message: "Failed to delete files",
+      message: 'Failed to delete files',
       error: error.message,
     });
   }
@@ -174,7 +174,7 @@ exports.getFileDetails = async (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        message: "File ID is required",
+        message: 'File ID is required',
       });
     }
 
@@ -185,10 +185,10 @@ exports.getFileDetails = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    logger.error("Get file details controller error:", error);
+    logger.error('Get file details controller error:', error);
     res.status(500).json({
       success: false,
-      message: "Failed to get file details",
+      message: 'Failed to get file details',
       error: error.message,
     });
   }
@@ -202,9 +202,9 @@ exports.listFiles = async (req, res) => {
     const options = {
       skip: parseInt(req.query.skip) || 0,
       limit: parseInt(req.query.limit) || 100,
-      searchQuery: req.query.searchQuery || "",
-      tags: req.query.tags ? req.query.tags.split(",") : [],
-      path: req.query.path || "/medivoy",
+      searchQuery: req.query.searchQuery || '',
+      tags: req.query.tags ? req.query.tags.split(',') : [],
+      path: req.query.path || '/medivoy',
     };
 
     const results = await imagekitService.listFiles(options);
@@ -219,10 +219,10 @@ exports.listFiles = async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error("List files controller error:", error);
+    logger.error('List files controller error:', error);
     res.status(500).json({
       success: false,
-      message: "Failed to list files",
+      message: 'Failed to list files',
       error: error.message,
     });
   }
@@ -239,7 +239,7 @@ exports.updateFileDetails = async (req, res) => {
     if (!fileId) {
       return res.status(400).json({
         success: false,
-        message: "File ID is required",
+        message: 'File ID is required',
       });
     }
 
@@ -247,14 +247,14 @@ exports.updateFileDetails = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "File details updated successfully",
+      message: 'File details updated successfully',
       data: result,
     });
   } catch (error) {
-    logger.error("Update file details controller error:", error);
+    logger.error('Update file details controller error:', error);
     res.status(500).json({
       success: false,
-      message: "Failed to update file details",
+      message: 'Failed to update file details',
       error: error.message,
     });
   }
@@ -271,7 +271,7 @@ exports.getTransformedUrl = async (req, res) => {
     if (!path) {
       return res.status(400).json({
         success: false,
-        message: "File path is required",
+        message: 'File path is required',
       });
     }
 
@@ -282,10 +282,10 @@ exports.getTransformedUrl = async (req, res) => {
       data: { url },
     });
   } catch (error) {
-    logger.error("Get transformed URL controller error:", error);
+    logger.error('Get transformed URL controller error:', error);
     res.status(500).json({
       success: false,
-      message: "Failed to get transformed URL",
+      message: 'Failed to get transformed URL',
       error: error.message,
     });
   }
@@ -303,7 +303,7 @@ exports.getThumbnailUrl = async (req, res) => {
     if (!path) {
       return res.status(400).json({
         success: false,
-        message: "File path is required",
+        message: 'File path is required',
       });
     }
 
@@ -314,10 +314,10 @@ exports.getThumbnailUrl = async (req, res) => {
       data: { url },
     });
   } catch (error) {
-    logger.error("Get thumbnail URL controller error:", error);
+    logger.error('Get thumbnail URL controller error:', error);
     res.status(500).json({
       success: false,
-      message: "Failed to get thumbnail URL",
+      message: 'Failed to get thumbnail URL',
       error: error.message,
     });
   }
@@ -334,7 +334,7 @@ exports.getOptimizedUrl = async (req, res) => {
     if (!path) {
       return res.status(400).json({
         success: false,
-        message: "File path is required",
+        message: 'File path is required',
       });
     }
 
@@ -345,10 +345,10 @@ exports.getOptimizedUrl = async (req, res) => {
       data: { url },
     });
   } catch (error) {
-    logger.error("Get optimized URL controller error:", error);
+    logger.error('Get optimized URL controller error:', error);
     res.status(500).json({
       success: false,
-      message: "Failed to get optimized URL",
+      message: 'Failed to get optimized URL',
       error: error.message,
     });
   }
@@ -364,7 +364,7 @@ exports.purgeCache = async (req, res) => {
     if (!url) {
       return res.status(400).json({
         success: false,
-        message: "URL is required",
+        message: 'URL is required',
       });
     }
 
@@ -372,14 +372,14 @@ exports.purgeCache = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Cache purged successfully",
+      message: 'Cache purged successfully',
       data: result,
     });
   } catch (error) {
-    logger.error("Purge cache controller error:", error);
+    logger.error('Purge cache controller error:', error);
     res.status(500).json({
       success: false,
-      message: "Failed to purge cache",
+      message: 'Failed to purge cache',
       error: error.message,
     });
   }
@@ -397,10 +397,10 @@ exports.getAuthParams = async (req, res) => {
       data: authParams,
     });
   } catch (error) {
-    logger.error("Get auth params controller error:", error);
+    logger.error('Get auth params controller error:', error);
     res.status(500).json({
       success: false,
-      message: "Failed to get authentication parameters",
+      message: 'Failed to get authentication parameters',
       error: error.message,
     });
   }
@@ -416,25 +416,25 @@ exports.createFolder = async (req, res) => {
     if (!folderName) {
       return res.status(400).json({
         success: false,
-        message: "Folder name is required",
+        message: 'Folder name is required',
       });
     }
 
     const result = await imagekitService.createFolder(
       folderName,
-      parentFolderPath || "/",
+      parentFolderPath || '/'
     );
 
     res.status(201).json({
       success: true,
-      message: "Folder created successfully",
+      message: 'Folder created successfully',
       data: result,
     });
   } catch (error) {
-    logger.error("Create folder controller error:", error);
+    logger.error('Create folder controller error:', error);
     res.status(500).json({
       success: false,
-      message: "Failed to create folder",
+      message: 'Failed to create folder',
       error: error.message,
     });
   }
@@ -450,7 +450,7 @@ exports.deleteFolder = async (req, res) => {
     if (!folderPath) {
       return res.status(400).json({
         success: false,
-        message: "Folder path is required",
+        message: 'Folder path is required',
       });
     }
 
@@ -458,13 +458,13 @@ exports.deleteFolder = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Folder deleted successfully",
+      message: 'Folder deleted successfully',
     });
   } catch (error) {
-    logger.error("Delete folder controller error:", error);
+    logger.error('Delete folder controller error:', error);
     res.status(500).json({
       success: false,
-      message: "Failed to delete folder",
+      message: 'Failed to delete folder',
       error: error.message,
     });
   }
@@ -487,7 +487,7 @@ exports.getAllMedia = async (req, res) => {
       where: whereClause,
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [["created_at", "DESC"]],
+      order: [['created_at', 'DESC']],
     });
 
     res.status(200).json({
@@ -503,7 +503,7 @@ exports.getAllMedia = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error fetching media",
+      message: 'Error fetching media',
       error: error.message,
     });
   }
@@ -521,7 +521,7 @@ exports.getMediaById = async (req, res) => {
     if (!media) {
       return res.status(404).json({
         success: false,
-        message: "Media not found",
+        message: 'Media not found',
       });
     }
 
@@ -532,7 +532,7 @@ exports.getMediaById = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error fetching media",
+      message: 'Error fetching media',
       error: error.message,
     });
   }

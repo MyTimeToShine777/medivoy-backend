@@ -1,5 +1,5 @@
-const Patient = require("../models/Patient.model");
-const logger = require("../utils/logger");
+const Patient = require('../models/Patient.model');
+const logger = require('../utils/logger');
 
 class PatientService {
   /**
@@ -10,7 +10,7 @@ class PatientService {
       const patient = await Patient.create(data);
       return patient;
     } catch (error) {
-      logger.error("Create patient service error:", error);
+      logger.error('Create patient service error:', error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class PatientService {
       const patient = await Patient.findByPk(id);
       return patient;
     } catch (error) {
-      logger.error("Get patient by ID service error:", error);
+      logger.error('Get patient by ID service error:', error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class PatientService {
     try {
       const patient = await Patient.findByPk(id);
       if (!patient) {
-        throw new Error("Patient not found");
+        throw new Error('Patient not found');
       }
 
       await patient.update(data);
       return patient;
     } catch (error) {
-      logger.error("Update patient service error:", error);
+      logger.error('Update patient service error:', error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class PatientService {
     try {
       const patient = await Patient.findByPk(id);
       if (!patient) {
-        throw new Error("Patient not found");
+        throw new Error('Patient not found');
       }
 
       await patient.destroy();
       return true;
     } catch (error) {
-      logger.error("Delete patient service error:", error);
+      logger.error('Delete patient service error:', error);
       throw error;
     }
   }
@@ -75,12 +75,12 @@ class PatientService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return patients;
     } catch (error) {
-      logger.error("Get all patients service error:", error);
+      logger.error('Get all patients service error:', error);
       throw error;
     }
   }

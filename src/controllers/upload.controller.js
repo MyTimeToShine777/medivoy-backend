@@ -1,6 +1,6 @@
-const Media = require("../models/Media.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const Media = require('../models/Media.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class UploadController {
   /**
@@ -13,9 +13,9 @@ class UploadController {
         return errorResponse(
           res,
           {
-            message: "No file uploaded",
+            message: 'No file uploaded',
           },
-          400,
+          400
         );
       }
 
@@ -35,10 +35,10 @@ class UploadController {
       return successResponse(
         res,
         {
-          message: "File uploaded successfully",
+          message: 'File uploaded successfully',
           data: media,
         },
-        201,
+        201
       );
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -59,14 +59,14 @@ class UploadController {
         return errorResponse(
           res,
           {
-            message: "Media not found",
+            message: 'Media not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Media retrieved successfully",
+        message: 'Media retrieved successfully',
         data: media,
       });
     } catch (error) {
@@ -89,9 +89,9 @@ class UploadController {
         return errorResponse(
           res,
           {
-            message: "Media not found",
+            message: 'Media not found',
           },
-          404,
+          404
         );
       }
 
@@ -103,7 +103,7 @@ class UploadController {
       });
 
       return successResponse(res, {
-        message: "Media updated successfully",
+        message: 'Media updated successfully',
         data: media,
       });
     } catch (error) {
@@ -125,9 +125,9 @@ class UploadController {
         return errorResponse(
           res,
           {
-            message: "Media not found",
+            message: 'Media not found',
           },
-          404,
+          404
         );
       }
 
@@ -139,7 +139,7 @@ class UploadController {
       await media.destroy();
 
       return successResponse(res, {
-        message: "Media deleted successfully",
+        message: 'Media deleted successfully',
       });
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -162,11 +162,11 @@ class UploadController {
         },
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Media retrieved successfully",
+        message: 'Media retrieved successfully',
         data: media.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -190,11 +190,11 @@ class UploadController {
       const { count, rows } = await Media.findAndCountAll({
         limit: parseInt(limit),
         offset: parseInt(offset),
-        order: [["created_at", "DESC"]],
+        order: [['created_at', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Uploads retrieved successfully",
+        message: 'Uploads retrieved successfully',
         data: rows,
         pagination: {
           total: count,
@@ -204,7 +204,7 @@ class UploadController {
         },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve uploads");
+      return handleDatabaseError(error, res, 'Failed to retrieve uploads');
     }
   }
 
@@ -218,15 +218,15 @@ class UploadController {
       const upload = await Media.findByPk(id);
 
       if (!upload) {
-        return errorResponse(res, "Upload not found", 404);
+        return errorResponse(res, 'Upload not found', 404);
       }
 
       return successResponse(res, {
-        message: "Upload retrieved successfully",
+        message: 'Upload retrieved successfully',
         data: upload,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve upload");
+      return handleDatabaseError(error, res, 'Failed to retrieve upload');
     }
   }
 }

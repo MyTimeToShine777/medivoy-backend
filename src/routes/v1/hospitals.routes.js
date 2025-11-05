@@ -6,12 +6,7 @@ const authorize = require('../../middleware/authorize.middleware');
 const router = express.Router();
 
 // Create hospital (admin only)
-router.post(
-  '/',
-  auth,
-  authorize(['admin']),
-  hospitalController.createHospital,
-);
+router.post('/', auth, authorize(['admin']), hospitalController.createHospital);
 
 /**
  * @swagger
@@ -40,17 +35,14 @@ router.post(
  *         $ref: '#/components/responses/ServerError'
  */
 // Get hospital by ID (public endpoint)
-router.get(
-  '/:id',
-  hospitalController.getHospital,
-);
+router.get('/:id', hospitalController.getHospital);
 
 // Update hospital (hospital admins themselves, admin)
 router.put(
   '/:id',
   auth,
   authorize(['admin', 'hospital_admin']),
-  hospitalController.updateHospital,
+  hospitalController.updateHospital
 );
 
 // Delete hospital (admin only)
@@ -58,7 +50,7 @@ router.delete(
   '/:id',
   auth,
   authorize(['admin']),
-  hospitalController.deleteHospital,
+  hospitalController.deleteHospital
 );
 
 /**
@@ -93,17 +85,14 @@ router.delete(
  *         $ref: '#/components/responses/ServerError'
  */
 // Get all hospitals (public endpoint)
-router.get(
-  '/',
-  hospitalController.getAllHospitals,
-);
+router.get('/', hospitalController.getAllHospitals);
 
 // Verify hospital (admin only)
 router.patch(
   '/:id/verify',
   auth,
   authorize(['admin']),
-  hospitalController.verifyHospital,
+  hospitalController.verifyHospital
 );
 
 module.exports = router;

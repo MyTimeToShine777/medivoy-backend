@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Subscription = sequelize.define(
-  "Subscription",
+  'Subscription',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -11,15 +11,15 @@ const Subscription = sequelize.define(
     },
     plan_id: {
       type: DataTypes.INTEGER,
-      references: { model: "subscription_plans", key: "id" },
+      references: { model: 'subscription_plans', key: 'id' },
     },
     hospital_id: {
       type: DataTypes.INTEGER,
-      references: { model: "hospitals", key: "id" },
+      references: { model: 'hospitals', key: 'id' },
     },
     doctor_id: {
       type: DataTypes.INTEGER,
-      references: { model: "doctors", key: "id" },
+      references: { model: 'doctors', key: 'id' },
     },
     start_date: {
       type: DataTypes.DATEONLY,
@@ -39,10 +39,10 @@ const Subscription = sequelize.define(
     },
   },
   {
-    tableName: "subscriptions",
+    tableName: 'subscriptions',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = Subscription;

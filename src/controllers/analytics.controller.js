@@ -3,8 +3,8 @@
  * Handles analytics and dashboard statistics
  */
 
-const { Op } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { Op } = require('sequelize');
+const { sequelize } = require('../config/database');
 const {
   Booking,
   Appointment,
@@ -15,7 +15,7 @@ const {
   Payment,
   Review,
   User,
-} = require("../models");
+} = require('../models');
 
 /**
  * Get overall dashboard statistics
@@ -52,21 +52,21 @@ exports.getDashboardStats = async (req, res) => {
       Patient.count(),
       Doctor.count(),
       Hospital.count(),
-      Payment.sum("amount", {
-        where: { ...dateFilter, payment_status: "completed" },
+      Payment.sum('amount', {
+        where: { ...dateFilter, payment_status: 'completed' },
       }),
       Booking.count({
         where: {
           ...dateFilter,
           ...hospitalFilter,
-          status: { [Op.in]: ["requested", "under_review", "quotation_sent"] },
+          status: { [Op.in]: ['requested', 'under_review', 'quotation_sent'] },
         },
       }),
       Booking.count({
-        where: { ...dateFilter, ...hospitalFilter, status: "completed" },
+        where: { ...dateFilter, ...hospitalFilter, status: 'completed' },
       }),
       Booking.count({
-        where: { ...dateFilter, ...hospitalFilter, status: "cancelled" },
+        where: { ...dateFilter, ...hospitalFilter, status: 'cancelled' },
       }),
     ]);
 
@@ -76,13 +76,13 @@ exports.getDashboardStats = async (req, res) => {
       include: [
         {
           model: Patient,
-          as: "patient",
-          include: [{ model: User, as: "user" }],
+          as: 'patient',
+          include: [{ model: User, as: 'user' }],
         },
-        { model: Hospital, as: "hospital" },
-        { model: Treatment, as: "treatment" },
+        { model: Hospital, as: 'hospital' },
+        { model: Treatment, as: 'treatment' },
       ],
-      order: [["created_at", "DESC"]],
+      order: [['created_at', 'DESC']],
       limit: 10,
     });
 
@@ -90,34 +90,34 @@ exports.getDashboardStats = async (req, res) => {
     const statusDistribution = await Booking.findAll({
       where: { ...dateFilter, ...hospitalFilter },
       attributes: [
-        "status",
-        [sequelize.fn("COUNT", sequelize.col("id")), "count"],
+        'status',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
       ],
-      group: ["status"],
+      group: ['status'],
       raw: true,
     });
 
     // Get monthly revenue trend (last 12 months)
     const monthlyRevenue = await Payment.findAll({
       where: {
-        payment_status: "completed",
+        payment_status: 'completed',
         created_at: {
           [Op.gte]: new Date(new Date().setMonth(new Date().getMonth() - 12)),
         },
       },
       attributes: [
         [
-          sequelize.fn("DATE_TRUNC", "month", sequelize.col("created_at")),
-          "month",
+          sequelize.fn('DATE_TRUNC', 'month', sequelize.col('created_at')),
+          'month',
         ],
-        [sequelize.fn("SUM", sequelize.col("amount")), "revenue"],
-        [sequelize.fn("COUNT", sequelize.col("id")), "count"],
+        [sequelize.fn('SUM', sequelize.col('amount')), 'revenue'],
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
       ],
-      group: [sequelize.fn("DATE_TRUNC", "month", sequelize.col("created_at"))],
+      group: [sequelize.fn('DATE_TRUNC', 'month', sequelize.col('created_at'))],
       order: [
         [
-          sequelize.fn("DATE_TRUNC", "month", sequelize.col("created_at")),
-          "ASC",
+          sequelize.fn('DATE_TRUNC', 'month', sequelize.col('created_at')),
+          'ASC',
         ],
       ],
       raw: true,
@@ -143,10 +143,10 @@ exports.getDashboardStats = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching dashboard stats:", error);
+    console.error('Error fetching dashboard stats:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching dashboard statistics",
+      message: 'Error fetching dashboard statistics',
       error: error.message,
     });
   }
@@ -157,7 +157,7 @@ exports.getDashboardStats = async (req, res) => {
  */
 exports.getBookingAnalytics = async (req, res) => {
   try {
-    const { startDate, endDate, hospitalId, groupBy = "day" } = req.query;
+    const { startDate, endDate, hospitalId, groupBy = 'day' } = req.query;
 
     const dateFilter = {};
     if (startDate && endDate) {
@@ -169,30 +169,30 @@ exports.getBookingAnalytics = async (req, res) => {
     const hospitalFilter = hospitalId ? { hospital_id: hospitalId } : {};
 
     // Determine date truncation based on groupBy
-    let dateTrunc = "day";
-    if (groupBy === "week") dateTrunc = "week";
-    if (groupBy === "month") dateTrunc = "month";
-    if (groupBy === "year") dateTrunc = "year";
+    let dateTrunc = 'day';
+    if (groupBy === 'week') dateTrunc = 'week';
+    if (groupBy === 'month') dateTrunc = 'month';
+    if (groupBy === 'year') dateTrunc = 'year';
 
     // Get bookings over time
     const bookingsOverTime = await Booking.findAll({
       where: { ...dateFilter, ...hospitalFilter },
       attributes: [
         [
-          sequelize.fn("DATE_TRUNC", dateTrunc, sequelize.col("created_at")),
-          "period",
+          sequelize.fn('DATE_TRUNC', dateTrunc, sequelize.col('created_at')),
+          'period',
         ],
-        [sequelize.fn("COUNT", sequelize.col("id")), "count"],
-        "status",
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
+        'status',
       ],
       group: [
-        sequelize.fn("DATE_TRUNC", dateTrunc, sequelize.col("created_at")),
-        "status",
+        sequelize.fn('DATE_TRUNC', dateTrunc, sequelize.col('created_at')),
+        'status',
       ],
       order: [
         [
-          sequelize.fn("DATE_TRUNC", dateTrunc, sequelize.col("created_at")),
-          "ASC",
+          sequelize.fn('DATE_TRUNC', dateTrunc, sequelize.col('created_at')),
+          'ASC',
         ],
       ],
       raw: true,
@@ -201,13 +201,13 @@ exports.getBookingAnalytics = async (req, res) => {
     // Get bookings by treatment
     const bookingsByTreatment = await Booking.findAll({
       where: { ...dateFilter, ...hospitalFilter },
-      include: [{ model: Treatment, as: "treatment", attributes: ["name"] }],
+      include: [{ model: Treatment, as: 'treatment', attributes: ['name'] }],
       attributes: [
-        "treatment_id",
-        [sequelize.fn("COUNT", sequelize.col("Booking.id")), "count"],
+        'treatment_id',
+        [sequelize.fn('COUNT', sequelize.col('Booking.id')), 'count'],
       ],
-      group: ["treatment_id", "treatment.id", "treatment.name"],
-      order: [[sequelize.fn("COUNT", sequelize.col("Booking.id")), "DESC"]],
+      group: ['treatment_id', 'treatment.id', 'treatment.name'],
+      order: [[sequelize.fn('COUNT', sequelize.col('Booking.id')), 'DESC']],
       limit: 10,
       raw: false,
     });
@@ -215,13 +215,13 @@ exports.getBookingAnalytics = async (req, res) => {
     // Get bookings by hospital
     const bookingsByHospital = await Booking.findAll({
       where: { ...dateFilter, ...hospitalFilter },
-      include: [{ model: Hospital, as: "hospital", attributes: ["name"] }],
+      include: [{ model: Hospital, as: 'hospital', attributes: ['name'] }],
       attributes: [
-        "hospital_id",
-        [sequelize.fn("COUNT", sequelize.col("Booking.id")), "count"],
+        'hospital_id',
+        [sequelize.fn('COUNT', sequelize.col('Booking.id')), 'count'],
       ],
-      group: ["hospital_id", "hospital.id", "hospital.name"],
-      order: [[sequelize.fn("COUNT", sequelize.col("Booking.id")), "DESC"]],
+      group: ['hospital_id', 'hospital.id', 'hospital.name'],
+      order: [[sequelize.fn('COUNT', sequelize.col('Booking.id')), 'DESC']],
       limit: 10,
       raw: false,
     });
@@ -231,7 +231,7 @@ exports.getBookingAnalytics = async (req, res) => {
       where: { ...dateFilter, ...hospitalFilter },
     });
     const completedBookings = await Booking.count({
-      where: { ...dateFilter, ...hospitalFilter, status: "completed" },
+      where: { ...dateFilter, ...hospitalFilter, status: 'completed' },
     });
     const conversionRate =
       totalRequests > 0 ? (completedBookings / totalRequests) * 100 : 0;
@@ -246,10 +246,10 @@ exports.getBookingAnalytics = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching booking analytics:", error);
+    console.error('Error fetching booking analytics:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching booking analytics",
+      message: 'Error fetching booking analytics',
       error: error.message,
     });
   }
@@ -260,7 +260,7 @@ exports.getBookingAnalytics = async (req, res) => {
  */
 exports.getRevenueAnalytics = async (req, res) => {
   try {
-    const { startDate, endDate, hospitalId, groupBy = "month" } = req.query;
+    const { startDate, endDate, hospitalId, groupBy = 'month' } = req.query;
 
     const dateFilter = {};
     if (startDate && endDate) {
@@ -270,29 +270,29 @@ exports.getRevenueAnalytics = async (req, res) => {
     }
 
     // Determine date truncation
-    let dateTrunc = "month";
-    if (groupBy === "day") dateTrunc = "day";
-    if (groupBy === "week") dateTrunc = "week";
-    if (groupBy === "year") dateTrunc = "year";
+    let dateTrunc = 'month';
+    if (groupBy === 'day') dateTrunc = 'day';
+    if (groupBy === 'week') dateTrunc = 'week';
+    if (groupBy === 'year') dateTrunc = 'year';
 
     // Get revenue over time
     const revenueOverTime = await Payment.findAll({
-      where: { ...dateFilter, payment_status: "completed" },
+      where: { ...dateFilter, payment_status: 'completed' },
       attributes: [
         [
-          sequelize.fn("DATE_TRUNC", dateTrunc, sequelize.col("created_at")),
-          "period",
+          sequelize.fn('DATE_TRUNC', dateTrunc, sequelize.col('created_at')),
+          'period',
         ],
-        [sequelize.fn("SUM", sequelize.col("amount")), "revenue"],
-        [sequelize.fn("COUNT", sequelize.col("id")), "transactions"],
+        [sequelize.fn('SUM', sequelize.col('amount')), 'revenue'],
+        [sequelize.fn('COUNT', sequelize.col('id')), 'transactions'],
       ],
       group: [
-        sequelize.fn("DATE_TRUNC", dateTrunc, sequelize.col("created_at")),
+        sequelize.fn('DATE_TRUNC', dateTrunc, sequelize.col('created_at')),
       ],
       order: [
         [
-          sequelize.fn("DATE_TRUNC", dateTrunc, sequelize.col("created_at")),
-          "ASC",
+          sequelize.fn('DATE_TRUNC', dateTrunc, sequelize.col('created_at')),
+          'ASC',
         ],
       ],
       raw: true,
@@ -300,24 +300,24 @@ exports.getRevenueAnalytics = async (req, res) => {
 
     // Get revenue by payment method
     const revenueByMethod = await Payment.findAll({
-      where: { ...dateFilter, payment_status: "completed" },
+      where: { ...dateFilter, payment_status: 'completed' },
       attributes: [
-        "payment_method",
-        [sequelize.fn("SUM", sequelize.col("amount")), "revenue"],
-        [sequelize.fn("COUNT", sequelize.col("id")), "count"],
+        'payment_method',
+        [sequelize.fn('SUM', sequelize.col('amount')), 'revenue'],
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
       ],
-      group: ["payment_method"],
+      group: ['payment_method'],
       raw: true,
     });
 
     // Get total revenue stats
-    const totalRevenue = await Payment.sum("amount", {
-      where: { ...dateFilter, payment_status: "completed" },
+    const totalRevenue = await Payment.sum('amount', {
+      where: { ...dateFilter, payment_status: 'completed' },
     });
 
     const averageTransactionValue = await Payment.findOne({
-      where: { ...dateFilter, payment_status: "completed" },
-      attributes: [[sequelize.fn("AVG", sequelize.col("amount")), "average"]],
+      where: { ...dateFilter, payment_status: 'completed' },
+      attributes: [[sequelize.fn('AVG', sequelize.col('amount')), 'average']],
       raw: true,
     });
 
@@ -331,10 +331,10 @@ exports.getRevenueAnalytics = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching revenue analytics:", error);
+    console.error('Error fetching revenue analytics:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching revenue analytics",
+      message: 'Error fetching revenue analytics',
       error: error.message,
     });
   }
@@ -358,28 +358,28 @@ exports.getTopHospitals = async (req, res) => {
       include: [
         {
           model: Booking,
-          as: "bookings",
+          as: 'bookings',
           where: dateFilter,
           attributes: [],
           required: false,
         },
         {
           model: Review,
-          as: "reviews",
+          as: 'reviews',
           attributes: [],
           required: false,
         },
       ],
       attributes: [
-        "id",
-        "name",
-        "city",
-        "country",
-        [sequelize.fn("COUNT", sequelize.col("bookings.id")), "totalBookings"],
-        [sequelize.fn("AVG", sequelize.col("reviews.rating")), "averageRating"],
+        'id',
+        'name',
+        'city',
+        'country',
+        [sequelize.fn('COUNT', sequelize.col('bookings.id')), 'totalBookings'],
+        [sequelize.fn('AVG', sequelize.col('reviews.rating')), 'averageRating'],
       ],
-      group: ["Hospital.id"],
-      order: [[sequelize.fn("COUNT", sequelize.col("bookings.id")), "DESC"]],
+      group: ['Hospital.id'],
+      order: [[sequelize.fn('COUNT', sequelize.col('bookings.id')), 'DESC']],
       limit: parseInt(limit, 10),
       subQuery: false,
     });
@@ -389,10 +389,10 @@ exports.getTopHospitals = async (req, res) => {
       data: topHospitals,
     });
   } catch (error) {
-    console.error("Error fetching top hospitals:", error);
+    console.error('Error fetching top hospitals:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching top hospitals",
+      message: 'Error fetching top hospitals',
       error: error.message,
     });
   }
@@ -416,20 +416,20 @@ exports.getTopTreatments = async (req, res) => {
       include: [
         {
           model: Booking,
-          as: "bookings",
+          as: 'bookings',
           where: dateFilter,
           attributes: [],
           required: false,
         },
       ],
       attributes: [
-        "id",
-        "name",
-        "description",
-        [sequelize.fn("COUNT", sequelize.col("bookings.id")), "totalBookings"],
+        'id',
+        'name',
+        'description',
+        [sequelize.fn('COUNT', sequelize.col('bookings.id')), 'totalBookings'],
       ],
-      group: ["Treatment.id"],
-      order: [[sequelize.fn("COUNT", sequelize.col("bookings.id")), "DESC"]],
+      group: ['Treatment.id'],
+      order: [[sequelize.fn('COUNT', sequelize.col('bookings.id')), 'DESC']],
       limit: parseInt(limit, 10),
       subQuery: false,
     });
@@ -439,10 +439,10 @@ exports.getTopTreatments = async (req, res) => {
       data: topTreatments,
     });
   } catch (error) {
-    console.error("Error fetching top treatments:", error);
+    console.error('Error fetching top treatments:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching top treatments",
+      message: 'Error fetching top treatments',
       error: error.message,
     });
   }
@@ -456,11 +456,11 @@ exports.getPatientDemographics = async (req, res) => {
     // Get patients by country
     const patientsByCountry = await Patient.findAll({
       attributes: [
-        "country",
-        [sequelize.fn("COUNT", sequelize.col("id")), "count"],
+        'country',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
       ],
-      group: ["country"],
-      order: [[sequelize.fn("COUNT", sequelize.col("id")), "DESC"]],
+      group: ['country'],
+      order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
       limit: 10,
       raw: true,
     });
@@ -478,21 +478,21 @@ exports.getPatientDemographics = async (req, res) => {
               ELSE 'Over 60'
             END
           `),
-          "ageGroup",
+          'ageGroup',
         ],
-        [sequelize.fn("COUNT", sequelize.col("id")), "count"],
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
       ],
-      group: ["ageGroup"],
+      group: ['ageGroup'],
       raw: true,
     });
 
     // Get patients by gender
     const patientsByGender = await Patient.findAll({
       attributes: [
-        "gender",
-        [sequelize.fn("COUNT", sequelize.col("id")), "count"],
+        'gender',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
       ],
-      group: ["gender"],
+      group: ['gender'],
       raw: true,
     });
 
@@ -509,10 +509,10 @@ exports.getPatientDemographics = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching patient demographics:", error);
+    console.error('Error fetching patient demographics:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching patient demographics",
+      message: 'Error fetching patient demographics',
       error: error.message,
     });
   }
@@ -539,36 +539,36 @@ exports.getDoctorAnalytics = async (req, res) => {
       include: [
         {
           model: User,
-          as: "user",
-          attributes: ["first_name", "last_name", "email"],
+          as: 'user',
+          attributes: ['first_name', 'last_name', 'email'],
         },
         {
           model: Appointment,
-          as: "appointments",
+          as: 'appointments',
           where: dateFilter,
           attributes: [],
           required: false,
         },
         {
           model: Review,
-          as: "reviews",
+          as: 'reviews',
           attributes: [],
           required: false,
         },
       ],
       attributes: [
-        "id",
-        "specialization",
+        'id',
+        'specialization',
         [
-          sequelize.fn("COUNT", sequelize.col("appointments.id")),
-          "totalAppointments",
+          sequelize.fn('COUNT', sequelize.col('appointments.id')),
+          'totalAppointments',
         ],
-        [sequelize.fn("AVG", sequelize.col("reviews.rating")), "averageRating"],
-        [sequelize.fn("COUNT", sequelize.col("reviews.id")), "totalReviews"],
+        [sequelize.fn('AVG', sequelize.col('reviews.rating')), 'averageRating'],
+        [sequelize.fn('COUNT', sequelize.col('reviews.id')), 'totalReviews'],
       ],
-      group: ["Doctor.id", "user.id"],
+      group: ['Doctor.id', 'user.id'],
       order: [
-        [sequelize.fn("COUNT", sequelize.col("appointments.id")), "DESC"],
+        [sequelize.fn('COUNT', sequelize.col('appointments.id')), 'DESC'],
       ],
       limit: 20,
       subQuery: false,
@@ -579,10 +579,10 @@ exports.getDoctorAnalytics = async (req, res) => {
       data: doctorStats,
     });
   } catch (error) {
-    console.error("Error fetching doctor analytics:", error);
+    console.error('Error fetching doctor analytics:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching doctor analytics",
+      message: 'Error fetching doctor analytics',
       error: error.message,
     });
   }

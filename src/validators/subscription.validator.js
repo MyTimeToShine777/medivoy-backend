@@ -1,11 +1,11 @@
-const Joi = require("joi");
+const Joi = require('joi');
 
 const createSubscriptionPlanSchema = Joi.object({
   name: Joi.string().max(100).required(),
   description: Joi.string().required(),
-  plan_type: Joi.string().valid("monthly", "quarterly", "yearly").required(),
+  plan_type: Joi.string().valid('monthly', 'quarterly', 'yearly').required(),
   price: Joi.number().precision(2).min(0).required(),
-  currency: Joi.string().length(3).default("USD"),
+  currency: Joi.string().length(3).default('USD'),
   features: Joi.array().items(Joi.string()).default([]),
   max_bookings: Joi.number().integer().min(1).allow(null),
   max_appointments: Joi.number().integer().min(1).allow(null),
@@ -17,7 +17,7 @@ const createSubscriptionPlanSchema = Joi.object({
 const updateSubscriptionPlanSchema = Joi.object({
   name: Joi.string().max(100),
   description: Joi.string(),
-  plan_type: Joi.string().valid("monthly", "quarterly", "yearly"),
+  plan_type: Joi.string().valid('monthly', 'quarterly', 'yearly'),
   price: Joi.number().precision(2).min(0),
   currency: Joi.string().length(3),
   features: Joi.array().items(Joi.string()),
@@ -30,7 +30,7 @@ const updateSubscriptionPlanSchema = Joi.object({
 
 const subscribeSchema = Joi.object({
   plan_id: Joi.number().integer().required(),
-  payment_method: Joi.string().valid("stripe", "razorpay", "paypal").required(),
+  payment_method: Joi.string().valid('stripe', 'razorpay', 'paypal').required(),
   auto_renew: Joi.boolean().default(true),
 });
 

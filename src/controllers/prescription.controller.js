@@ -1,6 +1,6 @@
-const Prescription = require("../models/Prescription.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const Prescription = require('../models/Prescription.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class PrescriptionController {
   /**
@@ -32,10 +32,10 @@ class PrescriptionController {
       return successResponse(
         res,
         {
-          message: "Prescription created successfully",
+          message: 'Prescription created successfully',
           data: prescription,
         },
-        201,
+        201
       );
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -56,14 +56,14 @@ class PrescriptionController {
         return errorResponse(
           res,
           {
-            message: "Prescription not found",
+            message: 'Prescription not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Prescription retrieved successfully",
+        message: 'Prescription retrieved successfully',
         data: prescription,
       });
     } catch (error) {
@@ -86,9 +86,9 @@ class PrescriptionController {
         return errorResponse(
           res,
           {
-            message: "Prescription not found",
+            message: 'Prescription not found',
           },
-          404,
+          404
         );
       }
 
@@ -102,7 +102,7 @@ class PrescriptionController {
       });
 
       return successResponse(res, {
-        message: "Prescription updated successfully",
+        message: 'Prescription updated successfully',
         data: prescription,
       });
     } catch (error) {
@@ -124,9 +124,9 @@ class PrescriptionController {
         return errorResponse(
           res,
           {
-            message: "Prescription not found",
+            message: 'Prescription not found',
           },
-          404,
+          404
         );
       }
 
@@ -134,7 +134,7 @@ class PrescriptionController {
       await prescription.destroy();
 
       return successResponse(res, {
-        message: "Prescription deleted successfully",
+        message: 'Prescription deleted successfully',
       });
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -151,18 +151,18 @@ class PrescriptionController {
 
       // Build where clause
       const where = { patientId };
-      if (isFulfilled !== undefined) where.isFulfilled = isFulfilled === "true";
+      if (isFulfilled !== undefined) where.isFulfilled = isFulfilled === 'true';
 
       // Get prescriptions with pagination
       const prescriptions = await Prescription.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Prescriptions retrieved successfully",
+        message: 'Prescriptions retrieved successfully',
         data: prescriptions.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -189,9 +189,9 @@ class PrescriptionController {
         return errorResponse(
           res,
           {
-            message: "Prescription not found",
+            message: 'Prescription not found',
           },
-          404,
+          404
         );
       }
 
@@ -203,7 +203,7 @@ class PrescriptionController {
       await prescription.update({ pdfUrl });
 
       return successResponse(res, {
-        message: "Prescription PDF generated successfully",
+        message: 'Prescription PDF generated successfully',
         data: { pdfUrl },
       });
     } catch (error) {
@@ -222,15 +222,15 @@ class PrescriptionController {
       const { count, rows } = await Prescription.findAndCountAll({
         limit: parseInt(limit),
         offset: parseInt(offset),
-        order: [["created_at", "DESC"]],
+        order: [['created_at', 'DESC']],
         include: [
-          { model: Patient, as: "patient" },
-          { model: Doctor, as: "doctor" },
+          { model: Patient, as: 'patient' },
+          { model: Doctor, as: 'doctor' },
         ],
       });
 
       return successResponse(res, {
-        message: "Prescriptions retrieved successfully",
+        message: 'Prescriptions retrieved successfully',
         data: rows,
         pagination: {
           total: count,
@@ -243,7 +243,7 @@ class PrescriptionController {
       return handleDatabaseError(
         error,
         res,
-        "Failed to retrieve prescriptions",
+        'Failed to retrieve prescriptions'
       );
     }
   }

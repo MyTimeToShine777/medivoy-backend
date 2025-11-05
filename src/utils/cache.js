@@ -3,8 +3,8 @@
  * Uses Redis with fallback to in-memory cache
  */
 
-const redis = require("../config/redis");
-const logger = require("./logger");
+const redis = require('../config/redis');
+const logger = require('./logger');
 
 // In-memory cache fallback
 const memoryCache = new Map();
@@ -18,7 +18,7 @@ class CacheUtil {
   static async get(key) {
     try {
       // Try Redis first
-      if (redis && typeof redis.get === "function") {
+      if (redis && typeof redis.get === 'function') {
         const data = await redis.get(key);
         if (data) {
           return JSON.parse(data);
@@ -36,7 +36,7 @@ class CacheUtil {
 
       return null;
     } catch (error) {
-      logger.warn("Cache get error:", error);
+      logger.warn('Cache get error:', error);
       return null;
     }
   }
@@ -53,7 +53,7 @@ class CacheUtil {
       const serializedData = JSON.stringify(data);
 
       // Try Redis first
-      if (redis && typeof redis.setex === "function") {
+      if (redis && typeof redis.setex === 'function') {
         await redis.setex(key, ttl, serializedData);
         return true;
       }
@@ -66,7 +66,7 @@ class CacheUtil {
 
       return true;
     } catch (error) {
-      logger.warn("Cache set error:", error);
+      logger.warn('Cache set error:', error);
       return false;
     }
   }
@@ -79,7 +79,7 @@ class CacheUtil {
   static async del(key) {
     try {
       // Try Redis first
-      if (redis && typeof redis.del === "function") {
+      if (redis && typeof redis.del === 'function') {
         await redis.del(key);
       }
 
@@ -88,7 +88,7 @@ class CacheUtil {
 
       return true;
     } catch (error) {
-      logger.warn("Cache delete error:", error);
+      logger.warn('Cache delete error:', error);
       return false;
     }
   }
@@ -100,7 +100,7 @@ class CacheUtil {
   static async clear() {
     try {
       // Try Redis first
-      if (redis && typeof redis.flushdb === "function") {
+      if (redis && typeof redis.flushdb === 'function') {
         await redis.flushdb();
       }
 
@@ -109,7 +109,7 @@ class CacheUtil {
 
       return true;
     } catch (error) {
-      logger.warn("Cache clear error:", error);
+      logger.warn('Cache clear error:', error);
       return false;
     }
   }
@@ -124,7 +124,7 @@ class CacheUtil {
     const paramString = Object.keys(params)
       .sort()
       .map((key) => `${key}:${params[key]}`)
-      .join("|");
+      .join('|');
 
     return paramString ? `${resource}:${paramString}` : resource;
   }
@@ -156,7 +156,7 @@ class CacheUtil {
 
       return data;
     } catch (error) {
-      logger.error("Cache wrapper error:", error);
+      logger.error('Cache wrapper error:', error);
       // Fallback to database operation
       return await dbOperation();
     }
@@ -170,7 +170,7 @@ class CacheUtil {
   static async invalidatePattern(pattern) {
     try {
       // Try Redis first
-      if (redis && typeof redis.keys === "function") {
+      if (redis && typeof redis.keys === 'function') {
         const keys = await redis.keys(`*${pattern}*`);
         if (keys.length > 0) {
           await redis.del(...keys);
@@ -186,7 +186,7 @@ class CacheUtil {
 
       return true;
     } catch (error) {
-      logger.warn("Cache pattern invalidate error:", error);
+      logger.warn('Cache pattern invalidate error:', error);
       return false;
     }
   }
@@ -200,7 +200,7 @@ class CacheUtil {
       const memorySize = memoryCache.size;
       let redisConnected = false;
 
-      if (redis && typeof redis.ping === "function") {
+      if (redis && typeof redis.ping === 'function') {
         try {
           await redis.ping();
           redisConnected = true;
@@ -219,7 +219,7 @@ class CacheUtil {
         },
       };
     } catch (error) {
-      logger.error("Cache stats error:", error);
+      logger.error('Cache stats error:', error);
       return {
         memoryCache: { size: 0, keys: [] },
         redis: { connected: false },

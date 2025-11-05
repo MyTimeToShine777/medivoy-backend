@@ -1,5 +1,5 @@
-const Prescription = require("../models/Prescription.model");
-const logger = require("../utils/logger");
+const Prescription = require('../models/Prescription.model');
+const logger = require('../utils/logger');
 
 class PrescriptionService {
   /**
@@ -10,7 +10,7 @@ class PrescriptionService {
       const prescription = await Prescription.create(data);
       return prescription;
     } catch (error) {
-      logger.error("Create prescription service error:", error);
+      logger.error('Create prescription service error:', error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class PrescriptionService {
       const prescription = await Prescription.findByPk(id);
       return prescription;
     } catch (error) {
-      logger.error("Get prescription by ID service error:", error);
+      logger.error('Get prescription by ID service error:', error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class PrescriptionService {
     try {
       const prescription = await Prescription.findByPk(id);
       if (!prescription) {
-        throw new Error("Prescription not found");
+        throw new Error('Prescription not found');
       }
 
       await prescription.update(data);
       return prescription;
     } catch (error) {
-      logger.error("Update prescription service error:", error);
+      logger.error('Update prescription service error:', error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class PrescriptionService {
     try {
       const prescription = await Prescription.findByPk(id);
       if (!prescription) {
-        throw new Error("Prescription not found");
+        throw new Error('Prescription not found');
       }
 
       await prescription.destroy();
       return true;
     } catch (error) {
-      logger.error("Delete prescription service error:", error);
+      logger.error('Delete prescription service error:', error);
       throw error;
     }
   }
@@ -76,12 +76,12 @@ class PrescriptionService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return prescriptions;
     } catch (error) {
-      logger.error("Get patient prescriptions service error:", error);
+      logger.error('Get patient prescriptions service error:', error);
       throw error;
     }
   }

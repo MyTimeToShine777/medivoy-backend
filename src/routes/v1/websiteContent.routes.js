@@ -10,7 +10,7 @@ router.post(
   '/',
   auth,
   authorize(['admin']),
-  websiteContentController.createContent,
+  websiteContentController.createContent
 );
 
 // Get website content by ID (admin only)
@@ -18,21 +18,18 @@ router.get(
   '/:id',
   auth,
   authorize(['admin']),
-  websiteContentController.getContent,
+  websiteContentController.getContent
 );
 
 // Get website content by slug (public access)
-router.get(
-  '/slug/:slug',
-  websiteContentController.getContentBySlug,
-);
+router.get('/slug/:slug', websiteContentController.getContentBySlug);
 
 // Update website content (admin only)
 router.put(
   '/:id',
   auth,
   authorize(['admin']),
-  websiteContentController.updateContent,
+  websiteContentController.updateContent
 );
 
 // Delete website content (admin only)
@@ -40,12 +37,12 @@ router.delete(
   '/:id',
   auth,
   authorize(['admin']),
-  websiteContentController.deleteContent,
+  websiteContentController.deleteContent
 );
 
 // Get all website content (public access)
-  router.get('/', websiteContentController.getAllContent);
+router.get('/', websiteContentController.getAllContent);
 
-  // Get website content by ID (public access)
-  router.get('/:id', websiteContentController.getAllContent);
+// Get website content by ID (public access)
+router.get('/:id', websiteContentController.getAllContent);
 module.exports = router;

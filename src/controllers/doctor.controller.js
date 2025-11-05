@@ -1,12 +1,12 @@
-const Doctor = require("../models/Doctor.model");
-const { successResponse, errorResponse } = require("../utils/response");
+const Doctor = require('../models/Doctor.model');
+const { successResponse, errorResponse } = require('../utils/response');
 const {
   handleDatabaseError,
   getMockData,
   withDatabaseFallback,
   createPaginatedMockResponse,
-} = require("../utils/databaseErrorHandler");
-const CacheUtil = require("../utils/cache");
+} = require('../utils/databaseErrorHandler');
+const CacheUtil = require('../utils/cache');
 
 class DoctorController {
   /**
@@ -38,13 +38,13 @@ class DoctorController {
       return successResponse(
         res,
         {
-          message: "Doctor created successfully",
+          message: 'Doctor created successfully',
           data: doctor,
         },
-        201,
+        201
       );
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to create doctor");
+      return handleDatabaseError(error, res, 'Failed to create doctor');
     }
   }
 
@@ -56,7 +56,7 @@ class DoctorController {
       const { id } = req.params;
 
       // Generate cache key
-      const cacheKey = CacheUtil.generateKey("doctor", { id });
+      const cacheKey = CacheUtil.generateKey('doctor', { id });
 
       // Use cache wrapper
       const doctor = await CacheUtil.withCache(
@@ -64,29 +64,29 @@ class DoctorController {
         async () =>
           await withDatabaseFallback(
             () => Doctor.findByPk(id),
-            "doctor",
+            'doctor',
             { id: parseInt(id) },
-            getMockData("doctor", { id: parseInt(id) }),
+            getMockData('doctor', { id: parseInt(id) })
           ),
-        600,
+        600
       ); // Cache for 10 minutes
 
       if (!doctor) {
         return errorResponse(
           res,
           {
-            message: "Doctor not found",
+            message: 'Doctor not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Doctor retrieved successfully",
+        message: 'Doctor retrieved successfully',
         data: doctor,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve doctor");
+      return handleDatabaseError(error, res, 'Failed to retrieve doctor');
     }
   }
 
@@ -113,9 +113,9 @@ class DoctorController {
         return errorResponse(
           res,
           {
-            message: "Doctor not found",
+            message: 'Doctor not found',
           },
-          404,
+          404
         );
       }
 
@@ -131,11 +131,11 @@ class DoctorController {
       });
 
       return successResponse(res, {
-        message: "Doctor updated successfully",
+        message: 'Doctor updated successfully',
         data: doctor,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to update doctor");
+      return handleDatabaseError(error, res, 'Failed to update doctor');
     }
   }
 
@@ -153,9 +153,9 @@ class DoctorController {
         return errorResponse(
           res,
           {
-            message: "Doctor not found",
+            message: 'Doctor not found',
           },
-          404,
+          404
         );
       }
 
@@ -163,10 +163,10 @@ class DoctorController {
       await doctor.destroy();
 
       return successResponse(res, {
-        message: "Doctor deleted successfully",
+        message: 'Doctor deleted successfully',
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to delete doctor");
+      return handleDatabaseError(error, res, 'Failed to delete doctor');
     }
   }
 
@@ -178,11 +178,11 @@ class DoctorController {
       const { page = 1, limit = 10, specialty, isVerified } = req.query;
 
       // Generate cache key
-      const cacheKey = CacheUtil.generateKey("doctors", {
+      const cacheKey = CacheUtil.generateKey('doctors', {
         page,
         limit,
-        specialty: specialty || "",
-        isVerified: isVerified || "",
+        specialty: specialty || '',
+        isVerified: isVerified || '',
       });
 
       // Use cache wrapper
@@ -193,7 +193,7 @@ class DoctorController {
           const where = {};
           if (specialty) where.specialty = specialty;
           if (isVerified !== undefined)
-            where.isVerified = isVerified === "true";
+            where.isVerified = isVerified === 'true';
 
           // Get doctors with pagination
           const doctors = await withDatabaseFallback(
@@ -202,20 +202,20 @@ class DoctorController {
                 where,
                 limit: parseInt(limit, 10),
                 offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-                order: [["createdAt", "DESC"]],
+                order: [['createdAt', 'DESC']],
               }),
-            "doctor",
+            'doctor',
             {},
             createPaginatedMockResponse(
-              "doctor",
+              'doctor',
               parseInt(page, 10),
               parseInt(limit, 10),
               {
-                specialty: specialty || "General Medicine",
+                specialty: specialty || 'General Medicine',
                 isVerified:
-                  isVerified === undefined ? true : isVerified === "true",
-              },
-            ),
+                  isVerified === undefined ? true : isVerified === 'true',
+              }
+            )
           );
 
           return {
@@ -227,15 +227,15 @@ class DoctorController {
             },
           };
         },
-        300,
+        300
       ); // Cache for 5 minutes
 
       return successResponse(res, {
-        message: "Doctors retrieved successfully",
+        message: 'Doctors retrieved successfully',
         ...result,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve doctors");
+      return handleDatabaseError(error, res, 'Failed to retrieve doctors');
     }
   }
 
@@ -254,9 +254,9 @@ class DoctorController {
         return errorResponse(
           res,
           {
-            message: "Doctor not found",
+            message: 'Doctor not found',
           },
-          404,
+          404
         );
       }
 
@@ -264,14 +264,14 @@ class DoctorController {
       await doctor.update({ availability });
 
       return successResponse(res, {
-        message: "Doctor availability updated successfully",
+        message: 'Doctor availability updated successfully',
         data: doctor,
       });
     } catch (error) {
       return handleDatabaseError(
         error,
         res,
-        "Failed to update doctor availability",
+        'Failed to update doctor availability'
       );
     }
   }
@@ -291,9 +291,9 @@ class DoctorController {
         return errorResponse(
           res,
           {
-            message: "Doctor not found",
+            message: 'Doctor not found',
           },
-          404,
+          404
         );
       }
 
@@ -311,7 +311,7 @@ class DoctorController {
       // });
 
       return successResponse(res, {
-        message: "Doctor appointments retrieved successfully",
+        message: 'Doctor appointments retrieved successfully',
         data: [],
         pagination: {
           currentPage: parseInt(page, 10),
@@ -323,7 +323,7 @@ class DoctorController {
       return handleDatabaseError(
         error,
         res,
-        "Failed to retrieve doctor appointments",
+        'Failed to retrieve doctor appointments'
       );
     }
   }
@@ -342,9 +342,9 @@ class DoctorController {
         return errorResponse(
           res,
           {
-            message: "Doctor not found",
+            message: 'Doctor not found',
           },
-          404,
+          404
         );
       }
 
@@ -352,11 +352,11 @@ class DoctorController {
       await doctor.update({ isVerified: true });
 
       return successResponse(res, {
-        message: "Doctor verified successfully",
+        message: 'Doctor verified successfully',
         data: doctor,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to verify doctor");
+      return handleDatabaseError(error, res, 'Failed to verify doctor');
     }
   }
 }

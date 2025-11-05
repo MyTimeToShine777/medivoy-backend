@@ -116,7 +116,10 @@ router.get('/treatments/top', analyticsController.getTopTreatments);
  *     security:
  *       - bearerAuth: []
  */
-router.get('/patients/demographics', analyticsController.getPatientDemographics);
+router.get(
+  '/patients/demographics',
+  analyticsController.getPatientDemographics
+);
 
 /**
  * @swagger

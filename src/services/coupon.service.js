@@ -1,5 +1,5 @@
-const Coupon = require("../models/Coupon.model");
-const logger = require("../utils/logger");
+const Coupon = require('../models/Coupon.model');
+const logger = require('../utils/logger');
 
 class CouponService {
   /**
@@ -10,7 +10,7 @@ class CouponService {
       const coupon = await Coupon.create(data);
       return coupon;
     } catch (error) {
-      logger.error("Create coupon service error:", error);
+      logger.error('Create coupon service error:', error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class CouponService {
       const coupon = await Coupon.findByPk(id);
       return coupon;
     } catch (error) {
-      logger.error("Get coupon by ID service error:", error);
+      logger.error('Get coupon by ID service error:', error);
       throw error;
     }
   }
@@ -36,7 +36,7 @@ class CouponService {
       const coupon = await Coupon.findOne({ where: { code } });
       return coupon;
     } catch (error) {
-      logger.error("Get coupon by code service error:", error);
+      logger.error('Get coupon by code service error:', error);
       throw error;
     }
   }
@@ -48,13 +48,13 @@ class CouponService {
     try {
       const coupon = await Coupon.findByPk(id);
       if (!coupon) {
-        throw new Error("Coupon not found");
+        throw new Error('Coupon not found');
       }
 
       await coupon.update(data);
       return coupon;
     } catch (error) {
-      logger.error("Update coupon service error:", error);
+      logger.error('Update coupon service error:', error);
       throw error;
     }
   }
@@ -66,13 +66,13 @@ class CouponService {
     try {
       const coupon = await Coupon.findByPk(id);
       if (!coupon) {
-        throw new Error("Coupon not found");
+        throw new Error('Coupon not found');
       }
 
       await coupon.destroy();
       return true;
     } catch (error) {
-      logger.error("Delete coupon service error:", error);
+      logger.error('Delete coupon service error:', error);
       throw error;
     }
   }
@@ -88,12 +88,12 @@ class CouponService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return coupons;
     } catch (error) {
-      logger.error("Get all coupons service error:", error);
+      logger.error('Get all coupons service error:', error);
       throw error;
     }
   }
@@ -105,32 +105,32 @@ class CouponService {
     try {
       const coupon = await Coupon.findOne({ where: { code } });
       if (!coupon) {
-        throw new Error("Coupon not found");
+        throw new Error('Coupon not found');
       }
 
       // Check if coupon is active
       if (!coupon.isActive) {
-        throw new Error("Coupon is not active");
+        throw new Error('Coupon is not active');
       }
 
       // Check if coupon is expired
       const now = new Date();
       if (new Date(coupon.validFrom) > now) {
-        throw new Error("Coupon is not yet valid");
+        throw new Error('Coupon is not yet valid');
       }
 
       if (new Date(coupon.validUntil) < now) {
-        throw new Error("Coupon has expired");
+        throw new Error('Coupon has expired');
       }
 
       // Check if coupon has reached maximum uses
       if (coupon.maxUses > 0 && coupon.usedCount >= coupon.maxUses) {
-        throw new Error("Coupon has reached maximum uses");
+        throw new Error('Coupon has reached maximum uses');
       }
 
       return coupon;
     } catch (error) {
-      logger.error("Validate coupon service error:", error);
+      logger.error('Validate coupon service error:', error);
       throw error;
     }
   }
@@ -143,11 +143,11 @@ class CouponService {
       const coupon = await this.validateCoupon(code);
 
       // Increment used count
-      await coupon.increment("usedCount");
+      await coupon.increment('usedCount');
 
       return coupon;
     } catch (error) {
-      logger.error("Apply coupon service error:", error);
+      logger.error('Apply coupon service error:', error);
       throw error;
     }
   }

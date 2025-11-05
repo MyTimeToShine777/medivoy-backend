@@ -1,7 +1,7 @@
-const Joi = require("joi");
+const Joi = require('joi');
 
 const createReviewSchema = Joi.object({
-  reviewable_type: Joi.string().valid("Hospital", "Doctor").required(),
+  reviewable_type: Joi.string().valid('Hospital', 'Doctor').required(),
   reviewable_id: Joi.string().uuid().required(),
   rating: Joi.number().integer().min(1).max(5).required(),
   comment: Joi.string().min(10).max(1000).required(),

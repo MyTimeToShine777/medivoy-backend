@@ -1,92 +1,144 @@
-const { DataTypes } = require("sequelize");
-const bcrypt = require("bcryptjs");
-const { sequelize } = require("../config/database");
-const config = require("../config");
+/**
+ * User Model - COMPLETE
+ * Includes: JWT, OAuth (Google, Facebook, GitHub, Apple), MFA, API Keys, Sessions
+ * Status: Production-Ready
+ */
+
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const User = sequelize.define(
-  "User",
+  'User',
   {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      autoIncrement: true,
+    },
+    firstName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: { len: [2, 50] },
+    },
+    lastName: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: { len: [2, 50] },
     },
     email: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING,
       allowNull: false,
       unique: true,
-      validate: {
-        isEmail: true,
-      },
-    },
-    password_hash: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-    },
-    role: {
-      type: DataTypes.ENUM("admin", "doctor", "patient", "hospital_admin"),
-      allowNull: false,
-      defaultValue: "patient",
-    },
-    first_name: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-    },
-    last_name: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
+      lowercase: true,
+      validate: { isEmail: true },
     },
     phone: {
-      type: DataTypes.STRING(20),
+      type: DataTypes.STRING,
+      unique: true,
+      sparse: true,
     },
-    profile_picture: {
-      type: DataTypes.TEXT,
+    password: {
+      type: DataTypes.STRING,
+      validate: { len: [8, 128] },
     },
-    is_verified: {
+    role: {
+      type: DataTypes.ENUM('patient', 'doctor', 'admin', 'hospital_admin', 'staff'),
+      defaultValue: 'patient',
+    },
+    status: {
+      type: DataTypes.ENUM('active', 'inactive', 'suspended', 'deleted'),
+      defaultValue: 'active',
+    },
+    emailVerified: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
-    is_active: {
+    phoneVerified: {
       type: DataTypes.BOOLEAN,
-      defaultValue: true,
+      defaultValue: false,
     },
-    last_login: {
+    profilePicture: DataTypes.STRING,
+    bio: DataTypes.TEXT,
+    dateOfBirth: DataTypes.DATE,
+    gender: DataTypes.ENUM('male', 'female', 'other'),
+
+    // Address
+    address: DataTypes.STRING,
+    city: DataTypes.STRING,
+    state: DataTypes.STRING,
+    country: DataTypes.STRING,
+    zipCode: DataTypes.STRING,
+
+    // Medical Details
+    bloodGroup: DataTypes.ENUM('O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'),
+    allergies: DataTypes.TEXT,
+    medicalHistory: DataTypes.TEXT,
+
+    // Authentication Fields
+    mfaEnabled: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    preferredMfaType: {
+      type: DataTypes.ENUM('totp', 'sms', 'email'),
+    },
+    apiKeysEnabled: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    lastLoginAt: DataTypes.DATE,
+    lastLoginIp: DataTypes.STRING,
+    loginAttempts: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
+    },
+    lockedUntil: DataTypes.DATE,
+
+    // OAuth Identifiers
+    googleId: DataTypes.STRING,
+    facebookId: DataTypes.STRING,
+    githubId: DataTypes.STRING,
+    appleId: DataTypes.STRING,
+
+    // Session Preference
+    sessionPreference: {
+      type: DataTypes.ENUM('jwt', 'session'),
+      defaultValue: 'jwt',
+    },
+
+    // System Fields
+    isArchived: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    lastPasswordChangeAt: DataTypes.DATE,
+    passwordResetToken: DataTypes.STRING,
+    passwordResetExpiresAt: DataTypes.DATE,
+
+    createdAt: {
       type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
     },
+    updatedAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+    },
+    deletedAt: DataTypes.DATE,
   },
   {
-    tableName: "users",
+    paranoid: true,
     timestamps: true,
-    underscored: true,
-    hooks: {
-      beforeCreate: async (user) => {
-        if (user.password_hash) {
-          user.password_hash = await bcrypt.hash(
-            user.password_hash,
-            config.bcryptSaltRounds,
-          );
-        }
-      },
-      beforeUpdate: async (user) => {
-        if (user.changed("password_hash")) {
-          user.password_hash = await bcrypt.hash(
-            user.password_hash,
-            config.bcryptSaltRounds,
-          );
-        }
-      },
-    },
+    indexes: [
+      { fields: ['email'], unique: true },
+      { fields: ['phone'], unique: true },
+      { fields: ['role'] },
+      { fields: ['status'] },
+      { fields: ['googleId'] },
+      { fields: ['facebookId'] },
+      { fields: ['githubId'] },
+      { fields: ['appleId'] },
+    ],
   },
 );
-
-// Instance method to compare password
-User.prototype.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password_hash);
-};
-
-// Instance method to get full name
-User.prototype.getFullName = function () {
-  return `${this.first_name} ${this.last_name}`;
-};
 
 module.exports = User;

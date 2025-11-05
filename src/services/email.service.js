@@ -1,18 +1,18 @@
-const nodemailer = require("nodemailer");
-const sendgrid = require("@sendgrid/mail");
-const config = require("../config");
-const logger = require("../utils/logger");
+const nodemailer = require('nodemailer');
+const sendgrid = require('@sendgrid/mail');
+const config = require('../config');
+const logger = require('../utils/logger');
 
 // Set SendGrid API key
-if (config.sendgrid.apiKey && config.sendgrid.apiKey.startsWith("SG.")) {
+if (config.sendgrid.apiKey && config.sendgrid.apiKey.startsWith('SG.')) {
   sendgrid.setApiKey(config.sendgrid.apiKey);
 }
 
 // nodemailer configuration for sending emails
 const transporter = nodemailer.createTransport({
-  host: config.email.host || process.env.EMAIL_HOST || "smtp.gmail.com",
+  host: config.email.host || process.env.EMAIL_HOST || 'smtp.gmail.com',
   port: config.email.port || process.env.EMAIL_PORT || 587,
-  secure: config.email.secure || process.env.EMAIL_SECURE === "true",
+  secure: config.email.secure || process.env.EMAIL_SECURE === 'true',
   auth: {
     user: config.email.user || process.env.EMAIL_USER,
     pass: config.email.pass || process.env.EMAIL_PASS,
@@ -26,12 +26,12 @@ const transporter = nodemailer.createTransport({
 class EmailService {
   constructor() {
     // Initialize SendGrid if API key is provided
-    if (config.sendgrid.apiKey && config.sendgrid.apiKey.startsWith("SG.")) {
+    if (config.sendgrid.apiKey && config.sendgrid.apiKey.startsWith('SG.')) {
       this.sendgridEnabled = true;
     } else {
       this.sendgridEnabled = false;
       logger.warn(
-        "SendGrid API key is missing or invalid. SendGrid emails will be disabled.",
+        'SendGrid API key is missing or invalid. SendGrid emails will be disabled.'
       );
     }
 
@@ -42,7 +42,7 @@ class EmailService {
     } else {
       this.smtpEnabled = false;
       logger.warn(
-        "SMTP configuration is missing. SMTP emails will be disabled.",
+        'SMTP configuration is missing. SMTP emails will be disabled.'
       );
     }
   }
@@ -59,7 +59,7 @@ class EmailService {
    */
   async sendSendGridEmail({ to, subject, text, html, from }) {
     if (!this.sendgridEnabled) {
-      throw new Error("SendGrid is not configured");
+      throw new Error('SendGrid is not configured');
     }
 
     const msg = {
@@ -92,7 +92,7 @@ class EmailService {
    */
   async sendSMTPEmail({ to, subject, text, html, from }) {
     if (!this.smtpEnabled) {
-      throw new Error("SMTP is not configured");
+      throw new Error('SMTP is not configured');
     }
 
     const mailOptions = {
@@ -140,7 +140,7 @@ class EmailService {
       return await this.sendSMTPEmail(options);
     }
 
-    throw new Error("No email service is configured");
+    throw new Error('No email service is configured');
   }
 
   /**
@@ -150,9 +150,9 @@ class EmailService {
    * @param {string} [firstName] - User's first name
    * @returns {Promise<Object>} - Email service response
    */
-  async sendVerificationEmail(to, token, firstName = "") {
-    const verificationUrl = `${config.app.frontendUrl || "http://localhost:3000"}/verify-email?token=${token}`;
-    const subject = "Verify Your Email Address";
+  async sendVerificationEmail(to, token, firstName = '') {
+    const verificationUrl = `${config.app.frontendUrl || 'http://localhost:3000'}/verify-email?token=${token}`;
+    const subject = 'Verify Your Email Address';
 
     const text = `Hello ${firstName},\n\nPlease verify your email address by clicking the link below:\n${verificationUrl}\n\nThis link will expire in 24 hours.\n\nThank you,\n${config.app.name}`;
 
@@ -184,9 +184,9 @@ class EmailService {
    * @param {string} [firstName] - User's first name
    * @returns {Promise<Object>} - Email service response
    */
-  async sendPasswordResetEmail(to, token, firstName = "") {
-    const resetUrl = `${config.app.frontendUrl || "http://localhost:3000"}/reset-password?token=${token}`;
-    const subject = "Reset Your Password";
+  async sendPasswordResetEmail(to, token, firstName = '') {
+    const resetUrl = `${config.app.frontendUrl || 'http://localhost:3000'}/reset-password?token=${token}`;
+    const subject = 'Reset Your Password';
 
     const text = `Hello ${firstName},\n\nYou requested a password reset. Please click the link below to reset your password:\n${resetUrl}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.\n\nThank you,\n${config.app.name}`;
 
@@ -218,7 +218,7 @@ class EmailService {
    * @param {string} [firstName] - User's first name
    * @returns {Promise<Object>} - Email service response
    */
-  async sendWelcomeEmail(to, firstName = "") {
+  async sendWelcomeEmail(to, firstName = '') {
     const subject = `Welcome to ${config.app.name}!`;
 
     const text = `Hello ${firstName},\n\nWelcome to ${config.app.name}! We're excited to have you on board.\n\nYour account has been successfully created. You can now:\n\n• Book appointments with doctors\n• Access medical records\n• Manage prescriptions\n• And much more!\n\nIf you have any questions, feel free to contact our support team.\n\nThank you for choosing ${config.app.name}!\n\nBest regards,\nThe ${config.app.name} Team`;
@@ -235,7 +235,7 @@ class EmailService {
           <li>Manage prescriptions</li>
           <li>And much more!</li>
         </ul>
-        <a href="${config.app.frontendUrl || "http://localhost:3000"}/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #28a745; color: white; text-decoration: none; border-radius: 4px; margin-top: 20px;">Go to Dashboard</a>
+        <a href="${config.app.frontendUrl || 'http://localhost:3000'}/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #28a745; color: white; text-decoration: none; border-radius: 4px; margin-top: 20px;">Go to Dashboard</a>
         <p style="margin-top: 30px;">If you have any questions, feel free to contact our support team.</p>
         <p style="margin-top: 20px;">Thank you for choosing ${config.app.name}!</p>
         <p style="margin-top: 20px;">Best regards,<br>The ${config.app.name} Team</p>
@@ -257,14 +257,14 @@ class EmailService {
    * @param {string} [firstName] - User's first name
    * @returns {Promise<Object>} - Email service response
    */
-  async sendAppointmentConfirmationEmail(to, appointment, firstName = "") {
-    const subject = "Appointment Confirmation";
+  async sendAppointmentConfirmationEmail(to, appointment, firstName = '') {
+    const subject = 'Appointment Confirmation';
     const appointmentDate = new Date(
-      appointment.appointment_date,
+      appointment.appointment_date
     ).toLocaleDateString();
     const appointmentTime = appointment.appointment_time;
 
-    const text = `Hello ${firstName},\n\nYour appointment has been confirmed.\n\nAppointment Details:\nDate: ${appointmentDate}\nTime: ${appointmentTime}\nDoctor: ${appointment.doctor_name}\nLocation: ${appointment.location || "Online"}\n\nPlease arrive 10 minutes early for your appointment.\n\nIf you need to reschedule or cancel, please do so at least 24 hours in advance.\n\nThank you,\n${config.app.name}`;
+    const text = `Hello ${firstName},\n\nYour appointment has been confirmed.\n\nAppointment Details:\nDate: ${appointmentDate}\nTime: ${appointmentTime}\nDoctor: ${appointment.doctor_name}\nLocation: ${appointment.location || 'Online'}\n\nPlease arrive 10 minutes early for your appointment.\n\nIf you need to reschedule or cancel, please do so at least 24 hours in advance.\n\nThank you,\n${config.app.name}`;
 
     const html = `
       <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
@@ -276,7 +276,7 @@ class EmailService {
           <p style="margin: 5px 0;"><strong>Date:</strong> ${appointmentDate}</p>
           <p style="margin: 5px 0;"><strong>Time:</strong> ${appointmentTime}</p>
           <p style="margin: 5px 0;"><strong>Doctor:</strong> ${appointment.doctor_name}</p>
-          <p style="margin: 5px 0;"><strong>Location:</strong> ${appointment.location || "Online"}</p>
+          <p style="margin: 5px 0;"><strong>Location:</strong> ${appointment.location || 'Online'}</p>
         </div>
         <p style="color: #666;">Please arrive 10 minutes early for your appointment.</p>
         <p style="color: #666;">If you need to reschedule or cancel, please do so at least 24 hours in advance.</p>
@@ -299,14 +299,14 @@ class EmailService {
    * @param {string} [firstName] - User's first name
    * @returns {Promise<Object>} - Email service response
    */
-  async sendAppointmentReminderEmail(to, appointment, firstName = "") {
-    const subject = "Appointment Reminder";
+  async sendAppointmentReminderEmail(to, appointment, firstName = '') {
+    const subject = 'Appointment Reminder';
     const appointmentDate = new Date(
-      appointment.appointment_date,
+      appointment.appointment_date
     ).toLocaleDateString();
     const appointmentTime = appointment.appointment_time;
 
-    const text = `Hello ${firstName},\n\nThis is a reminder about your upcoming appointment.\n\nAppointment Details:\nDate: ${appointmentDate}\nTime: ${appointmentTime}\nDoctor: ${appointment.doctor_name}\nLocation: ${appointment.location || "Online"}\n\nPlease arrive 10 minutes early for your appointment.\n\nIf you need to reschedule or cancel, please do so at least 24 hours in advance.\n\nThank you,\n${config.app.name}`;
+    const text = `Hello ${firstName},\n\nThis is a reminder about your upcoming appointment.\n\nAppointment Details:\nDate: ${appointmentDate}\nTime: ${appointmentTime}\nDoctor: ${appointment.doctor_name}\nLocation: ${appointment.location || 'Online'}\n\nPlease arrive 10 minutes early for your appointment.\n\nIf you need to reschedule or cancel, please do so at least 24 hours in advance.\n\nThank you,\n${config.app.name}`;
 
     const html = `
       <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif;">
@@ -318,7 +318,7 @@ class EmailService {
           <p style="margin: 5px 0;"><strong>Date:</strong> ${appointmentDate}</p>
           <p style="margin: 5px 0;"><strong>Time:</strong> ${appointmentTime}</p>
           <p style="margin: 5px 0;"><strong>Doctor:</strong> ${appointment.doctor_name}</p>
-          <p style="margin: 5px 0;"><strong>Location:</strong> ${appointment.location || "Online"}</p>
+          <p style="margin: 5px 0;"><strong>Location:</strong> ${appointment.location || 'Online'}</p>
         </div>
         <p style="color: #666;">Please arrive 10 minutes early for your appointment.</p>
         <p style="color: #666;">If you need to reschedule or cancel, please do so at least 24 hours in advance.</p>
@@ -341,8 +341,8 @@ class EmailService {
    * @param {string} [firstName] - User's first name
    * @returns {Promise<Object>} - Email service response
    */
-  async sendBookingConfirmationEmail(to, booking, firstName = "") {
-    const subject = "Booking Confirmation";
+  async sendBookingConfirmationEmail(to, booking, firstName = '') {
+    const subject = 'Booking Confirmation';
 
     const text = `Hello ${firstName},\n\nYour booking has been confirmed.\n\nBooking Details:\nBooking Number: ${booking.booking_number}\nTreatment: ${booking.treatment_name}\nHospital: ${booking.hospital_name}\nTotal Amount: $${booking.total_amount}\n\nThank you for choosing ${config.app.name}.\n\nBest regards,\nThe ${config.app.name} Team`;
 
@@ -378,8 +378,8 @@ class EmailService {
    * @param {string} [firstName] - User's first name
    * @returns {Promise<Object>} - Email service response
    */
-  async sendPaymentConfirmationEmail(to, payment, firstName = "") {
-    const subject = "Payment Confirmation";
+  async sendPaymentConfirmationEmail(to, payment, firstName = '') {
+    const subject = 'Payment Confirmation';
 
     const text = `Hello ${firstName},\n\nYour payment has been processed successfully.\n\nPayment Details:\nPayment ID: ${payment.payment_id}\nAmount: $${payment.amount}\nStatus: ${payment.status}\nPayment Method: ${payment.payment_method}\n\nThank you for your payment.\n\nBest regards,\nThe ${config.app.name} Team`;
 

@@ -1,5 +1,5 @@
-const { validationResult } = require("express-validator");
-const { ValidationError } = require("../utils/error-handler");
+const { validationResult } = require('express-validator');
+const { ValidationError } = require('../utils/error-handler');
 
 /**
  * Validation middleware - Check express-validator results
@@ -14,7 +14,7 @@ const validate = (req, res, next) => {
       value: error.value,
     }));
 
-    throw new ValidationError("Validation failed", formattedErrors);
+    throw new ValidationError('Validation failed', formattedErrors);
   }
 
   next();
@@ -26,7 +26,7 @@ const validate = (req, res, next) => {
  * @param {String} property - Property to validate (body, query, params)
  */
 const validateJoi =
-  (schema, property = "body") =>
+  (schema, property = 'body') =>
   (req, res, next) => {
     const { error, value } = schema.validate(req[property], {
       abortEarly: false,
@@ -35,12 +35,12 @@ const validateJoi =
 
     if (error) {
       const formattedErrors = error.details.map((detail) => ({
-        field: detail.path.join("."),
+        field: detail.path.join('.'),
         message: detail.message,
         type: detail.type,
       }));
 
-      const validationError = new ValidationError("Validation failed");
+      const validationError = new ValidationError('Validation failed');
       validationError.errors = formattedErrors;
 
       return next(validationError);
@@ -51,7 +51,20 @@ const validateJoi =
     next();
   };
 
+/**
+ * Helper to apply express-validator chains and then the validation result checker
+ * Accepts an array of validator middlewares (or a single middleware) and returns
+ * a composed middleware array that runs the validators first then the `validate` checker.
+ */
+const validateRequest = (validators) => {
+  if (!validators) return validate;
+  // allow either a single middleware or an array of middlewares
+  const arr = Array.isArray(validators) ? validators : [validators];
+  return [...arr, validate];
+};
+
 module.exports = {
   validate,
   validateJoi,
+  validateRequest,
 };

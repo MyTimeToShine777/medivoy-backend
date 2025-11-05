@@ -7,7 +7,7 @@
  *     description: |
  *       This endpoint demonstrates the comprehensive documentation
  *       quality that has been applied to all 287 endpoints.
- *       
+ *
  *       Features demonstrated:
  *       - Detailed descriptions with use cases
  *       - Comprehensive parameter documentation
@@ -92,17 +92,17 @@ router.get('/test/comprehensive', (req, res) => {
     documentation: {
       totalEndpoints: 287,
       categories: 40,
-      coverage: "100%",
+      coverage: '100%',
       features: [
-        "Detailed descriptions",
-        "Request/response examples", 
-        "Error handling",
-        "Authentication info",
-        "Validation rules",
-        "Use cases"
-      ]
+        'Detailed descriptions',
+        'Request/response examples',
+        'Error handling',
+        'Authentication info',
+        'Validation rules',
+        'Use cases',
+      ],
     },
-    message: "All endpoints documented comprehensively"
+    message: 'All endpoints documented comprehensively',
   });
 });
 

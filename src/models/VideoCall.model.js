@@ -3,11 +3,11 @@
  * Represents video call sessions between patients and doctors
  */
 
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const VideoCall = sequelize.define(
-  "VideoCall",
+  'VideoCall',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -18,68 +18,68 @@ const VideoCall = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: "appointments",
-        key: "id",
+        model: 'appointments',
+        key: 'id',
       },
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE',
     },
     conversation_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: "chat_conversations",
-        key: "id",
+        model: 'chat_conversations',
+        key: 'id',
       },
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE',
     },
     host_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "users",
-        key: "id",
+        model: 'users',
+        key: 'id',
       },
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     },
     host_type: {
-      type: DataTypes.ENUM("patient", "doctor", "staff"),
+      type: DataTypes.ENUM('patient', 'doctor', 'staff'),
       allowNull: false,
     },
     participant_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "users",
-        key: "id",
+        model: 'users',
+        key: 'id',
       },
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     },
     participant_type: {
-      type: DataTypes.ENUM("patient", "doctor", "staff"),
+      type: DataTypes.ENUM('patient', 'doctor', 'staff'),
       allowNull: false,
     },
     call_type: {
-      type: DataTypes.ENUM("consultation", "follow_up", "emergency", "support"),
+      type: DataTypes.ENUM('consultation', 'follow_up', 'emergency', 'support'),
       allowNull: false,
-      defaultValue: "consultation",
+      defaultValue: 'consultation',
     },
     call_status: {
       type: DataTypes.ENUM(
-        "scheduled",
-        "initiated",
-        "ringing",
-        "connected",
-        "ended",
-        "missed",
-        "cancelled",
-        "failed",
+        'scheduled',
+        'initiated',
+        'ringing',
+        'connected',
+        'ended',
+        'missed',
+        'cancelled',
+        'failed'
       ),
       allowNull: false,
-      defaultValue: "scheduled",
+      defaultValue: 'scheduled',
     },
     scheduled_at: {
       type: DataTypes.DATE,
@@ -96,18 +96,18 @@ const VideoCall = sequelize.define(
     duration_seconds: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      comment: "Call duration in seconds",
+      comment: 'Call duration in seconds',
     },
     room_id: {
       type: DataTypes.STRING(255),
       allowNull: true,
-      comment: "Video call room/session ID from provider",
+      comment: 'Video call room/session ID from provider',
     },
     provider: {
       type: DataTypes.STRING(50),
       allowNull: true,
-      defaultValue: "agora",
-      comment: "Video call provider (agora, twilio, zoom, etc.)",
+      defaultValue: 'agora',
+      comment: 'Video call provider (agora, twilio, zoom, etc.)',
     },
     provider_session_id: {
       type: DataTypes.STRING(255),
@@ -116,12 +116,12 @@ const VideoCall = sequelize.define(
     host_token: {
       type: DataTypes.TEXT,
       allowNull: true,
-      comment: "Access token for host",
+      comment: 'Access token for host',
     },
     participant_token: {
       type: DataTypes.TEXT,
       allowNull: true,
-      comment: "Access token for participant",
+      comment: 'Access token for participant',
     },
     recording_enabled: {
       type: DataTypes.BOOLEAN,
@@ -135,7 +135,7 @@ const VideoCall = sequelize.define(
     recording_duration: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      comment: "Recording duration in seconds",
+      comment: 'Recording duration in seconds',
     },
     quality_rating: {
       type: DataTypes.INTEGER,
@@ -156,7 +156,7 @@ const VideoCall = sequelize.define(
     connection_quality: {
       type: DataTypes.JSON,
       allowNull: true,
-      comment: "Network quality metrics",
+      comment: 'Network quality metrics',
     },
     notes: {
       type: DataTypes.TEXT,
@@ -170,14 +170,14 @@ const VideoCall = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: "users",
-        key: "id",
+        model: 'users',
+        key: 'id',
       },
     },
     metadata: {
       type: DataTypes.JSON,
       allowNull: true,
-      comment: "Additional call metadata",
+      comment: 'Additional call metadata',
     },
     created_at: {
       type: DataTypes.DATE,
@@ -191,33 +191,33 @@ const VideoCall = sequelize.define(
     },
   },
   {
-    tableName: "video_calls",
+    tableName: 'video_calls',
     timestamps: true,
     underscored: true,
     indexes: [
       {
-        fields: ["appointment_id"],
+        fields: ['appointment_id'],
       },
       {
-        fields: ["conversation_id"],
+        fields: ['conversation_id'],
       },
       {
-        fields: ["host_id"],
+        fields: ['host_id'],
       },
       {
-        fields: ["participant_id"],
+        fields: ['participant_id'],
       },
       {
-        fields: ["call_status"],
+        fields: ['call_status'],
       },
       {
-        fields: ["scheduled_at"],
+        fields: ['scheduled_at'],
       },
       {
-        fields: ["room_id"],
+        fields: ['room_id'],
       },
     ],
-  },
+  }
 );
 
 module.exports = VideoCall;

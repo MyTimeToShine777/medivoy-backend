@@ -121,7 +121,11 @@ router.put('/privacy/:id', auth, termsPrivacyController.updatePrivacyPolicy);
  *     security:
  *       - bearerAuth: []
  */
-router.put('/privacy/:id/publish', auth, termsPrivacyController.publishPrivacyPolicy);
+router.put(
+  '/privacy/:id/publish',
+  auth,
+  termsPrivacyController.publishPrivacyPolicy
+);
 
 /**
  * User Acceptance Routes
@@ -147,7 +151,11 @@ router.post('/acceptance', auth, termsPrivacyController.recordAcceptance);
  *     security:
  *       - bearerAuth: []
  */
-router.get('/acceptance/user/:userId', auth, termsPrivacyController.getUserAcceptances);
+router.get(
+  '/acceptance/user/:userId',
+  auth,
+  termsPrivacyController.getUserAcceptances
+);
 
 /**
  * @swagger
@@ -158,10 +166,19 @@ router.get('/acceptance/user/:userId', auth, termsPrivacyController.getUserAccep
  *     security:
  *       - bearerAuth: []
  */
-router.get('/acceptance/check/:userId', auth, termsPrivacyController.checkUserAcceptance);
+router.get(
+  '/acceptance/check/:userId',
+  auth,
+  termsPrivacyController.checkUserAcceptance
+);
 
 router.get('/:id', termsPrivacyController.getTermsPrivacyById);
 
-router.delete('/:id', auth, authorize("admin"), termsPrivacyController.deleteTermsPrivacy);
+router.delete(
+  '/:id',
+  auth,
+  authorize('admin'),
+  termsPrivacyController.deleteTermsPrivacy
+);
 
 module.exports = router;

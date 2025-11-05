@@ -1,5 +1,5 @@
-const User = require("../models/User.model");
-const logger = require("../utils/logger");
+const User = require('../models/User.model');
+const logger = require('../utils/logger');
 
 class UserService {
   /**
@@ -10,7 +10,7 @@ class UserService {
       const user = await User.create(data);
       return user;
     } catch (error) {
-      logger.error("Create user service error:", error);
+      logger.error('Create user service error:', error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class UserService {
       const user = await User.findByPk(id);
       return user;
     } catch (error) {
-      logger.error("Get user by ID service error:", error);
+      logger.error('Get user by ID service error:', error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class UserService {
     try {
       const user = await User.findByPk(id);
       if (!user) {
-        throw new Error("User not found");
+        throw new Error('User not found');
       }
 
       await user.update(data);
       return user;
     } catch (error) {
-      logger.error("Update user service error:", error);
+      logger.error('Update user service error:', error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class UserService {
     try {
       const user = await User.findByPk(id);
       if (!user) {
-        throw new Error("User not found");
+        throw new Error('User not found');
       }
 
       await user.destroy();
       return true;
     } catch (error) {
-      logger.error("Delete user service error:", error);
+      logger.error('Delete user service error:', error);
       throw error;
     }
   }
@@ -75,12 +75,12 @@ class UserService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return users;
     } catch (error) {
-      logger.error("Get all users service error:", error);
+      logger.error('Get all users service error:', error);
       throw error;
     }
   }
@@ -93,7 +93,7 @@ class UserService {
       const user = await User.findOne({ where: { email } });
       return user;
     } catch (error) {
-      logger.error("Get user by email service error:", error);
+      logger.error('Get user by email service error:', error);
       throw error;
     }
   }
@@ -105,13 +105,13 @@ class UserService {
     try {
       const user = await User.findByPk(id);
       if (!user) {
-        throw new Error("User not found");
+        throw new Error('User not found');
       }
 
       await user.update({ lastLogin: new Date() });
       return user;
     } catch (error) {
-      logger.error("Update last login service error:", error);
+      logger.error('Update last login service error:', error);
       throw error;
     }
   }

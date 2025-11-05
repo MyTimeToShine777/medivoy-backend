@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Patient = sequelize.define(
-  "Patient",
+  'Patient',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -14,17 +14,17 @@ const Patient = sequelize.define(
       allowNull: false,
       unique: true,
       references: {
-        model: "users",
-        key: "id",
+        model: 'users',
+        key: 'id',
       },
-      onDelete: "CASCADE",
+      onDelete: 'CASCADE',
     },
     date_of_birth: {
       type: DataTypes.DATEONLY,
       allowNull: false,
     },
     gender: {
-      type: DataTypes.ENUM("male", "female", "other"),
+      type: DataTypes.ENUM('male', 'female', 'other'),
       allowNull: false,
     },
     blood_group: {
@@ -38,7 +38,7 @@ const Patient = sequelize.define(
     },
     country: {
       type: DataTypes.STRING(100),
-      defaultValue: "India",
+      defaultValue: 'India',
     },
     emergency_contact_name: {
       type: DataTypes.STRING(100),
@@ -49,8 +49,8 @@ const Patient = sequelize.define(
     insurance_id: {
       type: DataTypes.INTEGER,
       references: {
-        model: "insurance_providers",
-        key: "id",
+        model: 'insurance_providers',
+        key: 'id',
       },
     },
     insurance_policy_number: {
@@ -67,10 +67,10 @@ const Patient = sequelize.define(
     },
   },
   {
-    tableName: "patients",
+    tableName: 'patients',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = Patient;

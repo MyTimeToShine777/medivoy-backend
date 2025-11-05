@@ -1,6 +1,6 @@
-const Payment = require("../models/Payment.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const Payment = require('../models/Payment.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class PaymentController {
   /**
@@ -30,10 +30,10 @@ class PaymentController {
       return successResponse(
         res,
         {
-          message: "Payment created successfully",
+          message: 'Payment created successfully',
           data: payment,
         },
-        201,
+        201
       );
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -54,14 +54,14 @@ class PaymentController {
         return errorResponse(
           res,
           {
-            message: "Payment not found",
+            message: 'Payment not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Payment retrieved successfully",
+        message: 'Payment retrieved successfully',
         data: payment,
       });
     } catch (error) {
@@ -84,9 +84,9 @@ class PaymentController {
         return errorResponse(
           res,
           {
-            message: "Payment not found",
+            message: 'Payment not found',
           },
-          404,
+          404
         );
       }
 
@@ -97,7 +97,7 @@ class PaymentController {
       });
 
       return successResponse(res, {
-        message: "Payment updated successfully",
+        message: 'Payment updated successfully',
         data: payment,
       });
     } catch (error) {
@@ -119,9 +119,9 @@ class PaymentController {
         return errorResponse(
           res,
           {
-            message: "Payment not found",
+            message: 'Payment not found',
           },
-          404,
+          404
         );
       }
 
@@ -129,7 +129,7 @@ class PaymentController {
       await payment.destroy();
 
       return successResponse(res, {
-        message: "Payment deleted successfully",
+        message: 'Payment deleted successfully',
       });
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -153,11 +153,11 @@ class PaymentController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Payments retrieved successfully",
+        message: 'Payments retrieved successfully',
         data: payments.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -185,9 +185,9 @@ class PaymentController {
         return errorResponse(
           res,
           {
-            message: "Payment not found",
+            message: 'Payment not found',
           },
-          404,
+          404
         );
       }
 
@@ -200,11 +200,11 @@ class PaymentController {
         refundAmount,
         refundReason,
         refundTransactionId,
-        status: "refunded",
+        status: 'refunded',
       });
 
       return successResponse(res, {
-        message: "Payment refund processed successfully",
+        message: 'Payment refund processed successfully',
         data: payment,
       });
     } catch (error) {

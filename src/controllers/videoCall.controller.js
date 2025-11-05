@@ -3,8 +3,8 @@
  * Handles video call sessions and management
  */
 
-const { Op } = require("sequelize");
-const { VideoCall, Appointment, ChatConversation, User } = require("../models");
+const { Op } = require('sequelize');
+const { VideoCall, Appointment, ChatConversation, User } = require('../models');
 
 /**
  * Initiate a video call
@@ -29,7 +29,7 @@ exports.initiateCall = async (req, res) => {
       if (!appointment) {
         return res.status(404).json({
           success: false,
-          message: "Appointment not found",
+          message: 'Appointment not found',
         });
       }
     }
@@ -39,7 +39,7 @@ exports.initiateCall = async (req, res) => {
       if (!conversation) {
         return res.status(404).json({
           success: false,
-          message: "Conversation not found",
+          message: 'Conversation not found',
         });
       }
     }
@@ -52,14 +52,14 @@ exports.initiateCall = async (req, res) => {
       appointment_id,
       conversation_id,
       host_id,
-      host_type: host_type || "doctor",
+      host_type: host_type || 'doctor',
       participant_id,
-      participant_type: participant_type || "patient",
-      call_type: call_type || "consultation",
-      call_status: scheduled_at ? "scheduled" : "initiated",
+      participant_type: participant_type || 'patient',
+      call_type: call_type || 'consultation',
+      call_status: scheduled_at ? 'scheduled' : 'initiated',
       scheduled_at,
       room_id: roomId,
-      provider: provider || "agora",
+      provider: provider || 'agora',
       recording_enabled: false,
     });
 
@@ -77,40 +77,40 @@ exports.initiateCall = async (req, res) => {
       include: [
         {
           model: User,
-          as: "host",
-          attributes: ["id", "first_name", "last_name", "email"],
+          as: 'host',
+          attributes: ['id', 'first_name', 'last_name', 'email'],
         },
         {
           model: User,
-          as: "participant",
-          attributes: ["id", "first_name", "last_name", "email"],
+          as: 'participant',
+          attributes: ['id', 'first_name', 'last_name', 'email'],
         },
         {
           model: Appointment,
-          as: "appointment",
-          attributes: ["id", "appointment_date", "status"],
+          as: 'appointment',
+          attributes: ['id', 'appointment_date', 'status'],
         },
         {
           model: ChatConversation,
-          as: "conversation",
-          attributes: ["id", "conversation_type"],
+          as: 'conversation',
+          attributes: ['id', 'conversation_type'],
         },
       ],
     });
 
     res.status(201).json({
       success: true,
-      message: "Video call initiated successfully",
+      message: 'Video call initiated successfully',
       data: {
         ...callWithDetails.toJSON(),
         joinUrl: `/video-call/${roomId}`,
       },
     });
   } catch (error) {
-    console.error("Error initiating video call:", error);
+    console.error('Error initiating video call:', error);
     res.status(500).json({
       success: false,
-      message: "Error initiating video call",
+      message: 'Error initiating video call',
       error: error.message,
     });
   }
@@ -128,13 +128,13 @@ exports.joinCall = async (req, res) => {
       include: [
         {
           model: User,
-          as: "host",
-          attributes: ["id", "first_name", "last_name"],
+          as: 'host',
+          attributes: ['id', 'first_name', 'last_name'],
         },
         {
           model: User,
-          as: "participant",
-          attributes: ["id", "first_name", "last_name"],
+          as: 'participant',
+          attributes: ['id', 'first_name', 'last_name'],
         },
       ],
     });
@@ -142,7 +142,7 @@ exports.joinCall = async (req, res) => {
     if (!videoCall) {
       return res.status(404).json({
         success: false,
-        message: "Video call not found",
+        message: 'Video call not found',
       });
     }
 
@@ -150,17 +150,17 @@ exports.joinCall = async (req, res) => {
     if (userId !== videoCall.host_id && userId !== videoCall.participant_id) {
       return res.status(403).json({
         success: false,
-        message: "You are not authorized to join this call",
+        message: 'You are not authorized to join this call',
       });
     }
 
     // Update call status
     if (
-      videoCall.call_status === "initiated" ||
-      videoCall.call_status === "scheduled"
+      videoCall.call_status === 'initiated' ||
+      videoCall.call_status === 'scheduled'
     ) {
       await videoCall.update({
-        call_status: "ringing",
+        call_status: 'ringing',
       });
     }
 
@@ -172,7 +172,7 @@ exports.joinCall = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Joined call successfully",
+      message: 'Joined call successfully',
       data: {
         call_id: videoCall.id,
         room_id: videoCall.room_id,
@@ -184,10 +184,10 @@ exports.joinCall = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error joining video call:", error);
+    console.error('Error joining video call:', error);
     res.status(500).json({
       success: false,
-      message: "Error joining video call",
+      message: 'Error joining video call',
       error: error.message,
     });
   }
@@ -204,25 +204,25 @@ exports.startCall = async (req, res) => {
     if (!videoCall) {
       return res.status(404).json({
         success: false,
-        message: "Video call not found",
+        message: 'Video call not found',
       });
     }
 
     await videoCall.update({
-      call_status: "connected",
+      call_status: 'connected',
       started_at: new Date(),
     });
 
     res.json({
       success: true,
-      message: "Call started successfully",
+      message: 'Call started successfully',
       data: videoCall,
     });
   } catch (error) {
-    console.error("Error starting video call:", error);
+    console.error('Error starting video call:', error);
     res.status(500).json({
       success: false,
-      message: "Error starting video call",
+      message: 'Error starting video call',
       error: error.message,
     });
   }
@@ -240,7 +240,7 @@ exports.endCall = async (req, res) => {
     if (!videoCall) {
       return res.status(404).json({
         success: false,
-        message: "Video call not found",
+        message: 'Video call not found',
       });
     }
 
@@ -250,7 +250,7 @@ exports.endCall = async (req, res) => {
       : 0;
 
     const updateData = {
-      call_status: "ended",
+      call_status: 'ended',
       ended_at: endedAt,
       duration_seconds: durationSeconds,
     };
@@ -272,7 +272,7 @@ exports.endCall = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Call ended successfully",
+      message: 'Call ended successfully',
       data: {
         call_id: videoCall.id,
         duration_seconds: durationSeconds,
@@ -280,10 +280,10 @@ exports.endCall = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error ending video call:", error);
+    console.error('Error ending video call:', error);
     res.status(500).json({
       success: false,
-      message: "Error ending video call",
+      message: 'Error ending video call',
       error: error.message,
     });
   }
@@ -301,35 +301,35 @@ exports.cancelCall = async (req, res) => {
     if (!videoCall) {
       return res.status(404).json({
         success: false,
-        message: "Video call not found",
+        message: 'Video call not found',
       });
     }
 
     // Only allow cancellation of scheduled or initiated calls
     if (
-      !["scheduled", "initiated", "ringing"].includes(videoCall.call_status)
+      !['scheduled', 'initiated', 'ringing'].includes(videoCall.call_status)
     ) {
       return res.status(400).json({
         success: false,
-        message: "Cannot cancel a call that is already connected or ended",
+        message: 'Cannot cancel a call that is already connected or ended',
       });
     }
 
     await videoCall.update({
-      call_status: "cancelled",
+      call_status: 'cancelled',
       cancellation_reason,
       cancelled_by: userId,
     });
 
     res.json({
       success: true,
-      message: "Call cancelled successfully",
+      message: 'Call cancelled successfully',
     });
   } catch (error) {
-    console.error("Error cancelling video call:", error);
+    console.error('Error cancelling video call:', error);
     res.status(500).json({
       success: false,
-      message: "Error cancelling video call",
+      message: 'Error cancelling video call',
       error: error.message,
     });
   }
@@ -356,21 +356,21 @@ exports.getCallHistory = async (req, res) => {
       include: [
         {
           model: User,
-          as: "host",
-          attributes: ["id", "first_name", "last_name", "email"],
+          as: 'host',
+          attributes: ['id', 'first_name', 'last_name', 'email'],
         },
         {
           model: User,
-          as: "participant",
-          attributes: ["id", "first_name", "last_name", "email"],
+          as: 'participant',
+          attributes: ['id', 'first_name', 'last_name', 'email'],
         },
         {
           model: Appointment,
-          as: "appointment",
-          attributes: ["id", "appointment_date", "status"],
+          as: 'appointment',
+          attributes: ['id', 'appointment_date', 'status'],
         },
       ],
-      order: [["created_at", "DESC"]],
+      order: [['created_at', 'DESC']],
       limit: parseInt(limit, 10),
       offset: parseInt(offset, 10),
     });
@@ -386,10 +386,10 @@ exports.getCallHistory = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error fetching call history:", error);
+    console.error('Error fetching call history:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching call history",
+      message: 'Error fetching call history',
       error: error.message,
     });
   }
@@ -406,23 +406,23 @@ exports.getCallById = async (req, res) => {
       include: [
         {
           model: User,
-          as: "host",
-          attributes: ["id", "first_name", "last_name", "email"],
+          as: 'host',
+          attributes: ['id', 'first_name', 'last_name', 'email'],
         },
         {
           model: User,
-          as: "participant",
-          attributes: ["id", "first_name", "last_name", "email"],
+          as: 'participant',
+          attributes: ['id', 'first_name', 'last_name', 'email'],
         },
         {
           model: Appointment,
-          as: "appointment",
-          attributes: ["id", "appointment_date", "status"],
+          as: 'appointment',
+          attributes: ['id', 'appointment_date', 'status'],
         },
         {
           model: ChatConversation,
-          as: "conversation",
-          attributes: ["id", "conversation_type"],
+          as: 'conversation',
+          attributes: ['id', 'conversation_type'],
         },
       ],
     });
@@ -430,7 +430,7 @@ exports.getCallById = async (req, res) => {
     if (!videoCall) {
       return res.status(404).json({
         success: false,
-        message: "Video call not found",
+        message: 'Video call not found',
       });
     }
 
@@ -439,10 +439,10 @@ exports.getCallById = async (req, res) => {
       data: videoCall,
     });
   } catch (error) {
-    console.error("Error fetching video call:", error);
+    console.error('Error fetching video call:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching video call",
+      message: 'Error fetching video call',
       error: error.message,
     });
   }
@@ -460,7 +460,7 @@ exports.updateRecordingStatus = async (req, res) => {
     if (!videoCall) {
       return res.status(404).json({
         success: false,
-        message: "Video call not found",
+        message: 'Video call not found',
       });
     }
 
@@ -472,17 +472,17 @@ exports.updateRecordingStatus = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Recording status updated successfully",
+      message: 'Recording status updated successfully',
       data: {
         recording_enabled: videoCall.recording_enabled,
         recording_url: videoCall.recording_url,
       },
     });
   } catch (error) {
-    console.error("Error updating recording status:", error);
+    console.error('Error updating recording status:', error);
     res.status(500).json({
       success: false,
-      message: "Error updating recording status",
+      message: 'Error updating recording status',
       error: error.message,
     });
   }
@@ -499,7 +499,7 @@ exports.getUpcomingCalls = async (req, res) => {
     const upcomingCalls = await VideoCall.findAll({
       where: {
         [Op.or]: [{ host_id: userId }, { participant_id: userId }],
-        call_status: "scheduled",
+        call_status: 'scheduled',
         scheduled_at: {
           [Op.gte]: new Date(),
         },
@@ -507,21 +507,21 @@ exports.getUpcomingCalls = async (req, res) => {
       include: [
         {
           model: User,
-          as: "host",
-          attributes: ["id", "first_name", "last_name"],
+          as: 'host',
+          attributes: ['id', 'first_name', 'last_name'],
         },
         {
           model: User,
-          as: "participant",
-          attributes: ["id", "first_name", "last_name"],
+          as: 'participant',
+          attributes: ['id', 'first_name', 'last_name'],
         },
         {
           model: Appointment,
-          as: "appointment",
-          attributes: ["id", "appointment_date"],
+          as: 'appointment',
+          attributes: ['id', 'appointment_date'],
         },
       ],
-      order: [["scheduled_at", "ASC"]],
+      order: [['scheduled_at', 'ASC']],
       limit: parseInt(limit, 10),
     });
 
@@ -530,10 +530,10 @@ exports.getUpcomingCalls = async (req, res) => {
       data: upcomingCalls,
     });
   } catch (error) {
-    console.error("Error fetching upcoming calls:", error);
+    console.error('Error fetching upcoming calls:', error);
     res.status(500).json({
       success: false,
-      message: "Error fetching upcoming calls",
+      message: 'Error fetching upcoming calls',
       error: error.message,
     });
   }
@@ -567,11 +567,11 @@ exports.getAllVideoCalls = async (req, res) => {
     const { count, rows } = await VideoCall.findAndCountAll({
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [["created_at", "DESC"]],
+      order: [['created_at', 'DESC']],
       include: [
-        { model: Appointment, as: "appointment" },
-        { model: Doctor, as: "doctor" },
-        { model: Patient, as: "patient" },
+        { model: Appointment, as: 'appointment' },
+        { model: Doctor, as: 'doctor' },
+        { model: Patient, as: 'patient' },
       ],
     });
 
@@ -588,7 +588,7 @@ exports.getAllVideoCalls = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error fetching video calls",
+      message: 'Error fetching video calls',
       error: error.message,
     });
   }
@@ -603,16 +603,16 @@ exports.getVideoCallById = async (req, res) => {
 
     const videoCall = await VideoCall.findByPk(id, {
       include: [
-        { model: Appointment, as: "appointment" },
-        { model: Doctor, as: "doctor" },
-        { model: Patient, as: "patient" },
+        { model: Appointment, as: 'appointment' },
+        { model: Doctor, as: 'doctor' },
+        { model: Patient, as: 'patient' },
       ],
     });
 
     if (!videoCall) {
       return res.status(404).json({
         success: false,
-        message: "Video call not found",
+        message: 'Video call not found',
       });
     }
 
@@ -623,7 +623,7 @@ exports.getVideoCallById = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error fetching video call",
+      message: 'Error fetching video call',
       error: error.message,
     });
   }
@@ -641,7 +641,7 @@ exports.deleteVideoCall = async (req, res) => {
     if (!videoCall) {
       return res.status(404).json({
         success: false,
-        message: "Video call not found",
+        message: 'Video call not found',
       });
     }
 
@@ -649,12 +649,12 @@ exports.deleteVideoCall = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "Video call deleted successfully",
+      message: 'Video call deleted successfully',
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error deleting video call",
+      message: 'Error deleting video call',
       error: error.message,
     });
   }

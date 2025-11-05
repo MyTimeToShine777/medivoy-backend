@@ -1,5 +1,5 @@
-const Doctor = require("../models/Doctor.model");
-const logger = require("../utils/logger");
+const Doctor = require('../models/Doctor.model');
+const logger = require('../utils/logger');
 
 class DoctorService {
   /**
@@ -10,7 +10,7 @@ class DoctorService {
       const doctor = await Doctor.create(data);
       return doctor;
     } catch (error) {
-      logger.error("Create doctor service error:", error);
+      logger.error('Create doctor service error:', error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class DoctorService {
       const doctor = await Doctor.findByPk(id);
       return doctor;
     } catch (error) {
-      logger.error("Get doctor by ID service error:", error);
+      logger.error('Get doctor by ID service error:', error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class DoctorService {
     try {
       const doctor = await Doctor.findByPk(id);
       if (!doctor) {
-        throw new Error("Doctor not found");
+        throw new Error('Doctor not found');
       }
 
       await doctor.update(data);
       return doctor;
     } catch (error) {
-      logger.error("Update doctor service error:", error);
+      logger.error('Update doctor service error:', error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class DoctorService {
     try {
       const doctor = await Doctor.findByPk(id);
       if (!doctor) {
-        throw new Error("Doctor not found");
+        throw new Error('Doctor not found');
       }
 
       await doctor.destroy();
       return true;
     } catch (error) {
-      logger.error("Delete doctor service error:", error);
+      logger.error('Delete doctor service error:', error);
       throw error;
     }
   }
@@ -75,12 +75,12 @@ class DoctorService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return doctors;
     } catch (error) {
-      logger.error("Get all doctors service error:", error);
+      logger.error('Get all doctors service error:', error);
       throw error;
     }
   }
@@ -92,13 +92,13 @@ class DoctorService {
     try {
       const doctor = await Doctor.findByPk(id);
       if (!doctor) {
-        throw new Error("Doctor not found");
+        throw new Error('Doctor not found');
       }
 
       await doctor.update({ isVerified: true });
       return doctor;
     } catch (error) {
-      logger.error("Verify doctor service error:", error);
+      logger.error('Verify doctor service error:', error);
       throw error;
     }
   }

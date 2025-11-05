@@ -1,6 +1,6 @@
-const FAQ = require("../models/FAQ.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const FAQ = require('../models/FAQ.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class FAQController {
   /**
@@ -21,13 +21,13 @@ class FAQController {
       return successResponse(
         res,
         {
-          message: "FAQ created successfully",
+          message: 'FAQ created successfully',
           data: faq,
         },
-        201,
+        201
       );
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to create FAQ");
+      return handleDatabaseError(error, res, 'Failed to create FAQ');
     }
   }
 
@@ -39,13 +39,13 @@ class FAQController {
       return errorResponse(
         res,
         {
-          message: "FAQ not found",
-          note: "Database not configured. Configure PostgreSQL to see actual data.",
+          message: 'FAQ not found',
+          note: 'Database not configured. Configure PostgreSQL to see actual data.',
         },
-        404,
+        404
       );
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve FAQ");
+      return handleDatabaseError(error, res, 'Failed to retrieve FAQ');
     }
   }
 
@@ -56,17 +56,17 @@ class FAQController {
     try {
       // Return empty array with success when database is not connected
       return successResponse(res, {
-        message: "FAQs retrieved successfully",
+        message: 'FAQs retrieved successfully',
         data: [],
         pagination: {
           currentPage: 1,
           totalPages: 0,
           totalRecords: 0,
         },
-        note: "Database not configured. Configure PostgreSQL to see actual data.",
+        note: 'Database not configured. Configure PostgreSQL to see actual data.',
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve FAQs");
+      return handleDatabaseError(error, res, 'Failed to retrieve FAQs');
     }
   }
 
@@ -84,13 +84,13 @@ class FAQController {
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
         order: [
-          ["display_order", "ASC"],
-          ["createdAt", "DESC"],
+          ['display_order', 'ASC'],
+          ['createdAt', 'DESC'],
         ],
       });
 
       return successResponse(res, {
-        message: "FAQs retrieved successfully",
+        message: 'FAQs retrieved successfully',
         data: faqs.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -102,7 +102,7 @@ class FAQController {
       return handleDatabaseError(
         error,
         res,
-        "Failed to retrieve FAQs by category",
+        'Failed to retrieve FAQs by category'
       );
     }
   }
@@ -122,9 +122,9 @@ class FAQController {
         return errorResponse(
           res,
           {
-            message: "FAQ not found",
+            message: 'FAQ not found',
           },
-          404,
+          404
         );
       }
 
@@ -137,11 +137,11 @@ class FAQController {
       });
 
       return successResponse(res, {
-        message: "FAQ updated successfully",
+        message: 'FAQ updated successfully',
         data: faq,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to update FAQ");
+      return handleDatabaseError(error, res, 'Failed to update FAQ');
     }
   }
 
@@ -159,9 +159,9 @@ class FAQController {
         return errorResponse(
           res,
           {
-            message: "FAQ not found",
+            message: 'FAQ not found',
           },
-          404,
+          404
         );
       }
 
@@ -169,10 +169,10 @@ class FAQController {
       await faq.destroy();
 
       return successResponse(res, {
-        message: "FAQ deleted successfully",
+        message: 'FAQ deleted successfully',
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to delete FAQ");
+      return handleDatabaseError(error, res, 'Failed to delete FAQ');
     }
   }
 
@@ -185,16 +185,16 @@ class FAQController {
 
       // Update sort order for each FAQ
       const updates = faqOrder.map((faqId, index) =>
-        FAQ.update({ display_order: index + 1 }, { where: { id: faqId } }),
+        FAQ.update({ display_order: index + 1 }, { where: { id: faqId } })
       );
 
       await Promise.all(updates);
 
       return successResponse(res, {
-        message: "FAQs reordered successfully",
+        message: 'FAQs reordered successfully',
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to reorder FAQs");
+      return handleDatabaseError(error, res, 'Failed to reorder FAQs');
     }
   }
 
@@ -208,15 +208,15 @@ class FAQController {
       const faq = await FAQ.findByPk(id);
 
       if (!faq) {
-        return errorResponse(res, "FAQ not found", 404);
+        return errorResponse(res, 'FAQ not found', 404);
       }
 
       return successResponse(res, {
-        message: "FAQ retrieved successfully",
+        message: 'FAQ retrieved successfully',
         data: faq,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve FAQ");
+      return handleDatabaseError(error, res, 'Failed to retrieve FAQ');
     }
   }
 }

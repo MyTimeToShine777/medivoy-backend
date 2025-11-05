@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Payment = sequelize.define(
-  "Payment",
+  'Payment',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -15,15 +15,15 @@ const Payment = sequelize.define(
     },
     booking_id: {
       type: DataTypes.INTEGER,
-      references: { model: "bookings", key: "id" },
+      references: { model: 'bookings', key: 'id' },
     },
     appointment_id: {
       type: DataTypes.INTEGER,
-      references: { model: "appointments", key: "id" },
+      references: { model: 'appointments', key: 'id' },
     },
     patient_id: {
       type: DataTypes.INTEGER,
-      references: { model: "patients", key: "id" },
+      references: { model: 'patients', key: 'id' },
     },
     amount: {
       type: DataTypes.DECIMAL(10, 2),
@@ -31,7 +31,7 @@ const Payment = sequelize.define(
     },
     currency: {
       type: DataTypes.STRING(3),
-      defaultValue: "USD",
+      defaultValue: 'USD',
     },
     payment_method: {
       type: DataTypes.STRING(50),
@@ -44,7 +44,7 @@ const Payment = sequelize.define(
     },
     status: {
       type: DataTypes.STRING(50),
-      defaultValue: "pending",
+      defaultValue: 'pending',
     },
     payment_date: {
       type: DataTypes.DATE,
@@ -60,10 +60,10 @@ const Payment = sequelize.define(
     },
   },
   {
-    tableName: "payments",
+    tableName: 'payments',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = Payment;

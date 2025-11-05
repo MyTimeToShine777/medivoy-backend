@@ -10,7 +10,7 @@ router.post(
   '/',
   auth,
   authorize(['admin', 'hospital_admin']),
-  labTestController.createLabTest,
+  labTestController.createLabTest
 );
 
 // Get lab test by ID (authd users)
@@ -18,7 +18,7 @@ router.get(
   '/:id',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
-  labTestController.getLabTest,
+  labTestController.getLabTest
 );
 
 // Update lab test (admin, hospital admins)
@@ -26,7 +26,7 @@ router.put(
   '/:id',
   auth,
   authorize(['admin', 'hospital_admin']),
-  labTestController.updateLabTest,
+  labTestController.updateLabTest
 );
 
 // Delete lab test (admin only)
@@ -34,7 +34,7 @@ router.delete(
   '/:id',
   auth,
   authorize(['admin']),
-  labTestController.deleteLabTest,
+  labTestController.deleteLabTest
 );
 
 // Get all lab tests (authd users)
@@ -42,7 +42,7 @@ router.get(
   '/',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
-  labTestController.getAllLabTests,
+  labTestController.getAllLabTests
 );
 
 module.exports = router;

@@ -1,7 +1,7 @@
-const Subscription = require("../models/Subscription.model");
-const SubscriptionPlan = require("../models/SubscriptionPlan.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const Subscription = require('../models/Subscription.model');
+const SubscriptionPlan = require('../models/SubscriptionPlan.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class SubscriptionController {
   /**
@@ -17,9 +17,9 @@ class SubscriptionController {
         return errorResponse(
           res,
           {
-            message: "Subscription plan not found",
+            message: 'Subscription plan not found',
           },
-          404,
+          404
         );
       }
 
@@ -38,10 +38,10 @@ class SubscriptionController {
       return successResponse(
         res,
         {
-          message: "Subscription created successfully",
+          message: 'Subscription created successfully',
           data: subscription,
         },
-        201,
+        201
       );
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -62,14 +62,14 @@ class SubscriptionController {
         return errorResponse(
           res,
           {
-            message: "Subscription not found",
+            message: 'Subscription not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Subscription retrieved successfully",
+        message: 'Subscription retrieved successfully',
         data: subscription,
       });
     } catch (error) {
@@ -92,9 +92,9 @@ class SubscriptionController {
         return errorResponse(
           res,
           {
-            message: "Subscription not found",
+            message: 'Subscription not found',
           },
-          404,
+          404
         );
       }
 
@@ -105,7 +105,7 @@ class SubscriptionController {
       });
 
       return successResponse(res, {
-        message: "Subscription updated successfully",
+        message: 'Subscription updated successfully',
         data: subscription,
       });
     } catch (error) {
@@ -127,9 +127,9 @@ class SubscriptionController {
         return errorResponse(
           res,
           {
-            message: "Subscription not found",
+            message: 'Subscription not found',
           },
-          404,
+          404
         );
       }
 
@@ -140,7 +140,7 @@ class SubscriptionController {
       });
 
       return successResponse(res, {
-        message: "Subscription cancelled successfully",
+        message: 'Subscription cancelled successfully',
         data: subscription,
       });
     } catch (error) {
@@ -158,18 +158,18 @@ class SubscriptionController {
 
       // Build where clause
       const where = { userId };
-      if (isActive !== undefined) where.isActive = isActive === "true";
+      if (isActive !== undefined) where.isActive = isActive === 'true';
 
       // Get subscriptions with pagination
       const subscriptions = await Subscription.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Subscriptions retrieved successfully",
+        message: 'Subscriptions retrieved successfully',
         data: subscriptions.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -191,18 +191,18 @@ class SubscriptionController {
 
       // Build where clause
       const where = {};
-      if (isActive !== undefined) where.isActive = isActive === "true";
+      if (isActive !== undefined) where.isActive = isActive === 'true';
 
       // Get subscription plans with pagination
       const plans = await SubscriptionPlan.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Subscription plans retrieved successfully",
+        message: 'Subscription plans retrieved successfully',
         data: plans.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -229,10 +229,10 @@ class SubscriptionController {
         return errorResponse(
           res,
           {
-            message: "Subscription not found",
-            code: "SUBSCRIPTION_NOT_FOUND",
+            message: 'Subscription not found',
+            code: 'SUBSCRIPTION_NOT_FOUND',
           },
-          404,
+          404
         );
       }
 
@@ -240,7 +240,7 @@ class SubscriptionController {
       await subscription.destroy();
 
       return successResponse(res, {
-        message: "Subscription deleted successfully",
+        message: 'Subscription deleted successfully',
       });
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -261,10 +261,10 @@ class SubscriptionController {
         return errorResponse(
           res,
           {
-            message: "Subscription not found",
-            code: "SUBSCRIPTION_NOT_FOUND",
+            message: 'Subscription not found',
+            code: 'SUBSCRIPTION_NOT_FOUND',
           },
-          404,
+          404
         );
       }
 
@@ -276,11 +276,11 @@ class SubscriptionController {
       // Update subscription
       await subscription.update({
         end_date: newEndDate,
-        status: "active",
+        status: 'active',
       });
 
       return successResponse(res, {
-        message: "Subscription renewed successfully",
+        message: 'Subscription renewed successfully',
         data: subscription,
       });
     } catch (error) {
@@ -299,15 +299,15 @@ class SubscriptionController {
       const { count, rows } = await Subscription.findAndCountAll({
         limit: parseInt(limit),
         offset: parseInt(offset),
-        order: [["created_at", "DESC"]],
+        order: [['created_at', 'DESC']],
         include: [
-          { model: User, as: "user" },
-          { model: SubscriptionPlan, as: "plan" },
+          { model: User, as: 'user' },
+          { model: SubscriptionPlan, as: 'plan' },
         ],
       });
 
       return successResponse(res, {
-        message: "Subscriptions retrieved successfully",
+        message: 'Subscriptions retrieved successfully',
         data: rows,
         pagination: {
           total: count,
@@ -320,7 +320,7 @@ class SubscriptionController {
       return handleDatabaseError(
         error,
         res,
-        "Failed to retrieve subscriptions",
+        'Failed to retrieve subscriptions'
       );
     }
   }

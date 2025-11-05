@@ -3,11 +3,11 @@
  * Represents individual messages in chat conversations
  */
 
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const ChatMessage = sequelize.define(
-  "ChatMessage",
+  'ChatMessage',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -18,30 +18,30 @@ const ChatMessage = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "chat_conversations",
-        key: "id",
+        model: 'chat_conversations',
+        key: 'id',
       },
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     },
     sender_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "users",
-        key: "id",
+        model: 'users',
+        key: 'id',
       },
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     },
     sender_type: {
-      type: DataTypes.ENUM("patient", "doctor", "staff", "admin"),
+      type: DataTypes.ENUM('patient', 'doctor', 'staff', 'admin'),
       allowNull: false,
     },
     message_type: {
-      type: DataTypes.ENUM("text", "image", "file", "audio", "video", "system"),
+      type: DataTypes.ENUM('text', 'image', 'file', 'audio', 'video', 'system'),
       allowNull: false,
-      defaultValue: "text",
+      defaultValue: 'text',
     },
     message_content: {
       type: DataTypes.TEXT,
@@ -50,7 +50,7 @@ const ChatMessage = sequelize.define(
     file_url: {
       type: DataTypes.STRING(500),
       allowNull: true,
-      comment: "URL for attached files/media",
+      comment: 'URL for attached files/media',
     },
     file_name: {
       type: DataTypes.STRING(255),
@@ -59,17 +59,17 @@ const ChatMessage = sequelize.define(
     file_size: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      comment: "File size in bytes",
+      comment: 'File size in bytes',
     },
     file_type: {
       type: DataTypes.STRING(100),
       allowNull: true,
-      comment: "MIME type of the file",
+      comment: 'MIME type of the file',
     },
     thumbnail_url: {
       type: DataTypes.STRING(500),
       allowNull: true,
-      comment: "Thumbnail for images/videos",
+      comment: 'Thumbnail for images/videos',
     },
     is_read: {
       type: DataTypes.BOOLEAN,
@@ -111,16 +111,16 @@ const ChatMessage = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: "chat_messages",
-        key: "id",
+        model: 'chat_messages',
+        key: 'id',
       },
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE',
     },
     metadata: {
       type: DataTypes.JSON,
       allowNull: true,
-      comment: "Additional message metadata",
+      comment: 'Additional message metadata',
     },
     created_at: {
       type: DataTypes.DATE,
@@ -134,27 +134,27 @@ const ChatMessage = sequelize.define(
     },
   },
   {
-    tableName: "chat_messages",
+    tableName: 'chat_messages',
     timestamps: true,
     underscored: true,
     indexes: [
       {
-        fields: ["conversation_id"],
+        fields: ['conversation_id'],
       },
       {
-        fields: ["sender_id"],
+        fields: ['sender_id'],
       },
       {
-        fields: ["is_read"],
+        fields: ['is_read'],
       },
       {
-        fields: ["created_at"],
+        fields: ['created_at'],
       },
       {
-        fields: ["message_type"],
+        fields: ['message_type'],
       },
     ],
-  },
+  }
 );
 
 module.exports = ChatMessage;

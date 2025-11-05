@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Prescription = sequelize.define(
-  "Prescription",
+  'Prescription',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -11,17 +11,17 @@ const Prescription = sequelize.define(
     },
     appointment_id: {
       type: DataTypes.INTEGER,
-      references: { model: "appointments", key: "id" },
+      references: { model: 'appointments', key: 'id' },
     },
     patient_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: { model: "patients", key: "id" },
+      references: { model: 'patients', key: 'id' },
     },
     doctor_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: { model: "doctors", key: "id" },
+      references: { model: 'doctors', key: 'id' },
     },
     medications: {
       type: DataTypes.JSONB,
@@ -41,10 +41,10 @@ const Prescription = sequelize.define(
     },
   },
   {
-    tableName: "prescriptions",
+    tableName: 'prescriptions',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = Prescription;

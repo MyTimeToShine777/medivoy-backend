@@ -1,6 +1,6 @@
-const Coupon = require("../models/Coupon.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const Coupon = require('../models/Coupon.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class CouponController {
   /**
@@ -32,13 +32,13 @@ class CouponController {
       return successResponse(
         res,
         {
-          message: "Coupon created successfully",
+          message: 'Coupon created successfully',
           data: coupon,
         },
-        201,
+        201
       );
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to create coupon");
+      return handleDatabaseError(error, res, 'Failed to create coupon');
     }
   }
 
@@ -56,18 +56,18 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: "Coupon not found",
+            message: 'Coupon not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Coupon retrieved successfully",
+        message: 'Coupon retrieved successfully',
         data: coupon,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve coupon");
+      return handleDatabaseError(error, res, 'Failed to retrieve coupon');
     }
   }
 
@@ -82,11 +82,11 @@ class CouponController {
       const coupons = await Coupon.findAndCountAll({
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Coupons retrieved successfully",
+        message: 'Coupons retrieved successfully',
         data: coupons.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -95,7 +95,7 @@ class CouponController {
         },
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve coupons");
+      return handleDatabaseError(error, res, 'Failed to retrieve coupons');
     }
   }
 
@@ -113,9 +113,9 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: "Coupon not found",
+            message: 'Coupon not found',
           },
-          404,
+          404
         );
       }
 
@@ -125,9 +125,9 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: "Coupon is not yet valid",
+            message: 'Coupon is not yet valid',
           },
-          400,
+          400
         );
       }
 
@@ -135,9 +135,9 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: "Coupon has expired",
+            message: 'Coupon has expired',
           },
-          400,
+          400
         );
       }
 
@@ -145,18 +145,18 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: "Coupon has reached maximum uses",
+            message: 'Coupon has reached maximum uses',
           },
-          400,
+          400
         );
       }
 
       return successResponse(res, {
-        message: "Coupon is valid",
+        message: 'Coupon is valid',
         data: coupon,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to validate coupon");
+      return handleDatabaseError(error, res, 'Failed to validate coupon');
     }
   }
 
@@ -174,9 +174,9 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: "Coupon not found",
+            message: 'Coupon not found',
           },
-          404,
+          404
         );
       }
 
@@ -186,9 +186,9 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: "Coupon is not yet valid",
+            message: 'Coupon is not yet valid',
           },
-          400,
+          400
         );
       }
 
@@ -196,9 +196,9 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: "Coupon has expired",
+            message: 'Coupon has expired',
           },
-          400,
+          400
         );
       }
 
@@ -206,21 +206,21 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: "Coupon has reached maximum uses",
+            message: 'Coupon has reached maximum uses',
           },
-          400,
+          400
         );
       }
 
       // Increment used count
-      await coupon.increment("usedCount");
+      await coupon.increment('usedCount');
 
       return successResponse(res, {
-        message: "Coupon applied successfully",
+        message: 'Coupon applied successfully',
         data: coupon,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to apply coupon");
+      return handleDatabaseError(error, res, 'Failed to apply coupon');
     }
   }
 
@@ -246,9 +246,9 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: "Coupon not found",
+            message: 'Coupon not found',
           },
-          404,
+          404
         );
       }
 
@@ -263,11 +263,11 @@ class CouponController {
       });
 
       return successResponse(res, {
-        message: "Coupon updated successfully",
+        message: 'Coupon updated successfully',
         data: coupon,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to update coupon");
+      return handleDatabaseError(error, res, 'Failed to update coupon');
     }
   }
 
@@ -285,9 +285,9 @@ class CouponController {
         return errorResponse(
           res,
           {
-            message: "Coupon not found",
+            message: 'Coupon not found',
           },
-          404,
+          404
         );
       }
 
@@ -295,10 +295,10 @@ class CouponController {
       await coupon.destroy();
 
       return successResponse(res, {
-        message: "Coupon deleted successfully",
+        message: 'Coupon deleted successfully',
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to delete coupon");
+      return handleDatabaseError(error, res, 'Failed to delete coupon');
     }
   }
 }

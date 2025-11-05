@@ -1,6 +1,6 @@
-const jwt = require("jsonwebtoken");
-const config = require("../config");
-const { UnauthorizedError } = require("./error-handler");
+const jwt = require('jsonwebtoken');
+const config = require('../config');
+const { UnauthorizedError } = require('./error-handler');
 
 /**
  * Generate access token
@@ -31,10 +31,10 @@ const verifyAccessToken = (token) => {
   try {
     return jwt.verify(token, config.jwt.secret);
   } catch (error) {
-    if (error.name === "TokenExpiredError") {
-      throw new UnauthorizedError("Token has expired");
+    if (error.name === 'TokenExpiredError') {
+      throw new UnauthorizedError('Token has expired');
     }
-    throw new UnauthorizedError("Invalid token");
+    throw new UnauthorizedError('Invalid token');
   }
 };
 
@@ -47,10 +47,10 @@ const verifyRefreshToken = (token) => {
   try {
     return jwt.verify(token, config.jwt.refreshSecret);
   } catch (error) {
-    if (error.name === "TokenExpiredError") {
-      throw new UnauthorizedError("Refresh token has expired");
+    if (error.name === 'TokenExpiredError') {
+      throw new UnauthorizedError('Refresh token has expired');
     }
-    throw new UnauthorizedError("Invalid refresh token");
+    throw new UnauthorizedError('Invalid refresh token');
   }
 };
 

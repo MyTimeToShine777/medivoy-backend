@@ -1,21 +1,21 @@
-const multer = require("multer");
-const path = require("path");
-const { ValidationError } = require("../utils/error-handler");
+const multer = require('multer');
+const path = require('path');
+const { ValidationError } = require('../utils/error-handler');
 const {
   ALLOWED_MIME_TYPES,
   MAX_FILE_SIZES,
-} = require("../constants/file-types");
+} = require('../constants/file-types');
 
 // Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/");
+    cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
     cb(
       null,
-      `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`,
+      `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`
     );
   },
 });

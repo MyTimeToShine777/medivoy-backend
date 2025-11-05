@@ -10,7 +10,7 @@ router.post(
   '/',
   auth,
   authorize(['admin', 'hospital_admin']),
-  invoiceController.createInvoice,
+  invoiceController.createInvoice
 );
 
 // Get invoice by ID (authd users)
@@ -18,7 +18,7 @@ router.get(
   '/:id',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
-  invoiceController.getInvoice,
+  invoiceController.getInvoice
 );
 
 // Update invoice (admin, hospital admins)
@@ -26,7 +26,7 @@ router.put(
   '/:id',
   auth,
   authorize(['admin', 'hospital_admin']),
-  invoiceController.updateInvoice,
+  invoiceController.updateInvoice
 );
 
 // Delete invoice (admin only)
@@ -34,7 +34,7 @@ router.delete(
   '/:id',
   auth,
   authorize(['admin']),
-  invoiceController.deleteInvoice,
+  invoiceController.deleteInvoice
 );
 
 // Get all invoices (admin, hospital admins)
@@ -42,7 +42,7 @@ router.get(
   '/',
   auth,
   authorize(['admin', 'hospital_admin']),
-  invoiceController.getAllInvoices,
+  invoiceController.getAllInvoices
 );
 
 module.exports = router;

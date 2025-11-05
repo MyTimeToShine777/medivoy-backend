@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Treatment = sequelize.define(
-  "Treatment",
+  'Treatment',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -16,15 +16,15 @@ const Treatment = sequelize.define(
     category_id: {
       type: DataTypes.INTEGER,
       references: {
-        model: "treatment_categories",
-        key: "id",
+        model: 'treatment_categories',
+        key: 'id',
       },
     },
     subcategory_id: {
       type: DataTypes.INTEGER,
       references: {
-        model: "treatment_subcategories",
-        key: "id",
+        model: 'treatment_subcategories',
+        key: 'id',
       },
     },
     description: {
@@ -46,10 +46,10 @@ const Treatment = sequelize.define(
     },
   },
   {
-    tableName: "treatments",
+    tableName: 'treatments',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = Treatment;

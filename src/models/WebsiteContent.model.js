@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const WebsiteContent = sequelize.define(
-  "WebsiteContent",
+  'WebsiteContent',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -32,10 +32,10 @@ const WebsiteContent = sequelize.define(
     },
   },
   {
-    tableName: "website_content",
+    tableName: 'website_content',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = WebsiteContent;

@@ -1,5 +1,5 @@
-const Package = require("../models/Package.model");
-const logger = require("../utils/logger");
+const Package = require('../models/Package.model');
+const logger = require('../utils/logger');
 
 class PackageService {
   /**
@@ -10,7 +10,7 @@ class PackageService {
       const packageData = await Package.create(data);
       return packageData;
     } catch (error) {
-      logger.error("Create package service error:", error);
+      logger.error('Create package service error:', error);
       throw error;
     }
   }
@@ -23,7 +23,7 @@ class PackageService {
       const packageData = await Package.findByPk(id);
       return packageData;
     } catch (error) {
-      logger.error("Get package by ID service error:", error);
+      logger.error('Get package by ID service error:', error);
       throw error;
     }
   }
@@ -35,13 +35,13 @@ class PackageService {
     try {
       const packageData = await Package.findByPk(id);
       if (!packageData) {
-        throw new Error("Package not found");
+        throw new Error('Package not found');
       }
 
       await packageData.update(data);
       return packageData;
     } catch (error) {
-      logger.error("Update package service error:", error);
+      logger.error('Update package service error:', error);
       throw error;
     }
   }
@@ -53,13 +53,13 @@ class PackageService {
     try {
       const packageData = await Package.findByPk(id);
       if (!packageData) {
-        throw new Error("Package not found");
+        throw new Error('Package not found');
       }
 
       await packageData.destroy();
       return true;
     } catch (error) {
-      logger.error("Delete package service error:", error);
+      logger.error('Delete package service error:', error);
       throw error;
     }
   }
@@ -75,12 +75,12 @@ class PackageService {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return packages;
     } catch (error) {
-      logger.error("Get all packages service error:", error);
+      logger.error('Get all packages service error:', error);
       throw error;
     }
   }

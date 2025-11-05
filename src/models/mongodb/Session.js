@@ -1,79 +1,82 @@
 const mongoose = require('mongoose');
 
-const sessionSchema = new mongoose.Schema({
-  user_id: {
-    type: Number,
-    required: true,
-    index: true,
-  },
-  session_token: {
-    type: String,
-    required: true,
-    unique: true,
-    index: true,
-  },
-  refresh_token: {
-    type: String,
-    index: true,
-  },
-  device_info: {
-    type: {
-      device_type: String,
-      device_name: String,
-      os: String,
-      os_version: String,
-      browser: String,
-      browser_version: String,
+const sessionSchema = new mongoose.Schema(
+  {
+    user_id: {
+      type: Number,
+      required: true,
+      index: true,
     },
-    default: {},
-  },
-  ip_address: {
-    type: String,
-    required: true,
-  },
-  user_agent: {
-    type: String,
-  },
-  location: {
-    type: {
-      country: String,
-      city: String,
-      region: String,
-      latitude: Number,
-      longitude: Number,
+    session_token: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
     },
-    default: {},
+    refresh_token: {
+      type: String,
+      index: true,
+    },
+    device_info: {
+      type: {
+        device_type: String,
+        device_name: String,
+        os: String,
+        os_version: String,
+        browser: String,
+        browser_version: String,
+      },
+      default: {},
+    },
+    ip_address: {
+      type: String,
+      required: true,
+    },
+    user_agent: {
+      type: String,
+    },
+    location: {
+      type: {
+        country: String,
+        city: String,
+        region: String,
+        latitude: Number,
+        longitude: Number,
+      },
+      default: {},
+    },
+    is_active: {
+      type: Boolean,
+      default: true,
+      index: true,
+    },
+    last_activity: {
+      type: Date,
+      default: Date.now,
+      index: true,
+    },
+    login_at: {
+      type: Date,
+      default: Date.now,
+    },
+    logout_at: {
+      type: Date,
+    },
+    expires_at: {
+      type: Date,
+      required: true,
+      index: true,
+    },
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
   },
-  is_active: {
-    type: Boolean,
-    default: true,
-    index: true,
-  },
-  last_activity: {
-    type: Date,
-    default: Date.now,
-    index: true,
-  },
-  login_at: {
-    type: Date,
-    default: Date.now,
-  },
-  logout_at: {
-    type: Date,
-  },
-  expires_at: {
-    type: Date,
-    required: true,
-    index: true,
-  },
-  metadata: {
-    type: mongoose.Schema.Types.Mixed,
-    default: {},
-  },
-}, {
-  timestamps: true,
-  collection: 'sessions',
-});
+  {
+    timestamps: true,
+    collection: 'sessions',
+  }
+);
 
 // Indexes for better query performance
 sessionSchema.index({ user_id: 1, is_active: 1 });
@@ -145,7 +148,10 @@ sessionSchema.statics.getUserActiveSessions = async function (userId) {
     .lean();
 };
 
-sessionSchema.statics.getUserAllSessions = async function (userId, options = {}) {
+sessionSchema.statics.getUserAllSessions = async function (
+  userId,
+  options = {}
+) {
   const { limit = 50, skip = 0 } = options;
 
   return this.find({ user_id: userId })
@@ -164,11 +170,14 @@ sessionSchema.statics.terminateSession = async function (sessionToken) {
         logout_at: new Date(),
       },
     },
-    { new: true },
+    { new: true }
   );
 };
 
-sessionSchema.statics.terminateUserSessions = async function (userId, exceptToken = null) {
+sessionSchema.statics.terminateUserSessions = async function (
+  userId,
+  exceptToken = null
+) {
   const query = {
     user_id: userId,
     is_active: true,
@@ -178,15 +187,12 @@ sessionSchema.statics.terminateUserSessions = async function (userId, exceptToke
     query.session_token = { $ne: exceptToken };
   }
 
-  return this.updateMany(
-    query,
-    {
-      $set: {
-        is_active: false,
-        logout_at: new Date(),
-      },
+  return this.updateMany(query, {
+    $set: {
+      is_active: false,
+      logout_at: new Date(),
     },
-  );
+  });
 };
 
 sessionSchema.statics.terminateAllUserSessions = async function (userId) {
@@ -200,7 +206,7 @@ sessionSchema.statics.terminateAllUserSessions = async function (userId) {
         is_active: false,
         logout_at: new Date(),
       },
-    },
+    }
   );
 };
 
@@ -215,7 +221,7 @@ sessionSchema.statics.cleanupExpiredSessions = async function () {
         is_active: false,
         logout_at: new Date(),
       },
-    },
+    }
   );
 
   return result.modifiedCount;

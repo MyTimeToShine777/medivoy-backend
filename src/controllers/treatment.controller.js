@@ -1,12 +1,12 @@
-const { Sequelize } = require("sequelize");
+const { Sequelize } = require('sequelize');
 const {
   Treatment,
   TreatmentCategory,
   TreatmentSubcategory,
-} = require("../models");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
-const CacheUtil = require("../utils/cache");
+} = require('../models');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
+const CacheUtil = require('../utils/cache');
 
 class TreatmentController {
   /**
@@ -38,10 +38,10 @@ class TreatmentController {
       return successResponse(
         res,
         {
-          message: "Treatment created successfully",
+          message: 'Treatment created successfully',
           data: treatment,
         },
-        201,
+        201
       );
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -56,10 +56,10 @@ class TreatmentController {
       return errorResponse(
         res,
         {
-          message: "Treatment not found",
-          note: "Database not configured. Configure PostgreSQL to see actual data.",
+          message: 'Treatment not found',
+          note: 'Database not configured. Configure PostgreSQL to see actual data.',
         },
-        404,
+        404
       );
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -89,9 +89,9 @@ class TreatmentController {
         return errorResponse(
           res,
           {
-            message: "Treatment not found",
+            message: 'Treatment not found',
           },
-          404,
+          404
         );
       }
 
@@ -107,7 +107,7 @@ class TreatmentController {
       });
 
       return successResponse(res, {
-        message: "Treatment updated successfully",
+        message: 'Treatment updated successfully',
         data: treatment,
       });
     } catch (error) {
@@ -129,9 +129,9 @@ class TreatmentController {
         return errorResponse(
           res,
           {
-            message: "Treatment not found",
+            message: 'Treatment not found',
           },
-          404,
+          404
         );
       }
 
@@ -139,7 +139,7 @@ class TreatmentController {
       await treatment.destroy();
 
       return successResponse(res, {
-        message: "Treatment deleted successfully",
+        message: 'Treatment deleted successfully',
       });
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -153,14 +153,14 @@ class TreatmentController {
     try {
       // Return empty array with success when database is not connected
       return successResponse(res, {
-        message: "Treatments retrieved successfully",
+        message: 'Treatments retrieved successfully',
         data: [],
         pagination: {
           currentPage: 1,
           totalPages: 0,
           totalRecords: 0,
         },
-        note: "Database not configured. Configure PostgreSQL to see actual data.",
+        note: 'Database not configured. Configure PostgreSQL to see actual data.',
       });
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -177,18 +177,18 @@ class TreatmentController {
 
       // Build where clause
       const where = { categoryId };
-      if (isActive !== undefined) where.isActive = isActive === "true";
+      if (isActive !== undefined) where.isActive = isActive === 'true';
 
       // Get treatments with pagination
       const treatments = await Treatment.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["name", "ASC"]],
+        order: [['name', 'ASC']],
       });
 
       return successResponse(res, {
-        message: "Treatments retrieved successfully",
+        message: 'Treatments retrieved successfully',
         data: treatments.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -211,18 +211,18 @@ class TreatmentController {
 
       // Build where clause
       const where = { subcategory_id: subcategoryId };
-      if (isActive !== undefined) where.isActive = isActive === "true";
+      if (isActive !== undefined) where.isActive = isActive === 'true';
 
       // Get treatments with pagination
       const treatments = await Treatment.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["name", "ASC"]],
+        order: [['name', 'ASC']],
       });
 
       return successResponse(res, {
-        message: "Treatments retrieved successfully",
+        message: 'Treatments retrieved successfully',
         data: treatments.rows,
         pagination: {
           currentPage: parseInt(page, 10),

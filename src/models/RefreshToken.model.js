@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const RefreshToken = sequelize.define(
-  "RefreshToken",
+  'RefreshToken',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -11,7 +11,7 @@ const RefreshToken = sequelize.define(
     },
     user_id: {
       type: DataTypes.INTEGER,
-      references: { model: "users", key: "id" },
+      references: { model: 'users', key: 'id' },
     },
     token: {
       type: DataTypes.TEXT,
@@ -27,11 +27,11 @@ const RefreshToken = sequelize.define(
     },
   },
   {
-    tableName: "refresh_tokens",
+    tableName: 'refresh_tokens',
     timestamps: true,
     underscored: true,
     updatedAt: false,
-  },
+  }
 );
 
 module.exports = RefreshToken;

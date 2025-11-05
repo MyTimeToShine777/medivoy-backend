@@ -1,4 +1,4 @@
-const Joi = require("joi");
+const Joi = require('joi');
 
 const createAppointmentSchema = Joi.object({
   patient_id: Joi.string().uuid().required(),
@@ -7,7 +7,7 @@ const createAppointmentSchema = Joi.object({
   appointment_time: Joi.string()
     .pattern(/^([01]d|2[0-3]):([0-5]d)$/)
     .required(),
-  type: Joi.string().valid("consultation", "follow_up", "emergency").required(),
+  type: Joi.string().valid('consultation', 'follow_up', 'emergency').required(),
   notes: Joi.string().optional(),
 });
 
@@ -16,21 +16,21 @@ const updateAppointmentSchema = Joi.object({
   appointment_time: Joi.string()
     .pattern(/^([01]d|2[0-3]):([0-5]d)$/)
     .optional(),
-  type: Joi.string().valid("consultation", "follow_up", "emergency").optional(),
+  type: Joi.string().valid('consultation', 'follow_up', 'emergency').optional(),
   notes: Joi.string().optional(),
 });
 
 const updateAppointmentStatusSchema = Joi.object({
   status: Joi.string()
     .valid(
-      "requested",
-      "confirmed",
-      "awaiting_consultation",
-      "in_progress",
-      "prescription_provided",
-      "follow_up_scheduled",
-      "completed",
-      "cancelled",
+      'requested',
+      'confirmed',
+      'awaiting_consultation',
+      'in_progress',
+      'prescription_provided',
+      'follow_up_scheduled',
+      'completed',
+      'cancelled'
     )
     .required(),
   notes: Joi.string().optional(),

@@ -3,11 +3,11 @@
  * Represents chat conversations between users (patients, doctors, staff)
  */
 
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const ChatConversation = sequelize.define(
-  "ChatConversation",
+  'ChatConversation',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -16,62 +16,62 @@ const ChatConversation = sequelize.define(
     },
     conversation_type: {
       type: DataTypes.ENUM(
-        "patient_doctor",
-        "patient_coordinator",
-        "patient_support",
-        "doctor_coordinator",
-        "group",
+        'patient_doctor',
+        'patient_coordinator',
+        'patient_support',
+        'doctor_coordinator',
+        'group'
       ),
       allowNull: false,
-      defaultValue: "patient_doctor",
+      defaultValue: 'patient_doctor',
     },
     participant_1_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "users",
-        key: "id",
+        model: 'users',
+        key: 'id',
       },
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     },
     participant_1_type: {
-      type: DataTypes.ENUM("patient", "doctor", "staff", "admin"),
+      type: DataTypes.ENUM('patient', 'doctor', 'staff', 'admin'),
       allowNull: false,
     },
     participant_2_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: "users",
-        key: "id",
+        model: 'users',
+        key: 'id',
       },
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     },
     participant_2_type: {
-      type: DataTypes.ENUM("patient", "doctor", "staff", "admin"),
+      type: DataTypes.ENUM('patient', 'doctor', 'staff', 'admin'),
       allowNull: true,
     },
     booking_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: "bookings",
-        key: "id",
+        model: 'bookings',
+        key: 'id',
       },
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE',
     },
     appointment_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: "appointments",
-        key: "id",
+        model: 'appointments',
+        key: 'id',
       },
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE',
     },
     title: {
       type: DataTypes.STRING(200),
@@ -89,8 +89,8 @@ const ChatConversation = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: "users",
-        key: "id",
+        model: 'users',
+        key: 'id',
       },
     },
     unread_count_participant_1: {
@@ -121,7 +121,7 @@ const ChatConversation = sequelize.define(
     metadata: {
       type: DataTypes.JSON,
       allowNull: true,
-      comment: "Additional conversation metadata",
+      comment: 'Additional conversation metadata',
     },
     created_at: {
       type: DataTypes.DATE,
@@ -135,30 +135,30 @@ const ChatConversation = sequelize.define(
     },
   },
   {
-    tableName: "chat_conversations",
+    tableName: 'chat_conversations',
     timestamps: true,
     underscored: true,
     indexes: [
       {
-        fields: ["participant_1_id"],
+        fields: ['participant_1_id'],
       },
       {
-        fields: ["participant_2_id"],
+        fields: ['participant_2_id'],
       },
       {
-        fields: ["booking_id"],
+        fields: ['booking_id'],
       },
       {
-        fields: ["appointment_id"],
+        fields: ['appointment_id'],
       },
       {
-        fields: ["conversation_type"],
+        fields: ['conversation_type'],
       },
       {
-        fields: ["is_active"],
+        fields: ['is_active'],
       },
     ],
-  },
+  }
 );
 
 module.exports = ChatConversation;

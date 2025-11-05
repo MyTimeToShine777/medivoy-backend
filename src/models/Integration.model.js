@@ -3,11 +3,11 @@
  * Manages third-party integrations and API connections
  */
 
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const Integration = sequelize.define(
-  "Integration",
+  'Integration',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -17,32 +17,32 @@ const Integration = sequelize.define(
     name: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      comment: "Integration name",
+      comment: 'Integration name',
     },
     slug: {
       type: DataTypes.STRING(100),
       allowNull: false,
       unique: true,
-      comment: "Unique slug identifier",
+      comment: 'Unique slug identifier',
     },
     integration_type: {
       type: DataTypes.ENUM(
-        "payment",
-        "email",
-        "sms",
-        "video",
-        "storage",
-        "analytics",
-        "crm",
-        "other",
+        'payment',
+        'email',
+        'sms',
+        'video',
+        'storage',
+        'analytics',
+        'crm',
+        'other'
       ),
       allowNull: false,
-      defaultValue: "other",
+      defaultValue: 'other',
     },
     provider: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      comment: "Provider name (stripe, twilio, agora, etc.)",
+      comment: 'Provider name (stripe, twilio, agora, etc.)',
     },
     description: {
       type: DataTypes.TEXT,
@@ -51,37 +51,37 @@ const Integration = sequelize.define(
     api_key: {
       type: DataTypes.TEXT,
       allowNull: true,
-      comment: "Encrypted API key",
+      comment: 'Encrypted API key',
     },
     api_secret: {
       type: DataTypes.TEXT,
       allowNull: true,
-      comment: "Encrypted API secret",
+      comment: 'Encrypted API secret',
     },
     api_endpoint: {
       type: DataTypes.STRING(500),
       allowNull: true,
-      comment: "API base URL",
+      comment: 'API base URL',
     },
     webhook_url: {
       type: DataTypes.STRING(500),
       allowNull: true,
-      comment: "Webhook endpoint URL",
+      comment: 'Webhook endpoint URL',
     },
     webhook_secret: {
       type: DataTypes.TEXT,
       allowNull: true,
-      comment: "Webhook verification secret",
+      comment: 'Webhook verification secret',
     },
     configuration: {
       type: DataTypes.JSON,
       allowNull: true,
-      comment: "Additional configuration parameters",
+      comment: 'Additional configuration parameters',
     },
     credentials: {
       type: DataTypes.JSON,
       allowNull: true,
-      comment: "Additional credentials (encrypted)",
+      comment: 'Additional credentials (encrypted)',
     },
     is_active: {
       type: DataTypes.BOOLEAN,
@@ -92,33 +92,33 @@ const Integration = sequelize.define(
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true,
-      comment: "Whether using sandbox/test mode",
+      comment: 'Whether using sandbox/test mode',
     },
     last_sync_at: {
       type: DataTypes.DATE,
       allowNull: true,
-      comment: "Last successful sync timestamp",
+      comment: 'Last successful sync timestamp',
     },
     sync_status: {
-      type: DataTypes.ENUM("success", "failed", "pending", "never"),
+      type: DataTypes.ENUM('success', 'failed', 'pending', 'never'),
       allowNull: false,
-      defaultValue: "never",
+      defaultValue: 'never',
     },
     sync_error: {
       type: DataTypes.TEXT,
       allowNull: true,
-      comment: "Last sync error message",
+      comment: 'Last sync error message',
     },
     rate_limit: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      comment: "API rate limit per minute",
+      comment: 'API rate limit per minute',
     },
     usage_count: {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0,
-      comment: "Total API calls made",
+      comment: 'Total API calls made',
     },
     last_used_at: {
       type: DataTypes.DATE,
@@ -127,32 +127,32 @@ const Integration = sequelize.define(
     expires_at: {
       type: DataTypes.DATE,
       allowNull: true,
-      comment: "API key expiration date",
+      comment: 'API key expiration date',
     },
     metadata: {
       type: DataTypes.JSON,
       allowNull: true,
-      comment: "Additional integration metadata",
+      comment: 'Additional integration metadata',
     },
     created_by: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: "users",
-        key: "id",
+        model: 'users',
+        key: 'id',
       },
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE',
     },
     updated_by: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: "users",
-        key: "id",
+        model: 'users',
+        key: 'id',
       },
-      onDelete: "SET NULL",
-      onUpdate: "CASCADE",
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE',
     },
     created_at: {
       type: DataTypes.DATE,
@@ -166,25 +166,25 @@ const Integration = sequelize.define(
     },
   },
   {
-    tableName: "integrations",
+    tableName: 'integrations',
     timestamps: true,
     underscored: true,
     indexes: [
       {
-        fields: ["slug"],
+        fields: ['slug'],
         unique: true,
       },
       {
-        fields: ["integration_type"],
+        fields: ['integration_type'],
       },
       {
-        fields: ["provider"],
+        fields: ['provider'],
       },
       {
-        fields: ["is_active"],
+        fields: ['is_active'],
       },
     ],
-  },
+  }
 );
 
 module.exports = Integration;

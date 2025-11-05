@@ -1,6 +1,6 @@
-const SupportTicket = require("../models/SupportTicket.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const SupportTicket = require('../models/SupportTicket.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class SupportController {
   /**
@@ -22,10 +22,10 @@ class SupportController {
       return successResponse(
         res,
         {
-          message: "Support ticket created successfully",
+          message: 'Support ticket created successfully',
           data: ticket,
         },
-        201,
+        201
       );
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -46,14 +46,14 @@ class SupportController {
         return errorResponse(
           res,
           {
-            message: "Support ticket not found",
+            message: 'Support ticket not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Support ticket retrieved successfully",
+        message: 'Support ticket retrieved successfully',
         data: ticket,
       });
     } catch (error) {
@@ -76,9 +76,9 @@ class SupportController {
         return errorResponse(
           res,
           {
-            message: "Support ticket not found",
+            message: 'Support ticket not found',
           },
-          404,
+          404
         );
       }
 
@@ -92,7 +92,7 @@ class SupportController {
       });
 
       return successResponse(res, {
-        message: "Support ticket updated successfully",
+        message: 'Support ticket updated successfully',
         data: ticket,
       });
     } catch (error) {
@@ -114,9 +114,9 @@ class SupportController {
         return errorResponse(
           res,
           {
-            message: "Support ticket not found",
+            message: 'Support ticket not found',
           },
-          404,
+          404
         );
       }
 
@@ -124,7 +124,7 @@ class SupportController {
       await ticket.destroy();
 
       return successResponse(res, {
-        message: "Support ticket deleted successfully",
+        message: 'Support ticket deleted successfully',
       });
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -157,11 +157,11 @@ class SupportController {
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Support tickets retrieved successfully",
+        message: 'Support tickets retrieved successfully',
         data: tickets.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -189,9 +189,9 @@ class SupportController {
         return errorResponse(
           res,
           {
-            message: "Support ticket not found",
+            message: 'Support ticket not found',
           },
-          404,
+          404
         );
       }
 
@@ -204,10 +204,10 @@ class SupportController {
       });
 
       // Update ticket with new response
-      await ticket.update({ responses, status: "in_progress" });
+      await ticket.update({ responses, status: 'in_progress' });
 
       return successResponse(res, {
-        message: "Response added to support ticket successfully",
+        message: 'Response added to support ticket successfully',
         data: ticket,
       });
     } catch (error) {
@@ -229,17 +229,17 @@ class SupportController {
         return errorResponse(
           res,
           {
-            message: "Support ticket not found",
+            message: 'Support ticket not found',
           },
-          404,
+          404
         );
       }
 
       // Close ticket
-      await ticket.update({ status: "closed", closedAt: new Date() });
+      await ticket.update({ status: 'closed', closedAt: new Date() });
 
       return successResponse(res, {
-        message: "Support ticket closed successfully",
+        message: 'Support ticket closed successfully',
         data: ticket,
       });
     } catch (error) {
@@ -256,21 +256,25 @@ class SupportController {
 
       const ticket = await SupportTicket.findByPk(id, {
         include: [
-          { model: User, as: "user" },
-          { model: User, as: "assignedTo" },
+          { model: User, as: 'user' },
+          { model: User, as: 'assignedTo' },
         ],
       });
 
       if (!ticket) {
-        return errorResponse(res, "Support ticket not found", 404);
+        return errorResponse(res, 'Support ticket not found', 404);
       }
 
       return successResponse(res, {
-        message: "Support ticket retrieved successfully",
+        message: 'Support ticket retrieved successfully',
         data: ticket,
       });
     } catch (error) {
-      return handleDatabaseError(error, res, "Failed to retrieve support ticket");
+      return handleDatabaseError(
+        error,
+        res,
+        'Failed to retrieve support ticket'
+      );
     }
   }
 }

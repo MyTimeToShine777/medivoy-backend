@@ -1,6 +1,6 @@
-const Insurance = require("../models/Insurance.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const Insurance = require('../models/Insurance.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class InsuranceController {
   /**
@@ -21,16 +21,16 @@ class InsuranceController {
       return successResponse(
         res,
         {
-          message: "Insurance provider created successfully",
+          message: 'Insurance provider created successfully',
           data: insurance,
         },
-        201,
+        201
       );
     } catch (error) {
       return handleDatabaseError(
         error,
         res,
-        "Failed to create insurance provider",
+        'Failed to create insurance provider'
       );
     }
   }
@@ -49,21 +49,21 @@ class InsuranceController {
         return errorResponse(
           res,
           {
-            message: "Insurance provider not found",
+            message: 'Insurance provider not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Insurance provider retrieved successfully",
+        message: 'Insurance provider retrieved successfully',
         data: insurance,
       });
     } catch (error) {
       return handleDatabaseError(
         error,
         res,
-        "Failed to retrieve insurance provider",
+        'Failed to retrieve insurance provider'
       );
     }
   }
@@ -83,9 +83,9 @@ class InsuranceController {
         return errorResponse(
           res,
           {
-            message: "Insurance provider not found",
+            message: 'Insurance provider not found',
           },
-          404,
+          404
         );
       }
 
@@ -98,14 +98,14 @@ class InsuranceController {
       });
 
       return successResponse(res, {
-        message: "Insurance provider updated successfully",
+        message: 'Insurance provider updated successfully',
         data: insurance,
       });
     } catch (error) {
       return handleDatabaseError(
         error,
         res,
-        "Failed to update insurance provider",
+        'Failed to update insurance provider'
       );
     }
   }
@@ -124,9 +124,9 @@ class InsuranceController {
         return errorResponse(
           res,
           {
-            message: "Insurance provider not found",
+            message: 'Insurance provider not found',
           },
-          404,
+          404
         );
       }
 
@@ -134,13 +134,13 @@ class InsuranceController {
       await insurance.destroy();
 
       return successResponse(res, {
-        message: "Insurance provider deleted successfully",
+        message: 'Insurance provider deleted successfully',
       });
     } catch (error) {
       return handleDatabaseError(
         error,
         res,
-        "Failed to delete insurance provider",
+        'Failed to delete insurance provider'
       );
     }
   }
@@ -154,18 +154,18 @@ class InsuranceController {
 
       // Build where clause
       const where = {};
-      if (isActive !== undefined) where.isActive = isActive === "true";
+      if (isActive !== undefined) where.isActive = isActive === 'true';
 
       // Get insurance providers with pagination
       const insurances = await Insurance.findAndCountAll({
         where,
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Insurance providers retrieved successfully",
+        message: 'Insurance providers retrieved successfully',
         data: insurances.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -177,7 +177,7 @@ class InsuranceController {
       return handleDatabaseError(
         error,
         res,
-        "Failed to retrieve insurance providers",
+        'Failed to retrieve insurance providers'
       );
     }
   }
@@ -196,9 +196,9 @@ class InsuranceController {
         return errorResponse(
           res,
           {
-            message: "Insurance provider not found",
+            message: 'Insurance provider not found',
           },
-          404,
+          404
         );
       }
 
@@ -206,14 +206,14 @@ class InsuranceController {
       await insurance.update({ isVerified: true });
 
       return successResponse(res, {
-        message: "Insurance provider verified successfully",
+        message: 'Insurance provider verified successfully',
         data: insurance,
       });
     } catch (error) {
       return handleDatabaseError(
         error,
         res,
-        "Failed to verify insurance provider",
+        'Failed to verify insurance provider'
       );
     }
   }
@@ -232,9 +232,9 @@ class InsuranceController {
         return errorResponse(
           res,
           {
-            message: "Insurance provider not found",
+            message: 'Insurance provider not found',
           },
-          404,
+          404
         );
       }
 
@@ -244,7 +244,7 @@ class InsuranceController {
       const coveragePercentage = 80; // Placeholder value
 
       return successResponse(res, {
-        message: "Insurance coverage checked successfully",
+        message: 'Insurance coverage checked successfully',
         data: {
           insuranceId,
           treatmentId,
@@ -256,7 +256,7 @@ class InsuranceController {
       return handleDatabaseError(
         error,
         res,
-        "Failed to check insurance coverage",
+        'Failed to check insurance coverage'
       );
     }
   }

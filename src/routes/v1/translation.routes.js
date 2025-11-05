@@ -59,20 +59,35 @@ router.delete('/job/:jobId', auth, translationController.cancelJob);
  * @desc    Get queue statistics
  * @access  Private (Admin only)
  */
-router.get('/queue/stats', auth, authorize(['admin']), translationController.getQueueStats);
+router.get(
+  '/queue/stats',
+  auth,
+  authorize(['admin']),
+  translationController.getQueueStats
+);
 
 /**
  * @route   POST /api/v1/translation/queue/clean-completed
  * @desc    Clean completed jobs
  * @access  Private (Admin only)
  */
-router.post('/queue/clean-completed', auth, authorize(['admin']), translationController.cleanCompletedJobs);
+router.post(
+  '/queue/clean-completed',
+  auth,
+  authorize(['admin']),
+  translationController.cleanCompletedJobs
+);
 
 /**
  * @route   POST /api/v1/translation/queue/clean-failed
  * @desc    Clean failed jobs
  * @access  Private (Admin only)
  */
-router.post('/queue/clean-failed', auth, authorize(['admin']), translationController.cleanFailedJobs);
+router.post(
+  '/queue/clean-failed',
+  auth,
+  authorize(['admin']),
+  translationController.cleanFailedJobs
+);
 
 module.exports = router;

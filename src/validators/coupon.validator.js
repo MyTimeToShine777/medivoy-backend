@@ -1,8 +1,8 @@
-const Joi = require("joi");
+const Joi = require('joi');
 
 const createCouponSchema = Joi.object({
   code: Joi.string().uppercase().min(3).max(20).required(),
-  discount_type: Joi.string().valid("percentage", "fixed").required(),
+  discount_type: Joi.string().valid('percentage', 'fixed').required(),
   discount_value: Joi.number().positive().required(),
   min_amount: Joi.number().positive().optional(),
   max_discount: Joi.number().positive().optional(),
@@ -12,7 +12,7 @@ const createCouponSchema = Joi.object({
 });
 
 const updateCouponSchema = Joi.object({
-  discount_type: Joi.string().valid("percentage", "fixed").optional(),
+  discount_type: Joi.string().valid('percentage', 'fixed').optional(),
   discount_value: Joi.number().positive().optional(),
   min_amount: Joi.number().positive().optional(),
   max_discount: Joi.number().positive().optional(),

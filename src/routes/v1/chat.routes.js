@@ -53,7 +53,10 @@ router.get('/conversations/:id', chatController.getConversationById);
  *     security:
  *       - bearerAuth: []
  */
-router.put('/conversations/:id/archive', chatController.toggleArchiveConversation);
+router.put(
+  '/conversations/:id/archive',
+  chatController.toggleArchiveConversation
+);
 
 /**
  * @swagger
@@ -75,7 +78,10 @@ router.post('/messages', chatController.sendMessage);
  *     security:
  *       - bearerAuth: []
  */
-router.get('/messages/conversation/:conversationId', chatController.getConversationMessages);
+router.get(
+  '/messages/conversation/:conversationId',
+  chatController.getConversationMessages
+);
 
 /**
  * @swagger
@@ -97,7 +103,10 @@ router.delete('/messages/:id', chatController.deleteMessage);
  *     security:
  *       - bearerAuth: []
  */
-router.put('/messages/conversation/:conversationId/read', chatController.markMessagesAsRead);
+router.put(
+  '/messages/conversation/:conversationId/read',
+  chatController.markMessagesAsRead
+);
 
 /**
  * @swagger

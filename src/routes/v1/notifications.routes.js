@@ -10,7 +10,7 @@ router.post(
   '/',
   auth,
   authorize(['admin']),
-  notificationController.createNotification,
+  notificationController.createNotification
 );
 
 // Get notification by ID (users can only access their own notifications)
@@ -18,7 +18,7 @@ router.get(
   '/:id',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
-  notificationController.getNotification,
+  notificationController.getNotification
 );
 
 // Update notification (users can only update their own notifications)
@@ -26,7 +26,7 @@ router.put(
   '/:id',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
-  notificationController.updateNotification,
+  notificationController.updateNotification
 );
 
 // Delete notification (admin only)
@@ -34,7 +34,7 @@ router.delete(
   '/:id',
   auth,
   authorize(['admin']),
-  notificationController.deleteNotification,
+  notificationController.deleteNotification
 );
 
 // Get all notifications for a user
@@ -42,17 +42,18 @@ router.get(
   '/user/:userId',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
-  notificationController.getUserNotifications,
+  notificationController.getUserNotifications
 );
 
-  // Get all notifications (admin)
+// Get all notifications (admin)
 router.get('/', auth, notificationController.getAll);
 
 // Mark notification as read
-router.patch('/:id/read',
+router.patch(
+  '/:id/read',
   auth,
   authorize(['admin', 'patient', 'doctor', 'hospital_admin']),
-  notificationController.markAsRead,
+  notificationController.markAsRead
 );
 
 module.exports = router;

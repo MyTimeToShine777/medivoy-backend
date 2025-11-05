@@ -1,35 +1,35 @@
-const path = require("path");
-const { cleanupQueue } = require("./queue");
-const fs = require("fs").promises;
-const logger = require("../utils/logger");
-const { PasswordReset, RefreshToken } = require("../models");
-const { Op } = require("sequelize");
+const path = require('path');
+const { cleanupQueue } = require('./queue');
+const fs = require('fs').promises;
+const logger = require('../utils/logger');
+const { PasswordReset, RefreshToken } = require('../models');
+const { Op } = require('sequelize');
 
 // Process cleanup jobs
 cleanupQueue.process(async (job) => {
   const { type, data } = job.data;
 
   try {
-    logger.info("Processing cleanup job", { type, jobId: job.id });
+    logger.info('Processing cleanup job', { type, jobId: job.id });
 
     switch (type) {
-      case "temp_files":
+      case 'temp_files':
         await cleanupTempFiles(data);
         break;
 
-      case "expired_tokens":
+      case 'expired_tokens':
         await cleanupExpiredTokens(data);
         break;
 
-      case "old_logs":
+      case 'old_logs':
         await cleanupOldLogs(data);
         break;
 
-      case "session_data":
+      case 'session_data':
         await cleanupSessionData(data);
         break;
 
-      case "all":
+      case 'all':
         await cleanupAll(data);
         break;
 
@@ -37,10 +37,10 @@ cleanupQueue.process(async (job) => {
         throw new Error(`Unknown cleanup type: ${type}`);
     }
 
-    logger.info("Cleanup job completed successfully", { type, jobId: job.id });
+    logger.info('Cleanup job completed successfully', { type, jobId: job.id });
     return { success: true, type };
   } catch (error) {
-    logger.error("Cleanup job failed", {
+    logger.error('Cleanup job failed', {
       type,
       jobId: job.id,
       error: error.message,
@@ -51,7 +51,7 @@ cleanupQueue.process(async (job) => {
 
 // Cleanup temporary files
 const cleanupTempFiles = async (data) => {
-  const tempDir = path.join(__dirname, "../../temp");
+  const tempDir = path.join(__dirname, '../../temp');
   const maxAge = data.maxAgeDays || 1; // Default: 1 day
   const maxAgeMs = maxAge * 24 * 60 * 60 * 1000;
 
@@ -71,10 +71,10 @@ const cleanupTempFiles = async (data) => {
       }
     }
 
-    logger.info("Temporary files cleaned up", { deletedCount });
+    logger.info('Temporary files cleaned up', { deletedCount });
     return { success: true, deletedCount };
   } catch (error) {
-    logger.error("Failed to cleanup temp files", { error: error.message });
+    logger.error('Failed to cleanup temp files', { error: error.message });
     throw error;
   }
 };
@@ -102,7 +102,7 @@ const cleanupExpiredTokens = async (data) => {
       },
     });
 
-    logger.info("Expired tokens cleaned up", {
+    logger.info('Expired tokens cleaned up', {
       passwordResets: deletedPasswordResets,
       refreshTokens: deletedRefreshTokens,
     });
@@ -113,14 +113,14 @@ const cleanupExpiredTokens = async (data) => {
       deletedRefreshTokens,
     };
   } catch (error) {
-    logger.error("Failed to cleanup expired tokens", { error: error.message });
+    logger.error('Failed to cleanup expired tokens', { error: error.message });
     throw error;
   }
 };
 
 // Cleanup old log files
 const cleanupOldLogs = async (data) => {
-  const logsDir = path.join(__dirname, "../../logs");
+  const logsDir = path.join(__dirname, '../../logs');
   const maxAge = data.maxAgeDays || 30; // Default: 30 days
   const maxAgeMs = maxAge * 24 * 60 * 60 * 1000;
 
@@ -132,8 +132,8 @@ const cleanupOldLogs = async (data) => {
     for (const file of files) {
       // Skip current log files
       if (
-        file.includes(".log") &&
-        !file.includes(new Date().toISOString().split("T")[0])
+        file.includes('.log') &&
+        !file.includes(new Date().toISOString().split('T')[0])
       ) {
         const filePath = path.join(logsDir, file);
         const stats = await fs.stat(filePath);
@@ -146,10 +146,10 @@ const cleanupOldLogs = async (data) => {
       }
     }
 
-    logger.info("Old log files cleaned up", { deletedCount });
+    logger.info('Old log files cleaned up', { deletedCount });
     return { success: true, deletedCount };
   } catch (error) {
-    logger.error("Failed to cleanup old logs", { error: error.message });
+    logger.error('Failed to cleanup old logs', { error: error.message });
     throw error;
   }
 };
@@ -157,8 +157,8 @@ const cleanupOldLogs = async (data) => {
 // Cleanup old session data from MongoDB
 const cleanupSessionData = async (data) => {
   try {
-    const mongoose = require("mongoose");
-    const Session = mongoose.model("Session");
+    const mongoose = require('mongoose');
+    const Session = mongoose.model('Session');
 
     const maxAge = data.maxAgeDays || 7; // Default: 7 days
     const cutoffDate = new Date();
@@ -168,12 +168,12 @@ const cleanupSessionData = async (data) => {
       updatedAt: { $lt: cutoffDate },
     });
 
-    logger.info("Old session data cleaned up", {
+    logger.info('Old session data cleaned up', {
       deletedCount: result.deletedCount,
     });
     return { success: true, deletedCount: result.deletedCount };
   } catch (error) {
-    logger.error("Failed to cleanup session data", { error: error.message });
+    logger.error('Failed to cleanup session data', { error: error.message });
     throw error;
   }
 };
@@ -193,10 +193,10 @@ const cleanupAll = async (data) => {
     results.oldLogs = await cleanupOldLogs(data);
     results.sessionData = await cleanupSessionData(data);
 
-    logger.info("All cleanup tasks completed", results);
+    logger.info('All cleanup tasks completed', results);
     return results;
   } catch (error) {
-    logger.error("Cleanup all failed", { error: error.message });
+    logger.error('Cleanup all failed', { error: error.message });
     throw error;
   }
 };
@@ -205,15 +205,15 @@ const cleanupAll = async (data) => {
 const scheduleDailyCleanup = () => {
   // Run cleanup every day at 3 AM
   cleanupQueue.add(
-    { type: "all", data: {} },
+    { type: 'all', data: {} },
     {
       repeat: {
-        cron: "0 3 * * *", // 3 AM every day
+        cron: '0 3 * * *', // 3 AM every day
       },
-    },
+    }
   );
 
-  logger.info("Daily cleanup scheduled");
+  logger.info('Daily cleanup scheduled');
 };
 
 // Add cleanup job to queue
@@ -224,13 +224,13 @@ const addCleanupJob = async (type, data = {}, options = {}) => {
       {
         priority: options.priority || 2,
         ...options,
-      },
+      }
     );
 
-    logger.info("Cleanup job added to queue", { type, jobId: job.id });
+    logger.info('Cleanup job added to queue', { type, jobId: job.id });
     return job;
   } catch (error) {
-    logger.error("Failed to add cleanup job to queue", {
+    logger.error('Failed to add cleanup job to queue', {
       type,
       error: error.message,
     });

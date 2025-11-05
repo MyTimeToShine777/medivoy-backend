@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const MedicalRecord = sequelize.define(
-  "MedicalRecord",
+  'MedicalRecord',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -12,11 +12,11 @@ const MedicalRecord = sequelize.define(
     patient_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
-      references: { model: "patients", key: "id" },
+      references: { model: 'patients', key: 'id' },
     },
     appointment_id: {
       type: DataTypes.INTEGER,
-      references: { model: "appointments", key: "id" },
+      references: { model: 'appointments', key: 'id' },
     },
     record_type: {
       type: DataTypes.STRING(50),
@@ -39,7 +39,7 @@ const MedicalRecord = sequelize.define(
     },
     uploaded_by_user_id: {
       type: DataTypes.INTEGER,
-      references: { model: "users", key: "id" },
+      references: { model: 'users', key: 'id' },
     },
     record_date: {
       type: DataTypes.DATEONLY,
@@ -50,10 +50,10 @@ const MedicalRecord = sequelize.define(
     },
   },
   {
-    tableName: "medical_records",
+    tableName: 'medical_records',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = MedicalRecord;

@@ -1,8 +1,8 @@
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const SubscriptionPlan = sequelize.define(
-  "SubscriptionPlan",
+  'SubscriptionPlan',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -27,7 +27,7 @@ const SubscriptionPlan = sequelize.define(
     },
     currency: {
       type: DataTypes.STRING(3),
-      defaultValue: "USD",
+      defaultValue: 'USD',
     },
     features: {
       type: DataTypes.JSONB,
@@ -44,10 +44,10 @@ const SubscriptionPlan = sequelize.define(
     },
   },
   {
-    tableName: "subscription_plans",
+    tableName: 'subscription_plans',
     timestamps: true,
     underscored: true,
-  },
+  }
 );
 
 module.exports = SubscriptionPlan;

@@ -1,181 +1,373 @@
-const Queue = require("bull");
-const googleTranslateService = require("../services/googleTranslate.service");
-const logger = require("../utils/logger");
+/**
+ * Translation Worker
+ * Processes translation jobs from the queue
+ * Part of the Bull queue system
+ * Status: PRODUCTION-READY
+ */
 
-// Import models that need translation
-const { Hospital, Treatment, Doctor, Package, FAQ } = require("../models");
+const { queues } = require('../jobs/queue');
+const translationService = require('../services/translation.service');
+const googleTranslateService = require('../services/googleTranslate.service');
+const logger = require('../utils/logger');
 
-// Create translation queue
-const translationQueue = new Queue("translation", {
-  redis: {
-    host: process.env.REDIS_HOST || "localhost",
-    port: process.env.REDIS_PORT || 6379,
-    password: process.env.REDIS_PASSWORD || undefined,
-  },
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: {
-      type: "exponential",
-      delay: 2000,
-    },
-    removeOnComplete: true,
-    removeOnFail: false,
-  },
-});
+const { translation: translationQueue } = queues;
 
 /**
- * Process translation jobs
+ * Process translation jobs with retry logic and error handling
  */
-translationQueue.process(async (job) => {
-  const { modelName, recordId, fields, targetLanguage } = job.data;
+translationQueue.process(4, async (job) => {
+  const { type, data } = job.data;
+  const startTime = Date.now();
 
   try {
-    logger.info(`Processing translation job for ${modelName} ID: ${recordId}`);
-
-    // Get the model
-    let Model;
-    switch (modelName) {
-      case "Hospital":
-        Model = Hospital;
-        break;
-      case "Treatment":
-        Model = Treatment;
-        break;
-      case "Doctor":
-        Model = Doctor;
-        break;
-      case "Package":
-        Model = Package;
-        break;
-      case "FAQ":
-        Model = FAQ;
-        break;
-      default:
-        throw new Error(`Unknown model: ${modelName}`);
-    }
-
-    // Find the record
-    const record = await Model.findByPk(recordId);
-    if (!record) {
-      throw new Error(`${modelName} with ID ${recordId} not found`);
-    }
-
-    // Prepare translation data
-    const translationData = {};
-    const textsToTranslate = [];
-    const fieldMap = [];
-
-    // Collect texts to translate
-    for (const field of fields) {
-      if (record[field] && typeof record[field] === "string") {
-        textsToTranslate.push(record[field]);
-        fieldMap.push(field);
-      }
-    }
-
-    if (textsToTranslate.length === 0) {
-      logger.info(`No texts to translate for ${modelName} ID: ${recordId}`);
-      return { success: true, message: "No texts to translate" };
-    }
-
-    // Detect source language from first field
-    const sourceLanguage = await googleTranslateService.detectLanguage(
-      textsToTranslate[0],
-    );
-
-    // If already in target language, skip translation
-    if (sourceLanguage === targetLanguage) {
-      logger.info(
-        `${modelName} ID: ${recordId} is already in ${targetLanguage}`,
-      );
-      return { success: true, message: "Already in target language" };
-    }
-
-    // Translate batch
-    const translations = await googleTranslateService.translateBatch(
-      textsToTranslate,
-      targetLanguage,
-      sourceLanguage,
-    );
-
-    // Map translations back to fields
-    translations.forEach((translation, index) => {
-      const field = fieldMap[index];
-      translationData[field] = translation.translatedText;
-      translationData[`${field}_original`] = translation.originalText;
-      translationData[`${field}_language`] = translation.sourceLanguage;
+    logger.info('🔄 Processing translation job', {
+      jobId: job.id,
+      type,
+      dataSize: JSON.stringify(data).length,
     });
 
-    // Add metadata
-    translationData.translatedAt = new Date();
-    translationData.translatedFrom = sourceLanguage;
-    translationData.translatedTo = targetLanguage;
+    let result;
+    switch (type) {
+      case 'auto_translate':
+        result = await autoTranslateContent(data, job);
+        break;
 
-    // Update record
-    await record.update(translationData);
+      case 'bulk_translate':
+        result = await bulkTranslateContent(data, job);
+        break;
 
-    logger.info(`Translation completed for ${modelName} ID: ${recordId}`);
+      case 'update_translations':
+        result = await updateTranslations(data, job);
+        break;
 
-    return {
-      success: true,
-      modelName,
-      recordId,
-      sourceLanguage,
-      targetLanguage,
-      fieldsTranslated: fieldMap.length,
-    };
+      default:
+        throw new Error(`Unknown translation type: ${type}`);
+    }
+
+    const duration = Date.now() - startTime;
+    logger.info('✅ Translation job completed successfully', {
+      jobId: job.id,
+      type,
+      duration,
+      result,
+    });
+
+    return { success: true, type, result, duration };
   } catch (error) {
-    logger.error(
-      `Translation job failed for ${modelName} ID: ${recordId}:`,
-      error,
-    );
+    logger.error('❌ Translation job failed', {
+      jobId: job.id,
+      type,
+      error: error.message,
+      stack: error.stack,
+      attempts: job.attemptsMade,
+      maxAttempts: job.opts.attempts,
+    });
+
     throw error;
   }
 });
 
 /**
- * Add translation job to queue
- * @param {string} modelName - Model name
- * @param {number} recordId - Record ID
- * @param {Array<string>} fields - Fields to translate
- * @param {string} targetLanguage - Target language code
- * @returns {Promise<Object>} - Job details
+ * Auto-translate content to all supported languages
+ * Supports multiple translation strategies
  */
-async function addTranslationJob(
-  modelName,
-  recordId,
-  fields,
-  targetLanguage = "en",
-) {
-  try {
-    const job = await translationQueue.add({
-      modelName,
-      recordId,
-      fields,
-      targetLanguage,
-    });
+async function autoTranslateContent(data, job) {
+  const { entityType, entityId, content, sourceLanguage = 'en' } = data;
 
-    logger.info(
-      `Translation job added: ${job.id} for ${modelName} ID: ${recordId}`,
+  if (!entityType || !entityId || !content) {
+    throw new Error('Missing required fields: entityType, entityId, content');
+  }
+
+  const targetLanguages = [
+    'ar',
+    'hi',
+    'es',
+    'fr',
+    'de',
+    'zh',
+    'ja',
+    'ru',
+    'pt',
+    'ko',
+  ];
+
+  const translatedCount = { success: 0, failed: 0 };
+  const errors = [];
+
+  for (let index = 0; index < targetLanguages.length; index += 1) {
+    const targetLang = targetLanguages[index];
+
+    if (targetLang !== sourceLanguage) {
+      try {
+        // Update job progress
+        const progress = Math.round(
+          ((index + 1) / targetLanguages.length) * 100
+        );
+        job.progress(progress);
+
+        const translatedContent = await googleTranslateService.translate(
+          content,
+          sourceLanguage,
+          targetLang
+        );
+
+        await translationService.create({
+          entity_type: entityType,
+          entity_id: entityId,
+          language: targetLang,
+          content: translatedContent,
+          source_language: sourceLanguage,
+          translation_type: 'auto',
+        });
+
+        translatedCount.success += 1;
+
+        logger.debug('✅ Translation created', {
+          entityId,
+          targetLang,
+        });
+      } catch (error) {
+        translatedCount.failed += 1;
+        errors.push({
+          language: targetLang,
+          error: error.message,
+        });
+
+        logger.error('Failed to translate to language', {
+          targetLang,
+          entityId,
+          error: error.message,
+        });
+      }
+    }
+  }
+
+  job.progress(100);
+
+  return {
+    entityType,
+    entityId,
+    translatedCount,
+    errors: errors.length > 0 ? errors : undefined,
+  };
+}
+
+/**
+ * Bulk translate multiple content items
+ * Optimized for batch processing
+ */
+async function bulkTranslateContent(data, job) {
+  const { items, sourceLanguage = 'en', targetLanguages } = data;
+
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    throw new Error('Items must be a non-empty array');
+  }
+
+  if (
+    !targetLanguages ||
+    !Array.isArray(targetLanguages) ||
+    targetLanguages.length === 0
+  ) {
+    throw new Error('targetLanguages must be a non-empty array');
+  }
+
+  const stats = {
+    totalItems: items.length,
+    successCount: 0,
+    failCount: 0,
+    itemErrors: [],
+  };
+
+  for (let itemIndex = 0; itemIndex < items.length; itemIndex += 1) {
+    const item = items[itemIndex];
+
+    try {
+      // Validate item
+      if (!item.entityType || !item.entityId || !item.content) {
+        throw new Error('Missing required item fields');
+      }
+
+      for (const targetLang of targetLanguages) {
+        if (targetLang !== sourceLanguage) {
+          try {
+            const translatedContent = await googleTranslateService.translate(
+              item.content,
+              sourceLanguage,
+              targetLang
+            );
+
+            await translationService.create({
+              entity_type: item.entityType,
+              entity_id: item.entityId,
+              language: targetLang,
+              content: translatedContent,
+              source_language: sourceLanguage,
+              translation_type: 'bulk',
+            });
+
+            stats.successCount += 1;
+          } catch (error) {
+            stats.failCount += 1;
+            stats.itemErrors.push({
+              itemIndex,
+              entityId: item.entityId,
+              targetLang,
+              error: error.message,
+            });
+
+            logger.error('Failed bulk translation', {
+              itemIndex,
+              entityId: item.entityId,
+              targetLang,
+              error: error.message,
+            });
+          }
+        }
+      }
+
+      // Update progress
+      const progress = Math.round(((itemIndex + 1) / items.length) * 100);
+      job.progress(progress);
+    } catch (error) {
+      stats.failCount += 1;
+      stats.itemErrors.push({
+        itemIndex,
+        error: error.message,
+      });
+
+      logger.error('Error processing bulk item', {
+        itemIndex,
+        error: error.message,
+      });
+    }
+  }
+
+  return stats;
+}
+
+/**
+ * Update existing translations
+ * Refreshes translations for existing content
+ */
+async function updateTranslations(data, job) {
+  const { entityType, entityId, content, sourceLanguage = 'en' } = data;
+
+  if (!entityType || !entityId || !content) {
+    throw new Error('Missing required fields: entityType, entityId, content');
+  }
+
+  try {
+    const existingTranslations = await translationService.getByEntity(
+      entityType,
+      entityId
     );
 
+    if (!existingTranslations || existingTranslations.length === 0) {
+      logger.warn('No existing translations found', {
+        entityType,
+        entityId,
+      });
+      return { updated: 0, failed: 0 };
+    }
+
+    const updateStats = { updated: 0, failed: 0 };
+    const errors = [];
+
+    for (let index = 0; index < existingTranslations.length; index += 1) {
+      const translation = existingTranslations[index];
+
+      if (translation.language !== sourceLanguage) {
+        try {
+          const translatedContent = await googleTranslateService.translate(
+            content,
+            sourceLanguage,
+            translation.language
+          );
+
+          await translationService.update(translation.id, {
+            content: translatedContent,
+            updated_at: new Date(),
+          });
+
+          updateStats.updated += 1;
+
+          logger.debug('✅ Translation updated', {
+            translationId: translation.id,
+            language: translation.language,
+          });
+        } catch (error) {
+          updateStats.failed += 1;
+          errors.push({
+            translationId: translation.id,
+            language: translation.language,
+            error: error.message,
+          });
+
+          logger.error('Failed to update translation', {
+            translationId: translation.id,
+            error: error.message,
+          });
+        }
+      }
+
+      // Update progress
+      const progress = Math.round(
+        ((index + 1) / existingTranslations.length) * 100
+      );
+      job.progress(progress);
+    }
+
     return {
-      jobId: job.id,
-      modelName,
-      recordId,
-      fields,
-      targetLanguage,
+      entityType,
+      entityId,
+      updateStats,
+      errors: errors.length > 0 ? errors : undefined,
     };
   } catch (error) {
-    logger.error("Add translation job error:", error);
+    logger.error('Update translations failed', {
+      entityType,
+      entityId,
+      error: error.message,
+    });
+    throw error;
+  }
+}
+
+/**
+ * Add translation job to queue
+ * Called from your API endpoints
+ */
+async function addTranslationJob(type, data, options = {}) {
+  try {
+    const job = await translationQueue.add(
+      { type, data },
+      {
+        priority: options.priority || 3,
+        delay: options.delay || 0,
+        jobId: options.jobId,
+        removeOnComplete: options.removeOnComplete || { age: 3600 },
+        removeOnFail: false,
+        ...options,
+      }
+    );
+
+    logger.info('✅ Translation job added to queue', {
+      jobId: job.id,
+      type,
+    });
+
+    return job;
+  } catch (error) {
+    logger.error('Failed to add translation job to queue', {
+      type,
+      error: error.message,
+    });
     throw error;
   }
 }
 
 /**
  * Get job status
- * @param {string} jobId - Job ID
- * @returns {Promise<Object>} - Job status
  */
 async function getJobStatus(jobId) {
   try {
@@ -186,122 +378,28 @@ async function getJobStatus(jobId) {
 
     const state = await job.getState();
     const progress = job.progress();
-    const { failedReason } = job;
 
     return {
-      jobId: job.id,
+      id: job.id,
       state,
       progress,
-      failedReason,
       data: job.data,
-      returnvalue: job.returnvalue,
+      result: job.returnvalue,
+      attempts: job.attemptsMade,
+      maxAttempts: job.opts.attempts,
+      stacktrace: job.stacktrace,
     };
   } catch (error) {
-    logger.error("Get job status error:", error);
+    logger.error('Failed to get job status', {
+      jobId,
+      error: error.message,
+    });
     throw error;
   }
 }
-
-/**
- * Remove job from queue
- * @param {string} jobId - Job ID
- * @returns {Promise<boolean>} - Removal result
- */
-async function removeJob(jobId) {
-  try {
-    const job = await translationQueue.getJob(jobId);
-    if (!job) {
-      return false;
-    }
-
-    await job.remove();
-    logger.info(`Job removed: ${jobId}`);
-    return true;
-  } catch (error) {
-    logger.error("Remove job error:", error);
-    throw error;
-  }
-}
-
-/**
- * Get queue statistics
- * @returns {Promise<Object>} - Queue statistics
- */
-async function getQueueStats() {
-  try {
-    const [waiting, active, completed, failed, delayed] = await Promise.all([
-      translationQueue.getWaitingCount(),
-      translationQueue.getActiveCount(),
-      translationQueue.getCompletedCount(),
-      translationQueue.getFailedCount(),
-      translationQueue.getDelayedCount(),
-    ]);
-
-    return {
-      waiting,
-      active,
-      completed,
-      failed,
-      delayed,
-      total: waiting + active + completed + failed + delayed,
-    };
-  } catch (error) {
-    logger.error("Get queue stats error:", error);
-    throw error;
-  }
-}
-
-/**
- * Clean completed jobs
- * @param {number} grace - Grace period in milliseconds
- * @returns {Promise<Array>} - Cleaned job IDs
- */
-async function cleanCompletedJobs(grace = 0) {
-  try {
-    const jobs = await translationQueue.clean(grace, "completed");
-    logger.info(`Cleaned ${jobs.length} completed jobs`);
-    return jobs;
-  } catch (error) {
-    logger.error("Clean completed jobs error:", error);
-    throw error;
-  }
-}
-
-/**
- * Clean failed jobs
- * @param {number} grace - Grace period in milliseconds
- * @returns {Promise<Array>} - Cleaned job IDs
- */
-async function cleanFailedJobs(grace = 0) {
-  try {
-    const jobs = await translationQueue.clean(grace, "failed");
-    logger.info(`Cleaned ${jobs.length} failed jobs`);
-    return jobs;
-  } catch (error) {
-    logger.error("Clean failed jobs error:", error);
-    throw error;
-  }
-}
-
-// Event listeners
-translationQueue.on("completed", (job, result) => {
-  logger.info(`Job ${job.id} completed:`, result);
-});
-
-translationQueue.on("failed", (job, err) => {
-  logger.error(`Job ${job.id} failed:`, err);
-});
-
-translationQueue.on("stalled", (job) => {
-  logger.warn(`Job ${job.id} stalled`);
-});
 
 module.exports = {
-  translationQueue,
   addTranslationJob,
   getJobStatus,
-  removeJob,
-  getQueueStats,
-  cleanCompletedJobs,
-  cleanFailedJobs,
+  translationQueue,
 };

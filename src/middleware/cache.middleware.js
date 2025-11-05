@@ -1,5 +1,5 @@
-const redis = require("../config/redis");
-const logger = require("../utils/logger");
+const redis = require('../config/redis');
+const logger = require('../utils/logger');
 
 /**
  * Cache middleware - Cache responses in Redis
@@ -9,7 +9,7 @@ const cache =
   (ttl = 300) =>
   async (req, res, next) => {
     // Only cache GET requests
-    if (req.method !== "GET") {
+    if (req.method !== 'GET') {
       return next();
     }
 
@@ -31,14 +31,14 @@ const cache =
       res.json = (data) => {
         redis
           .setex(key, ttl, JSON.stringify(data))
-          .catch((err) => logger.error("Cache set error:", err));
+          .catch((err) => logger.error('Cache set error:', err));
 
         return originalJson(data);
       };
 
       next();
     } catch (error) {
-      logger.error("Cache middleware error:", error);
+      logger.error('Cache middleware error:', error);
       next();
     }
   };
@@ -55,7 +55,7 @@ const clearCache = async (pattern) => {
       logger.info(`Cleared ${keys.length} cache keys matching: ${pattern}`);
     }
   } catch (error) {
-    logger.error("Clear cache error:", error);
+    logger.error('Clear cache error:', error);
   }
 };
 

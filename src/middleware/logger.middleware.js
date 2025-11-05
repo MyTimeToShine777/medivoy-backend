@@ -1,14 +1,14 @@
-const morgan = require("morgan");
-const logger = require("../utils/logger");
-const config = require("../config");
+const morgan = require('morgan');
+const logger = require('../utils/logger');
+const config = require('../config');
 
 // Create custom token for user email
-morgan.token("user", (req) => req.user?.email || "anonymous");
+morgan.token('user', (req) => req.user?.email || 'anonymous');
 
 // Create custom token for response time in ms
-morgan.token("response-time-ms", (req, res) => {
+morgan.token('response-time-ms', (req, res) => {
   if (!req._startAt || !res._startAt) {
-    return "";
+    return '';
   }
 
   const ms =
@@ -20,14 +20,14 @@ morgan.token("response-time-ms", (req, res) => {
 
 // Define log format
 const logFormat =
-  ":method :url :status :response-time-ms ms - :user - :remote-addr";
+  ':method :url :status :response-time-ms ms - :user - :remote-addr';
 
 // Create morgan middleware
 const loggerMiddleware = morgan(logFormat, {
   stream: logger.stream,
   skip: (req) =>
     // Skip logging for health check in production
-    config.env === "production" && req.path === "/health",
+    config.env === 'production' && req.path === '/health',
 });
 
 module.exports = loggerMiddleware;

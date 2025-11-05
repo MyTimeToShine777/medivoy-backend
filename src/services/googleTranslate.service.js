@@ -1,6 +1,6 @@
-const { Translate } = require("@google-cloud/translate").v2;
-const franc = require("franc");
-const logger = require("../utils/logger");
+const { Translate } = require('@google-cloud/translate').v2;
+const franc = require('franc');
+const logger = require('../utils/logger');
 
 class GoogleTranslateService {
   constructor() {
@@ -16,25 +16,25 @@ class GoogleTranslateService {
       });
     } else {
       logger.warn(
-        "Google Translate credentials not configured. Translation service will not work.",
+        'Google Translate credentials not configured. Translation service will not work.'
       );
       this.translate = null;
     }
 
-    this.defaultTargetLanguage = "en";
+    this.defaultTargetLanguage = 'en';
     this.supportedLanguages = [
-      "en",
-      "hi",
-      "es",
-      "fr",
-      "de",
-      "it",
-      "pt",
-      "ru",
-      "ja",
-      "ko",
-      "zh",
-      "ar",
+      'en',
+      'hi',
+      'es',
+      'fr',
+      'de',
+      'it',
+      'pt',
+      'ru',
+      'ja',
+      'ko',
+      'zh',
+      'ar',
     ];
   }
 
@@ -45,7 +45,7 @@ class GoogleTranslateService {
    */
   async detectLanguage(text) {
     try {
-      if (!text || typeof text !== "string") {
+      if (!text || typeof text !== 'string') {
         return this.defaultTargetLanguage;
       }
 
@@ -53,30 +53,30 @@ class GoogleTranslateService {
       const detectedLang = franc(text, { minLength: 3 });
 
       // If franc returns 'und' (undefined), try Google Translate
-      if (detectedLang === "und" && this.translate) {
+      if (detectedLang === 'und' && this.translate) {
         const [detection] = await this.translate.detect(text);
         return detection.language || this.defaultTargetLanguage;
       }
 
       // Convert franc's ISO 639-3 to ISO 639-1
       const langMap = {
-        eng: "en",
-        hin: "hi",
-        spa: "es",
-        fra: "fr",
-        deu: "de",
-        ita: "it",
-        por: "pt",
-        rus: "ru",
-        jpn: "ja",
-        kor: "ko",
-        cmn: "zh",
-        ara: "ar",
+        eng: 'en',
+        hin: 'hi',
+        spa: 'es',
+        fra: 'fr',
+        deu: 'de',
+        ita: 'it',
+        por: 'pt',
+        rus: 'ru',
+        jpn: 'ja',
+        kor: 'ko',
+        cmn: 'zh',
+        ara: 'ar',
       };
 
       return langMap[detectedLang] || this.defaultTargetLanguage;
     } catch (error) {
-      logger.error("Language detection error:", error);
+      logger.error('Language detection error:', error);
       return this.defaultTargetLanguage;
     }
   }
@@ -88,13 +88,13 @@ class GoogleTranslateService {
    * @param {string} sourceLanguage - Source language code (optional)
    * @returns {Promise<Object>} - Translation result
    */
-  async translateText(text, targetLanguage = "en", sourceLanguage = null) {
+  async translateText(text, targetLanguage = 'en', sourceLanguage = null) {
     try {
       if (!this.translate) {
-        throw new Error("Translation service not configured");
+        throw new Error('Translation service not configured');
       }
 
-      if (!text || typeof text !== "string") {
+      if (!text || typeof text !== 'string') {
         return {
           originalText: text,
           translatedText: text,
@@ -134,7 +134,7 @@ class GoogleTranslateService {
         isTranslated: true,
       };
     } catch (error) {
-      logger.error("Translation error:", error);
+      logger.error('Translation error:', error);
       return {
         originalText: text,
         translatedText: text,
@@ -153,10 +153,10 @@ class GoogleTranslateService {
    * @param {string} sourceLanguage - Source language code (optional)
    * @returns {Promise<Array>} - Array of translation results
    */
-  async translateBatch(texts, targetLanguage = "en", sourceLanguage = null) {
+  async translateBatch(texts, targetLanguage = 'en', sourceLanguage = null) {
     try {
       if (!this.translate) {
-        throw new Error("Translation service not configured");
+        throw new Error('Translation service not configured');
       }
 
       if (!Array.isArray(texts) || texts.length === 0) {
@@ -193,7 +193,7 @@ class GoogleTranslateService {
         isTranslated: true,
       }));
     } catch (error) {
-      logger.error("Batch translation error:", error);
+      logger.error('Batch translation error:', error);
       return texts.map((text) => ({
         originalText: text,
         translatedText: text,
@@ -212,7 +212,7 @@ class GoogleTranslateService {
    * @param {string} targetLanguage - Target language code
    * @returns {Promise<Object>} - Object with translated fields
    */
-  async translateObject(obj, fields, targetLanguage = "en") {
+  async translateObject(obj, fields, targetLanguage = 'en') {
     try {
       const result = { ...obj };
       const textsToTranslate = [];
@@ -220,7 +220,7 @@ class GoogleTranslateService {
 
       // Collect texts to translate
       for (const field of fields) {
-        if (obj[field] && typeof obj[field] === "string") {
+        if (obj[field] && typeof obj[field] === 'string') {
           textsToTranslate.push(obj[field]);
           fieldMap.push(field);
         }
@@ -233,7 +233,7 @@ class GoogleTranslateService {
       // Translate batch
       const translations = await this.translateBatch(
         textsToTranslate,
-        targetLanguage,
+        targetLanguage
       );
 
       // Map translations back to fields
@@ -246,7 +246,7 @@ class GoogleTranslateService {
 
       return result;
     } catch (error) {
-      logger.error("Object translation error:", error);
+      logger.error('Object translation error:', error);
       return obj;
     }
   }
@@ -264,7 +264,7 @@ class GoogleTranslateService {
       const [languages] = await this.translate.getLanguages();
       return languages;
     } catch (error) {
-      logger.error("Get supported languages error:", error);
+      logger.error('Get supported languages error:', error);
       return this.supportedLanguages.map((code) => ({ code, name: code }));
     }
   }
@@ -275,12 +275,12 @@ class GoogleTranslateService {
    * @param {string} targetLanguage - Target language code
    * @returns {Promise<boolean>} - True if translation is needed
    */
-  async needsTranslation(text, targetLanguage = "en") {
+  async needsTranslation(text, targetLanguage = 'en') {
     try {
       const detectedLanguage = await this.detectLanguage(text);
       return detectedLanguage !== targetLanguage;
     } catch (error) {
-      logger.error("Needs translation check error:", error);
+      logger.error('Needs translation check error:', error);
       return false;
     }
   }

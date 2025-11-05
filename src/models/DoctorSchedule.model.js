@@ -3,11 +3,11 @@
  * Represents doctor availability schedules and time slots
  */
 
-const { DataTypes } = require("sequelize");
-const { sequelize } = require("../config/database");
+const { DataTypes } = require('sequelize');
+const { sequelize } = require('../config/database');
 
 const DoctorSchedule = sequelize.define(
-  "DoctorSchedule",
+  'DoctorSchedule',
   {
     id: {
       type: DataTypes.INTEGER,
@@ -18,31 +18,31 @@ const DoctorSchedule = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       references: {
-        model: "doctors",
-        key: "id",
+        model: 'doctors',
+        key: 'id',
       },
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     },
     hospital_id: {
       type: DataTypes.INTEGER,
       allowNull: true,
       references: {
-        model: "hospitals",
-        key: "id",
+        model: 'hospitals',
+        key: 'id',
       },
-      onDelete: "CASCADE",
-      onUpdate: "CASCADE",
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE',
     },
     day_of_week: {
       type: DataTypes.ENUM(
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
-        "sunday",
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+        'sunday'
       ),
       allowNull: false,
     },
@@ -58,7 +58,7 @@ const DoctorSchedule = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 30,
-      comment: "Duration of each appointment slot in minutes",
+      comment: 'Duration of each appointment slot in minutes',
     },
     max_patients_per_slot: {
       type: DataTypes.INTEGER,
@@ -66,9 +66,9 @@ const DoctorSchedule = sequelize.define(
       defaultValue: 1,
     },
     consultation_type: {
-      type: DataTypes.ENUM("in_person", "video", "both"),
+      type: DataTypes.ENUM('in_person', 'video', 'both'),
       allowNull: false,
-      defaultValue: "both",
+      defaultValue: 'both',
     },
     consultation_fee: {
       type: DataTypes.DECIMAL(10, 2),
@@ -77,13 +77,13 @@ const DoctorSchedule = sequelize.define(
     currency: {
       type: DataTypes.STRING(3),
       allowNull: false,
-      defaultValue: "USD",
+      defaultValue: 'USD',
     },
     is_recurring: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true,
-      comment: "Whether this schedule repeats weekly",
+      comment: 'Whether this schedule repeats weekly',
     },
     effective_from: {
       type: DataTypes.DATE,
@@ -93,22 +93,22 @@ const DoctorSchedule = sequelize.define(
     effective_to: {
       type: DataTypes.DATE,
       allowNull: true,
-      comment: "End date for this schedule (null means indefinite)",
+      comment: 'End date for this schedule (null means indefinite)',
     },
     break_start_time: {
       type: DataTypes.TIME,
       allowNull: true,
-      comment: "Break/lunch start time",
+      comment: 'Break/lunch start time',
     },
     break_end_time: {
       type: DataTypes.TIME,
       allowNull: true,
-      comment: "Break/lunch end time",
+      comment: 'Break/lunch end time',
     },
     location: {
       type: DataTypes.STRING(200),
       allowNull: true,
-      comment: "Specific location/room within hospital",
+      comment: 'Specific location/room within hospital',
     },
     notes: {
       type: DataTypes.TEXT,
@@ -131,27 +131,27 @@ const DoctorSchedule = sequelize.define(
     },
   },
   {
-    tableName: "doctor_schedules",
+    tableName: 'doctor_schedules',
     timestamps: true,
     underscored: true,
     indexes: [
       {
-        fields: ["doctor_id"],
+        fields: ['doctor_id'],
       },
       {
-        fields: ["hospital_id"],
+        fields: ['hospital_id'],
       },
       {
-        fields: ["day_of_week"],
+        fields: ['day_of_week'],
       },
       {
-        fields: ["is_active"],
+        fields: ['is_active'],
       },
       {
-        fields: ["effective_from", "effective_to"],
+        fields: ['effective_from', 'effective_to'],
       },
     ],
-  },
+  }
 );
 
 module.exports = DoctorSchedule;

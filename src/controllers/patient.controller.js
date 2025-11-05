@@ -1,6 +1,6 @@
-const Patient = require("../models/Patient.model");
-const { successResponse, errorResponse } = require("../utils/response");
-const { handleDatabaseError } = require("../utils/databaseErrorHandler");
+const Patient = require('../models/Patient.model');
+const { successResponse, errorResponse } = require('../utils/response');
+const { handleDatabaseError } = require('../utils/databaseErrorHandler');
 
 class PatientController {
   /**
@@ -34,10 +34,10 @@ class PatientController {
       return successResponse(
         res,
         {
-          message: "Patient created successfully",
+          message: 'Patient created successfully',
           data: patient,
         },
-        201,
+        201
       );
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -58,14 +58,14 @@ class PatientController {
         return errorResponse(
           res,
           {
-            message: "Patient not found",
+            message: 'Patient not found',
           },
-          404,
+          404
         );
       }
 
       return successResponse(res, {
-        message: "Patient retrieved successfully",
+        message: 'Patient retrieved successfully',
         data: patient,
       });
     } catch (error) {
@@ -96,9 +96,9 @@ class PatientController {
         return errorResponse(
           res,
           {
-            message: "Patient not found",
+            message: 'Patient not found',
           },
-          404,
+          404
         );
       }
 
@@ -114,7 +114,7 @@ class PatientController {
       });
 
       return successResponse(res, {
-        message: "Patient updated successfully",
+        message: 'Patient updated successfully',
         data: patient,
       });
     } catch (error) {
@@ -136,9 +136,9 @@ class PatientController {
         return errorResponse(
           res,
           {
-            message: "Patient not found",
+            message: 'Patient not found',
           },
-          404,
+          404
         );
       }
 
@@ -146,7 +146,7 @@ class PatientController {
       await patient.destroy();
 
       return successResponse(res, {
-        message: "Patient deleted successfully",
+        message: 'Patient deleted successfully',
       });
     } catch (error) {
       return handleDatabaseError(error, res, $1);
@@ -164,11 +164,11 @@ class PatientController {
       const patients = await Patient.findAndCountAll({
         limit: parseInt(limit, 10),
         offset: (parseInt(page, 10) - 1) * parseInt(limit, 10),
-        order: [["createdAt", "DESC"]],
+        order: [['createdAt', 'DESC']],
       });
 
       return successResponse(res, {
-        message: "Patients retrieved successfully",
+        message: 'Patients retrieved successfully',
         data: patients.rows,
         pagination: {
           currentPage: parseInt(page, 10),
@@ -195,9 +195,9 @@ class PatientController {
         return errorResponse(
           res,
           {
-            message: "Patient not found",
+            message: 'Patient not found',
           },
-          404,
+          404
         );
       }
 
@@ -209,7 +209,7 @@ class PatientController {
       // });
 
       return successResponse(res, {
-        message: "Patient medical records retrieved successfully",
+        message: 'Patient medical records retrieved successfully',
         data: [],
       });
     } catch (error) {
