@@ -1,76 +1,81 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
-const Patient = sequelize.define(
-  'Patient',
-  {
+const Patient = sequelize.define('Patient', {
     id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
     },
-    user_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      unique: true,
-      references: {
-        model: 'users',
-        key: 'id',
-      },
-      onDelete: 'CASCADE',
+    userId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        unique: true,
+        references: {
+            model: 'users',
+            key: 'id',
+        },
     },
-    date_of_birth: {
-      type: DataTypes.DATEONLY,
-      allowNull: false,
+    dateOfBirth: {
+        type: DataTypes.DATE,
+        allowNull: true,
     },
     gender: {
-      type: DataTypes.ENUM('male', 'female', 'other'),
-      allowNull: false,
+        type: DataTypes.ENUM('male', 'female', 'other'),
+        allowNull: true,
     },
-    blood_group: {
-      type: DataTypes.STRING(10),
+    bloodGroup: {
+        type: DataTypes.STRING(3),
+        allowNull: true,
     },
     address: {
-      type: DataTypes.TEXT,
+        type: DataTypes.TEXT,
+        allowNull: true,
     },
     city: {
-      type: DataTypes.STRING(100),
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    state: {
+        type: DataTypes.STRING,
+        allowNull: true,
     },
     country: {
-      type: DataTypes.STRING(100),
-      defaultValue: 'India',
+        type: DataTypes.STRING,
+        allowNull: true,
     },
-    emergency_contact_name: {
-      type: DataTypes.STRING(100),
+    zipCode: {
+        type: DataTypes.STRING,
+        allowNull: true,
     },
-    emergency_contact_phone: {
-      type: DataTypes.STRING(20),
+    emergencyContact: {
+        type: DataTypes.JSON,
+        allowNull: true,
     },
-    insurance_id: {
-      type: DataTypes.INTEGER,
-      references: {
-        model: 'insurance_providers',
-        key: 'id',
-      },
-    },
-    insurance_policy_number: {
-      type: DataTypes.STRING(100),
-    },
-    medical_history: {
-      type: DataTypes.TEXT,
+    medicalHistory: {
+        type: DataTypes.JSON,
+        defaultValue: [],
     },
     allergies: {
-      type: DataTypes.JSONB,
+        type: DataTypes.JSON,
+        defaultValue: [],
     },
-    current_medications: {
-      type: DataTypes.JSONB,
+    medications: {
+        type: DataTypes.JSON,
+        defaultValue: [],
     },
-  },
-  {
+    insuranceProvider: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    insurancePolicyNumber: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+}, {
     tableName: 'patients',
     timestamps: true,
     underscored: true,
-  }
-);
+});
 
-module.exports = Patient;
+export default Patient;

@@ -1,73 +1,81 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
-const Invoice = sequelize.define(
-  'Invoice',
-  {
+const Invoice = sequelize.define('Invoice', {
     id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
     },
-    invoice_number: {
-      type: DataTypes.STRING(50),
-      allowNull: false,
-      unique: true,
+    bookingId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'bookings',
+            key: 'id',
+        },
     },
-    booking_id: {
-      type: DataTypes.INTEGER,
-      references: { model: 'bookings', key: 'id' },
+    invoiceNumber: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
     },
-    appointment_id: {
-      type: DataTypes.INTEGER,
-      references: { model: 'appointments', key: 'id' },
+    patientId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'users',
+            key: 'id',
+        },
     },
-    patient_id: {
-      type: DataTypes.INTEGER,
-      references: { model: 'patients', key: 'id' },
+    subtotal: {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: false,
     },
-    hospital_id: {
-      type: DataTypes.INTEGER,
-      references: { model: 'hospitals', key: 'id' },
+    tax: {
+        type: DataTypes.DECIMAL(12, 2),
+        defaultValue: 0,
     },
-    total_amount: {
-      type: DataTypes.DECIMAL(10, 2),
+    discount: {
+        type: DataTypes.DECIMAL(12, 2),
+        defaultValue: 0,
     },
-    tax_amount: {
-      type: DataTypes.DECIMAL(10, 2),
-    },
-    discount_amount: {
-      type: DataTypes.DECIMAL(10, 2),
-    },
-    final_amount: {
-      type: DataTypes.DECIMAL(10, 2),
+    total: {
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: false,
     },
     currency: {
-      type: DataTypes.STRING(3),
-      defaultValue: 'USD',
-    },
-    line_items: {
-      type: DataTypes.JSONB,
-    },
-    invoice_date: {
-      type: DataTypes.DATEONLY,
-    },
-    due_date: {
-      type: DataTypes.DATEONLY,
-    },
-    pdf_url: {
-      type: DataTypes.TEXT,
+        type: DataTypes.STRING(3),
+        defaultValue: 'INR',
     },
     status: {
-      type: DataTypes.STRING(50),
-      defaultValue: 'draft',
+        type: DataTypes.ENUM('draft', 'sent', 'paid', 'overdue', 'cancelled'),
+        defaultValue: 'draft',
     },
-  },
-  {
+    items: {
+        type: DataTypes.JSON,
+        defaultValue: [],
+    },
+    notes: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    pdfUrl: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    sentAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+    dueDate: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
+}, {
     tableName: 'invoices',
     timestamps: true,
     underscored: true,
-  }
-);
+});
 
-module.exports = Invoice;
+export default Invoice;

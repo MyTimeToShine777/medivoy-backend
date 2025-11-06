@@ -1,73 +1,94 @@
-const jwt = require('jsonwebtoken');
-const config = require('../config');
-const { UnauthorizedError } = require('./error-handler');
+// JWT Token Generation and Verification - NO optional chaining
+import jwt from 'jsonwebtoken';
+import logger from './logger.js';
+import config from '../config/index.js';
 
-/**
- * Generate access token
- * @param {Object} payload - Token payload
- * @returns {String} JWT token
- */
-const generateAccessToken = (payload) =>
-  jwt.sign(payload, config.jwt.secret, {
-    expiresIn: config.jwt.expire,
-  });
+const jwtUtil = {
+    // Generate access token
+    generateAccessToken: (payload) => {
+        try {
+            if (!payload || typeof payload !== 'object') {
+                throw new Error('Payload is required');
+            }
 
-/**
- * Generate refresh token
- * @param {Object} payload - Token payload
- * @returns {String} JWT refresh token
- */
-const generateRefreshToken = (payload) =>
-  jwt.sign(payload, config.jwt.refreshSecret, {
-    expiresIn: config.jwt.refreshExpire,
-  });
+            const token = jwt.sign(payload, config.jwt.secret, {
+                expiresIn: config.jwt.expiresIn,
+            });
 
-/**
- * Verify access token
- * @param {String} token - JWT token
- * @returns {Object} Decoded payload
- */
-const verifyAccessToken = (token) => {
-  try {
-    return jwt.verify(token, config.jwt.secret);
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      throw new UnauthorizedError('Token has expired');
-    }
-    throw new UnauthorizedError('Invalid token');
-  }
+            return token;
+        } catch (error) {
+            logger.error('Access token generation failed');
+            logger.error('Error details:', error.message);
+            throw error;
+        }
+    },
+
+    // Generate refresh token
+    generateRefreshToken: (payload) => {
+        try {
+            if (!payload || typeof payload !== 'object') {
+                throw new Error('Payload is required');
+            }
+
+            const token = jwt.sign(payload, config.jwt.refreshSecret, {
+                expiresIn: config.jwt.refreshExpiresIn,
+            });
+
+            return token;
+        } catch (error) {
+            logger.error('Refresh token generation failed');
+            logger.error('Error details:', error.message);
+            throw error;
+        }
+    },
+
+    // Verify access token
+    verifyAccessToken: (token) => {
+        try {
+            if (!token || typeof token !== 'string') {
+                throw new Error('Token is required');
+            }
+
+            const decoded = jwt.verify(token, config.jwt.secret);
+            return decoded;
+        } catch (error) {
+            logger.error('Access token verification failed');
+            logger.error('Error details:', error.message);
+            throw error;
+        }
+    },
+
+    // Verify refresh token
+    verifyRefreshToken: (token) => {
+        try {
+            if (!token || typeof token !== 'string') {
+                throw new Error('Token is required');
+            }
+
+            const decoded = jwt.verify(token, config.jwt.refreshSecret);
+            return decoded;
+        } catch (error) {
+            logger.error('Refresh token verification failed');
+            logger.error('Error details:', error.message);
+            throw error;
+        }
+    },
+
+    // Decode token without verification
+    decodeToken: (token) => {
+        try {
+            if (!token || typeof token !== 'string') {
+                throw new Error('Token is required');
+            }
+
+            const decoded = jwt.decode(token);
+            return decoded;
+        } catch (error) {
+            logger.error('Token decoding failed');
+            logger.error('Error details:', error.message);
+            throw error;
+        }
+    },
 };
 
-/**
- * Verify refresh token
- * @param {String} token - JWT refresh token
- * @returns {Object} Decoded payload
- */
-const verifyRefreshToken = (token) => {
-  try {
-    return jwt.verify(token, config.jwt.refreshSecret);
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      throw new UnauthorizedError('Refresh token has expired');
-    }
-    throw new UnauthorizedError('Invalid refresh token');
-  }
-};
-
-/**
- * Generate both access and refresh tokens
- * @param {Object} payload - Token payload
- * @returns {Object} Object containing both tokens
- */
-const generateTokenPair = (payload) => ({
-  accessToken: generateAccessToken(payload),
-  refreshToken: generateRefreshToken(payload),
-});
-
-module.exports = {
-  generateAccessToken,
-  generateRefreshToken,
-  verifyAccessToken,
-  verifyRefreshToken,
-  generateTokenPair,
-};
+export default jwtUtil;

@@ -1,203 +1,235 @@
-const swaggerJsdoc = require('swagger-jsdoc');
-const config = require('./index');
-const schemas = require('./swagger-schemas');
+// Swagger Configuration - NO optional chaining
+import swaggerJsdoc from 'swagger-jsdoc';
+import config from './index.js';
 
 const options = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Medivoy Healthcare API',
-      version: '1.0.0',
-      description: `
-# Medivoy Healthcare Management System API
-
-Complete REST API for healthcare management including:
-- Patient Management
-- Doctor Management
-- Hospital Management
-- Treatment & Package Management
-- Booking & Appointment System
-- Payment Processing
-- Review & Rating System
-- And much more...
-
-## Authentication
-Most endpoints require JWT authentication. Include the token in the Authorization header:
-\`\`\`
-Authorization: Bearer YOUR_JWT_TOKEN
-\`\`\`
-
-## Base URL
-- Development: http://localhost:${config.port}/api/${config.apiVersion}
-- Production: ${config.frontendUrl}/api/${config.apiVersion}
-      `,
-      contact: {
-        name: 'Medivoy API Support',
-        email: 'support@medivoy.com',
-      },
-      license: {
-        name: 'MIT',
-        url: 'https://opensource.org/licenses/MIT',
-      },
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'Medivoy Healthcare Backend API',
+            version: '1.0.0',
+            description: 'Complete Medical Tourism Platform with Booking, Payments, Consultations & Document Management',
+            contact: {
+                name: 'Medivoy Support',
+                email: 'support@medivoy.com',
+            },
+            license: {
+                name: 'ISC',
+            },
+        },
+        servers: [{
+                url: `http://localhost:${config.port}/api`,
+                description: 'Development Server',
+            },
+            {
+                url: 'https://api.medivoy.com/api',
+                description: 'Production Server',
+            },
+        ],
+        components: {
+            securitySchemes: {
+                BearerAuth: {
+                    type: 'http',
+                    scheme: 'bearer',
+                    bearerFormat: 'JWT',
+                    description: 'JWT token for authentication',
+                },
+            },
+            schemas: {
+                Error: {
+                    type: 'object',
+                    properties: {
+                        success: {
+                            type: 'boolean',
+                            example: false,
+                        },
+                        message: {
+                            type: 'string',
+                            example: 'Error message',
+                        },
+                        error: {
+                            type: 'object',
+                            description: 'Error details (development only)',
+                        },
+                    },
+                },
+                Success: {
+                    type: 'object',
+                    properties: {
+                        success: {
+                            type: 'boolean',
+                            example: true,
+                        },
+                        message: {
+                            type: 'string',
+                            example: 'Success message',
+                        },
+                        data: {
+                            type: 'object',
+                        },
+                    },
+                },
+                User: {
+                    type: 'object',
+                    properties: {
+                        id: {
+                            type: 'integer',
+                            example: 1,
+                        },
+                        email: {
+                            type: 'string',
+                            example: 'user@medivoy.com',
+                        },
+                        firstName: {
+                            type: 'string',
+                            example: 'John',
+                        },
+                        lastName: {
+                            type: 'string',
+                            example: 'Doe',
+                        },
+                        phone: {
+                            type: 'string',
+                            example: '+919876543210',
+                        },
+                        role: {
+                            type: 'string',
+                            enum: ['patient', 'doctor', 'medivoy_staff', 'admin', 'super_admin'],
+                            example: 'patient',
+                        },
+                        isActive: {
+                            type: 'boolean',
+                            example: true,
+                        },
+                        emailVerified: {
+                            type: 'boolean',
+                            example: false,
+                        },
+                        createdAt: {
+                            type: 'string',
+                            format: 'date-time',
+                        },
+                        updatedAt: {
+                            type: 'string',
+                            format: 'date-time',
+                        },
+                    },
+                },
+                AuthResponse: {
+                    type: 'object',
+                    properties: {
+                        user: {
+                            $ref: '#/components/schemas/User',
+                        },
+                        accessToken: {
+                            type: 'string',
+                            description: 'JWT Access Token (valid for 24 hours)',
+                        },
+                        refreshToken: {
+                            type: 'string',
+                            description: 'JWT Refresh Token (valid for 7 days)',
+                        },
+                    },
+                },
+                Booking: {
+                    type: 'object',
+                    properties: {
+                        id: {
+                            type: 'integer',
+                            example: 1,
+                        },
+                        patientId: {
+                            type: 'integer',
+                            example: 5,
+                        },
+                        countryId: {
+                            type: 'integer',
+                            example: 1,
+                        },
+                        hospitalId: {
+                            type: 'integer',
+                            example: 3,
+                        },
+                        doctorId: {
+                            type: 'integer',
+                            example: 2,
+                        },
+                        treatmentId: {
+                            type: 'integer',
+                            example: 4,
+                        },
+                        packageTypeId: {
+                            type: 'integer',
+                            example: 1,
+                        },
+                        packageTierId: {
+                            type: 'integer',
+                            example: 2,
+                        },
+                        bookingStatus: {
+                            type: 'string',
+                            enum: ['inquiry', 'under_review', 'accepted', 'rejected', 'completed'],
+                            example: 'inquiry',
+                        },
+                        totalCost: {
+                            type: 'number',
+                            example: 50000.00,
+                        },
+                        currency: {
+                            type: 'string',
+                            example: 'INR',
+                        },
+                        bookingReference: {
+                            type: 'string',
+                            example: 'BK20251106ABC123',
+                        },
+                        createdAt: {
+                            type: 'string',
+                            format: 'date-time',
+                        },
+                        updatedAt: {
+                            type: 'string',
+                            format: 'date-time',
+                        },
+                    },
+                },
+                Pagination: {
+                    type: 'object',
+                    properties: {
+                        page: {
+                            type: 'integer',
+                            example: 1,
+                        },
+                        limit: {
+                            type: 'integer',
+                            example: 10,
+                        },
+                        total: {
+                            type: 'integer',
+                            example: 50,
+                        },
+                        totalPages: {
+                            type: 'integer',
+                            example: 5,
+                        },
+                        hasNextPage: {
+                            type: 'boolean',
+                            example: true,
+                        },
+                        hasPrevPage: {
+                            type: 'boolean',
+                            example: false,
+                        },
+                    },
+                },
+            },
+        },
     },
-    servers: [
-      {
-        url: `http://localhost:${config.port}/api/${config.apiVersion}`,
-        description: 'Development server',
-      },
-      {
-        url: `https://3000-d3911e85-31b9-4b01-9734-b7792b2ea6a4.proxy.daytona.works/api/${config.apiVersion}`,
-        description: 'Public sandbox server',
-      },
-      {
-        url: `${config.frontendUrl}/api/${config.apiVersion}`,
-        description: 'Production server',
-      },
+    apis: [
+        './src/routes/auth.routes.js',
     ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: 'http',
-          scheme: 'bearer',
-          bearerFormat: 'JWT',
-          description: 'Enter your JWT token in the format: Bearer {token}',
-        },
-      },
-      schemas,
-      parameters: {
-        pageParam: {
-          in: 'query',
-          name: 'page',
-          schema: { type: 'integer', default: 1 },
-          description: 'Page number for pagination',
-        },
-        limitParam: {
-          in: 'query',
-          name: 'limit',
-          schema: { type: 'integer', default: 10 },
-          description: 'Number of items per page',
-        },
-        searchParam: {
-          in: 'query',
-          name: 'search',
-          schema: { type: 'string' },
-          description: 'Search query',
-        },
-        sortParam: {
-          in: 'query',
-          name: 'sort',
-          schema: { type: 'string' },
-          description: 'Sort field (prefix with - for descending)',
-        },
-        idParam: {
-          in: 'path',
-          name: 'id',
-          required: true,
-          schema: { type: 'integer' },
-          description: 'Resource ID',
-        },
-      },
-      responses: {
-        Success: {
-          description: 'Successful operation',
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/SuccessResponse' },
-            },
-          },
-        },
-        Created: {
-          description: 'Resource created successfully',
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/SuccessResponse' },
-            },
-          },
-        },
-        BadRequest: {
-          description: 'Bad request - Invalid input',
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/ErrorResponse' },
-            },
-          },
-        },
-        Unauthorized: {
-          description: 'Unauthorized - Authentication required',
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/ErrorResponse' },
-            },
-          },
-        },
-        Forbidden: {
-          description: 'Forbidden - Insufficient permissions',
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/ErrorResponse' },
-            },
-          },
-        },
-        NotFound: {
-          description: 'Resource not found',
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/ErrorResponse' },
-            },
-          },
-        },
-        ServerError: {
-          description: 'Internal server error',
-          content: {
-            'application/json': {
-              schema: { $ref: '#/components/schemas/ErrorResponse' },
-            },
-          },
-        },
-      },
-    },
-    tags: [
-      {
-        name: 'Authentication',
-        description: 'User authentication and authorization',
-      },
-      { name: 'Users', description: 'User management' },
-      { name: 'Patients', description: 'Patient management' },
-      { name: 'Doctors', description: 'Doctor management' },
-      { name: 'Hospitals', description: 'Hospital management' },
-      { name: 'Treatments', description: 'Treatment management' },
-      {
-        name: 'Treatment Categories',
-        description: 'Treatment category management',
-      },
-      { name: 'Packages', description: 'Treatment package management' },
-      { name: 'Bookings', description: 'Booking management' },
-      { name: 'Appointments', description: 'Appointment management' },
-      { name: 'Payments', description: 'Payment processing' },
-      { name: 'Invoices', description: 'Invoice management' },
-      { name: 'Reviews', description: 'Review and rating system' },
-      { name: 'Notifications', description: 'Notification management' },
-      { name: 'Support Tickets', description: 'Customer support system' },
-      { name: 'FAQs', description: 'Frequently asked questions' },
-      { name: 'Website Content', description: 'Website content management' },
-      { name: 'Translations', description: 'Multi-language support' },
-      { name: 'Subscriptions', description: 'Subscription management' },
-      { name: 'Media', description: 'File upload and management' },
-    ],
-    security: [
-      {
-        bearerAuth: [],
-      },
-    ],
-  },
-  apis: [
-    './src/routes/v1/*.js',
-    './src/routes/**/*.js',
-    './src/models/*.js',
-    './src/routes/v1/comprehensive-swagger-docs.js',
-  ],
 };
 
 const swaggerSpec = swaggerJsdoc(options);
 
-module.exports = swaggerSpec;
+export default swaggerSpec;

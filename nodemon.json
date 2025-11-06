@@ -1,0 +1,17 @@
+{
+    "watch": ["src"],
+    "ext": "js",
+    "ignore": ["node_modules", "dist", "logs"],
+    "exec": "node",
+    "script": "src/server.js",
+    "env": {
+        "NODE_ENV": "development"
+    },
+    "delay": 500,
+    "exitcrash": true,
+    "events": {
+        "restart": "clear",
+        "crash": "node -e \"console.error('App crashed')\""
+    },
+    "verbose": true
+}

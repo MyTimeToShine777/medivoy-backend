@@ -1,70 +1,40 @@
-const { validationResult } = require('express-validator');
-const { ValidationError } = require('../utils/error-handler');
+// Request Validation Middleware - NO optional chaining
+import logger from '../utils/logger.js';
+import { ValidationError } from '../exceptions/index.js';
+import { sendError } from '../utils/response.js';
+import { HTTP_STATUS } from '../constants/httpStatus.js';
 
-/**
- * Validation middleware - Check express-validator results
- */
-const validate = (req, res, next) => {
-  const errors = validationResult(req);
+export const validateRequest = (schema, dataSource) => {
+    return (req, res, next) => {
+        try {
+            const data = dataSource === 'body' ? req.body : req.params;
 
-  if (!errors.isEmpty()) {
-    const formattedErrors = errors.array().map((error) => ({
-      field: error.path || error.param,
-      message: error.msg,
-      value: error.value,
-    }));
+            const { error, value } = schema.validate(data, {
+                abortEarly: false,
+                stripUnknown: true,
+            });
 
-    throw new ValidationError('Validation failed', formattedErrors);
-  }
+            if (error) {
+                const messages = error.details.map((detail) => detail.message);
+                throw new ValidationError('Validation failed', messages);
+            }
 
-  next();
+            if (dataSource === 'body') {
+                req.body = value;
+            } else {
+                req.params = value;
+            }
+
+            next();
+        } catch (err) {
+            const errorResponse = err instanceof ValidationError ?
+                err :
+                new ValidationError('Validation failed');
+
+            logger.error('Validation error:', err.message);
+            return sendError(res, errorResponse.statusCode, errorResponse.message);
+        }
+    };
 };
 
-/**
- * Joi validation middleware
- * @param {Object} schema - Joi schema
- * @param {String} property - Property to validate (body, query, params)
- */
-const validateJoi =
-  (schema, property = 'body') =>
-  (req, res, next) => {
-    const { error, value } = schema.validate(req[property], {
-      abortEarly: false,
-      stripUnknown: true,
-    });
-
-    if (error) {
-      const formattedErrors = error.details.map((detail) => ({
-        field: detail.path.join('.'),
-        message: detail.message,
-        type: detail.type,
-      }));
-
-      const validationError = new ValidationError('Validation failed');
-      validationError.errors = formattedErrors;
-
-      return next(validationError);
-    }
-
-    // Replace request property with validated value
-    req[property] = value;
-    next();
-  };
-
-/**
- * Helper to apply express-validator chains and then the validation result checker
- * Accepts an array of validator middlewares (or a single middleware) and returns
- * a composed middleware array that runs the validators first then the `validate` checker.
- */
-const validateRequest = (validators) => {
-  if (!validators) return validate;
-  // allow either a single middleware or an array of middlewares
-  const arr = Array.isArray(validators) ? validators : [validators];
-  return [...arr, validate];
-};
-
-module.exports = {
-  validate,
-  validateJoi,
-  validateRequest,
-};
+export default validateRequest;

@@ -1,69 +1,73 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
-const Payment = sequelize.define(
-  'Payment',
-  {
+const Payment = sequelize.define('Payment', {
     id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
     },
-    transaction_id: {
-      type: DataTypes.STRING(100),
-      unique: true,
+    bookingId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'bookings',
+            key: 'id',
+        },
     },
-    booking_id: {
-      type: DataTypes.INTEGER,
-      references: { model: 'bookings', key: 'id' },
-    },
-    appointment_id: {
-      type: DataTypes.INTEGER,
-      references: { model: 'appointments', key: 'id' },
-    },
-    patient_id: {
-      type: DataTypes.INTEGER,
-      references: { model: 'patients', key: 'id' },
+    patientId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'users',
+            key: 'id',
+        },
     },
     amount: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
+        type: DataTypes.DECIMAL(12, 2),
+        allowNull: false,
     },
     currency: {
-      type: DataTypes.STRING(3),
-      defaultValue: 'USD',
+        type: DataTypes.STRING(3),
+        defaultValue: 'INR',
     },
-    payment_method: {
-      type: DataTypes.STRING(50),
+    gateway: {
+        type: DataTypes.ENUM('stripe', 'razorpay'),
+        allowNull: false,
     },
-    payment_gateway: {
-      type: DataTypes.STRING(50),
+    transactionId: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
     },
-    gateway_transaction_id: {
-      type: DataTypes.STRING(255),
+    paymentStatus: {
+        type: DataTypes.ENUM('pending', 'processing', 'completed', 'failed', 'refunded'),
+        defaultValue: 'pending',
     },
-    status: {
-      type: DataTypes.STRING(50),
-      defaultValue: 'pending',
+    paymentMethod: {
+        type: DataTypes.ENUM('credit_card', 'debit_card', 'upi', 'net_banking', 'wallet'),
+        allowNull: true,
     },
-    payment_date: {
-      type: DataTypes.DATE,
+    paymentDetails: {
+        type: DataTypes.JSON,
+        allowNull: true,
     },
-    refund_amount: {
-      type: DataTypes.DECIMAL(10, 2),
+    receiptUrl: {
+        type: DataTypes.STRING,
+        allowNull: true,
     },
-    refund_date: {
-      type: DataTypes.DATE,
+    errorMessage: {
+        type: DataTypes.TEXT,
+        allowNull: true,
     },
-    metadata: {
-      type: DataTypes.JSONB,
+    completedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
     },
-  },
-  {
+}, {
     tableName: 'payments',
     timestamps: true,
     underscored: true,
-  }
-);
+});
 
-module.exports = Payment;
+export default Payment;

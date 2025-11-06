@@ -1,72 +1,70 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
-const Doctor = sequelize.define(
-  'Doctor',
-  {
+const Doctor = sequelize.define('Doctor', {
     id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
     },
-    user_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      unique: true,
-      references: {
-        model: 'users',
-        key: 'id',
-      },
-      onDelete: 'CASCADE',
+    userId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        unique: true,
+        references: {
+            model: 'users',
+            key: 'id',
+        },
     },
-    specialty: {
-      type: DataTypes.STRING(200),
-      allowNull: false,
+    medicalLicenseNumber: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
     },
-    qualification: {
-      type: DataTypes.TEXT,
+    specializations: {
+        type: DataTypes.JSON,
+        defaultValue: [],
     },
-    experience_years: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
+    yearsOfExperience: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
     },
-    license_number: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      unique: true,
+    qualifications: {
+        type: DataTypes.JSON,
+        defaultValue: [],
     },
     bio: {
-      type: DataTypes.TEXT,
+        type: DataTypes.TEXT,
+        allowNull: true,
     },
-    consultation_fee: {
-      type: DataTypes.DECIMAL(10, 2),
+    consultationFee: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: true,
     },
-    languages: {
-      type: DataTypes.JSONB,
-      defaultValue: [],
+    currency: {
+        type: DataTypes.STRING(3),
+        defaultValue: 'INR',
     },
-    availability_slots: {
-      type: DataTypes.JSONB,
-      defaultValue: {},
+    averageRating: {
+        type: DataTypes.DECIMAL(3, 2),
+        defaultValue: 0,
     },
-    is_available_teleconsult: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true,
+    totalReviews: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
     },
-    rating: {
-      type: DataTypes.DECIMAL(3, 2),
-      defaultValue: 0.0,
+    isVerified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
     },
-    total_reviews: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
+    isAvailable: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
     },
-  },
-  {
+}, {
     tableName: 'doctors',
     timestamps: true,
     underscored: true,
-  }
-);
+});
 
-module.exports = Doctor;
+export default Doctor;

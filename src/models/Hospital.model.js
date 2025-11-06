@@ -1,85 +1,78 @@
-const { DataTypes } = require('sequelize');
-const { sequelize } = require('../config/database');
+// Hospital Model - NO optional chaining
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/database.js';
 
-const Hospital = sequelize.define(
-  'Hospital',
-  {
+const Hospital = sequelize.define('Hospital', {
     id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+    },
+    countryId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        references: {
+            model: 'countries',
+            key: 'id',
+        },
     },
     name: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-    },
-    type: {
-      type: DataTypes.STRING(50),
-    },
-    description: {
-      type: DataTypes.TEXT,
-    },
-    logo: {
-      type: DataTypes.TEXT,
-    },
-    country: {
-      type: DataTypes.STRING(100),
-    },
-    city: {
-      type: DataTypes.STRING(100),
-    },
-    address: {
-      type: DataTypes.TEXT,
-    },
-    latitude: {
-      type: DataTypes.DECIMAL(10, 8),
-    },
-    longitude: {
-      type: DataTypes.DECIMAL(11, 8),
-    },
-    phone: {
-      type: DataTypes.STRING(20),
+        type: DataTypes.STRING,
+        allowNull: false,
     },
     email: {
-      type: DataTypes.STRING(255),
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true,
+    },
+    phone: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    address: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
+    city: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    state: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    zipCode: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+    },
+    accreditation: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    totalBeds: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
     },
     website: {
-      type: DataTypes.TEXT,
+        type: DataTypes.STRING,
+        allowNull: true,
     },
-    certifications: {
-      type: DataTypes.JSONB,
+    logo: {
+        type: DataTypes.STRING,
+        allowNull: true,
     },
-    specializations: {
-      type: DataTypes.JSONB,
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
     },
-    is_verified: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: false,
-    },
-    is_active: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true,
-    },
-    admin_user_id: {
-      type: DataTypes.INTEGER,
-      references: {
-        model: 'users',
-        key: 'id',
-      },
-    },
-    bank_details: {
-      type: DataTypes.JSONB,
-    },
-    total_beds: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-    },
-  },
-  {
+}, {
     tableName: 'hospitals',
     timestamps: true,
     underscored: true,
-  }
-);
+});
 
-module.exports = Hospital;
+export default Hospital;
