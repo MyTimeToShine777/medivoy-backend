@@ -1,0 +1,227 @@
+'use strict';
+
+import { ExpertCall, User, Doctor } from '../models/index.js';
+import { cacheService } from '../config/redis.js';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// EXPERT CALL SERVICE - ULTRA-COMPREHENSIVE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export class ExpertCallService {
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SCHEDULE CALL
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async scheduleCall(userId, doctorId, scheduledTime, duration, topic) {
+        try {
+            if (!userId || !doctorId || !scheduledTime) {
+                return { success: false, error: 'User ID, doctor ID and scheduled time required' };
+            }
+
+            const call = await ExpertCall.create({
+                userId: userId,
+                doctorId: doctorId,
+                scheduledTime: new Date(scheduledTime),
+                duration: duration || 30,
+                topic: topic || '',
+                status: 'scheduled',
+                createdAt: new Date()
+            });
+
+            await cacheService.delete(`expert_calls_${userId}`);
+            console.log(`✅ Call scheduled: ${call.callId}`);
+
+            return { success: true, data: call };
+        } catch (error) {
+            console.error('❌ Schedule call error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // GET CALL HISTORY
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async getCallHistory(userId) {
+        try {
+            if (!userId) {
+                return { success: false, error: 'User ID required' };
+            }
+
+            const cacheKey = `expert_calls_${userId}`;
+            let cached = await cacheService.get(cacheKey);
+            if (cached) return { success: true, data: cached };
+
+            const calls = await ExpertCall.findAll({
+                where: { userId: userId },
+                include: [
+                    { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] }
+                ],
+                order: [
+                    ['scheduledTime', 'DESC']
+                ]
+            });
+
+            await cacheService.set(cacheKey, calls, 86400);
+            console.log(`✅ Call history retrieved: ${userId}`);
+
+            return { success: true, data: calls };
+        } catch (error) {
+            console.error('❌ Get call history error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // START CALL
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async startCall(callId) {
+        try {
+            if (!callId) {
+                return { success: false, error: 'Call ID required' };
+            }
+
+            const call = await ExpertCall.findByPk(callId);
+
+            if (!call) {
+                return { success: false, error: 'Call not found', code: 'NOT_FOUND' };
+            }
+
+            await call.update({
+                status: 'in_progress',
+                startedAt: new Date()
+            });
+
+            await cacheService.delete(`expert_calls_${call.userId}`);
+            console.log(`✅ Call started: ${callId}`);
+
+            return { success: true, data: call };
+        } catch (error) {
+            console.error('❌ Start call error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // END CALL
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async endCall(callId, notes) {
+        try {
+            if (!callId) {
+                return { success: false, error: 'Call ID required' };
+            }
+
+            const call = await ExpertCall.findByPk(callId);
+
+            if (!call) {
+                return { success: false, error: 'Call not found', code: 'NOT_FOUND' };
+            }
+
+            await call.update({
+                status: 'completed',
+                endedAt: new Date(),
+                notes: notes || ''
+            });
+
+            await cacheService.delete(`expert_calls_${call.userId}`);
+            console.log(`✅ Call ended: ${callId}`);
+
+            return { success: true, data: call };
+        } catch (error) {
+            console.error('❌ End call error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // CANCEL CALL
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async cancelCall(callId) {
+        try {
+            if (!callId) {
+                return { success: false, error: 'Call ID required' };
+            }
+
+            const call = await ExpertCall.findByPk(callId);
+
+            if (!call) {
+                return { success: false, error: 'Call not found', code: 'NOT_FOUND' };
+            }
+
+            await call.update({
+                status: 'cancelled',
+                cancelledAt: new Date()
+            });
+
+            await cacheService.delete(`expert_calls_${call.userId}`);
+            console.log(`✅ Call cancelled: ${callId}`);
+
+            return { success: true, message: 'Call cancelled successfully' };
+        } catch (error) {
+            console.error('❌ Cancel call error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // GET DOCTOR SCHEDULE
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async getDoctorAvailability(doctorId, date) {
+        try {
+            if (!doctorId || !date) {
+                return { success: false, error: 'Doctor ID and date required' };
+            }
+
+            const calls = await ExpertCall.findAll({
+                where: { doctorId: doctorId, scheduledTime: {
+                        [require('sequelize').Op.gte]: new Date(date) } },
+                attributes: ['scheduledTime', 'duration']
+            });
+
+            console.log(`✅ Doctor availability retrieved: ${doctorId}`);
+
+            return { success: true, data: calls };
+        } catch (error) {
+            console.error('❌ Get availability error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // RESCHEDULE CALL
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async rescheduleCall(callId, newScheduledTime) {
+        try {
+            if (!callId || !newScheduledTime) {
+                return { success: false, error: 'Call ID and new time required' };
+            }
+
+            const call = await ExpertCall.findByPk(callId);
+
+            if (!call) {
+                return { success: false, error: 'Call not found', code: 'NOT_FOUND' };
+            }
+
+            await call.update({
+                scheduledTime: new Date(newScheduledTime),
+                rescheduledAt: new Date()
+            });
+
+            await cacheService.delete(`expert_calls_${call.userId}`);
+            console.log(`✅ Call rescheduled: ${callId}`);
+
+            return { success: true, data: call };
+        } catch (error) {
+            console.error('❌ Reschedule call error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+}
+
+export const expertCallService = new ExpertCallService();
+export default expertCallService;

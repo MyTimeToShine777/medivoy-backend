@@ -1,46 +1,42 @@
-// Logger Utility - NO optional chaining
-const logger = {
-    info: (message, data) => {
-        const timestamp = new Date().toISOString();
-        if (data !== undefined && data !== null) {
-            console.log(`[${timestamp}] ℹ️  INFO: ${message}`, data);
-        } else {
-            console.log(`[${timestamp}] ℹ️  INFO: ${message}`);
-        }
-    },
+'use strict';
 
-    error: (message, error) => {
-        const timestamp = new Date().toISOString();
-        if (error !== undefined && error !== null) {
-            const errorMessage = error.message ? error.message : String(error);
-            console.error(`[${timestamp}] ❌ ERROR: ${message}`, errorMessage);
-            if (error.stack && process.env.NODE_ENV === 'development') {
-                console.error('Stack trace:', error.stack);
-            }
-        } else {
-            console.error(`[${timestamp}] ❌ ERROR: ${message}`);
-        }
-    },
+// ═══════════════════════════════════════════════════════════════════════════════
+// LOGGER UTILITY
+// ═══════════════════════════════════════════════════════════════════════════════
 
-    warn: (message, data) => {
-        const timestamp = new Date().toISOString();
-        if (data !== undefined && data !== null) {
-            console.warn(`[${timestamp}] ⚠️  WARN: ${message}`, data);
-        } else {
-            console.warn(`[${timestamp}] ⚠️  WARN: ${message}`);
-        }
-    },
+const LOG_LEVELS = {
+    ERROR: 'ERROR',
+    WARN: 'WARN',
+    INFO: 'INFO',
+    DEBUG: 'DEBUG'
+};
 
-    debug: (message, data) => {
-        if (process.env.NODE_ENV === 'development') {
-            const timestamp = new Date().toISOString();
-            if (data !== undefined && data !== null) {
-                console.log(`[${timestamp}] 🔧 DEBUG: ${message}`, data);
-            } else {
-                console.log(`[${timestamp}] 🔧 DEBUG: ${message}`);
-            }
+const getTimestamp = () => {
+    return new Date().toISOString();
+};
+
+const log = (level, message, data) => {
+    const timestamp = getTimestamp();
+    const logMessage = `[${timestamp}] [${level}] ${message}`;
+
+    if (level === LOG_LEVELS.ERROR) {
+        console.error(logMessage, data || '');
+    } else if (level === LOG_LEVELS.WARN) {
+        console.warn(logMessage, data || '');
+    } else if (level === LOG_LEVELS.INFO) {
+        console.log(logMessage, data || '');
+    } else if (level === LOG_LEVELS.DEBUG) {
+        if (process.env.DEBUG === 'true') {
+            console.log(logMessage, data || '');
         }
-    },
+    }
+};
+
+export const logger = {
+    error: (message, data) => log(LOG_LEVELS.ERROR, message, data),
+    warn: (message, data) => log(LOG_LEVELS.WARN, message, data),
+    info: (message, data) => log(LOG_LEVELS.INFO, message, data),
+    debug: (message, data) => log(LOG_LEVELS.DEBUG, message, data)
 };
 
 export default logger;

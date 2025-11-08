@@ -1,0 +1,208 @@
+'use strict';
+
+import { Op, sequelize } from 'sequelize';
+import { Specialization, Doctor, AuditLog } from '../models/index.js';
+import { ValidationService } from './ValidationService.js';
+import { ErrorHandlingService } from './ErrorHandlingService.js';
+import { AuditLogService } from './AuditLogService.js';
+import { AppError } from '../utils/errors/AppError.js';
+
+export class SpecializationService {
+    constructor() {
+        this.validationService = new ValidationService();
+        this.errorHandlingService = new ErrorHandlingService();
+        this.auditLogService = new AuditLogService();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // SPECIALIZATION MANAGEMENT
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    async createSpecialization(specializationData) {
+        const transaction = await sequelize.transaction();
+        try {
+            if (!specializationData || !specializationData.specializationName) {
+                throw new AppError('Specialization name required', 400);
+            }
+
+            const existing = await Specialization.findOne({
+                where: { specializationName: specializationData.specializationName },
+                transaction: transaction
+            });
+
+            if (existing) {
+                await transaction.rollback();
+                throw new AppError('Specialization already exists', 409);
+            }
+
+            const specialization = await Specialization.create({
+                specializationId: this._generateSpecId(),
+                specializationName: specializationData.specializationName,
+                specializationDescription: specializationData.specializationDescription || null,
+                averageFee: specializationData.averageFee || 0,
+                isActive: true,
+                createdAt: new Date()
+            }, { transaction: transaction });
+
+            await this.auditLogService.logAction({
+                action: 'SPECIALIZATION_CREATED',
+                entityType: 'Specialization',
+                entityId: specialization.specializationId,
+                userId: 'ADMIN',
+                details: { name: specializationData.specializationName }
+            }, transaction);
+
+            await transaction.commit();
+
+            return { success: true, message: 'Specialization created', specialization: specialization };
+        } catch (error) {
+            await transaction.rollback();
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async getSpecializationById(specializationId) {
+        try {
+            if (!specializationId) throw new AppError('Specialization ID required', 400);
+
+            const specialization = await Specialization.findByPk(specializationId, {
+                include: [
+                    { model: Doctor, attributes: ['doctorId', 'firstName', 'lastName'] }
+                ]
+            });
+
+            if (!specialization) throw new AppError('Specialization not found', 404);
+
+            return { success: true, specialization: specialization };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async listSpecializations(filters) {
+        try {
+            const limit = filters && filters.limit ? Math.min(filters.limit, 100) : 20;
+            const offset = filters && filters.offset ? filters.offset : 0;
+            const where = { isActive: true };
+
+            if (filters && filters.search) {
+                where.specializationName = {
+                    [Op.like]: '%' + filters.search + '%' };
+            }
+
+            const specializations = await Specialization.findAll({
+                where: where,
+                order: [
+                    ['specializationName', 'ASC']
+                ],
+                limit: limit,
+                offset: offset
+            });
+
+            const total = await Specialization.count({ where: where });
+
+            return {
+                success: true,
+                specializations: specializations,
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+            };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async updateSpecialization(specializationId, updateData) {
+        const transaction = await sequelize.transaction();
+        try {
+            if (!specializationId || !updateData) throw new AppError('Required params missing', 400);
+
+            const specialization = await Specialization.findByPk(specializationId, { transaction: transaction });
+            if (!specialization) {
+                await transaction.rollback();
+                throw new AppError('Specialization not found', 404);
+            }
+
+            if (updateData.specializationDescription) specialization.specializationDescription = updateData.specializationDescription;
+            if (updateData.averageFee) specialization.averageFee = updateData.averageFee;
+
+            await specialization.save({ transaction: transaction });
+
+            await this.auditLogService.logAction({
+                action: 'SPECIALIZATION_UPDATED',
+                entityType: 'Specialization',
+                entityId: specializationId,
+                userId: 'ADMIN',
+                details: {}
+            }, transaction);
+
+            await transaction.commit();
+
+            return { success: true, message: 'Updated', specialization: specialization };
+        } catch (error) {
+            await transaction.rollback();
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async getSpecializationDoctors(specializationId, filters) {
+        try {
+            if (!specializationId) throw new AppError('Specialization ID required', 400);
+
+            const limit = filters && filters.limit ? Math.min(filters.limit, 100) : 10;
+            const offset = filters && filters.offset ? filters.offset : 0;
+
+            const doctors = await Doctor.findAll({
+                where: { specializationId: specializationId, isActive: true },
+                order: [
+                    ['firstName', 'ASC']
+                ],
+                limit: limit,
+                offset: offset
+            });
+
+            const total = await Doctor.count({ where: { specializationId: specializationId, isActive: true } });
+
+            return {
+                success: true,
+                doctors: doctors,
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+            };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async getSpecializationStats(specializationId) {
+        try {
+            if (!specializationId) throw new AppError('Specialization ID required', 400);
+
+            const specialization = await Specialization.findByPk(specializationId);
+            if (!specialization) throw new AppError('Specialization not found', 404);
+
+            const doctorCount = await Doctor.count({ where: { specializationId: specializationId, isActive: true } });
+
+            return {
+                success: true,
+                stats: {
+                    name: specialization.specializationName,
+                    doctorCount: doctorCount,
+                    averageFee: specialization.averageFee
+                }
+            };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // HELPER METHODS
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    _generateSpecId() {
+        const ts = Date.now().toString(36).toUpperCase();
+        const rnd = Math.floor(Math.random() * 1000).toString(36).toUpperCase();
+        return 'SPEC-' + ts + rnd;
+    }
+}
+
+export default SpecializationService;

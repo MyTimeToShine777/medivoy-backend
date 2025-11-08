@@ -1,134 +1,202 @@
-// Main configuration aggregator
+'use strict';
+
 import dotenv from 'dotenv';
 
 dotenv.config();
 
-const config = {
-    // Server
-    nodeEnv: process.env.NODE_ENV || 'development',
-    port: parseInt(process.env.PORT) || 5000,
-    appName: process.env.APP_NAME || 'Medivoy',
-    appUrl: process.env.APP_URL || 'http://localhost:5000',
-    frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+/**
+ * ULTRA-COMPREHENSIVE CONFIGURATION
+ * All third-party services: ImageKit, Twilio, Stripe, Razorpay, SendGrid, etc.
+ */
 
-    // Database
+const config = {
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // SERVER
+    // ═══════════════════════════════════════════════════════════════════════════════
+    server: {
+        nodeEnv: process.env.NODE_ENV || 'development',
+        port: parseInt(process.env.PORT, 10) || 5000,
+        appName: process.env.APP_NAME || 'Medivoy',
+        appVersion: process.env.APP_VERSION || '1.0.0',
+        appUrl: process.env.APP_URL || 'http://localhost:5000',
+        frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
+        isDevelopment: process.env.NODE_ENV === 'development',
+        isProduction: process.env.NODE_ENV === 'production'
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // DATABASE
+    // ═══════════════════════════════════════════════════════════════════════════════
     database: {
         url: process.env.DATABASE_URL || '',
         dialect: 'postgres',
-        logging: process.env.DB_LOG === 'true',
         pool: {
             max: 10,
             min: 2,
             acquire: 30000,
             idle: 10000,
+            evict: 30000
         },
+        retry: {
+            max: 3,
+            timeout: 3000,
+            match: [/timeout/i, /ETIMEDOUT/, /ECONNREFUSED/]
+        },
+        dialectOptions: {
+            connectTimeout: 20000,
+            ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        }
     },
 
-    // Redis
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // REDIS
+    // ═══════════════════════════════════════════════════════════════════════════════
     redis: {
-        url: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
+        url: process.env.REDIS_URL || 'redis://localhost:6379',
+        enabled: process.env.REDIS_ENABLED !== 'false',
+        db: 0,
+        prefix: 'medivoy:'
     },
 
+    // ═══════════════════════════════════════════════════════════════════════════════
     // JWT
+    // ═══════════════════════════════════════════════════════════════════════════════
     jwt: {
-        secret: process.env.JWT_SECRET || 'your-secret-key',
-        expiresIn: process.env.JWT_EXPIRES_IN || '24h',
-        refreshSecret: process.env.JWT_REFRESH_SECRET || 'your-refresh-secret',
+        secret: process.env.JWT_SECRET || '',
+        expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+        refreshSecret: process.env.JWT_REFRESH_SECRET || '',
         refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
+        algorithm: 'HS256'
     },
 
-    // ImageKit
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // IMAGEKIT (FILE UPLOADS)
+    // ═══════════════════════════════════════════════════════════════════════════════
     imageKit: {
+        enabled: !!(process.env.IMAGEKIT_PUBLIC_KEY &&
+            process.env.IMAGEKIT_PRIVATE_KEY &&
+            process.env.IMAGEKIT_URL_ENDPOINT),
         publicKey: process.env.IMAGEKIT_PUBLIC_KEY || '',
         privateKey: process.env.IMAGEKIT_PRIVATE_KEY || '',
         urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT || '',
+        maxFileSize: 10485760, // 10MB
+        folder: process.env.IMAGEKIT_FOLDER || '/medivoy'
     },
 
-    // Stripe
-    stripe: {
-        publicKey: process.env.STRIPE_PUBLIC_KEY || '',
-        secretKey: process.env.STRIPE_SECRET_KEY || '',
-        webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
-    },
-
-    // Razorpay
-    razorpay: {
-        keyId: process.env.RAZORPAY_KEY_ID || '',
-        keySecret: process.env.RAZORPAY_KEY_SECRET || '',
-        webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || '',
-    },
-
-    // SendGrid
-    sendGrid: {
-        apiKey: process.env.SENDGRID_API_KEY || '',
-        fromEmail: process.env.SENDGRID_FROM_EMAIL || '',
-        fromName: process.env.SENDGRID_FROM_NAME || 'Medivoy',
-    },
-
-    // Twilio
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // TWILIO (SMS)
+    // ═══════════════════════════════════════════════════════════════════════════════
     twilio: {
+        enabled: !!(process.env.TWILIO_ACCOUNT_SID &&
+            process.env.TWILIO_AUTH_TOKEN &&
+            process.env.TWILIO_PHONE_NUMBER),
         accountSid: process.env.TWILIO_ACCOUNT_SID || '',
         authToken: process.env.TWILIO_AUTH_TOKEN || '',
-        phoneNumber: process.env.TWILIO_PHONE_NUMBER || '',
+        phoneNumber: process.env.TWILIO_PHONE_NUMBER || ''
     },
 
-    // Google Translate
-    googleTranslate: {
-        apiKey: process.env.GOOGLE_TRANSLATE_API_KEY || '',
-        projectId: process.env.GOOGLE_TRANSLATE_PROJECT_ID || '',
-        supportedLanguages: process.env.SUPPORTED_LANGUAGES || 'en,hi,es,fr,de,it,pt,ru,ja,ko,zh,ar',
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // STRIPE PAYMENT
+    // ═══════════════════════════════════════════════════════════════════════════════
+    stripe: {
+        enabled: !!(process.env.STRIPE_PUBLIC_KEY && process.env.STRIPE_SECRET_KEY),
+        publicKey: process.env.STRIPE_PUBLIC_KEY || '',
+        secretKey: process.env.STRIPE_SECRET_KEY || '',
+        webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || ''
     },
 
-    // Google Meet
-    googleMeet: {
-        enabled: process.env.GOOGLE_MEET_ENABLED === 'true',
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // RAZORPAY PAYMENT
+    // ═══════════════════════════════════════════════════════════════════════════════
+    razorpay: {
+        enabled: !!(process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET),
+        keyId: process.env.RAZORPAY_KEY_ID || '',
+        keySecret: process.env.RAZORPAY_KEY_SECRET || ''
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // SENDGRID EMAIL
+    // ═══════════════════════════════════════════════════════════════════════════════
+    sendGrid: {
+        enabled: !!process.env.SENDGRID_API_KEY,
+        apiKey: process.env.SENDGRID_API_KEY || '',
+        fromEmail: process.env.SENDGRID_FROM_EMAIL || 'noreply@medivoy.com',
+        fromName: process.env.SENDGRID_FROM_NAME || 'Medivoy'
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // GOOGLE OAUTH
+    // ═══════════════════════════════════════════════════════════════════════════════
+    googleOAuth: {
+        enabled: !!(process.env.GOOGLE_OAUTH_CLIENT_ID &&
+            process.env.GOOGLE_OAUTH_CLIENT_SECRET),
         clientId: process.env.GOOGLE_OAUTH_CLIENT_ID || '',
         clientSecret: process.env.GOOGLE_OAUTH_CLIENT_SECRET || '',
-        redirectUri: process.env.GOOGLE_OAUTH_REDIRECT_URI || '',
+        redirectUri: process.env.GOOGLE_OAUTH_REDIRECT_URI || ''
     },
 
-    // Agora
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // AGORA VIDEO
+    // ═══════════════════════════════════════════════════════════════════════════════
     agora: {
+        enabled: !!(process.env.AGORA_APP_ID && process.env.AGORA_APP_CERTIFICATE),
         appId: process.env.AGORA_APP_ID || '',
-        appCertificate: process.env.AGORA_APP_CERTIFICATE || '',
-        customerKey: process.env.AGORA_CUSTOMER_KEY || '',
-        customerSecret: process.env.AGORA_CUSTOMER_SECRET || '',
+        appCertificate: process.env.AGORA_APP_CERTIFICATE || ''
     },
 
-    // Cache
-    cache: {
-        enabled: process.env.CACHE_ENABLED === 'true',
-        ttl: {
-            short: parseInt(process.env.CACHE_TTL_SHORT) || 300,
-            medium: parseInt(process.env.CACHE_TTL_MEDIUM) || 1800,
-            long: parseInt(process.env.CACHE_TTL_LONG) || 3600,
-            veryLong: parseInt(process.env.CACHE_TTL_VERY_LONG) || 86400,
-        },
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // AWS S3
+    // ═══════════════════════════════════════════════════════════════════════════════
+    awsS3: {
+        enabled: !!(process.env.AWS_ACCESS_KEY_ID &&
+            process.env.AWS_SECRET_ACCESS_KEY &&
+            process.env.AWS_S3_BUCKET_NAME),
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+        region: process.env.AWS_REGION || 'us-east-1',
+        bucketName: process.env.AWS_S3_BUCKET_NAME || ''
     },
 
-    // Security
-    security: {
-        bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS) || 10,
-        encryptionKey: process.env.ENCRYPTION_KEY || 'default-key-change-in-production',
-        encryptionAlgorithm: process.env.ENCRYPTION_ALGORITHM || 'aes-256-cbc',
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // FIREBASE
+    // ═══════════════════════════════════════════════════════════════════════════════
+    firebase: {
+        enabled: !!(process.env.FIREBASE_PROJECT_ID &&
+            process.env.FIREBASE_PRIVATE_KEY),
+        projectId: process.env.FIREBASE_PROJECT_ID || '',
+        privateKey: process.env.FIREBASE_PRIVATE_KEY || '',
+        clientEmail: process.env.FIREBASE_CLIENT_EMAIL || ''
     },
 
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // CLOUDINARY
+    // ═══════════════════════════════════════════════════════════════════════════════
+    cloudinary: {
+        enabled: !!(process.env.CLOUDINARY_CLOUD_NAME &&
+            process.env.CLOUDINARY_API_KEY),
+        cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
+        apiKey: process.env.CLOUDINARY_API_KEY || '',
+        apiSecret: process.env.CLOUDINARY_API_SECRET || ''
+    },
+
+    // ═══════════════════════════════════════════════════════════════════════════════
     // CORS
+    // ═══════════════════════════════════════════════════════════════════════════════
     cors: {
         origin: (process.env.CORS_ORIGIN || 'http://localhost:3000').split(','),
-        credentials: process.env.CORS_CREDENTIALS === 'true',
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization']
     },
 
-    // Features
-    features: {
-        bookingEnabled: process.env.FEATURE_BOOKING_ENABLED === 'true',
-        paymentsEnabled: process.env.FEATURE_PAYMENTS_ENABLED === 'true',
-        consultationsEnabled: process.env.FEATURE_CONSULTATIONS_ENABLED === 'true',
-        medicalRecordsEnabled: process.env.FEATURE_MEDICAL_RECORDS_ENABLED === 'true',
-        multilingualEnabled: process.env.FEATURE_MULTILINGUAL_ENABLED === 'true',
-        videoCallsEnabled: process.env.FEATURE_VIDEO_CALLS_ENABLED === 'true',
-        insuranceEnabled: process.env.FEATURE_INSURANCE_ENABLED === 'true',
-    },
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // RATE LIMITING
+    // ═══════════════════════════════════════════════════════════════════════════════
+    rateLimit: {
+        enabled: true,
+        windowMs: 15 * 60 * 1000,
+        maxRequests: 100
+    }
 };
 
 export default config;

@@ -1,125 +1,108 @@
-// ImageKit Configuration
+'use strict';
+
 import ImageKit from 'imagekit';
-import logger from '../utils/logger.js';
-import config from './index.js';
+import { environment } from './environment.js';
 
-if (!config.imageKit.publicKey || !config.imageKit.privateKey || !config.imageKit.urlEndpoint) {
-    logger.warn('ImageKit credentials not fully configured');
-}
+// ═══════════════════════════════════════════════════════════════════════════════
+// IMAGEKIT CONFIGURATION
+// ═══════════════════════════════════════════════════════════════════════════════
 
-const imageKit = new ImageKit({
-    publicKey: config.imageKit.publicKey,
-    privateKey: config.imageKit.privateKey,
-    urlEndpoint: config.imageKit.urlEndpoint,
+export const imagekit = new ImageKit({
+    publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
 });
 
-async function testImageKitConnection() {
-    try {
-        const result = await imageKit.listFiles({
-            limit: 1,
-        });
-        logger.info('✅ ImageKit connection successful');
-        return true;
-    } catch (error) {
-        logger.error('ImageKit connection failed');
-        logger.error('Error details:', error.message);
-        return false;
+// ═══════════════════════════════════════════════════════════════════════════════
+// IMAGEKIT SERVICE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export class ImageKitService {
+    constructor() {
+        this.imagekit = imagekit;
+    }
+
+    // Upload file
+    async uploadFile(file, fileName, tags = []) {
+        try {
+            const result = await this.imagekit.upload({
+                file: file.buffer,
+                fileName: fileName,
+                tags: tags,
+                folder: '/medivoy'
+            });
+
+            console.log('✅ File uploaded to ImageKit:', result.url);
+
+            return {
+                success: true,
+                fileId: result.fileId,
+                url: result.url,
+                thumbnailUrl: result.thumbnailUrl
+            };
+        } catch (error) {
+            console.error('❌ ImageKit upload error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Upload multiple files
+    async uploadMultipleFiles(files, tags = []) {
+        try {
+            const uploadPromises = files.map(file =>
+                this.uploadFile(file, `${Date.now()}-${file.originalname}`, tags)
+            );
+
+            const results = await Promise.all(uploadPromises);
+
+            return {
+                success: true,
+                files: results.filter(r => r.success),
+                failed: results.filter(r => !r.success)
+            };
+        } catch (error) {
+            console.error('❌ Multiple upload error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Delete file
+    async deleteFile(fileId) {
+        try {
+            await this.imagekit.deleteFile(fileId);
+            console.log('✅ File deleted from ImageKit:', fileId);
+            return { success: true };
+        } catch (error) {
+            console.error('❌ ImageKit delete error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Get file metadata
+    async getFileMetadata(fileId) {
+        try {
+            const result = await this.imagekit.getFileDetails(fileId);
+            return { success: true, data: result };
+        } catch (error) {
+            console.error('❌ ImageKit metadata error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Get transformation URL
+    getTransformationUrl(url, transformations) {
+        try {
+            return this.imagekit.url({
+                path: url,
+                transformation: transformations
+            });
+        } catch (error) {
+            console.error('❌ Transformation error:', error.message);
+            return null;
+        }
     }
 }
 
-const uploadFile = async(fileBuffer, fileName, folder) => {
-    try {
-        if (!fileBuffer) {
-            throw new Error('File buffer is required');
-        }
+export const imagekitService = new ImageKitService();
 
-        if (!fileName) {
-            throw new Error('File name is required');
-        }
-
-        const folderPath = folder || config.imageKit.folderPrefix || '/medivoy';
-
-        const response = await imageKit.upload({
-            file: fileBuffer,
-            fileName: fileName,
-            folder: folderPath,
-            isPrivateFile: false,
-            useUniqueFileName: true,
-            overwriteFile: false,
-            tags: ['medivoy'],
-            customCoordinates: null,
-            responseFields: 'isPrivateFile,tags',
-        });
-
-        logger.info(`File uploaded successfully: ${fileName}`);
-        return {
-            success: true,
-            fileId: response.fileId,
-            name: response.name,
-            url: response.url,
-            path: response.filePath,
-            size: response.size,
-            createdAt: response.createdAt,
-        };
-    } catch (error) {
-        logger.error('ImageKit file upload failed');
-        logger.error('Error details:', error.message);
-        return {
-            success: false,
-            error: error.message,
-        };
-    }
-};
-
-const deleteFile = async(fileId) => {
-    try {
-        if (!fileId) {
-            throw new Error('File ID is required');
-        }
-
-        await imageKit.deleteFile(fileId);
-        logger.info(`File deleted successfully: ${fileId}`);
-        return {
-            success: true,
-            message: 'File deleted',
-        };
-    } catch (error) {
-        logger.error('ImageKit file deletion failed');
-        logger.error('Error details:', error.message);
-        return {
-            success: false,
-            error: error.message,
-        };
-    }
-};
-
-const getFileUrl = async(fileId) => {
-    try {
-        if (!fileId) {
-            throw new Error('File ID is required');
-        }
-
-        const response = await imageKit.getFileDetails(fileId);
-        return {
-            success: true,
-            url: response.url,
-            name: response.name,
-            size: response.size,
-        };
-    } catch (error) {
-        logger.error('Failed to get file URL');
-        logger.error('Error details:', error.message);
-        return {
-            success: false,
-            error: error.message,
-        };
-    }
-};
-
-export {
-    imageKit,
-    testImageKitConnection,
-    uploadFile,
-    deleteFile,
-    getFileUrl,
-};
+export default imagekit;

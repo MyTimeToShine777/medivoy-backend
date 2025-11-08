@@ -9,12 +9,13 @@ const BookingPreferences = sequelize.define('BookingPreferences', {
         autoIncrement: true,
     },
     bookingId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         allowNull: false,
         unique: true,
         references: {
             model: 'bookings',
-            key: 'id',
+            // Booking model uses `bookingId` (UUID) as its PK attribute.
+            key: 'bookingId',
         },
     },
     preferredRoomType: {

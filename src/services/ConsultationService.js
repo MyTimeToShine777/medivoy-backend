@@ -1,262 +1,165 @@
-// Consultation Service - Video Calls with Google Meet - NO optional chaining
-import { sequelize } from '../config/database.js';
-import logger from '../utils/logger.js';
-import helpers from '../utils/helpers.js';
-import validators from '../utils/validators.js';
-import {
-    ValidationError,
-    NotFoundError,
-} from '../exceptions/index.js';
+'use strict';
 
-class ConsultationService {
-    // Schedule consultation
-    async scheduleConsultation(bookingId, doctorId, consultationDate, type) {
+import { Consultation, Doctor, Patient } from '../models/index.js';
+import { cacheService } from '../config/redis.js';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONSULTATION SERVICE - ULTRA-COMPREHENSIVE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export class ConsultationService {
+    // ─────────────────────────────────────────────────────────────────────────────
+    // CREATE CONSULTATION
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async createConsultation(patientId, doctorId, consultationType, symptoms, notes) {
         try {
-            if (!validators.isValidInteger(bookingId)) {
-                throw new ValidationError('Valid booking ID is required');
+            if (!patientId || !doctorId || !consultationType) {
+                return { success: false, error: 'Patient ID, doctor ID and consultation type required' };
             }
 
-            if (!validators.isValidInteger(doctorId)) {
-                throw new ValidationError('Valid doctor ID is required');
-            }
-
-            if (!validators.isValidDate(consultationDate)) {
-                throw new ValidationError('Valid consultation date is required');
-            }
-
-            if (!type || !['video', 'audio', 'text', 'in_person'].includes(type)) {
-                throw new ValidationError('Valid consultation type is required');
-            }
-
-            // Verify booking exists
-            const Booking = sequelize.models.Booking;
-            const booking = await Booking.findByPk(bookingId);
-            if (!booking) {
-                throw new NotFoundError('Booking not found');
-            }
-
-            // Generate unique Google Meet link
-            const randomCode = helpers.generateRandomString(21).toLowerCase();
-            const meetingLink = `https://meet.google.com/${randomCode}`;
-
-            // Create consultation
-            const Consultation = sequelize.models.Consultation;
             const consultation = await Consultation.create({
-                bookingId: bookingId,
-                patientId: booking.patientId,
+                patientId: patientId,
                 doctorId: doctorId,
-                consultationType: type,
-                consultationDate: new Date(consultationDate),
-                status: 'scheduled',
-                meetingLink: meetingLink,
+                consultationType: consultationType,
+                symptoms: symptoms || '',
+                notes: notes || '',
+                status: 'pending',
+                createdAt: new Date()
             });
 
-            logger.info(`Consultation scheduled: ${consultation.id}`);
+            await cacheService.delete(`consultations_${patientId}`);
+            console.log(`✅ Consultation created: ${consultation.consultationId}`);
 
-            return {
-                consultationId: consultation.id,
-                bookingId: booking.id,
-                doctorId: doctorId,
-                date: consultation.consultationDate,
-                type: consultation.consultationType,
-                meetingLink: meetingLink,
-                status: consultation.status,
-            };
+            return { success: true, data: consultation };
         } catch (error) {
-            logger.error('Consultation scheduling failed');
-            logger.error('Error details:', error.message);
-            throw error;
+            console.error('❌ Create consultation error:', error.message);
+            return { success: false, error: error.message };
         }
     }
 
-    // Get meeting link
-    async getMeetingLink(consultationId) {
+    // ─────────────────────────────────────────────────────────────────────────────
+    // GET PATIENT CONSULTATIONS
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async getPatientConsultations(patientId) {
         try {
-            if (!validators.isValidInteger(consultationId)) {
-                throw new ValidationError('Valid consultation ID is required');
+            if (!patientId) {
+                return { success: false, error: 'Patient ID required' };
             }
 
-            const Consultation = sequelize.models.Consultation;
-            const consultation = await Consultation.findByPk(consultationId);
-            if (!consultation) {
-                throw new NotFoundError('Consultation not found');
-            }
+            const cacheKey = `consultations_${patientId}`;
+            let cached = await cacheService.get(cacheKey);
+            if (cached) return { success: true, data: cached };
 
-            if (!consultation.meetingLink) {
-                throw new NotFoundError('Meeting link not available');
-            }
-
-            logger.info(`Retrieved meeting link for consultation ${consultationId}`);
-
-            return {
-                consultationId: consultation.id,
-                meetingLink: consultation.meetingLink,
-                type: consultation.consultationType,
-            };
-        } catch (error) {
-            logger.error('Failed to get meeting link');
-            logger.error('Error details:', error.message);
-            throw error;
-        }
-    }
-
-    // Start consultation
-    async startConsultation(consultationId) {
-        try {
-            if (!validators.isValidInteger(consultationId)) {
-                throw new ValidationError('Valid consultation ID is required');
-            }
-
-            const Consultation = sequelize.models.Consultation;
-            const consultation = await Consultation.findByPk(consultationId);
-            if (!consultation) {
-                throw new NotFoundError('Consultation not found');
-            }
-
-            if (consultation.status !== 'scheduled') {
-                throw new ValidationError('Consultation is not in scheduled status');
-            }
-
-            consultation.status = 'ongoing';
-            consultation.startedAt = new Date();
-            await consultation.save();
-
-            logger.info(`Consultation started: ${consultationId}`);
-
-            return {
-                consultationId: consultation.id,
-                status: consultation.status,
-                meetingLink: consultation.meetingLink,
-                startedAt: consultation.startedAt,
-            };
-        } catch (error) {
-            logger.error('Consultation start failed');
-            logger.error('Error details:', error.message);
-            throw error;
-        }
-    }
-
-    // End consultation and save notes
-    async endConsultation(consultationId, notes, prescription) {
-        try {
-            if (!validators.isValidInteger(consultationId)) {
-                throw new ValidationError('Valid consultation ID is required');
-            }
-
-            const Consultation = sequelize.models.Consultation;
-            const consultation = await Consultation.findByPk(consultationId);
-            if (!consultation) {
-                throw new NotFoundError('Consultation not found');
-            }
-
-            if (consultation.status !== 'ongoing') {
-                throw new ValidationError('Consultation is not ongoing');
-            }
-
-            const endTime = new Date();
-            const duration = Math.round((endTime - consultation.startedAt) / 60000); // minutes
-
-            consultation.status = 'completed';
-            consultation.endedAt = endTime;
-            consultation.duration = duration;
-            if (notes) consultation.notes = notes;
-            if (prescription) consultation.prescription = prescription;
-            await consultation.save();
-
-            logger.info(`Consultation ended: ${consultationId}`);
-
-            return {
-                consultationId: consultation.id,
-                status: consultation.status,
-                duration: duration,
-                endedAt: consultation.endedAt,
-            };
-        } catch (error) {
-            logger.error('Consultation end failed');
-            logger.error('Error details:', error.message);
-            throw error;
-        }
-    }
-
-    // Get upcoming consultations
-    async getUpcomingConsultations(userId, page, limit) {
-        try {
-            if (!validators.isValidInteger(userId)) {
-                throw new ValidationError('Valid user ID is required');
-            }
-
-            const pageNum = helpers.toInt(page, 1);
-            const limitNum = helpers.toInt(limit, 10);
-            const offset = (pageNum - 1) * limitNum;
-
-            const Consultation = sequelize.models.Consultation;
-            const Op = sequelize.Sequelize.Op;
-
-            const { count, rows } = await Consultation.findAndCountAll({
-                where: {
-                    consultationDate: {
-                        [Op.gte]: new Date(),
-                    },
-                    [Op.or]: [
-                        { doctorId: userId },
-                        { patientId: userId },
-                    ],
-                },
-                offset: offset,
-                limit: limitNum,
-                order: [
-                    ['consultationDate', 'ASC']
+            const consultations = await Consultation.findAll({
+                where: { patientId: patientId },
+                include: [
+                    { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] }
                 ],
+                order: [
+                    ['createdAt', 'DESC']
+                ]
             });
 
-            const pagination = helpers.calculatePagination(pageNum, limitNum, count);
+            await cacheService.set(cacheKey, consultations, 86400);
+            console.log(`✅ Consultations retrieved: ${patientId}`);
 
-            logger.info(`Retrieved ${rows.length} upcoming consultations for user ${userId}`);
-
-            return {
-                data: rows,
-                pagination: pagination,
-            };
+            return { success: true, data: consultations };
         } catch (error) {
-            logger.error('Failed to get upcoming consultations');
-            logger.error('Error details:', error.message);
-            throw error;
+            console.error('❌ Get consultations error:', error.message);
+            return { success: false, error: error.message };
         }
     }
 
-    // Cancel consultation
-    async cancelConsultation(consultationId, reason) {
+    // ─────────────────────────────────────────────────────────────────────────────
+    // UPDATE CONSULTATION
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async updateConsultation(consultationId, diagnosis, treatment, status) {
         try {
-            if (!validators.isValidInteger(consultationId)) {
-                throw new ValidationError('Valid consultation ID is required');
+            if (!consultationId) {
+                return { success: false, error: 'Consultation ID required' };
             }
 
-            const Consultation = sequelize.models.Consultation;
             const consultation = await Consultation.findByPk(consultationId);
+
             if (!consultation) {
-                throw new NotFoundError('Consultation not found');
+                return { success: false, error: 'Consultation not found', code: 'NOT_FOUND' };
             }
 
-            if (!['scheduled', 'ongoing'].includes(consultation.status)) {
-                throw new ValidationError('Cannot cancel completed or cancelled consultation');
-            }
+            await consultation.update({
+                diagnosis: diagnosis !== undefined ? diagnosis : consultation.diagnosis,
+                treatment: treatment !== undefined ? treatment : consultation.treatment,
+                status: status !== undefined ? status : consultation.status,
+                updatedAt: new Date()
+            });
 
-            consultation.status = 'cancelled';
-            if (reason) consultation.notes = reason;
-            await consultation.save();
+            await cacheService.delete(`consultations_${consultation.patientId}`);
+            console.log(`✅ Consultation updated: ${consultationId}`);
 
-            logger.info(`Consultation cancelled: ${consultationId}`);
-
-            return {
-                consultationId: consultation.id,
-                status: consultation.status,
-            };
+            return { success: true, data: consultation };
         } catch (error) {
-            logger.error('Consultation cancellation failed');
-            logger.error('Error details:', error.message);
-            throw error;
+            console.error('❌ Update consultation error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // GET CONSULTATION BY ID
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async getConsultationById(consultationId) {
+        try {
+            if (!consultationId) {
+                return { success: false, error: 'Consultation ID required' };
+            }
+
+            const consultation = await Consultation.findByPk(consultationId, {
+                include: [
+                    { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] },
+                    { model: Patient, attributes: ['firstName', 'lastName', 'email'] }
+                ]
+            });
+
+            if (!consultation) {
+                return { success: false, error: 'Consultation not found', code: 'NOT_FOUND' };
+            }
+
+            return { success: true, data: consultation };
+        } catch (error) {
+            console.error('❌ Get consultation error:', error.message);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // DELETE CONSULTATION
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async deleteConsultation(consultationId) {
+        try {
+            if (!consultationId) {
+                return { success: false, error: 'Consultation ID required' };
+            }
+
+            const consultation = await Consultation.findByPk(consultationId);
+
+            if (!consultation) {
+                return { success: false, error: 'Consultation not found', code: 'NOT_FOUND' };
+            }
+
+            await consultation.destroy();
+            await cacheService.delete(`consultations_${consultation.patientId}`);
+            console.log(`✅ Consultation deleted: ${consultationId}`);
+
+            return { success: true, message: 'Consultation deleted successfully' };
+        } catch (error) {
+            console.error('❌ Delete consultation error:', error.message);
+            return { success: false, error: error.message };
         }
     }
 }
 
-export default new ConsultationService();
+export const consultationService = new ConsultationService();
+export default consultationService;

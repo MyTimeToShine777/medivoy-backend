@@ -1,0 +1,310 @@
+'use strict';
+
+import { Op, sequelize } from 'sequelize';
+import { Role, User, Permission, RolePermission, AuditLog } from '../models/index.js';
+import { ValidationService } from './ValidationService.js';
+import { ErrorHandlingService } from './ErrorHandlingService.js';
+import { AuditLogService } from './AuditLogService.js';
+import { AppError } from '../utils/errors/AppError.js';
+
+export class RoleService {
+    constructor() {
+        this.validationService = new ValidationService();
+        this.errorHandlingService = new ErrorHandlingService();
+        this.auditLogService = new AuditLogService();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // ROLE MANAGEMENT
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    async createRole(roleData) {
+        const transaction = await sequelize.transaction();
+        try {
+            if (!roleData || !roleData.roleName) throw new AppError('Role name required', 400);
+
+            const existingRole = await Role.findOne({
+                where: { roleName: roleData.roleName },
+                transaction: transaction
+            });
+
+            if (existingRole) {
+                await transaction.rollback();
+                throw new AppError('Role already exists', 409);
+            }
+
+            const role = await Role.create({
+                roleId: this._generateRoleId(),
+                roleName: roleData.roleName,
+                roleDescription: roleData.roleDescription || null,
+                isActive: true,
+                createdAt: new Date()
+            }, { transaction: transaction });
+
+            // Assign permissions if provided
+            if (roleData.permissionIds && Array.isArray(roleData.permissionIds)) {
+                for (const permId of roleData.permissionIds) {
+                    await RolePermission.create({
+                        roleId: role.roleId,
+                        permissionId: permId
+                    }, { transaction: transaction });
+                }
+            }
+
+            await this.auditLogService.logAction({
+                action: 'ROLE_CREATED',
+                entityType: 'Role',
+                entityId: role.roleId,
+                userId: 'ADMIN',
+                details: { roleName: roleData.roleName }
+            }, transaction);
+
+            await transaction.commit();
+
+            return { success: true, message: 'Role created', role: role };
+        } catch (error) {
+            await transaction.rollback();
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async getRoleById(roleId) {
+        try {
+            if (!roleId) throw new AppError('Role ID required', 400);
+
+            const role = await Role.findByPk(roleId, {
+                include: [{
+                    model: Permission,
+                    through: { attributes: [] },
+                    attributes: ['permissionId', 'permissionName']
+                }]
+            });
+
+            if (!role) throw new AppError('Role not found', 404);
+
+            return { success: true, role: role };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async listRoles(filters) {
+        try {
+            const limit = filters && filters.limit ? Math.min(filters.limit, 100) : 10;
+            const offset = filters && filters.offset ? filters.offset : 0;
+            const where = {};
+
+            if (filters && filters.isActive !== undefined) where.isActive = filters.isActive;
+
+            const roles = await Role.findAll({
+                where: where,
+                include: [{
+                    model: Permission,
+                    through: { attributes: [] },
+                    attributes: ['permissionName']
+                }],
+                order: [
+                    ['createdAt', 'DESC']
+                ],
+                limit: limit,
+                offset: offset
+            });
+
+            const total = await Role.count({ where: where });
+
+            return {
+                success: true,
+                roles: roles,
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+            };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async updateRole(roleId, updateData) {
+        const transaction = await sequelize.transaction();
+        try {
+            if (!roleId || !updateData) throw new AppError('Required params missing', 400);
+
+            const role = await Role.findByPk(roleId, { transaction: transaction });
+            if (!role) {
+                await transaction.rollback();
+                throw new AppError('Role not found', 404);
+            }
+
+            if (updateData.roleName) role.roleName = updateData.roleName;
+            if (updateData.roleDescription) role.roleDescription = updateData.roleDescription;
+
+            await role.save({ transaction: transaction });
+
+            await this.auditLogService.logAction({
+                action: 'ROLE_UPDATED',
+                entityType: 'Role',
+                entityId: roleId,
+                userId: 'ADMIN',
+                details: {}
+            }, transaction);
+
+            await transaction.commit();
+
+            return { success: true, message: 'Role updated', role: role };
+        } catch (error) {
+            await transaction.rollback();
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async deleteRole(roleId) {
+        const transaction = await sequelize.transaction();
+        try {
+            if (!roleId) throw new AppError('Role ID required', 400);
+
+            const role = await Role.findByPk(roleId, { transaction: transaction });
+            if (!role) {
+                await transaction.rollback();
+                throw new AppError('Role not found', 404);
+            }
+
+            const usersWithRole = await User.count({ where: { roleId: roleId } });
+            if (usersWithRole > 0) {
+                await transaction.rollback();
+                throw new AppError('Cannot delete role with assigned users', 400);
+            }
+
+            await RolePermission.destroy({ where: { roleId: roleId }, transaction: transaction });
+            await role.destroy({ transaction: transaction });
+
+            await this.auditLogService.logAction({
+                action: 'ROLE_DELETED',
+                entityType: 'Role',
+                entityId: roleId,
+                userId: 'ADMIN',
+                details: {}
+            }, transaction);
+
+            await transaction.commit();
+
+            return { success: true, message: 'Role deleted' };
+        } catch (error) {
+            await transaction.rollback();
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // ROLE PERMISSIONS
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    async assignPermissionToRole(roleId, permissionId) {
+        const transaction = await sequelize.transaction();
+        try {
+            if (!roleId || !permissionId) throw new AppError('Role and permission IDs required', 400);
+
+            const role = await Role.findByPk(roleId, { transaction: transaction });
+            if (!role) {
+                await transaction.rollback();
+                throw new AppError('Role not found', 404);
+            }
+
+            const permission = await Permission.findByPk(permissionId, { transaction: transaction });
+            if (!permission) {
+                await transaction.rollback();
+                throw new AppError('Permission not found', 404);
+            }
+
+            const existing = await RolePermission.findOne({
+                where: { roleId: roleId, permissionId: permissionId },
+                transaction: transaction
+            });
+
+            if (existing) {
+                await transaction.rollback();
+                throw new AppError('Permission already assigned', 409);
+            }
+
+            await RolePermission.create({
+                roleId: roleId,
+                permissionId: permissionId
+            }, { transaction: transaction });
+
+            await this.auditLogService.logAction({
+                action: 'PERMISSION_ASSIGNED_TO_ROLE',
+                entityType: 'RolePermission',
+                entityId: roleId + '-' + permissionId,
+                userId: 'ADMIN',
+                details: { permissionId: permissionId }
+            }, transaction);
+
+            await transaction.commit();
+
+            return { success: true, message: 'Permission assigned' };
+        } catch (error) {
+            await transaction.rollback();
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async removePermissionFromRole(roleId, permissionId) {
+        const transaction = await sequelize.transaction();
+        try {
+            if (!roleId || !permissionId) throw new AppError('Required params missing', 400);
+
+            const rolePermission = await RolePermission.findOne({
+                where: { roleId: roleId, permissionId: permissionId },
+                transaction: transaction
+            });
+
+            if (!rolePermission) {
+                await transaction.rollback();
+                throw new AppError('Permission not assigned to this role', 404);
+            }
+
+            await rolePermission.destroy({ transaction: transaction });
+
+            await this.auditLogService.logAction({
+                action: 'PERMISSION_REMOVED_FROM_ROLE',
+                entityType: 'RolePermission',
+                entityId: roleId + '-' + permissionId,
+                userId: 'ADMIN',
+                details: {}
+            }, transaction);
+
+            await transaction.commit();
+
+            return { success: true, message: 'Permission removed' };
+        } catch (error) {
+            await transaction.rollback();
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async getRolePermissions(roleId) {
+        try {
+            if (!roleId) throw new AppError('Role ID required', 400);
+
+            const permissions = await RolePermission.findAll({
+                where: { roleId: roleId },
+                include: [
+                    { model: Permission, attributes: ['permissionId', 'permissionName', 'permissionDescription'] }
+                ]
+            });
+
+            return { success: true, permissions: permissions, total: permissions.length };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // HELPER METHODS
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    _generateRoleId() {
+        const ts = Date.now().toString(36).toUpperCase();
+        const rnd = Math.floor(Math.random() * 1000).toString(36).toUpperCase();
+        return 'ROLE-' + ts + rnd;
+    }
+}
+
+export default RoleService;

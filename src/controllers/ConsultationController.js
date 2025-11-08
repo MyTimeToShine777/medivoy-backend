@@ -1,145 +1,149 @@
-// Consultation Controller - Video Calls with Google Meet - NO optional chaining
-import asyncHandler from '../middleware/asyncHandler.middleware.js';
-import ConsultationService from '../services/ConsultationService.js';
-import { sendSuccess, sendError, sendPaginatedSuccess } from '../utils/response.js';
-import { HTTP_STATUS } from '../constants/httpStatus.js';
-import logger from '../utils/logger.js';
+'use strict';
 
-class ConsultationController {
-    // Schedule consultation
-    scheduleConsultation = asyncHandler(async(req, res) => {
+import { consultationService } from '../services/ConsultationService.js';
+import { ResponseFormatter } from '../utils/helpers/responseFormatter.js';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONSULTATION CONTROLLER - ULTRA-COMPREHENSIVE
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export class ConsultationController {
+    // ─────────────────────────────────────────────────────────────────────────────
+    // CREATE CONSULTATION
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async createConsultation(req, res, next) {
         try {
-            const { bookingId, doctorId, consultationDate, type } = req.body;
+            const requiredFields = ['doctorId', 'consultationType'];
+            const missing = requiredFields.filter(field => req.body[field] === undefined);
 
-            if (!bookingId || !doctorId || !consultationDate || !type) {
-                return sendError(res, HTTP_STATUS.BAD_REQUEST, 'All consultation details are required');
+            if (missing.length > 0) {
+                return res.status(400).json(
+                    ResponseFormatter.error(
+                        `Missing required fields: ${missing.join(', ')}`,
+                        400,
+                        'VALIDATION_ERROR'
+                    )
+                );
             }
 
-            const result = await ConsultationService.scheduleConsultation(
-                bookingId,
-                doctorId,
-                consultationDate,
-                type
+            const result = await consultationService.createConsultation(
+                req.user.userId,
+                req.body.doctorId,
+                req.body.consultationType,
+                req.body.symptoms,
+                req.body.notes
             );
 
-            logger.info(`Consultation scheduled: ${result.consultationId}`);
-            return sendSuccess(res, HTTP_STATUS.CREATED, 'Consultation scheduled successfully', result);
-        } catch (error) {
-            logger.error('Schedule consultation error:', error.message);
-            throw error;
-        }
-    });
-
-    // Get meeting link
-    getMeetingLink = asyncHandler(async(req, res) => {
-        try {
-            const { consultationId } = req.params;
-
-            if (!consultationId) {
-                return sendError(res, HTTP_STATUS.BAD_REQUEST, 'Consultation ID is required');
+            if (!result.success) {
+                return res.status(400).json(ResponseFormatter.error(result.error, 400, 'CONSULTATION_ERROR'));
             }
 
-            const result = await ConsultationService.getMeetingLink(parseInt(consultationId));
+            console.log(`✅ Consultation created: ${result.data.consultationId}`);
 
-            logger.info(`Retrieved meeting link for consultation ${consultationId}`);
-            return sendSuccess(res, HTTP_STATUS.OK, 'Meeting link retrieved', result);
+            return res.status(201).json(ResponseFormatter.created(result.data, 'Consultation created successfully'));
         } catch (error) {
-            logger.error('Get meeting link error:', error.message);
-            throw error;
+            console.error('❌ Create consultation error:', error.message);
+            return res.status(500).json(ResponseFormatter.error(error.message, 500, 'SERVER_ERROR'));
         }
-    });
+    }
 
-    // Start consultation
-    startConsultation = asyncHandler(async(req, res) => {
+    // ─────────────────────────────────────────────────────────────────────────────
+    // GET PATIENT CONSULTATIONS
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async getPatientConsultations(req, res, next) {
         try {
-            const { consultationId } = req.params;
+            const result = await consultationService.getPatientConsultations(req.user.userId);
 
-            if (!consultationId) {
-                return sendError(res, HTTP_STATUS.BAD_REQUEST, 'Consultation ID is required');
+            if (!result.success) {
+                return res.status(400).json(ResponseFormatter.error(result.error, 400, 'CONSULTATION_ERROR'));
             }
 
-            const result = await ConsultationService.startConsultation(parseInt(consultationId));
-
-            logger.info(`Consultation started: ${consultationId}`);
-            return sendSuccess(res, HTTP_STATUS.OK, 'Consultation started', result);
+            return res.status(200).json(ResponseFormatter.success(result.data, 'Consultations retrieved'));
         } catch (error) {
-            logger.error('Start consultation error:', error.message);
-            throw error;
+            console.error('❌ Get consultations error:', error.message);
+            return res.status(500).json(ResponseFormatter.error(error.message, 500, 'SERVER_ERROR'));
         }
-    });
+    }
 
-    // End consultation and save notes/prescription
-    endConsultation = asyncHandler(async(req, res) => {
+    // ─────────────────────────────────────────────────────────────────────────────
+    // GET CONSULTATION BY ID
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async getConsultationById(req, res, next) {
         try {
-            const { consultationId } = req.params;
-            const { notes, prescription } = req.body;
-
-            if (!consultationId) {
-                return sendError(res, HTTP_STATUS.BAD_REQUEST, 'Consultation ID is required');
+            if (!req.params.consultationId) {
+                return res.status(400).json(ResponseFormatter.error('Consultation ID required', 400, 'VALIDATION_ERROR'));
             }
 
-            const result = await ConsultationService.endConsultation(
-                parseInt(consultationId),
-                notes,
-                prescription
+            const result = await consultationService.getConsultationById(req.params.consultationId);
+
+            if (!result.success) {
+                return res.status(404).json(ResponseFormatter.error(result.error, 404, result.code || 'NOT_FOUND'));
+            }
+
+            return res.status(200).json(ResponseFormatter.success(result.data));
+        } catch (error) {
+            console.error('❌ Get consultation error:', error.message);
+            return res.status(500).json(ResponseFormatter.error(error.message, 500, 'SERVER_ERROR'));
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // UPDATE CONSULTATION
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async updateConsultation(req, res, next) {
+        try {
+            if (!req.params.consultationId) {
+                return res.status(400).json(ResponseFormatter.error('Consultation ID required', 400, 'VALIDATION_ERROR'));
+            }
+
+            const result = await consultationService.updateConsultation(
+                req.params.consultationId,
+                req.body.diagnosis,
+                req.body.treatment,
+                req.body.status
             );
 
-            logger.info(`Consultation ended: ${consultationId}`);
-            return sendSuccess(res, HTTP_STATUS.OK, 'Consultation ended successfully', result);
-        } catch (error) {
-            logger.error('End consultation error:', error.message);
-            throw error;
-        }
-    });
-
-    // Get upcoming consultations for user
-    getUpcomingConsultations = asyncHandler(async(req, res) => {
-        try {
-            const userId = req.user.userId;
-            const { page, limit } = req.query;
-
-            if (!userId) {
-                return sendError(res, HTTP_STATUS.UNAUTHORIZED, 'User not authenticated');
+            if (!result.success) {
+                return res.status(400).json(ResponseFormatter.error(result.error, 400, result.code || 'CONSULTATION_ERROR'));
             }
 
-            const result = await ConsultationService.getUpcomingConsultations(userId, page, limit);
+            console.log(`✅ Consultation updated: ${req.params.consultationId}`);
 
-            logger.info(`Retrieved ${result.data.length} upcoming consultations for user ${userId}`);
-            return sendPaginatedSuccess(
-                res,
-                HTTP_STATUS.OK,
-                'Upcoming consultations retrieved',
-                result.data,
-                result.pagination
-            );
+            return res.status(200).json(ResponseFormatter.success(result.data, 'Consultation updated successfully'));
         } catch (error) {
-            logger.error('Get upcoming consultations error:', error.message);
-            throw error;
+            console.error('❌ Update consultation error:', error.message);
+            return res.status(500).json(ResponseFormatter.error(error.message, 500, 'SERVER_ERROR'));
         }
-    });
+    }
 
-    // Cancel consultation
-    cancelConsultation = asyncHandler(async(req, res) => {
+    // ─────────────────────────────────────────────────────────────────────────────
+    // DELETE CONSULTATION
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    async deleteConsultation(req, res, next) {
         try {
-            const { consultationId } = req.params;
-            const { reason } = req.body;
-
-            if (!consultationId) {
-                return sendError(res, HTTP_STATUS.BAD_REQUEST, 'Consultation ID is required');
+            if (!req.params.consultationId) {
+                return res.status(400).json(ResponseFormatter.error('Consultation ID required', 400, 'VALIDATION_ERROR'));
             }
 
-            const result = await ConsultationService.cancelConsultation(
-                parseInt(consultationId),
-                reason
-            );
+            const result = await consultationService.deleteConsultation(req.params.consultationId);
 
-            logger.info(`Consultation cancelled: ${consultationId}`);
-            return sendSuccess(res, HTTP_STATUS.OK, 'Consultation cancelled successfully', result);
+            if (!result.success) {
+                return res.status(400).json(ResponseFormatter.error(result.error, 400, result.code || 'CONSULTATION_ERROR'));
+            }
+
+            console.log(`✅ Consultation deleted: ${req.params.consultationId}`);
+
+            return res.status(200).json(ResponseFormatter.success({}, result.message));
         } catch (error) {
-            logger.error('Cancel consultation error:', error.message);
-            throw error;
+            console.error('❌ Delete consultation error:', error.message);
+            return res.status(500).json(ResponseFormatter.error(error.message, 500, 'SERVER_ERROR'));
         }
-    });
+    }
 }
 
 export default new ConsultationController();

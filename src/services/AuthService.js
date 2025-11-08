@@ -1,393 +1,574 @@
-// Authentication Service - Email/Password + OAuth - NO optional chaining
-import { sequelize } from '../config/database.js';
-import logger from '../utils/logger.js';
-import passwordUtil from '../utils/password.js';
-import jwtUtil from '../utils/jwt.js';
-import cacheUtil from '../utils/cache.js';
-import helpers from '../utils/helpers.js';
-import {
-    AuthenticationError,
-    ValidationError,
-    ConflictError,
-    NotFoundError,
-} from '../exceptions/index.js';
-import validators from '../utils/validators.js';
+// Auth Service - Complete authentication with OAuth + Email
+// NO optional chaining - Production Ready
+import { User, RefreshToken, PasswordReset } from '../models/index.js';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+import passport from 'passport';
+import GoogleStrategy from 'passport-google-oauth20';
+import FacebookStrategy from 'passport-facebook';
+import nodemailer from 'nodemailer';
+import crypto from 'crypto';
 
 class AuthService {
-    // Register new user
-    async register(userData) {
-        try {
-            if (!userData || typeof userData !== 'object') {
-                throw new ValidationError('User data is required');
-            }
+    constructor() {
+        // Email transporter
+        this.emailTransporter = nodemailer.createTransport({
+            service: process.env.EMAIL_SERVICE || 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASSWORD,
+            },
+        });
 
-            // Validate required fields
-            const requiredFields = ['email', 'password', 'firstName', 'lastName', 'phone', 'role'];
-            if (!validators.hasRequiredFields(userData, requiredFields)) {
-                throw new ValidationError('Missing required fields: email, password, firstName, lastName, phone, role');
-            }
+        this.initializePassport();
+    }
 
-            // Validate email format
-            if (!validators.isValidEmail(userData.email)) {
-                throw new ValidationError('Invalid email format');
-            }
-
-            // Validate password strength
-            if (!validators.isValidPassword(userData.password)) {
-                throw new ValidationError('Password must be at least 8 characters with uppercase, lowercase, number and special character');
-            }
-
-            // Validate phone format
-            if (!validators.isValidPhone(userData.phone)) {
-                throw new ValidationError('Invalid phone number format');
-            }
-
-            // Check if user already exists
-            const User = sequelize.models.User;
-            const existingUser = await User.findOne({
-                where: {
-                    email: userData.email,
+    // ========== INITIALIZE PASSPORT ==========
+    initializePassport() {
+        // Google Strategy
+        passport.use(
+            new GoogleStrategy.Strategy({
+                    clientID: process.env.GOOGLE_CLIENT_ID,
+                    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+                    callbackURL: process.env.GOOGLE_CALLBACK_URL || '/auth/google/callback',
                 },
+                async(accessToken, refreshToken, profile, done) => {
+                    try {
+                        let user = await User.findOne({
+                            where: { email: profile.emails[0].value },
+                        });
+
+                        if (!user) {
+                            user = await User.create({
+                                firstName: profile.name.givenName || '',
+                                lastName: profile.name.familyName || '',
+                                email: profile.emails[0].value,
+                                password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
+                                authProvider: 'google',
+                                authProviderId: profile.id,
+                                profilePicture: profile.photos[0].value || null,
+                                emailVerified: true,
+                                status: 'active',
+                            });
+                        } else if (!user.authProviderId) {
+                            user.authProvider = 'google';
+                            user.authProviderId = profile.id;
+                            await user.save();
+                        }
+
+                        return done(null, user);
+                    } catch (error) {
+                        return done(error, null);
+                    }
+                }
+            )
+        );
+
+        // Facebook Strategy
+        passport.use(
+            new FacebookStrategy.Strategy({
+                    clientID: process.env.FACEBOOK_APP_ID,
+                    clientSecret: process.env.FACEBOOK_APP_SECRET,
+                    callbackURL: process.env.FACEBOOK_CALLBACK_URL || '/auth/facebook/callback',
+                    profileFields: ['id', 'emails', 'name', 'picture.type(large)'],
+                },
+                async(accessToken, refreshToken, profile, done) => {
+                    try {
+                        let user = await User.findOne({
+                            where: { email: profile.emails[0].value },
+                        });
+
+                        if (!user) {
+                            user = await User.create({
+                                firstName: profile.name.givenName || '',
+                                lastName: profile.name.familyName || '',
+                                email: profile.emails[0].value,
+                                password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
+                                authProvider: 'facebook',
+                                authProviderId: profile.id,
+                                profilePicture: profile.photos[0].value || null,
+                                emailVerified: true,
+                                status: 'active',
+                            });
+                        } else if (!user.authProviderId) {
+                            user.authProvider = 'facebook';
+                            user.authProviderId = profile.id;
+                            await user.save();
+                        }
+
+                        return done(null, user);
+                    } catch (error) {
+                        return done(error, null);
+                    }
+                }
+            )
+        );
+
+        // Serialize user
+        passport.serializeUser((user, done) => {
+            done(null, user.userId);
+        });
+
+        // Deserialize user
+        passport.deserializeUser(async(userId, done) => {
+            try {
+                const user = await User.findByPk(userId);
+                done(null, user);
+            } catch (error) {
+                done(error, null);
+            }
+        });
+    }
+
+    // ========== TRADITIONAL EMAIL/PASSWORD SIGNUP ==========
+    async signupWithEmail(signupData) {
+        try {
+            const existingUser = await User.findOne({
+                where: { email: signupData.email },
             });
 
             if (existingUser) {
-                throw new ConflictError('Email already registered');
+                return {
+                    success: false,
+                    error: 'Email already registered',
+                };
             }
 
-            // Hash password
-            const hashedPassword = await passwordUtil.hashPassword(userData.password);
+            if (!this.validatePassword(signupData.password)) {
+                return {
+                    success: false,
+                    error: 'Password must be at least 8 characters with uppercase, lowercase, and numbers',
+                };
+            }
 
-            // Create user
+            const hashedPassword = await bcrypt.hash(signupData.password, 10);
+
             const user = await User.create({
-                email: userData.email,
+                firstName: signupData.firstName,
+                lastName: signupData.lastName,
+                email: signupData.email,
                 password: hashedPassword,
-                firstName: userData.firstName,
-                lastName: userData.lastName,
-                phone: userData.phone,
-                role: userData.role,
-                isActive: true,
-                emailVerified: false,
+                authProvider: 'email',
+                status: 'active',
             });
 
-            logger.info(`User registered: ${userData.email}`);
-
-            // Generate tokens
-            const accessToken = jwtUtil.generateAccessToken({
-                userId: user.id,
-                email: user.email,
-                role: user.role,
-            });
-
-            const refreshToken = jwtUtil.generateRefreshToken({
-                userId: user.id,
-                email: user.email,
-            });
+            // Send verification email
+            await this.sendVerificationEmail(user.email);
 
             return {
-                user: {
-                    id: user.id,
+                success: true,
+                data: {
+                    userId: user.userId,
                     email: user.email,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    role: user.role,
+                    message: 'Signup successful. Please verify your email.',
                 },
-                accessToken,
-                refreshToken,
             };
         } catch (error) {
-            logger.error('User registration failed');
-            logger.error('Error details:', error.message);
-            throw error;
+            return { success: false, error: error.message };
         }
     }
 
-    // Login with email and password
-    async login(email, password) {
+    // ========== TRADITIONAL EMAIL/PASSWORD LOGIN ==========
+    async loginWithEmail(email, password) {
         try {
-            if (!email || !password) {
-                throw new ValidationError('Email and password are required');
-            }
-
-            if (!validators.isValidEmail(email)) {
-                throw new ValidationError('Invalid email format');
-            }
-
-            // Find user
-            const User = sequelize.models.User;
-            const user = await User.findOne({
-                where: {
-                    email: email,
-                },
-            });
+            const user = await User.findOne({ where: { email } });
 
             if (!user) {
-                throw new AuthenticationError('Invalid email or password');
+                return {
+                    success: false,
+                    error: 'Invalid email or password',
+                };
             }
 
-            // Check if user is active
-            if (!user.isActive) {
-                throw new AuthenticationError('User account is inactive');
-            }
-
-            // Verify password
-            const isPasswordValid = await passwordUtil.verifyPassword(password, user.password);
+            const isPasswordValid = await bcrypt.compare(password, user.password);
 
             if (!isPasswordValid) {
-                throw new AuthenticationError('Invalid email or password');
+                return {
+                    success: false,
+                    error: 'Invalid email or password',
+                };
             }
 
-            logger.info(`User logged in: ${email}`);
+            if (user.status === 'inactive') {
+                return {
+                    success: false,
+                    error: 'Account is inactive',
+                };
+            }
 
-            // Generate tokens
-            const accessToken = jwtUtil.generateAccessToken({
-                userId: user.id,
-                email: user.email,
-                role: user.role,
-            });
-
-            const refreshToken = jwtUtil.generateRefreshToken({
-                userId: user.id,
-                email: user.email,
-            });
+            const accessToken = this.generateAccessToken(user);
+            const refreshToken = await this.generateRefreshToken(user);
 
             return {
-                user: {
-                    id: user.id,
-                    email: user.email,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    role: user.role,
+                success: true,
+                data: {
+                    user,
+                    accessToken,
+                    refreshToken,
                 },
-                accessToken,
-                refreshToken,
             };
         } catch (error) {
-            logger.error('Login failed');
-            logger.error('Error details:', error.message);
-            throw error;
+            return { success: false, error: error.message };
         }
     }
 
-    // Google OAuth login/register
-    async googleOAuthLogin(googleData) {
+    // ========== GOOGLE OAUTH LOGIN ==========
+    async handleGoogleCallback(profile) {
         try {
-            if (!googleData || !googleData.email || !googleData.sub) {
-                throw new ValidationError('Invalid Google data');
-            }
-
-            const User = sequelize.models.User;
-
-            // Find user by email
             let user = await User.findOne({
-                where: {
-                    email: googleData.email,
-                },
+                where: { email: profile.emails[0].value },
             });
 
-            // If user doesn't exist, create new user
             if (!user) {
-                const randomPassword = helpers.generateRandomString(16);
-                const hashedPassword = await passwordUtil.hashPassword(randomPassword);
-
                 user = await User.create({
-                    email: googleData.email,
-                    password: hashedPassword,
-                    firstName: googleData.given_name || 'Google',
-                    lastName: googleData.family_name || 'User',
-                    phone: '', // Empty for OAuth
-                    role: 'patient', // Default role
-                    isActive: true,
-                    emailVerified: true, // Google email is verified
-                    googleId: googleData.sub,
-                    avatar: googleData.picture || null,
+                    firstName: profile.name.givenName || '',
+                    lastName: profile.name.familyName || '',
+                    email: profile.emails[0].value,
+                    password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
+                    authProvider: 'google',
+                    authProviderId: profile.id,
+                    profilePicture: profile.photos[0].value || null,
+                    emailVerified: true,
+                    status: 'active',
                 });
-
-                logger.info(`New user created via Google OAuth: ${googleData.email}`);
-            } else {
-                // Update Google ID if not set
-                if (!user.googleId) {
-                    user.googleId = googleData.sub;
-                    await user.save();
-                }
+            } else if (!user.authProviderId) {
+                user.authProvider = 'google';
+                user.authProviderId = profile.id;
+                await user.save();
             }
 
-            // Check if user is active
-            if (!user.isActive) {
-                throw new AuthenticationError('User account is inactive');
-            }
-
-            logger.info(`User logged in via Google: ${googleData.email}`);
-
-            // Generate tokens
-            const accessToken = jwtUtil.generateAccessToken({
-                userId: user.id,
-                email: user.email,
-                role: user.role,
-            });
-
-            const refreshToken = jwtUtil.generateRefreshToken({
-                userId: user.id,
-                email: user.email,
-            });
+            const accessToken = this.generateAccessToken(user);
+            const refreshToken = await this.generateRefreshToken(user);
 
             return {
-                user: {
-                    id: user.id,
-                    email: user.email,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    role: user.role,
-                    avatar: user.avatar,
+                success: true,
+                data: {
+                    user,
+                    accessToken,
+                    refreshToken,
                 },
-                accessToken,
-                refreshToken,
             };
         } catch (error) {
-            logger.error('Google OAuth login failed');
-            logger.error('Error details:', error.message);
-            throw error;
+            return { success: false, error: error.message };
         }
     }
 
-    // Facebook OAuth login/register
-    async facebookOAuthLogin(facebookData) {
+    // ========== FACEBOOK OAUTH LOGIN ==========
+    async handleFacebookCallback(profile) {
         try {
-            if (!facebookData || !facebookData.email || !facebookData.id) {
-                throw new ValidationError('Invalid Facebook data');
+            const email = profile.emails && profile.emails[0] ? profile.emails[0].value : null;
+
+            if (!email) {
+                return {
+                    success: false,
+                    error: 'Facebook email not provided',
+                };
             }
 
-            const User = sequelize.models.User;
+            let user = await User.findOne({ where: { email } });
 
-            // Find user by email
-            let user = await User.findOne({
-                where: {
-                    email: facebookData.email,
-                },
-            });
-
-            // If user doesn't exist, create new user
             if (!user) {
-                const randomPassword = helpers.generateRandomString(16);
-                const hashedPassword = await passwordUtil.hashPassword(randomPassword);
-
                 user = await User.create({
-                    email: facebookData.email,
-                    password: hashedPassword,
-                    firstName: facebookData.first_name || 'Facebook',
-                    lastName: facebookData.last_name || 'User',
-                    phone: '', // Empty for OAuth
-                    role: 'patient', // Default role
-                    isActive: true,
-                    emailVerified: true, // Facebook email is verified
-                    facebookId: facebookData.id,
-                    avatar: facebookData.picture && facebookData.picture.data ?
-                        facebookData.picture.data.url :
-                        null,
+                    firstName: profile.name.givenName || '',
+                    lastName: profile.name.familyName || '',
+                    email,
+                    password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
+                    authProvider: 'facebook',
+                    authProviderId: profile.id,
+                    profilePicture: profile.photos && profile.photos[0] ? profile.photos[0].value : null,
+                    emailVerified: true,
+                    status: 'active',
                 });
-
-                logger.info(`New user created via Facebook OAuth: ${facebookData.email}`);
-            } else {
-                // Update Facebook ID if not set
-                if (!user.facebookId) {
-                    user.facebookId = facebookData.id;
-                    await user.save();
-                }
+            } else if (!user.authProviderId) {
+                user.authProvider = 'facebook';
+                user.authProviderId = profile.id;
+                await user.save();
             }
 
-            // Check if user is active
-            if (!user.isActive) {
-                throw new AuthenticationError('User account is inactive');
-            }
-
-            logger.info(`User logged in via Facebook: ${facebookData.email}`);
-
-            // Generate tokens
-            const accessToken = jwtUtil.generateAccessToken({
-                userId: user.id,
-                email: user.email,
-                role: user.role,
-            });
-
-            const refreshToken = jwtUtil.generateRefreshToken({
-                userId: user.id,
-                email: user.email,
-            });
+            const accessToken = this.generateAccessToken(user);
+            const refreshToken = await this.generateRefreshToken(user);
 
             return {
-                user: {
-                    id: user.id,
-                    email: user.email,
-                    firstName: user.firstName,
-                    lastName: user.lastName,
-                    role: user.role,
-                    avatar: user.avatar,
+                success: true,
+                data: {
+                    user,
+                    accessToken,
+                    refreshToken,
                 },
-                accessToken,
-                refreshToken,
             };
         } catch (error) {
-            logger.error('Facebook OAuth login failed');
-            logger.error('Error details:', error.message);
-            throw error;
+            return { success: false, error: error.message };
         }
     }
 
-    // Refresh token
-    async refreshToken(refreshToken) {
+    // ========== REFRESH TOKEN ==========
+    async refreshAccessToken(refreshToken) {
         try {
-            if (!refreshToken) {
-                throw new ValidationError('Refresh token is required');
+            const token = await RefreshToken.findOne({
+                where: { token: refreshToken, isRevoked: false },
+            });
+
+            if (!token) {
+                return { success: false, error: 'Invalid refresh token' };
             }
 
-            // Verify refresh token
-            const decoded = jwtUtil.verifyRefreshToken(refreshToken);
+            if (token.isExpired()) {
+                return { success: false, error: 'Refresh token expired' };
+            }
 
-            const User = sequelize.models.User;
-            const user = await User.findByPk(decoded.userId);
+            const user = await User.findByPk(token.userId);
 
             if (!user) {
-                throw new NotFoundError('User', 'not found');
+                return { success: false, error: 'User not found' };
             }
 
-            if (!user.isActive) {
-                throw new AuthenticationError('User account is inactive');
-            }
-
-            logger.info(`Token refreshed for user: ${user.email}`);
-
-            // Generate new access token
-            const newAccessToken = jwtUtil.generateAccessToken({
-                userId: user.id,
-                email: user.email,
-                role: user.role,
-            });
+            const newAccessToken = this.generateAccessToken(user);
 
             return {
-                accessToken: newAccessToken,
+                success: true,
+                data: { accessToken: newAccessToken },
             };
         } catch (error) {
-            logger.error('Token refresh failed');
-            logger.error('Error details:', error.message);
-            throw error;
+            return { success: false, error: error.message };
         }
     }
 
-    // Logout
-    async logout(userId) {
+    // ========== LOGOUT ==========
+    async logout(refreshToken) {
         try {
-            if (!userId) {
-                throw new ValidationError('User ID is required');
+            const token = await RefreshToken.findOne({
+                where: { token: refreshToken },
+            });
+
+            if (token) {
+                await token.revoke('User logout');
             }
 
-            logger.info(`User logged out: ${userId}`);
+            return { success: true, message: 'Logged out successfully' };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ========== SEND VERIFICATION EMAIL ==========
+    async sendVerificationEmail(email) {
+        try {
+            const verificationLink = `${process.env.APP_URL}/auth/verify-email?email=${email}`;
+
+            const mailOptions = {
+                from: process.env.EMAIL_FROM,
+                to: email,
+                subject: 'Email Verification - Medivoy',
+                html: `
+                    <h2>Welcome to Medivoy</h2>
+                    <p>Please verify your email by clicking the link below:</p>
+                    <a href="${verificationLink}">Verify Email</a>
+                    <p>This link expires in 24 hours.</p>
+                `,
+            };
+
+            await this.emailTransporter.sendMail(mailOptions);
+
+            return { success: true };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ========== VERIFY EMAIL ==========
+    async verifyEmail(email) {
+        try {
+            const user = await User.findOne({ where: { email } });
+
+            if (!user) {
+                return { success: false, error: 'User not found' };
+            }
+
+            user.emailVerified = true;
+            user.emailVerifiedAt = new Date();
+            await user.save();
+
+            return { success: true, message: 'Email verified successfully' };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ========== REQUEST PASSWORD RESET ==========
+    async requestPasswordReset(email) {
+        try {
+            const user = await User.findOne({ where: { email } });
+
+            if (!user) {
+                return {
+                    success: false,
+                    error: 'If email exists, reset link has been sent',
+                };
+            }
+
+            const resetToken = crypto.randomBytes(32).toString('hex');
+            const hashedToken = await bcrypt.hash(resetToken, 10);
+
+            await PasswordReset.create({
+                userId: user.userId,
+                token: hashedToken,
+                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            });
+
+            const resetLink = `${process.env.APP_URL}/auth/reset-password?token=${resetToken}`;
+
+            const mailOptions = {
+                from: process.env.EMAIL_FROM,
+                to: email,
+                subject: 'Password Reset - Medivoy',
+                html: `
+                    <h2>Password Reset Request</h2>
+                    <p>Click the link below to reset your password:</p>
+                    <a href="${resetLink}">Reset Password</a>
+                    <p>This link expires in 24 hours.</p>
+                    <p>If you didn't request this, ignore this email.</p>
+                `,
+            };
+
+            await this.emailTransporter.sendMail(mailOptions);
+
             return {
-                message: 'Logout successful',
+                success: true,
+                message: 'Password reset link sent to email',
             };
         } catch (error) {
-            logger.error('Logout failed');
-            logger.error('Error details:', error.message);
-            throw error;
+            return { success: false, error: error.message };
         }
+    }
+
+    // ========== RESET PASSWORD ==========
+    async resetPassword(token, newPassword) {
+        try {
+            const resetRecord = await PasswordReset.findOne({
+                where: { used: false },
+            });
+
+            if (!resetRecord) {
+                return { success: false, error: 'Invalid or expired reset token' };
+            }
+
+            if (new Date(resetRecord.expiresAt) < new Date()) {
+                return { success: false, error: 'Reset token has expired' };
+            }
+
+            const isTokenValid = await bcrypt.compare(token, resetRecord.token);
+
+            if (!isTokenValid) {
+                return { success: false, error: 'Invalid reset token' };
+            }
+
+            if (!this.validatePassword(newPassword)) {
+                return {
+                    success: false,
+                    error: 'Password must be at least 8 characters with uppercase, lowercase, and numbers',
+                };
+            }
+
+            const user = await User.findByPk(resetRecord.userId);
+
+            if (!user) {
+                return { success: false, error: 'User not found' };
+            }
+
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            user.password = hashedPassword;
+            await user.save();
+
+            resetRecord.used = true;
+            resetRecord.usedAt = new Date();
+            await resetRecord.save();
+
+            return { success: true, message: 'Password reset successfully' };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ========== CHANGE PASSWORD ==========
+    async changePassword(userId, oldPassword, newPassword) {
+        try {
+            const user = await User.findByPk(userId);
+
+            if (!user) {
+                return { success: false, error: 'User not found' };
+            }
+
+            const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+
+            if (!isPasswordValid) {
+                return { success: false, error: 'Old password is incorrect' };
+            }
+
+            if (!this.validatePassword(newPassword)) {
+                return {
+                    success: false,
+                    error: 'Password must be at least 8 characters with uppercase, lowercase, and numbers',
+                };
+            }
+
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            user.password = hashedPassword;
+            await user.save();
+
+            return { success: true, message: 'Password changed successfully' };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ========== TOKEN VERIFICATION ==========
+    verifyToken(token) {
+        try {
+            const decoded = jwt.verify(
+                token,
+                process.env.JWT_SECRET || 'your-secret-key'
+            );
+            return { valid: true, decoded };
+        } catch (error) {
+            return { valid: false, error: error.message };
+        }
+    }
+
+    // ========== HELPER METHODS ==========
+    generateAccessToken(user) {
+        return jwt.sign({
+                userId: user.userId,
+                email: user.email,
+                role: user.role,
+                firstName: user.firstName,
+                lastName: user.lastName,
+            },
+            process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '1h' }
+        );
+    }
+
+    async generateRefreshToken(user) {
+        const token = jwt.sign({ userId: user.userId },
+            process.env.JWT_REFRESH_SECRET || 'your-refresh-secret', { expiresIn: '7d' }
+        );
+
+        await RefreshToken.create({
+            userId: user.userId,
+            token,
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            status: 'active',
+        });
+
+        return token;
+    }
+
+    validatePassword(password) {
+        const hasMinLength = password.length >= 8;
+        const hasUpperCase = /[A-Z]/.test(password);
+        const hasLowerCase = /[a-z]/.test(password);
+        const hasNumbers = /[0-9]/.test(password);
+
+        return hasMinLength && hasUpperCase && hasLowerCase && hasNumbers;
     }
 }
 

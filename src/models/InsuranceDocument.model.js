@@ -9,19 +9,19 @@ const InsuranceDocument = sequelize.define('InsuranceDocument', {
         autoIncrement: true,
     },
     bookingId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         allowNull: false,
         references: {
             model: 'bookings',
-            key: 'id',
+            key: 'bookingId',
         },
     },
     patientId: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
         allowNull: false,
         references: {
             model: 'users',
-            key: 'id',
+            key: 'userId',
         },
     },
     insuranceProviderName: {

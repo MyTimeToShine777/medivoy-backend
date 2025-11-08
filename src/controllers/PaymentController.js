@@ -1,128 +1,173 @@
-// Payment Controller - Stripe & Razorpay - NO optional chaining
-import asyncHandler from '../middleware/asyncHandler.middleware.js';
-import PaymentService from '../services/PaymentService.js';
-import { sendSuccess, sendError, sendPaginatedSuccess } from '../utils/response.js';
-import { HTTP_STATUS } from '../constants/httpStatus.js';
-import logger from '../utils/logger.js';
+'use strict';
 
-class PaymentController {
-    // Create Stripe payment
-    createStripePayment = asyncHandler(async(req, res) => {
+import { PaymentGatewayService } from '../services/PaymentGatewayService.js';
+import { AppError } from '../utils/errors/AppError.js';
+
+export class PaymentController {
+    constructor() {
+        this.paymentService = new PaymentGatewayService();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // PAYMENT MANAGEMENT
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    async createPayment(req, res) {
         try {
             const userId = req.user.userId;
-            const { bookingId, amount, currency } = req.body;
+            const bookingId = req.params.bookingId;
+            const paymentData = req.body;
 
-            if (!bookingId || !amount || !currency) {
-                return sendError(res, HTTP_STATUS.BAD_REQUEST, 'Booking ID, amount, and currency are required');
+            const result = await this.paymentService.createPayment(userId, bookingId, paymentData);
+
+            if (!result.success) {
+                return res.status(400).json(result);
             }
 
-            const result = await PaymentService.createStripePayment(bookingId, userId, amount, currency);
-            return sendSuccess(res, HTTP_STATUS.CREATED, 'Stripe payment initiated', result);
+            return res.status(201).json({
+                success: true,
+                message: 'Payment initiated',
+                data: {
+                    paymentId: result.paymentId,
+                    gatewayPaymentId: result.gatewayPaymentId,
+                    gateway: result.gateway,
+                    amount: result.amount,
+                    currency: result.currency
+                }
+            });
         } catch (error) {
-            logger.error('Create Stripe payment error:', error.message);
-            throw error;
+            return res.status(500).json({
+                success: false,
+                error: error.message
+            });
         }
-    });
+    }
 
-    // Create Razorpay payment
-    createRazorpayPayment = asyncHandler(async(req, res) => {
+    async verifyPayment(req, res) {
+        try {
+            const paymentId = req.params.paymentId;
+            const verificationData = req.body;
+
+            const result = await this.paymentService.verifyPayment(paymentId, verificationData);
+
+            if (!result.success) {
+                return res.status(400).json(result);
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: 'Payment verified',
+                data: result.payment
+            });
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    }
+
+    async refundPayment(req, res) {
+        try {
+            const paymentId = req.params.paymentId;
+            const userId = req.user.userId;
+            const refundData = req.body;
+
+            const result = await this.paymentService.refundPayment(paymentId, userId, refundData);
+
+            if (!result.success) {
+                return res.status(400).json(result);
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: 'Refund processed',
+                data: result.payment
+            });
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    }
+
+    async createSubscription(req, res) {
         try {
             const userId = req.user.userId;
-            const { bookingId, amount, currency } = req.body;
+            const subscriptionData = req.body;
 
-            if (!bookingId || !amount || !currency) {
-                return sendError(res, HTTP_STATUS.BAD_REQUEST, 'Booking ID, amount, and currency are required');
+            const result = await this.paymentService.createSubscription(userId, subscriptionData);
+
+            if (!result.success) {
+                return res.status(400).json(result);
             }
 
-            const result = await PaymentService.createRazorpayPayment(bookingId, userId, amount, currency);
-            return sendSuccess(res, HTTP_STATUS.CREATED, 'Razorpay payment initiated', result);
+            return res.status(201).json({
+                success: true,
+                message: 'Subscription created',
+                data: {
+                    subscriptionId: result.subscriptionId,
+                    gateway: result.gateway
+                }
+            });
         } catch (error) {
-            logger.error('Create Razorpay payment error:', error.message);
-            throw error;
+            return res.status(500).json({
+                success: false,
+                error: error.message
+            });
         }
-    });
+    }
 
-    // Verify Stripe payment
-    verifyStripePayment = asyncHandler(async(req, res) => {
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // WEBHOOK HANDLERS
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    async handleRazorpayWebhook(req, res) {
         try {
-            const { paymentId, paymentIntentId } = req.body;
+            const webhookData = req.body;
+            const signature = req.headers['x-razorpay-signature'];
 
-            if (!paymentId || !paymentIntentId) {
-                return sendError(res, HTTP_STATUS.BAD_REQUEST, 'Payment ID and intent ID are required');
+            const result = await this.paymentService.handleRazorpayWebhook(webhookData, signature);
+
+            if (!result.success) {
+                return res.status(400).json(result);
             }
 
-            const result = await PaymentService.verifyStripePayment(paymentId, paymentIntentId);
-            return sendSuccess(res, HTTP_STATUS.OK, 'Stripe payment verified', result);
+            return res.status(200).json({
+                success: true,
+                message: 'Webhook processed'
+            });
         } catch (error) {
-            logger.error('Verify Stripe payment error:', error.message);
-            throw error;
+            return res.status(500).json({
+                success: false,
+                error: error.message
+            });
         }
-    });
+    }
 
-    // Verify Razorpay payment
-    verifyRazorpayPayment = asyncHandler(async(req, res) => {
+    async handleStripeWebhook(req, res) {
         try {
-            const { paymentId, razorpayPaymentId, razorpaySignature } = req.body;
+            const webhookData = req.body;
+            const signature = req.headers['stripe-signature'];
 
-            if (!paymentId || !razorpayPaymentId || !razorpaySignature) {
-                return sendError(res, HTTP_STATUS.BAD_REQUEST, 'Payment details are required');
+            const result = await this.paymentService.handleStripeWebhook(webhookData, signature);
+
+            if (!result.success) {
+                return res.status(400).json(result);
             }
 
-            const result = await PaymentService.verifyRazorpayPayment(paymentId, razorpayPaymentId, razorpaySignature);
-            return sendSuccess(res, HTTP_STATUS.OK, 'Razorpay payment verified', result);
+            return res.status(200).json({
+                success: true,
+                message: 'Webhook processed'
+            });
         } catch (error) {
-            logger.error('Verify Razorpay payment error:', error.message);
-            throw error;
+            return res.status(500).json({
+                success: false,
+                error: error.message
+            });
         }
-    });
-
-    // Get payment history
-    getPaymentHistory = asyncHandler(async(req, res) => {
-        try {
-            const userId = req.user.userId;
-            const { page, limit } = req.query;
-
-            const result = await PaymentService.getPaymentHistory(userId, page, limit);
-            return sendPaginatedSuccess(res, HTTP_STATUS.OK, 'Payment history retrieved', result.data, result.pagination);
-        } catch (error) {
-            logger.error('Get payment history error:', error.message);
-            throw error;
-        }
-    });
-
-    // Generate invoice
-    generateInvoice = asyncHandler(async(req, res) => {
-        try {
-            const { bookingId } = req.params;
-
-            if (!bookingId) {
-                return sendError(res, HTTP_STATUS.BAD_REQUEST, 'Booking ID is required');
-            }
-
-            const result = await PaymentService.generateInvoice(parseInt(bookingId));
-            return sendSuccess(res, HTTP_STATUS.CREATED, 'Invoice generated', result);
-        } catch (error) {
-            logger.error('Generate invoice error:', error.message);
-            throw error;
-        }
-    });
-
-    // Refund payment
-    refundPayment = asyncHandler(async(req, res) => {
-        try {
-            const { paymentId, reason } = req.body;
-
-            if (!paymentId) {
-                return sendError(res, HTTP_STATUS.BAD_REQUEST, 'Payment ID is required');
-            }
-
-            const result = await PaymentService.refundPayment(paymentId, reason);
-            return sendSuccess(res, HTTP_STATUS.OK, 'Payment refunded', result);
-        } catch (error) {
-            logger.error('Refund payment error:', error.message);
-            throw error;
-        }
-    });
+    }
 }
 
 export default new PaymentController();

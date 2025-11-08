@@ -1,101 +1,232 @@
-// Medical Document Model - NO optional chaining
+// Medical Document Model - Medical documentation and reports
+// NO optional chaining - Production Ready
 import { DataTypes } from 'sequelize';
-import { sequelize } from '../config/database.js';
 
-const MedicalDocument = sequelize.define('MedicalDocument', {
-    id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true,
-    },
-    bookingId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'bookings',
-            key: 'id',
+export default (sequelize) => {
+    const MedicalDocument = sequelize.define('MedicalDocument', {
+        docId: {
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
+            primaryKey: true,
         },
-    },
-    patientId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-            model: 'users',
-            key: 'id',
-        },
-    },
-    documentType: {
-        type: DataTypes.ENUM(
-            'medical_history',
-            'lab_reports',
-            'imaging_reports',
-            'discharge_summary',
-            'previous_treatment_records',
-            'consultation_notes',
-            'medication_list',
-            'allergy_records',
-            'vaccination_records',
-            'prescription',
-            'other'
-        ),
-        allowNull: false,
-    },
-    documentTitle: {
-        type: DataTypes.STRING,
-        allowNull: false,
-    },
-    description: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-    },
-    documentUrl: {
-        type: DataTypes.STRING,
-        allowNull: false,
-    },
-    fileName: {
-        type: DataTypes.STRING,
-        allowNull: false,
-    },
-    fileSize: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-    },
-    fileId: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
-    dateOfDocument: {
-        type: DataTypes.DATE,
-        allowNull: true,
-    },
-    hospitalName: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
-    doctorName: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
-    specialty: {
-        type: DataTypes.STRING,
-        allowNull: true,
-    },
-    reviewStatus: {
-        type: DataTypes.ENUM('pending', 'reviewed', 'approved', 'rejected'),
-        defaultValue: 'pending',
-    },
-    isRelevantForTreatment: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: true,
-    },
-    reviewNotes: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-    },
-}, {
-    tableName: 'medical_documents',
-    timestamps: true,
-    underscored: true,
-});
 
-export default MedicalDocument;
+        // ========== RELATIONSHIPS ==========
+        userId: {
+            type: DataTypes.UUID,
+            allowNull: false,
+            references: {
+                model: 'users',
+                key: 'userId',
+            },
+            index: true,
+        },
+        appointmentId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            references: {
+                model: 'appointments',
+                key: 'appointmentId',
+            },
+        },
+        doctorId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            references: {
+                model: 'doctors',
+                key: 'doctorId',
+            },
+        },
+        hospitalId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            references: {
+                model: 'hospitals',
+                key: 'hospitalId',
+            },
+        },
+
+        // ========== DOCUMENT TYPE ==========
+        documentType: {
+            type: DataTypes.ENUM(
+                'consultation_note',
+                'diagnosis_report',
+                'treatment_plan',
+                'surgical_report',
+                'discharge_summary',
+                'lab_report',
+                'imaging_report',
+                'prescription',
+                'referral',
+                'medical_certificate',
+                'vaccination_record',
+                'allergy_record',
+                'medication_history',
+                'surgical_history',
+                'pathology_report',
+                'immunology_report',
+                'other'
+            ),
+            allowNull: false,
+        },
+
+        // ========== DOCUMENT DETAILS ==========
+        title: {
+            type: DataTypes.STRING,
+            allowNull: false,
+        },
+        description: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        content: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+
+        // ========== CLINICAL INFO ==========
+        diagnosis: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+            defaultValue: [],
+        },
+        symptoms: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+            defaultValue: [],
+        },
+        findings: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+            defaultValue: [],
+        },
+        recommendations: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+            defaultValue: [],
+        },
+        medications: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+            defaultValue: [],
+        },
+
+        // ========== DATES ==========
+        documentDate: {
+            type: DataTypes.DATE,
+            allowNull: false,
+        },
+        validFrom: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        validUntil: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+
+        // ========== FILE INFORMATION ==========
+        fileUrl: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        fileName: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        fileSize: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+        },
+        fileType: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+
+        // ========== DIGITAL SIGNATURE ==========
+        isSigned: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        },
+        signedBy: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
+        signatureDate: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+        signatureVerified: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        },
+
+        // ========== VERIFICATION ==========
+        isVerified: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        },
+        verificationStatus: {
+            type: DataTypes.ENUM('pending', 'verified', 'rejected'),
+            defaultValue: 'pending',
+        },
+        verifiedBy: {
+            type: DataTypes.UUID,
+            allowNull: true,
+        },
+        verifiedAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
+
+        // ========== VISIBILITY & ACCESS ==========
+        visibility: {
+            type: DataTypes.ENUM('private', 'doctor', 'hospital', 'public'),
+            defaultValue: 'private',
+        },
+        sharedWith: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+            defaultValue: [],
+        },
+        accessLog: {
+            type: DataTypes.JSONB,
+            allowNull: true,
+            defaultValue: [],
+        },
+
+        // ========== STATUS ==========
+        status: {
+            type: DataTypes.ENUM('draft', 'final', 'archived'),
+            defaultValue: 'draft',
+        },
+        isActive: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
+        },
+
+    }, {
+        timestamps: true,
+        tableName: 'medical_documents',
+        indexes: [
+            { fields: ['userId'] },
+            { fields: ['appointmentId'] },
+            { fields: ['doctorId'] },
+            { fields: ['documentType'] },
+            { fields: ['documentDate'] },
+        ],
+    });
+
+    MedicalDocument.prototype.isExpired = function() {
+        if (!this.validUntil) return false;
+        return new Date(this.validUntil) < new Date();
+    };
+
+    MedicalDocument.associate = (models) => {
+        MedicalDocument.belongsTo(models.User, { foreignKey: 'userId', as: 'patient' });
+        MedicalDocument.belongsTo(models.Appointment, { foreignKey: 'appointmentId', as: 'appointment' });
+        MedicalDocument.belongsTo(models.Doctor, { foreignKey: 'doctorId', as: 'doctor' });
+        MedicalDocument.belongsTo(models.Hospital, { foreignKey: 'hospitalId', as: 'hospital' });
+    };
+
+    return MedicalDocument;
+};

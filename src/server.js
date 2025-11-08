@@ -1,189 +1,220 @@
-// Server Startup - Production-Ready - NO optional chaining
+'use strict';
+
+import http from 'http';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+// Load environment variables
+dotenv.config();
+
 import app from './app.js';
-import config from './config/index.js';
-import logger from './utils/logger.js';
-import { testConnection, syncModels } from './config/database.js';
-import { connectRedis } from './config/redis.js';
+import { sequelize, testConnection, syncDatabase, disconnectDatabase } from './config/database.js';
+import { initializeModels } from './models/index.js';
+import { cacheService } from './config/redis.js';
+import { mongoDBService } from './config/mongodb.js';
 
-const PORT = config.port;
-const ENV = config.nodeEnv;
+const __filename = fileURLToPath(
+    import.meta.url);
+const __dirname = dirname(__filename);
 
-// ============================================================================
-// STARTUP SEQUENCE
-// ============================================================================
-async function startServer() {
+// ═══════════════════════════════════════════════════════════════════════════════
+// SERVER CONFIGURATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const PORT = process.env.PORT || 5000;
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const APP_NAME = process.env.APP_NAME || 'Medivoy Backend';
+const APP_VERSION = process.env.APP_VERSION || '1.0.0';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CREATE HTTP SERVER
+// ─────────────────────────────────────────────────────────────────────────────
+
+const server = http.createServer(app);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INITIALIZE DATABASES & SERVICES
+// ─────────────────────────────────────────────────────────────────────────────
+
+const initializeDatabases = async() => {
     try {
-        logger.info('');
-        logger.info('═══════════════════════════════════════════════════════════');
-        logger.info(`🚀 Starting Medivoy Healthcare Backend Server`);
-        logger.info('═══════════════════════════════════════════════════════════');
-        logger.info('');
+        console.log(`\n${'═'.repeat(80)}`);
+        console.log(`🚀 Initializing ${APP_NAME} v${APP_VERSION}`);
+        console.log(`${'═'.repeat(80)}\n`);
 
-        // Environment info
-        logger.info(`📊 Environment: ${ENV}`);
-        logger.info(`🔑 App Name: ${config.appName}`);
-        logger.info(`🌐 App URL: ${config.appUrl}`);
-        logger.info('');
+        // PostgreSQL Connection
+        console.log(`📡 Connecting to PostgreSQL...`);
+        const pgConnected = await testConnection();
 
-        // ====================================================================
-        // DATABASE CONNECTION
-        // ====================================================================
-        logger.info('🔗 Connecting to Database...');
-        const dbConnected = await testConnection();
+        // Initialize models (associations) before attempting sync
+        initializeModels();
 
-        if (!dbConnected) {
-            logger.warn('⚠️  Database connection test failed');
-            logger.warn('⚠️  Continuing without database...');
-        } else {
-            logger.info('✅ Database connected successfully');
-
-            // Sync models
-            logger.info('🔄 Synchronizing database models...');
-            const modelsSynced = await syncModels();
-
-            if (!modelsSynced) {
-                logger.warn('⚠️  Model sync failed');
-            } else {
-                logger.info('✅ Database models synchronized');
+        // Sync Database (only if connected)
+        if (pgConnected) {
+            if (NODE_ENV === 'development') {
+                console.log(`📡 Syncing PostgreSQL database...`);
+                const synced = await syncDatabase(false);
+                if (!synced && process.env.FORCE_DB_SYNC === 'true') {
+                    console.warn(`⚠️ Initial sync failed. FORCE_DB_SYNC=true so attempting force sync (this will ALTER/CREATE tables)`);
+                    await syncDatabase(true);
+                }
             }
-        }
-        logger.info('');
-
-        // ====================================================================
-        // REDIS CONNECTION
-        // ====================================================================
-        logger.info('💾 Connecting to Redis Cache...');
-        const redisConnected = await connectRedis();
-
-        if (!redisConnected) {
-            logger.warn('⚠️  Redis connection failed');
-            logger.warn('⚠️  Continuing without cache (performance may be affected)');
         } else {
-            logger.info('✅ Redis connected successfully');
+            console.warn(`⚠️ PostgreSQL is not available. Continuing without DB in ${NODE_ENV} mode.`);
         }
-        logger.info('');
 
-        // ====================================================================
-        // START EXPRESS SERVER
-        // ====================================================================
-        const server = app.listen(PORT, () => {
-            logger.info('═══════════════════════════════════════════════════════════');
-            logger.info(`✅ Server is running successfully!`);
-            logger.info('═══════════════════════════════════════════════════════════');
-            logger.info('');
-            logger.info(`📡 Server Address: http://localhost:${PORT}`);
-            logger.info(`🔗 API Base URL: http://localhost:${PORT}/api`);
-            logger.info(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
-            logger.info(`❤️  Health Check: http://localhost:${PORT}/health`);
-            logger.info('');
-            logger.info('Available Endpoints:');
-            logger.info('  🔐 Authentication: POST /api/auth/register, /api/auth/login');
-            logger.info('  👥 Users: GET/POST /api/users (Coming soon)');
-            logger.info('  📋 Bookings: GET/POST /api/bookings (Coming soon)');
-            logger.info('  💳 Payments: POST /api/payments (Coming soon)');
-            logger.info('  🏥 Consultations: GET/POST /api/consultations (Coming soon)');
-            logger.info('');
-            logger.info(`⚙️  Environment: ${ENV}`);
-            logger.info(`📝 Log Level: ${config.logLevel || 'info'}`);
-            logger.info('');
-            logger.info('═══════════════════════════════════════════════════════════');
-            logger.info('');
+        // Redis Connection
+        console.log(`\n📡 Connecting to Redis...`);
+        const redisConnected = await cacheService.initialize();
+        if (!redisConnected) {
+            console.warn(`⚠️ Redis connection failed, caching disabled`);
+        }
+
+        // MongoDB Connection (Optional)
+        if (process.env.MONGODB_URL) {
+            console.log(`\n📡 Connecting to MongoDB...`);
+            const mongoConnected = await mongoDBService.initialize();
+            if (!mongoConnected) {
+                console.warn(`⚠️ MongoDB connection failed, secondary database disabled`);
+            }
+        } else {
+            console.warn(`⚠️ MONGODB_URL not configured, MongoDB disabled`);
+        }
+
+        console.log(`\n${'═'.repeat(80)}`);
+        console.log(`✅ All databases initialized successfully`);
+        console.log(`${'═'.repeat(80)}\n`);
+
+        return true;
+    } catch (error) {
+        console.error(`\n❌ Database initialization failed:`, error.message);
+        process.exit(1);
+    }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// START SERVER
+// ─────────────────────────────────────────────────────────────────────────────
+
+const startServer = async() => {
+    try {
+        // Initialize databases
+        await initializeDatabases();
+
+        // Start listening
+        server.listen(PORT, () => {
+            console.log(`\n${'═'.repeat(80)}`);
+            console.log(`✅ ${APP_NAME} v${APP_VERSION} is running!`);
+            console.log(`${'═'.repeat(80)}`);
+            console.log(`🌐 Environment: ${NODE_ENV}`);
+            console.log(`🔗 Server URL: http://localhost:${PORT}`);
+            console.log(`📊 Health Check: http://localhost:${PORT}/health`);
+            if (process.env.SWAGGER_ENABLED === 'true') {
+                console.log(`📚 API Docs: http://localhost:${PORT}${process.env.SWAGGER_PATH || '/api-docs'}`);
+            }
+            console.log(`${'═'.repeat(80)}\n`);
         });
 
-        // ====================================================================
-        // HANDLE SERVER ERRORS
-        // ====================================================================
+        // Handle server errors
         server.on('error', (error) => {
             if (error.code === 'EADDRINUSE') {
-                logger.error(`❌ Port ${PORT} is already in use`);
-                logger.error('Try using a different port: PORT=3001 pnpm dev');
+                console.error(`❌ Port ${PORT} is already in use`);
             } else {
-                logger.error('❌ Server error:', error.message);
+                console.error(`❌ Server error:`, error.message);
             }
             process.exit(1);
         });
-
-        // ====================================================================
-        // HANDLE SERVER CLOSE
-        // ====================================================================
-        server.on('close', () => {
-            logger.info('Server closed');
-        });
-
-        return server;
     } catch (error) {
-        logger.error('');
-        logger.error('═══════════════════════════════════════════════════════════');
-        logger.error(`❌ Failed to start server`);
-        logger.error('═══════════════════════════════════════════════════════════');
-        logger.error('');
-        logger.error('Error Details:');
-        logger.error(`  Message: ${error.message}`);
-        if (error.stack) {
-            logger.error(`  Stack: ${error.stack}`);
-        }
-        logger.error('');
-        logger.error('Troubleshooting:');
-        logger.error('  1. Check .env file is configured correctly');
-        logger.error('  2. Verify DATABASE_URL is valid');
-        logger.error('  3. Check PostgreSQL is running');
-        logger.error('  4. Check Redis is running (optional)');
-        logger.error('');
-        logger.error('═══════════════════════════════════════════════════════════');
-        logger.error('');
+        console.error(`❌ Failed to start server:`, error.message);
         process.exit(1);
     }
-}
+};
 
-// ============================================================================
-// HANDLE UNHANDLED PROMISE REJECTIONS
-// ============================================================================
-process.on('unhandledRejection', (reason, promise) => {
-    logger.error('');
-    logger.error('⚠️  UNHANDLED PROMISE REJECTION');
-    logger.error(`Promise: ${promise}`);
-    logger.error(`Reason: ${reason}`);
-    logger.error('');
-    // Don't exit - let the app continue
-});
+// ─────────────────────────────────────────────────────────────────────────────
+// GRACEFUL SHUTDOWN
+// ─────────────────────────────────────────────────────────────────────────────
 
-// ============================================================================
-// HANDLE UNCAUGHT EXCEPTIONS
-// ============================================================================
-process.on('uncaughtException', (error) => {
-    logger.error('');
-    logger.error('❌ UNCAUGHT EXCEPTION');
-    logger.error(`Message: ${error.message}`);
-    if (error.stack) {
-        logger.error(`Stack: ${error.stack}`);
+const gracefulShutdown = async(signal) => {
+    console.log(`\n⏹️ Received ${signal}, shutting down gracefully...`);
+
+    try {
+        // Stop accepting new connections
+        server.close(async() => {
+            console.log(`✅ HTTP server closed`);
+
+            // Disconnect databases
+            try {
+                await disconnectDatabase();
+                console.log(`✅ PostgreSQL disconnected`);
+
+                if (cacheService.connected) {
+                    await cacheService.disconnect();
+                    console.log(`✅ Redis disconnected`);
+                }
+
+                if (process.env.MONGODB_URL) {
+                    await mongoDBService.disconnect();
+                    console.log(`✅ MongoDB disconnected`);
+                }
+
+                console.log(`\n✅ Graceful shutdown completed`);
+                process.exit(0);
+            } catch (error) {
+                console.error(`❌ Error during shutdown:`, error.message);
+                process.exit(1);
+            }
+        });
+
+        // Force shutdown after 30 seconds
+        setTimeout(() => {
+            console.error(`❌ Forced shutdown after timeout`);
+            process.exit(1);
+        }, 30000);
+    } catch (error) {
+        console.error(`❌ Shutdown error:`, error.message);
+        process.exit(1);
     }
-    logger.error('');
-    // Exit the process for uncaught exceptions
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SIGNAL HANDLERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// UNCAUGHT EXCEPTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+process.on('uncaughtException', (error) => {
+    console.error(`\n❌ Uncaught Exception:`, error);
+    console.error(`Stack:`, error.stack);
     process.exit(1);
 });
 
-// ============================================================================
-// GRACEFUL SHUTDOWN HANDLERS
-// ============================================================================
-process.on('SIGTERM', () => {
-    logger.warn('');
-    logger.warn('═══════════════════════════════════════════════════════════');
-    logger.warn('🛑 SIGTERM signal received: closing HTTP server');
-    logger.warn('═══════════════════════════════════════════════════════════');
-    logger.warn('');
-    process.exit(0);
+// ─────────────────────────────────────────────────────────────────────────────
+// UNHANDLED PROMISE REJECTIONS
+// ─────────────────────────────────────────────────────────────────────────────
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error(`\n❌ Unhandled Rejection at:`, promise);
+    console.error(`Reason:`, reason);
+    process.exit(1);
 });
 
-process.on('SIGINT', () => {
-    logger.warn('');
-    logger.warn('═══════════════════════════════════════════════════════════');
-    logger.warn('🛑 SIGINT signal received: closing HTTP server');
-    logger.warn('═══════════════════════════════════════════════════════════');
-    logger.warn('');
-    process.exit(0);
+// ─────────────────────────────────────────────────────────────────────────────
+// START APPLICATION
+// ─────────────────────────────────────────────────────────────────────────────
+
+startServer().catch((error) => {
+    console.error(`❌ Fatal error:`, error.message);
+    process.exit(1);
 });
 
-// ============================================================================
-// START SERVER
-// ============================================================================
-startServer();
+// ─────────────────────────────────────────────────────────────────────────────
+// EXPORT SERVER
+// ─────────────────────────────────────────────────────────────────────────────
+
+export default server;
