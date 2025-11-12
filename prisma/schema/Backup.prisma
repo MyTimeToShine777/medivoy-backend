@@ -1,0 +1,51 @@
+model Backup {
+  backupId                String    @id @default(uuid()) @db.Uuid
+  
+  // BACKUP DETAILS
+  backupType              String    @db.VarChar(50)
+  backupName              String    @db.VarChar(255)
+  backupLocation          String    @db.VarChar(500)
+  fileName                String    @db.VarChar(255)
+  fileSize                BigInt?
+  fileSizeReadable        String?   @db.VarChar(50)
+  
+  // STATUS
+  status                  String    @default("pending") @db.VarChar(50)
+  startedAt               DateTime?
+  completedAt             DateTime?
+  failedAt                DateTime?
+  
+  // CONFIGURATION
+  compressionEnabled      Boolean   @default(true)
+  encryptionEnabled       Boolean   @default(false)
+  retentionDays           Int       @default(30)
+  
+  // BACKUP SCOPE
+  tables                  Json?
+  databases               Json?
+  excludedTables          Json?
+  
+  // RESULTS
+  totalRecords            Int?
+  successfulRecords       Int?
+  failedRecords           Int?
+  errorMessage            String?   @db.Text
+  errorDetails            Json?
+  
+  // METADATA
+  triggerType             String?   @default("manual") @db.VarChar(50)
+  triggeredBy             String?   @db.Uuid
+  scheduledBackupId       String?   @db.Uuid
+  metadata                Json?
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  logs                    BackupLog[]
+  
+  @@index([status])
+  @@index([backupType])
+  @@index([createdAt])
+  @@map("backups")
+}

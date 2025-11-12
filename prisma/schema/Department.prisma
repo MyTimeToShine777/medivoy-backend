@@ -1,0 +1,64 @@
+model Department {
+  departmentId            String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  hospitalId              String    @db.Uuid
+  
+  // DEPARTMENT DETAILS
+  departmentName          String    @db.VarChar(255)
+  departmentCode          String?   @db.VarChar(50)
+  departmentType          String?   @db.VarChar(100)
+  
+  // DESCRIPTION
+  description             String?   @db.Text
+  shortDescription        String?   @db.VarChar(500)
+  services                Json?
+  specializations         Json?
+  
+  // FACILITIES
+  bedCount                Int       @default(0)
+  icuBeds                 Int       @default(0)
+  emergencyBeds           Int       @default(0)
+  facilities              Json?
+  equipment               Json?
+  
+  // STAFF
+  headOfDepartment        String?   @db.Uuid
+  doctorCount             Int       @default(0)
+  nurseCount              Int       @default(0)
+  staffCount              Int       @default(0)
+  
+  // CONTACT
+  phone                   String?   @db.VarChar(20)
+  email                   String?   @db.VarChar(255)
+  extension               String?   @db.VarChar(10)
+  location                String?   @db.VarChar(255)
+  floor                   String?   @db.VarChar(50)
+  
+  // OPERATIONAL
+  isEmergency             Boolean   @default(false)
+  is24x7                  Boolean   @default(false)
+  workingHours            Json?
+  
+  // STATISTICS
+  averageWaitTime         Int?
+  treatmentCount          Int       @default(0)
+  successRate             Decimal?  @db.Decimal(5, 2)
+  
+  // METADATA
+  isActive                Boolean   @default(true)
+  displayOrder            Int       @default(0)
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  hospital                Hospital  @relation(fields: [hospitalId], references: [hospitalId], onDelete: Cascade)
+  appointments            Appointment[]
+  bookings                Booking[]
+  
+  @@index([hospitalId])
+  @@index([departmentName])
+  @@index([isActive])
+  @@map("departments")
+}

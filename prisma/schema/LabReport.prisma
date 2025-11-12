@@ -1,0 +1,36 @@
+model LabReport {
+  reportId                String    @id @default(uuid()) @db.Uuid
+  patientId               String    @db.Uuid
+  labTestId               String?   @db.Uuid
+  laboratoryId            String?   @db.Uuid
+  doctorId                String?   @db.Uuid
+  bookingId               String?   @db.Uuid
+  reportNumber            String    @unique @db.VarChar(100)
+  testName                String    @db.VarChar(255)
+  testType                String?   @db.VarChar(100)
+  testDate                DateTime  @db.Date
+  reportDate              DateTime? @db.Date
+  results                 Json?
+  normalRange             Json?
+  interpretation          String?   @db.Text
+  fileUrl                 String?   @db.VarChar(500)
+  fileName                String?   @db.VarChar(255)
+  status                  String    @default("pending") @db.VarChar(50)
+  priority                String    @default("routine") @db.VarChar(50)
+  notes                   String?   @db.Text
+  isAbnormal              Boolean   @default(false)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  labTest                 LabTest?  @relation(fields: [labTestId], references: [testId], onDelete: SetNull)
+  laboratory              Laboratory? @relation(fields: [laboratoryId], references: [laboratoryId], onDelete: SetNull)
+  patient                 Patient   @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+  
+  @@index([patientId])
+  @@index([labTestId])
+  @@index([laboratoryId])
+  @@index([reportNumber])
+  @@index([status])
+  @@index([testDate])
+  @@map("lab_reports")
+}

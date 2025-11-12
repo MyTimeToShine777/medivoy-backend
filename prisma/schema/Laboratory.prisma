@@ -1,0 +1,30 @@
+model Laboratory {
+  laboratoryId            String    @id @default(uuid()) @db.Uuid
+  hospitalId              String    @db.Uuid
+  name                    String    @db.VarChar(150)
+  code                    String?   @unique @db.VarChar(50)
+  type                    String?   @db.VarChar(100)
+  description             String?   @db.Text
+  accreditations          Json?
+  certifications          Json?
+  phone                   String?   @db.VarChar(20)
+  email                   String?   @db.VarChar(255)
+  address                 String?   @db.Text
+  city                    String?   @db.VarChar(100)
+  state                   String?   @db.VarChar(100)
+  postalCode              String?   @db.VarChar(20)
+  workingHours            Json?
+  is24x7                  Boolean   @default(false)
+  testCapacity            Int?
+  equipment               Json?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  hospital                Hospital  @relation(fields: [hospitalId], references: [hospitalId], onDelete: Cascade)
+  labTests                LabTest[]
+  labReports              LabReport[]
+  dnaKits                 DNAKit[]
+  
+  @@index([hospitalId])
+  @@map("laboratories")
+}

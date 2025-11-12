@@ -1,0 +1,40 @@
+model Immunization {
+  immunizationId          String    @id @default(uuid()) @db.Uuid
+  patientId               String    @db.Uuid
+  vaccineName             String    @db.VarChar(255)
+  vaccineType             String?   @db.VarChar(100)
+  manufacturer            String?   @db.VarChar(255)
+  batchNumber             String?   @db.VarChar(100)
+  lotNumber               String?   @db.VarChar(100)
+  administeredDate        DateTime  @db.Date
+  administeredBy          String?   @db.VarChar(255)
+  administrationSite      String?   @db.VarChar(100)
+  routeOfAdministration   String?   @db.VarChar(100)
+  dosage                  String?   @db.VarChar(100)
+  doseNumber              Int?
+  totalDosesRequired      Int?
+  facilityName            String?   @db.VarChar(255)
+  facilityAddress         String?   @db.Text
+  nextDoseDate            DateTime? @db.Date
+  nextDoseReminder        Boolean   @default(false)
+  reminderSentAt          DateTime?
+  adverseReaction         Boolean   @default(false)
+  reactionDetails         String?   @db.Text
+  reactionSeverity        String?   @db.VarChar(50)
+  certificateNumber       String?   @db.VarChar(100)
+  certificateUrl          String?   @db.VarChar(500)
+  documentUrl             String?   @db.VarChar(500)
+  validFrom               DateTime? @db.Date
+  validUntil              DateTime? @db.Date
+  isValid                 Boolean   @default(true)
+  notes                   String?   @db.Text
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  patient                 Patient   @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+  
+  @@index([patientId])
+  @@index([administeredDate])
+  @@index([vaccineName])
+  @@map("immunizations")
+}

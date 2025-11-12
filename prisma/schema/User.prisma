@@ -1,0 +1,72 @@
+model User {
+  userId                  String    @id @default(uuid()) @db.Uuid
+  email                   String    @unique @db.VarChar(255)
+  password                String    @db.VarChar(255)
+  role                    String    @default("patient") @db.VarChar(50)
+  firstName               String    @db.VarChar(100)
+  lastName                String    @db.VarChar(100)
+  phone                   String?   @db.VarChar(20)
+  countryCode             String?   @db.VarChar(10)
+  dateOfBirth             DateTime? @db.Date
+  gender                  String?   @db.VarChar(20)
+  profilePicture          String?   @db.VarChar(500)
+  address                 String?   @db.Text
+  city                    String?   @db.VarChar(100)
+  state                   String?   @db.VarChar(100)
+  country                 String?   @db.VarChar(100)
+  postalCode              String?   @db.VarChar(20)
+  isEmailVerified         Boolean   @default(false)
+  isPhoneVerified         Boolean   @default(false)
+  emailVerifiedAt         DateTime?
+  phoneVerifiedAt         DateTime?
+  twoFactorEnabled        Boolean   @default(false)
+  twoFactorSecret         String?   @db.VarChar(255)
+  isActive                Boolean   @default(true)
+  isDeleted               Boolean   @default(false)
+  lastLoginAt             DateTime?
+  lastLoginIp             String?   @db.VarChar(45)
+  loginAttempts           Int       @default(0)
+  lockedUntil             DateTime?
+  preferences             Json?
+  metadata                Json?
+  referralCode            String?   @unique @db.VarChar(50)
+  referredBy              String?   @db.Uuid
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  patient                 Patient?
+  doctor                  Doctor?
+  bookings                Booking[]
+  accommodations          Accommodation[]
+  appointments            Appointment[]
+  consultations           Consultation[]
+  familyMembers           FamilyMember[]
+  reviews                 Review[]
+  sessions                Session[]
+  devices                 Device[]
+  notifications           Notification[]
+  passwordResets          PasswordReset[]
+  emailConfirmations      EmailConfirmation[]
+  prescriptions           Prescription[]
+  payments                Payment[]
+  invoices                Invoice[]
+  transactions            Transaction[]
+  supportTickets          SupportTicket[]
+  auditLogs               AuditLog[]
+
+  sentConversations       ChatConversation[] @relation("SenderConversations")
+  receivedConversations   ChatConversation[] @relation("ReceiverConversations")
+  sentMessages            ChatMessage[]      @relation("SentMessages")
+
+  companions              Companion[]
+  documents               Document[]
+  emailLogs               EmailLog[]
+  insurances              Insurance[]
+  expertCalls             ExpertCall[]
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+  @@index([referralCode])
+  @@map("users")
+}

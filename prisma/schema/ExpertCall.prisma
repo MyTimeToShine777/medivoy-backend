@@ -1,0 +1,59 @@
+model ExpertCall {
+  callId                  String    @id @default(uuid()) @db.Uuid
+  bookingId               String    @db.Uuid
+  expertId                String?   @db.Uuid
+  scheduledAt             DateTime?
+  scheduleTime            String?   @db.VarChar(50)
+  scheduleTimeZone        String?   @db.VarChar(50)
+  estimatedDuration       Int       @default(30)
+  remindedAt              DateTime?
+  startedAt               DateTime?
+  completedAt             DateTime?
+  status                  String    @default("pending") @db.VarChar(50)
+  callType                String    @default("video") @db.VarChar(50)
+  actualDuration          Int?
+  meetingLink             String?   @db.VarChar(500)
+  phoneNumber             String?   @db.VarChar(20)
+  phonePin                String?   @db.VarChar(50)
+  recordingUrl            String?   @db.VarChar(500)
+  recordingConsent        Boolean   @default(false)
+  notes                   String?   @db.Text
+  expertNotes             String?   @db.Text
+  patientFeedback         String?   @db.Text
+  findings                Json?
+  diagnosis               String?   @db.Text
+  recommendations         Json?
+  nextSteps               Json?
+  prescriptions           Json?
+  testsRecommended        Json?
+  attachments             Json?
+  followUpRequired        Boolean   @default(false)
+  followUpDate            DateTime?
+  followUpType            String?   @db.VarChar(50)
+  cancellationReason      String?   @db.Text
+  cancelledAt             DateTime?
+  cancelledBy             String?   @db.VarChar(50)
+  rescheduledFrom         String?   @db.Uuid
+  noShowReason            String?   @db.Text
+  patientResponded        Boolean   @default(false)
+  automaticReschedule     Boolean   @default(false)
+  expertRating            Decimal?  @db.Decimal(3, 2)
+  patientRating           Decimal?  @db.Decimal(3, 2)
+  patientReview           String?   @db.Text
+  ipAddress               String?   @db.VarChar(45)
+  deviceInfo              Json?
+  reminderId              String?   @db.Uuid
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  booking                 Booking   @relation(fields: [bookingId], references: [bookingId], onDelete: Cascade)
+  expert                  Doctor?   @relation(fields: [expertId], references: [doctorId], onDelete: SetNull)
+  userId                  String?   @db.Uuid
+  user                    User?     @relation(fields: [userId], references: [userId], onDelete: SetNull)
+
+  @@index([bookingId])
+  @@index([expertId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("expert_calls")
+}

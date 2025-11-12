@@ -1,0 +1,56 @@
+model Device {
+  deviceId                String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  userId                  String    @db.Uuid
+  
+  // DEVICE DETAILS
+  deviceName              String?   @db.VarChar(255)
+  deviceType              String?   @db.VarChar(50)
+  deviceModel             String?   @db.VarChar(100)
+  browser                 String?   @db.VarChar(100)
+  browserVersion          String?   @db.VarChar(50)
+  os                      String?   @db.VarChar(100)
+  osVersion               String?   @db.VarChar(50)
+  
+  // NETWORK
+  ipAddress               String?   @db.VarChar(45)
+  location                String?   @db.VarChar(255)
+  city                    String?   @db.VarChar(100)
+  country                 String?   @db.VarChar(100)
+  
+  // DEVICE FINGERPRINT
+  fingerprint             String?   @unique @db.VarChar(500)
+  userAgent               String?   @db.Text
+  screenResolution        String?   @db.VarChar(50)
+  timezone                String?   @db.VarChar(100)
+  language                String?   @db.VarChar(50)
+  
+  // SECURITY
+  isTrusted               Boolean   @default(false)
+  trustLevel              String?   @default("low") @db.VarChar(20)
+  isBlocked               Boolean   @default(false)
+  blockedAt               DateTime?
+  blockedReason           String?   @db.Text
+  
+  // USAGE
+  firstUsedAt             DateTime  @default(now())
+  lastUsedAt              DateTime  @default(now())
+  usageCount              Int       @default(1)
+  
+  // NOTIFICATIONS
+  pushToken               String?   @db.VarChar(500)
+  notificationsEnabled    Boolean   @default(false)
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  user                    User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  sessions                Session[]
+  
+  @@index([userId])
+  @@index([isTrusted])
+  @@index([fingerprint])
+  @@map("devices")
+}

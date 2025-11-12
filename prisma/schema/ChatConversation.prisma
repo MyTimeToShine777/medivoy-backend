@@ -1,0 +1,40 @@
+model ChatConversation {
+  conversationId          String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  senderId                String    @db.Uuid
+  receiverId              String    @db.Uuid
+  bookingId               String?   @db.Uuid
+  
+  // CONVERSATION DETAILS
+  title                   String?   @db.VarChar(255)
+  type                    String    @default("direct") @db.VarChar(50)
+  status                  String    @default("active") @db.VarChar(50)
+  
+  // METADATA
+  lastMessageAt           DateTime?
+  lastMessagePreview      String?   @db.VarChar(500)
+  unreadCount             Int       @default(0)
+  
+  // SETTINGS
+  isMuted                 Boolean   @default(false)
+  mutedUntil              DateTime?
+  isArchived              Boolean   @default(false)
+  archivedAt              DateTime?
+  isPinned                Boolean   @default(false)
+  pinnedAt                DateTime?
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  sender                  User      @relation("SenderConversations", fields: [senderId], references: [userId], onDelete: Cascade)
+  receiver                User      @relation("ReceiverConversations", fields: [receiverId], references: [userId], onDelete: Cascade)
+  messages                ChatMessage[]
+  
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([bookingId])
+  @@index([status])
+  @@map("chat_conversations")
+}

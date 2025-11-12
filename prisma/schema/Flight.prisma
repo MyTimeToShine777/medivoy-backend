@@ -1,0 +1,48 @@
+model Flight {
+  flightId                String    @id @default(uuid()) @db.Uuid
+  bookingId               String    @db.Uuid
+  userId                  String    @db.Uuid
+  flightType              String    @db.VarChar(50)
+  flightNumber            String?   @db.VarChar(50)
+  airline                 String?   @db.VarChar(255)
+  departureAirport        String    @db.VarChar(100)
+  departureAirportCode    String?   @db.VarChar(10)
+  arrivalAirport          String    @db.VarChar(100)
+  arrivalAirportCode      String?   @db.VarChar(10)
+  departureDate           DateTime  @db.Date
+  departureTime           String?   @db.VarChar(20)
+  arrivalDate             DateTime? @db.Date
+  arrivalTime             String?   @db.VarChar(20)
+  duration                Int?
+  class                   String?   @db.VarChar(50)
+  seatNumber              String?   @db.VarChar(20)
+  bookingReference        String?   @db.VarChar(100)
+  pnr                     String?   @db.VarChar(100)
+  price                   Decimal?  @db.Decimal(12, 2)
+  currency                String    @default("USD") @db.VarChar(3)
+  status                  String    @default("pending") @db.VarChar(50)
+  ticketUrl               String?   @db.VarChar(500)
+  eTicketNumber           String?   @db.VarChar(100)
+  baggageAllowance        String?   @db.VarChar(100)
+  specialRequests         String?   @db.Text
+  passengerName           String?   @db.VarChar(255)
+  passengerEmail          String?   @db.VarChar(255)
+  passengerPhone          String?   @db.VarChar(20)
+  checkInUrl              String?   @db.VarChar(500)
+  boardingPass            String?   @db.VarChar(500)
+  cancelledAt             DateTime?
+  cancellationReason      String?   @db.Text
+  refundAmount            Decimal?  @db.Decimal(12, 2)
+  notes                   String?   @db.Text
+  metadata                Json?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  booking                 Booking   @relation(fields: [bookingId], references: [bookingId], onDelete: Cascade)
+  
+  @@index([bookingId])
+  @@index([userId])
+  @@index([status])
+  @@index([departureDate])
+  @@map("flights")
+}

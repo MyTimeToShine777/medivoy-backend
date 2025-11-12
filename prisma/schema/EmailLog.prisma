@@ -1,0 +1,63 @@
+model EmailLog {
+  emailLogId              String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  userId                  String?   @db.Uuid
+  
+  // EMAIL DETAILS
+  toEmail                 String    @db.VarChar(255)
+  fromEmail               String    @db.VarChar(255)
+  ccEmails                Json?
+  bccEmails               Json?
+  
+  // CONTENT
+  subject                 String    @db.VarChar(500)
+  body                    String    @db.Text
+  htmlBody                String?   @db.Text
+  templateName            String?   @db.VarChar(100)
+  templateVariables       Json?
+  
+  // ATTACHMENTS
+  attachments             Json?
+  attachmentCount         Int       @default(0)
+  
+  // STATUS
+  status                  String    @default("pending") @db.VarChar(50)
+  sentAt                  DateTime?
+  deliveredAt             DateTime?
+  openedAt                DateTime?
+  clickedAt               DateTime?
+  bouncedAt               DateTime?
+  
+  // TRACKING
+  messageId               String?   @unique @db.VarChar(255)
+  externalId              String?   @db.VarChar(255)
+  provider                String?   @default("smtp") @db.VarChar(50)
+  
+  // DELIVERY INFO
+  deliveryAttempts        Int       @default(0)
+  lastAttemptAt           DateTime?
+  errorMessage            String?   @db.Text
+  errorCode               String?   @db.VarChar(50)
+  
+  // ENGAGEMENT
+  openCount               Int       @default(0)
+  clickCount              Int       @default(0)
+  
+  // METADATA
+  category                String?   @db.VarChar(100)
+  tags                    Json?
+  priority                String?   @default("normal") @db.VarChar(20)
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  user                    User?     @relation(fields: [userId], references: [userId], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([toEmail])
+  @@index([status])
+  @@index([createdAt])
+  @@map("email_logs")
+}

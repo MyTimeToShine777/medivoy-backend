@@ -1,0 +1,47 @@
+model ChatMessage {
+  messageId               String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  conversationId          String    @db.Uuid
+  senderId                String    @db.Uuid
+  
+  // MESSAGE CONTENT
+  message                 String    @db.Text
+  messageType             String    @default("text") @db.VarChar(50)
+  
+  // ATTACHMENTS
+  attachments             Json?
+  mediaUrl                String?   @db.VarChar(500)
+  mediaType               String?   @db.VarChar(50)
+  thumbnailUrl            String?   @db.VarChar(500)
+  
+  // STATUS
+  isRead                  Boolean   @default(false)
+  readAt                  DateTime?
+  isDelivered             Boolean   @default(false)
+  deliveredAt             DateTime?
+  isDeleted               Boolean   @default(false)
+  deletedAt               DateTime?
+  deletedBy               String?   @db.Uuid
+  
+  // REPLY/FORWARD
+  replyToMessageId        String?   @db.Uuid
+  forwardedFromMessageId  String?   @db.Uuid
+  isForwarded             Boolean   @default(false)
+  
+  // METADATA
+  metadata                Json?
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  conversation            ChatConversation @relation(fields: [conversationId], references: [conversationId], onDelete: Cascade)
+  sender                  User      @relation("SentMessages", fields: [senderId], references: [userId], onDelete: Cascade)
+  
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("chat_messages")
+}

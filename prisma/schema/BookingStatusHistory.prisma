@@ -1,0 +1,35 @@
+model BookingStatusHistory {
+  historyId               String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  bookingId               String    @db.Uuid
+  
+  // STATUS CHANGE
+  previousStatus          String?   @db.VarChar(50)
+  newStatus               String    @db.VarChar(50)
+  
+  // CHANGE DETAILS
+  changedBy               String?   @db.Uuid
+  changedByRole           String?   @db.VarChar(50)
+  reason                  String?   @db.Text
+  notes                   String?   @db.Text
+  
+  // METADATA
+  metadata                Json?
+  ipAddress               String?   @db.VarChar(45)
+  userAgent               String?   @db.Text
+  
+  // NOTIFICATION
+  notificationSent        Boolean   @default(false)
+  notificationSentAt      DateTime?
+  
+  createdAt               DateTime  @default(now())
+  
+  // RELATIONS
+  booking                 Booking   @relation(fields: [bookingId], references: [bookingId], onDelete: Cascade)
+  
+  @@index([bookingId])
+  @@index([newStatus])
+  @@index([createdAt])
+  @@map("booking_status_history")
+}

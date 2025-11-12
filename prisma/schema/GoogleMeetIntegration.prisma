@@ -1,0 +1,36 @@
+model GoogleMeetIntegration {
+  meetingId               String    @id @default(uuid()) @db.Uuid
+  appointmentId           String?   @db.Uuid
+  consultationId          String?   @db.Uuid
+  expertCallId            String?   @db.Uuid
+  userId                  String    @db.Uuid
+  meetLink                String    @db.VarChar(500)
+  meetingCode             String?   @db.VarChar(50)
+  scheduledStartTime      DateTime
+  scheduledEndTime        DateTime?
+  actualStartTime         DateTime?
+  actualEndTime           DateTime?
+  duration                Int?
+  status                  String    @default("scheduled") @db.VarChar(50)
+  hostUserId              String?   @db.Uuid
+  participantIds          Json?
+  recordingUrl            String?   @db.VarChar(500)
+  recordingConsent        Boolean   @default(false)
+  transcriptUrl           String?   @db.VarChar(500)
+  calendarEventId         String?   @db.VarChar(255)
+  googleCredentials       Json?
+  refreshToken            String?   @db.Text
+  accessToken             String?   @db.Text
+  tokenExpiresAt          DateTime?
+  notes                   String?   @db.Text
+  metadata                Json?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  @@index([appointmentId])
+  @@index([consultationId])
+  @@index([expertCallId])
+  @@index([userId])
+  @@index([status])
+  @@map("google_meet_integrations")
+}

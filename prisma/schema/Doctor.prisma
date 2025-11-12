@@ -1,0 +1,110 @@
+model Doctor {
+  doctorId                String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  userId                  String    @unique @db.Uuid
+  hospitalId              String?   @db.Uuid
+  departmentId            String?   @db.Uuid
+  specializationId        String?   @db.Uuid
+  
+  // PROFESSIONAL DETAILS (rest unchanged)
+  medicalLicenseNumber    String?   @unique @db.VarChar(100)
+  licenseIssuingAuthority String?   @db.VarChar(255)
+  licenseIssueDate        DateTime? @db.Date
+  licenseExpiryDate       DateTime? @db.Date
+  
+  qualifications          Json?
+  degree                  String?   @db.VarChar(255)
+  medicalSchool           String?   @db.VarChar(255)
+  graduationYear          Int?
+  certifications          Json?
+  
+  primarySpecialization   String?   @db.VarChar(255)
+  secondarySpecializations Json?
+  areasOfExpertise        Json?
+  treatmentTypes          Json?
+  
+  experienceYears         Int?
+  previousWorkplaces      Json?
+  currentHospital         String?   @db.VarChar(255)
+  departmentName          String?   @db.VarChar(255)
+  
+  consultationFee         Decimal?  @db.Decimal(10, 2)
+  followUpFee             Decimal?  @db.Decimal(10, 2)
+  emergencyFee            Decimal?  @db.Decimal(10, 2)
+  currency                String    @default("USD") @db.VarChar(3)
+  consultationDuration    Int       @default(30)
+  
+  availability            Json?
+  workingDays             Json?
+  workingHours            Json?
+  timeZone                String?   @db.VarChar(100)
+  acceptsEmergencies      Boolean   @default(false)
+  acceptsNewPatients      Boolean   @default(true)
+  
+  languagesSpoken         Json?
+  primaryLanguage         String?   @db.VarChar(100)
+  
+  bio                     String?   @db.Text
+  shortBio                String?   @db.VarChar(500)
+  achievements            Json?
+  awards                  Json?
+  publications            Json?
+  research                Json?
+  
+  rating                  Decimal?  @db.Decimal(3, 2)
+  totalReviews            Int       @default(0)
+  ratingBreakdown         Json?
+  
+  totalConsultations      Int       @default(0)
+  totalPatients           Int       @default(0)
+  successRate             Decimal?  @db.Decimal(5, 2)
+  averageWaitTime         Int?
+  
+  clinicPhone             String?   @db.VarChar(20)
+  clinicEmail             String?   @db.VarChar(255)
+  clinicAddress           String?   @db.Text
+  
+  isVerified              Boolean   @default(false)
+  verifiedAt              DateTime?
+  verifiedBy              String?   @db.Uuid
+  verificationDocuments   Json?
+  
+  status                  String    @default("active") @db.VarChar(50)
+  availabilityStatus      String?   @default("available") @db.VarChar(50)
+  isAcceptingAppointments Boolean   @default(true)
+  
+  medicalCouncilRegistration String? @db.VarChar(100)
+  councilName             String?   @db.VarChar(255)
+  registrationYear        Int?
+  
+  insuranceAccepted       Json?
+  insuranceProviders      Json?
+  
+  profileImage            String?   @db.VarChar(500)
+  clinicImages            Json?
+  videoIntro              String?   @db.VarChar(500)
+  
+  slug                    String?   @unique @db.VarChar(255)
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  user                    User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  specialization          Specialization? @relation(fields: [specializationId], references: [specializationId], onDelete: SetNull)
+  
+  expertCalls             ExpertCall[]
+  appointments            Appointment[]
+  consultations           Consultation[]
+  prescriptions           Prescription[]
+  schedules               DoctorSchedule[]
+  
+  @@index([userId])
+  @@index([hospitalId])
+  @@index([specializationId])
+  @@index([status])
+  @@index([isVerified])
+  @@index([slug])
+  @@map("doctors")
+}

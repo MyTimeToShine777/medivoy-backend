@@ -1,0 +1,53 @@
+model ComorbidCondition {
+  comorbidId              String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  patientId               String    @db.Uuid
+  
+  // CONDITION DETAILS
+  conditionName           String    @db.VarChar(255)
+  conditionCode           String?   @db.VarChar(50)
+  icdCode                 String?   @db.VarChar(20)
+  
+  // DIAGNOSIS
+  diagnosedDate           DateTime? @db.Date
+  diagnosedBy             String?   @db.VarChar(255)
+  diagnosisFacility       String?   @db.VarChar(255)
+  
+  // SEVERITY
+  severity                String?   @db.VarChar(50)
+  status                  String    @default("active") @db.VarChar(50)
+  
+  // TREATMENT
+  currentTreatment        String?   @db.Text
+  medications             Json?
+  treatmentStartDate      DateTime? @db.Date
+  
+  // MONITORING
+  lastReviewDate          DateTime? @db.Date
+  nextReviewDate          DateTime? @db.Date
+  monitoringFrequency     String?   @db.VarChar(50)
+  
+  // IMPACT
+  impactOnDailyLiving    String?   @db.Text
+  restrictions            Json?
+  precautions             String?   @db.Text
+  
+  // NOTES
+  notes                   String?   @db.Text
+  clinicalNotes           String?   @db.Text
+  
+  // METADATA
+  isActive                Boolean   @default(true)
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  patient                 Patient   @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+  
+  @@index([patientId])
+  @@index([conditionName])
+  @@index([status])
+  @@map("comorbid_conditions")
+}

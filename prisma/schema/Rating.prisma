@@ -1,0 +1,21 @@
+model Rating {
+  ratingId                String    @id @default(uuid()) @db.Uuid
+  userId                  String    @db.Uuid
+  entityType              String    @db.VarChar(50)
+  entityId                String    @db.Uuid
+  rating                  Decimal   @db.Decimal(3, 2)
+  maxRating               Decimal   @default(5.00) @db.Decimal(3, 2)
+  ratingDimensions        Json?
+  comment                 String?   @db.Text
+  isVerified              Boolean   @default(false)
+  verifiedAt              DateTime?
+  metadata                Json?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  @@unique([userId, entityType, entityId])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([rating])
+  @@map("ratings")
+}

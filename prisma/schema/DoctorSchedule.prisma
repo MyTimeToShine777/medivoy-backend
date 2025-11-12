@@ -1,0 +1,55 @@
+model DoctorSchedule {
+  scheduleId              String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  doctorId                String    @db.Uuid
+  hospitalId              String?   @db.Uuid
+  
+  // SCHEDULE DETAILS
+  dayOfWeek               Int
+  startTime               DateTime  @db.Time
+  endTime                 DateTime  @db.Time
+  slotDuration            Int       @default(30)
+  
+  // CAPACITY
+  maxPatients             Int       @default(20)
+  currentBookings         Int       @default(0)
+  
+  // AVAILABILITY
+  isAvailable             Boolean   @default(true)
+  isRecurring             Boolean   @default(true)
+  effectiveFrom           DateTime  @db.Date
+  effectiveTo             DateTime? @db.Date
+  
+  // CONSULTATION TYPE
+  consultationType        String    @default("in-person") @db.VarChar(50)
+  allowsOnlineConsultation Boolean  @default(true)
+  allowsInPersonConsultation Boolean @default(true)
+  
+  // BREAKS
+  breakStartTime          DateTime? @db.Time
+  breakEndTime            DateTime? @db.Time
+  hasBreak                Boolean   @default(false)
+  
+  // LOCATION
+  location                String?   @db.VarChar(255)
+  roomNumber              String?   @db.VarChar(50)
+  
+  // EXCEPTIONS
+  holidayDates            Json?
+  blockedDates            Json?
+  
+  // NOTES
+  notes                   String?   @db.Text
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  doctor                  Doctor    @relation(fields: [doctorId], references: [doctorId], onDelete: Cascade)
+  
+  @@index([doctorId])
+  @@index([dayOfWeek])
+  @@index([isAvailable])
+  @@map("doctor_schedules")
+}

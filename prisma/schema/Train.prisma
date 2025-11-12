@@ -1,0 +1,46 @@
+model Train {
+  trainId                 String    @id @default(uuid()) @db.Uuid
+  bookingId               String    @db.Uuid
+  userId                  String    @db.Uuid
+  trainNumber             String?   @db.VarChar(50)
+  trainName               String?   @db.VarChar(255)
+  departureStation        String    @db.VarChar(255)
+  departureStationCode    String?   @db.VarChar(10)
+  arrivalStation          String    @db.VarChar(255)
+  arrivalStationCode      String?   @db.VarChar(10)
+  departureDate           DateTime  @db.Date
+  departureTime           String?   @db.VarChar(20)
+  arrivalDate             DateTime? @db.Date
+  arrivalTime             String?   @db.VarChar(20)
+  duration                Int?
+  class                   String?   @db.VarChar(50)
+  coach                   String?   @db.VarChar(20)
+  seatNumber              String?   @db.VarChar(20)
+  berth                   String?   @db.VarChar(20)
+  pnr                     String?   @db.VarChar(50)
+  bookingReference        String?   @db.VarChar(100)
+  price                   Decimal?  @db.Decimal(12, 2)
+  currency                String    @default("INR") @db.VarChar(3)
+  status                  String    @default("pending") @db.VarChar(50)
+  ticketUrl               String?   @db.VarChar(500)
+  eTicketNumber           String?   @db.VarChar(100)
+  passengerName           String?   @db.VarChar(255)
+  passengerAge            Int?
+  passengerGender         String?   @db.VarChar(10)
+  foodPreference          String?   @db.VarChar(50)
+  cancelledAt             DateTime?
+  cancellationReason      String?   @db.Text
+  refundAmount            Decimal?  @db.Decimal(12, 2)
+  notes                   String?   @db.Text
+  metadata                Json?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  booking                 Booking   @relation(fields: [bookingId], references: [bookingId], onDelete: Cascade)
+  
+  @@index([bookingId])
+  @@index([userId])
+  @@index([status])
+  @@index([departureDate])
+  @@map("trains")
+}

@@ -1,0 +1,78 @@
+model Companion {
+  companionId             String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  userId                  String    @db.Uuid
+  bookingId               String    @db.Uuid
+  
+  // COMPANION DETAILS
+  firstName               String    @db.VarChar(100)
+  lastName                String    @db.VarChar(100)
+  fullName                String    @db.VarChar(255)
+  relationship            String    @db.VarChar(50)
+  
+  // CONTACT
+  email                   String?   @db.VarChar(255)
+  phoneNumber             String?   @db.VarChar(20)
+  alternatePhone          String?   @db.VarChar(20)
+  
+  // PERSONAL DETAILS
+  dateOfBirth             DateTime? @db.Date
+  age                     Int?
+  gender                  String?   @db.VarChar(20)
+  nationality             String?   @db.VarChar(100)
+  
+  // IDENTIFICATION
+  passportNumber          String?   @db.VarChar(50)
+  passportExpiry          DateTime? @db.Date
+  idType                  String?   @db.VarChar(50)
+  idNumber                String?   @db.VarChar(100)
+  
+  // ADDRESS
+  address                 String?   @db.Text
+  city                    String?   @db.VarChar(100)
+  state                   String?   @db.VarChar(100)
+  country                 String?   @db.VarChar(100)
+  postalCode              String?   @db.VarChar(20)
+  
+  // MEDICAL INFO
+  bloodGroup              String?   @db.VarChar(10)
+  allergies               Json?
+  medicalConditions       Json?
+  emergencyMedication     String?   @db.Text
+  
+  // EMERGENCY CONTACT
+  emergencyContactName    String?   @db.VarChar(255)
+  emergencyContactPhone   String?   @db.VarChar(20)
+  emergencyContactRelation String?  @db.VarChar(50)
+  
+  // ACCOMMODATION
+  needsAccommodation      Boolean   @default(false)
+  accommodationId         String?   @db.Uuid
+  roomSharing             Boolean   @default(true)
+  
+  // DIETARY
+  dietaryRestrictions     Json?
+  foodAllergies           Json?
+  mealPreferences         String?   @db.Text
+  
+  // SPECIAL REQUIREMENTS
+  specialRequirements     String?   @db.Text
+  accessibilityNeeds      Json?
+  mobilityAssistance      Boolean   @default(false)
+  
+  // METADATA
+  notes                   String?   @db.Text
+  internalNotes           String?   @db.Text
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  user                    User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  booking                 Booking   @relation(fields: [bookingId], references: [bookingId], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([bookingId])
+  @@map("companions")
+}

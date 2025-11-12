@@ -1,0 +1,85 @@
+model Document {
+  documentId              String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  userId                  String    @db.Uuid
+  bookingId               String?   @db.Uuid
+  patientId               String?   @db.Uuid
+  
+  // DOCUMENT DETAILS
+  documentName            String    @db.VarChar(255)
+  documentType            String    @db.VarChar(100)
+  documentCategory        String?   @db.VarChar(100)
+  description             String?   @db.Text
+  
+  // FILE INFO
+  fileName                String    @db.VarChar(255)
+  fileUrl                 String    @db.VarChar(500)
+  fileSize                BigInt
+  fileSizeReadable        String?   @db.VarChar(50)
+  fileType                String    @db.VarChar(100)
+  mimeType                String?   @db.VarChar(100)
+  
+  // STORAGE
+  storageProvider         String?   @default("imagekit") @db.VarChar(50)
+  storageKey              String?   @db.VarChar(500)
+  storageBucket           String?   @db.VarChar(255)
+  thumbnailUrl            String?   @db.VarChar(500)
+  
+  // DOCUMENT METADATA
+  documentDate            DateTime? @db.Date
+  expiryDate              DateTime? @db.Date
+  documentNumber          String?   @db.VarChar(100)
+  issuedBy                String?   @db.VarChar(255)
+  issuedDate              DateTime? @db.Date
+  
+  // VERIFICATION
+  isVerified              Boolean   @default(false)
+  verifiedAt              DateTime?
+  verifiedBy              String?   @db.Uuid
+  verificationNotes       String?   @db.Text
+  
+  // ACCESS CONTROL
+  isPublic                Boolean   @default(false)
+  isConfidential          Boolean   @default(false)
+  accessLevel             String?   @default("private") @db.VarChar(50)
+  sharedWith              Json?
+  
+  // STATUS
+  status                  String    @default("active") @db.VarChar(50)
+  uploadStatus            String?   @default("completed") @db.VarChar(50)
+  
+  // VERSIONING
+  version                 Int       @default(1)
+  previousVersionId       String?   @db.Uuid
+  
+  // OCR & PROCESSING
+  isProcessed             Boolean   @default(false)
+  processedAt             DateTime?
+  extractedText           String?   @db.Text
+  extractedData           Json?
+  
+  // TAGS & NOTES
+  tags                    Json?
+  notes                   String?   @db.Text
+  internalNotes           String?   @db.Text
+  
+  // DOWNLOAD TRACKING
+  downloadCount           Int       @default(0)
+  lastDownloadedAt        DateTime?
+  
+  uploadedAt              DateTime  @default(now())
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  user                    User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  booking                 Booking?  @relation(fields: [bookingId], references: [bookingId], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([bookingId])
+  @@index([documentType])
+  @@index([status])
+  @@index([isVerified])
+  @@map("documents")
+}

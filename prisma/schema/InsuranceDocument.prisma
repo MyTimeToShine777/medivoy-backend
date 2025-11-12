@@ -1,0 +1,35 @@
+model InsuranceDocument {
+  id                      Int       @id @default(autoincrement())
+  bookingId               String    @db.Uuid
+  patientId               String    @db.Uuid
+  insuranceProviderName   String    @db.VarChar(255)
+  policyNumber            String    @db.VarChar(255)
+  groupNumber             String?   @db.VarChar(255)
+  memberId                String?   @db.VarChar(255)
+  coverageType            String    @default("partial") @db.VarChar(50)
+  coverageAmount          Decimal?  @db.Decimal(12, 2)
+  deductible              Decimal?  @db.Decimal(12, 2)
+  coInsurancePercentage   Decimal?  @db.Decimal(5, 2)
+  documentUrl             String    @db.VarChar(500)
+  documentType            String    @db.VarChar(100)
+  fileName                String    @db.VarChar(255)
+  fileSize                Int?
+  fileId                  String?   @db.VarChar(255)
+  validFrom               DateTime? @db.Date
+  validTo                 DateTime? @db.Date
+  verificationStatus      String    @default("pending") @db.VarChar(50)
+  verificationNotes       String?   @db.Text
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
+  
+  booking                 Booking   @relation(fields: [bookingId], references: [bookingId], onDelete: Cascade)
+  // Patient relation (patientId scalar exists)
+  patient                 Patient   @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+  // Optional link to Insurance
+  insuranceId             String?   @db.Uuid
+  insurance               Insurance? @relation(fields: [insuranceId], references: [insuranceId], onDelete: SetNull)
+  
+  @@index([bookingId])
+  @@index([patientId])
+  @@map("insurance_documents")
+}

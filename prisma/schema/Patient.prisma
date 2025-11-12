@@ -1,0 +1,48 @@
+model Patient {
+  patientId               String    @id @default(uuid()) @db.Uuid
+  userId                  String    @unique @db.Uuid
+  bloodType               String?   @db.VarChar(20)
+  height                  Decimal?  @db.Decimal(5, 2)
+  weight                  Decimal?  @db.Decimal(5, 2)
+  bmi                     Decimal?  @db.Decimal(5, 2)
+  allergies               Json?
+  chronicConditions       Json?
+  familyMedicalHistory    Json?
+  surgicalHistory         Json?
+  currentMedications      Json?
+  pastMedications         Json?
+  smoker                  Boolean?
+  alcoholUser             Boolean?
+  exerciseFrequency       String?   @db.VarChar(50)
+  preferredLanguage       String    @default("en") @db.VarChar(10)
+  preferredGenderOfDoctor String    @default("nopreference") @db.VarChar(20)
+  hasInsurance            Boolean   @default(false)
+  emergencyContactName    String?   @db.VarChar(255)
+  emergencyContactPhone   String?   @db.VarChar(20)
+  emergencyContactRelation String?  @db.VarChar(50)
+  totalConsultations      Int       @default(0)
+  totalTreatments         Int       @default(0)
+  totalHospitals          Int       @default(0)
+  isActive                Boolean   @default(true)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  familyMemberProfile     FamilyMember?
+  user                    User                      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  bookings                Booking[]
+  medicalDocuments        MedicalDocument[]
+  medicalRecords          MedicalRecord[]
+  prescriptions           Prescription[]
+  labReports              LabReport[]
+  immunizations           Immunization[]
+  vitalSigns              VitalSign[]
+  comorbidConditions      ComorbidCondition[]
+  patientTreatmentPlans   PatientTreatmentPlan[]
+  consultations           Consultation[]
+  dnaKits                 DNAKit[]
+  insuranceDocuments      InsuranceDocument[]
+  
+  @@index([userId])
+  @@index([isActive])
+  @@map("patients")
+}

@@ -1,0 +1,27 @@
+model Profile {
+  profileId               String    @id @default(uuid()) @db.Uuid
+  userId                  String    @unique @db.Uuid
+  bio                     String?   @db.Text
+  headline                String?   @db.VarChar(255)
+  website                 String?   @db.VarChar(500)
+  socialLinks             Json?
+  languages               Json?
+  timezone                String?   @db.VarChar(100)
+  nationality             String?   @db.VarChar(100)
+  passportNumber          String?   @db.VarChar(100)
+  passportExpiry          DateTime? @db.Date
+  emergencyContact        Json?
+  medicalHistory          Json?
+  allergies               Json?
+  currentMedications      Json?
+  bloodType               String?   @db.VarChar(10)
+  insuranceInfo           Json?
+  preferences             Json?
+  privacy                 Json?
+  metadata                Json?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  @@index([userId])
+  @@map("profiles")
+}

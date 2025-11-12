@@ -1,0 +1,49 @@
+model Coupon {
+  couponId                String    @id @default(uuid()) @db.Uuid
+  
+  // COUPON DETAILS
+  code                    String    @unique @db.VarChar(50)
+  name                    String    @db.VarChar(255)
+  description             String?   @db.Text
+  
+  // DISCOUNT TYPE & VALUE
+  discountType            String    @db.VarChar(20)
+  discountValue           Decimal   @db.Decimal(10, 2)
+  maxDiscountAmount       Decimal?  @db.Decimal(10, 2)
+  minOrderAmount          Decimal?  @db.Decimal(10, 2)
+  
+  // VALIDITY
+  validFrom               DateTime  @db.Date
+  validTo                 DateTime  @db.Date
+  isActive                Boolean   @default(true)
+  
+  // USAGE LIMITS
+  totalUsageLimit         Int?
+  usageCount              Int       @default(0)
+  perUserLimit            Int       @default(1)
+  
+  // APPLICABILITY
+  applicableFor           Json?
+  treatmentTypes          Json?
+  hospitalIds             Json?
+  countryIds              Json?
+  userTypes               Json?
+  
+  // RESTRICTIONS
+  excludedTreatments      Json?
+  excludedHospitals       Json?
+  firstTimeUsersOnly      Boolean   @default(false)
+  
+  // METADATA
+  createdBy               String?   @db.Uuid
+  tags                    Json?
+  notes                   String?   @db.Text
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  @@index([code])
+  @@index([validFrom, validTo])
+  @@index([isActive])
+  @@map("coupons")
+}

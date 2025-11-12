@@ -1,0 +1,23 @@
+model TreatmentSubcategory {
+  subcategoryId          String    @id @default(uuid()) @db.Uuid
+  categoryId             String    @db.Uuid
+  name                   String    @db.VarChar(255)
+  code                   String?   @db.VarChar(50)
+  description            String?   @db.Text
+  icon                   String?   @db.VarChar(255)
+  imageUrl               String?   @db.VarChar(500)
+  isActive               Boolean   @default(true)
+  displayOrder           Int       @default(0)
+  slug                   String    @unique @db.VarChar(255)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  
+  category               TreatmentCategory @relation(fields: [categoryId], references: [categoryId], onDelete: Cascade)
+  treatments             Treatment[]
+  
+  @@unique([categoryId, name])
+  @@index([categoryId])
+  @@index([slug])
+  @@index([isActive])
+  @@map("treatment_subcategories")
+}

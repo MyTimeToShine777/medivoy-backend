@@ -1,0 +1,166 @@
+model Hospital {
+  hospitalId              String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  countryId               String    @db.Uuid
+  cityId                  String    @db.Uuid
+  
+  // HOSPITAL DETAILS
+  hospitalName            String    @db.VarChar(255)
+  hospitalType            String?   @db.VarChar(100)
+  establishedYear         Int?
+  registrationNumber      String?   @db.VarChar(100)
+  
+  // ACCREDITATION
+  accreditations          Json?
+  certifications          Json?
+  awards                  Json?
+  isJCIAccredited         Boolean   @default(false)
+  isNABHAccredited        Boolean   @default(false)
+  
+  // CONTACT
+  phone                   String?   @db.VarChar(20)
+  alternatePhone          String?   @db.VarChar(20)
+  email                   String?   @db.VarChar(255)
+  website                 String?   @db.VarChar(255)
+  fax                     String?   @db.VarChar(20)
+  
+  // ADDRESS
+  address                 String    @db.Text
+  street                  String?   @db.VarChar(255)
+  city                    String?   @db.VarChar(100) // Keep as scalar string, rename if you have relation below
+  state                   String?   @db.VarChar(100)
+  postalCode              String?   @db.VarChar(20)
+  landmark                String?   @db.VarChar(255)
+  
+  // GEOGRAPHIC
+  latitude                Decimal?  @db.Decimal(10, 8)
+  longitude               Decimal?  @db.Decimal(11, 8)
+  timezone                String?   @db.VarChar(100)
+  
+  // DESCRIPTION
+  description             String?   @db.Text
+  shortDescription        String?   @db.VarChar(500)
+  missionStatement        String?   @db.Text
+  visionStatement         String?   @db.Text
+  
+  // FACILITIES
+  bedCount                Int       @default(0)
+  icuBeds                 Int       @default(0)
+  emergencyBeds           Int       @default(0)
+  operationTheaters       Int       @default(0)
+  totalArea               Decimal?  @db.Decimal(10, 2)
+  parkingSpaces           Int       @default(0)
+  
+  // AMENITIES
+  amenities               Json?
+  facilities              Json?
+  equipment               Json?
+  technologies            Json?
+  
+  // DEPARTMENTS
+  departments             Department[]
+  specialties             Json?
+  centerOfExcellence      Json?
+  
+  // STAFF
+  totalDoctors            Int       @default(0)
+  totalNurses             Int       @default(0)
+  totalStaff              Int       @default(0)
+  internationalPatientCoordinator Boolean @default(false)
+  
+  // SERVICES
+  services                Json?
+  emergencyServices       Boolean   @default(true)
+  ambulanceService        Boolean   @default(true)
+  pharmacyService         Boolean   @default(true)
+  labService              Boolean   @default(true)
+  bloodBank               Boolean   @default(false)
+  diagnosticCenter        Boolean   @default(true)
+  
+  // INTERNATIONAL PATIENTS
+  acceptsInternationalPatients Boolean @default(true)
+  languagesSupported      Json?
+  interpreterService      Boolean   @default(false)
+  visaAssistance          Boolean   @default(false)
+  airportPickup           Boolean   @default(false)
+  accommodationAssistance Boolean   @default(false)
+  
+  // INSURANCE
+  insuranceAccepted       Json?
+  cashlessInsurance       Boolean   @default(false)
+  
+  // PAYMENT
+  paymentMethods          Json?
+  acceptsCreditCard       Boolean   @default(true)
+  acceptsInternationalCards Boolean @default(true)
+  currenciesAccepted      Json?
+  
+  // WORKING HOURS
+  workingHours            Json?
+  emergencyHours          String?   @db.VarChar(100)
+  isOpen24x7              Boolean   @default(false)
+  
+  // RATINGS & REVIEWS
+  rating                  Decimal?  @db.Decimal(3, 2)
+  totalReviews            Int       @default(0)
+  ratingBreakdown         Json?
+  
+  // STATISTICS
+  totalTreatments         Int       @default(0)
+  successRate             Decimal?  @db.Decimal(5, 2)
+  patientSatisfaction     Decimal?  @db.Decimal(5, 2)
+  averageCostSaving       Decimal?  @db.Decimal(5, 2)
+  
+  // MEDIA
+  logo                    String?   @db.VarChar(500)
+  images                  Json?
+  videos                  Json?
+  virtualTour             String?   @db.VarChar(500)
+  
+  // SOCIAL MEDIA
+  facebookUrl             String?   @db.VarChar(255)
+  twitterUrl              String?   @db.VarChar(255)
+  instagramUrl            String?   @db.VarChar(255)
+  linkedinUrl             String?   @db.VarChar(255)
+  youtubeUrl              String?   @db.VarChar(255)
+  
+  // SEO
+  slug                    String    @unique @db.VarChar(255)
+  metaTitle               String?   @db.VarChar(255)
+  metaDescription         String?   @db.VarChar(500)
+  metaKeywords            String?   @db.VarChar(500)
+  
+  // VERIFICATION
+  isVerified              Boolean   @default(false)
+  verifiedAt              DateTime?
+  verifiedBy              String?   @db.Uuid
+  
+  // STATUS
+  isActive                Boolean   @default(true)
+  isFeatured              Boolean   @default(false)
+  displayOrder            Int       @default(0)
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  country                 Country   @relation(fields: [countryId], references: [countryId], onDelete: Cascade)
+  cityRel                 City      @relation(fields: [cityId], references: [cityId], onDelete: Cascade)
+
+  bookings                Booking[]
+  appointments            Appointment[]
+  consultations           Consultation[]
+  accommodations          Accommodation[]
+  invoices                Invoice[]
+  laboratories            Laboratory[]
+  packages                Package[]
+  
+  @@index([countryId])
+  @@index([cityId])
+  @@index([slug])
+  @@index([isActive])
+  @@index([isFeatured])
+  @@index([isVerified])
+  @@map("hospitals")
+}

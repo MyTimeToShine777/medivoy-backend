@@ -1,0 +1,70 @@
+model BookingPreferences {
+  preferenceId            String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  bookingId               String    @unique @db.Uuid
+  
+  // ACCOMMODATION PREFERENCES
+  accommodationType       String?   @db.VarChar(100)
+  roomType                String?   @db.VarChar(50)
+  bedType                 String?   @db.VarChar(50)
+  smokingPreference       String?   @default("non-smoking") @db.VarChar(50)
+  floorPreference         String?   @db.VarChar(50)
+  viewPreference          String?   @db.VarChar(50)
+  
+  // DIETARY PREFERENCES
+  dietaryRequirements     String?   @db.Text
+  dietType                String?   @db.VarChar(50)
+  allergies               Json?
+  foodPreferences         Json?
+  mealTimings             Json?
+  
+  // SPECIAL REQUIREMENTS
+  specialRequests         String?   @db.Text
+  medicalEquipment        Json?
+  accessibilityNeeds      Json?
+  mobilityAssistance      Boolean   @default(false)
+  wheelchairRequired      Boolean   @default(false)
+  oxygenRequired          Boolean   @default(false)
+  
+  // COMMUNICATION PREFERENCES
+  languagePreference      String?   @db.VarChar(50)
+  interpreterRequired     Boolean   @default(false)
+  interpreterLanguage     String?   @db.VarChar(50)
+  communicationMode       String?   @default("email") @db.VarChar(50)
+  
+  // TRAVEL PREFERENCES
+  transportationNeeded    Boolean   @default(false)
+  transportationType      String?   @db.VarChar(50)
+  pickupLocation          String?   @db.VarChar(255)
+  dropoffLocation         String?   @db.VarChar(255)
+  flightPreferences       Json?
+  
+  // VISA & DOCUMENTATION
+  visaAssistanceNeeded    Boolean   @default(false)
+  passportNumber          String?   @db.VarChar(50)
+  passportExpiry          DateTime?
+  visaStatus              String?   @db.VarChar(50)
+  
+  // COMPANIONS
+  companionCount          Int       @default(0)
+  companionDetails        Json?
+  companionAccommodation  Boolean   @default(false)
+  
+  // ADDITIONAL SERVICES
+  additionalServices      Json?
+  tourismInterest         Boolean   @default(false)
+  tourPreferences         Json?
+  
+  // METADATA
+  notes                   String?   @db.Text
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  booking                 Booking   @relation(fields: [bookingId], references: [bookingId], onDelete: Cascade)
+  
+  @@index([bookingId])
+  @@map("booking_preferences")
+}

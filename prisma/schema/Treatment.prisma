@@ -1,0 +1,47 @@
+model Treatment {
+  treatmentId            String    @id @default(uuid()) @db.Uuid
+  categoryId             String?   @db.Uuid
+  subcategoryId          String?   @db.Uuid
+  name                   String    @db.VarChar(255)
+  code                   String?   @unique @db.VarChar(50)
+  description            String?   @db.Text
+  shortDescription       String?   @db.VarChar(500)
+  duration               Int?
+  durationUnit           String?   @default("days") @db.VarChar(20)
+  complexity             String?   @db.VarChar(50)
+  successRate            Decimal?  @db.Decimal(5, 2)
+  recoveryTime           Int?
+  minPrice               Decimal?  @db.Decimal(12, 2)
+  maxPrice               Decimal?  @db.Decimal(12, 2)
+  avgPrice               Decimal?  @db.Decimal(12, 2)
+  currency               String    @default("USD") @db.VarChar(3)
+  isActive               Boolean   @default(true)
+  isFeatured             Boolean   @default(false)
+  isPopular              Boolean   @default(false)
+  displayOrder           Int       @default(0)
+  images                 Json?
+  videos                 Json?
+  slug                   String    @unique @db.VarChar(255)
+  metaTitle              String?   @db.VarChar(255)
+  metaDescription        String?   @db.VarChar(500)
+  metaKeywords           String?   @db.VarChar(500)
+  bookingsCount          Int       @default(0)
+  viewsCount             Int       @default(0)
+  rating                 Decimal?  @db.Decimal(3, 2)
+  reviewsCount           Int       @default(0)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  
+  category               TreatmentCategory? @relation(fields: [categoryId], references: [categoryId], onDelete: SetNull)
+  subcategory            TreatmentSubcategory? @relation(fields: [subcategoryId], references: [subcategoryId], onDelete: SetNull)
+  bookings               Booking[]
+  packages               Package[]
+  patientTreatmentPlans  PatientTreatmentPlan[]
+  
+  @@index([categoryId])
+  @@index([subcategoryId])
+  @@index([slug])
+  @@index([isActive])
+  @@index([isFeatured])
+  @@map("treatments")
+}

@@ -1,0 +1,16 @@
+model NotificationPreference {
+  preferenceId            String    @id @default(uuid()) @db.Uuid
+  userId                  String    @db.Uuid
+  channel                 String    @db.VarChar(50)
+  category                String    @db.VarChar(100)
+  isEnabled               Boolean   @default(true)
+  frequency               String?   @default("realtime") @db.VarChar(50)
+  schedule                Json?
+  metadata                Json?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  @@unique([userId, channel, category])
+  @@index([userId])
+  @@map("notification_preferences")
+}

@@ -1,0 +1,22 @@
+model Translation {
+  translationId           String    @id @default(uuid()) @db.Uuid
+  key                     String    @db.VarChar(255)
+  language                String    @db.VarChar(10)
+  value                   String    @db.Text
+  context                 String?   @db.VarChar(100)
+  category                String?   @db.VarChar(100)
+  isActive                Boolean   @default(true)
+  isAutoTranslated        Boolean   @default(false)
+  translatedBy            String?   @db.Uuid
+  verifiedBy              String?   @db.Uuid
+  verifiedAt              DateTime?
+  metadata                Json?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  @@unique([key, language])
+  @@index([key])
+  @@index([language])
+  @@index([category])
+  @@map("translations")
+}

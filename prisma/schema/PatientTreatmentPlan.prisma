@@ -1,0 +1,53 @@
+// Patient Treatment Plan Model - Treatment plans for patients
+// NO optional chaining - Production Ready
+model PatientTreatmentPlan {
+  // ========== PRIMARY KEY ==========
+  planId                  String    @id @default(uuid()) @db.Uuid
+  
+  // ========== FOREIGN KEYS ==========
+  patientId               String    @db.Uuid
+  doctorId                String?   @db.Uuid
+  treatmentId             String?   @db.Uuid
+  bookingId               String?   @db.Uuid
+  
+  // ========== PLAN DETAILS ==========
+  planName                String    @db.VarChar(255)
+  description             String?   @db.Text
+  
+  // ========== PLAN COMPONENTS ==========
+  goals                   Json?     // Array of treatment goals
+  procedures              Json?     // Array of procedures in plan
+  medications             Json?     // Medication schedule
+  lifestyle               Json?     // Lifestyle recommendations
+  diet                    Json?     // Dietary guidelines
+  exercise                Json?     // Exercise regimen
+  followUps               Json?     // Follow-up appointments schedule
+  
+  // ========== TIMELINE ==========
+  startDate               DateTime  @db.Date
+  endDate                 DateTime? @db.Date
+  duration                Int?      // Duration in days
+  
+  // ========== STATUS & PROGRESS ==========
+  status                  String    @default("active") @db.VarChar(50)  // active, completed, cancelled
+  progress                Decimal?  @db.Decimal(5, 2)  // Progress percentage 0-100
+  
+  // ========== ADDITIONAL INFO ==========
+  notes                   String?   @db.Text
+  
+  // ========== TIMESTAMPS ==========
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // ========== RELATIONSHIPS ==========
+  patient                 Patient   @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+  treatment               Treatment? @relation(fields: [treatmentId], references: [treatmentId], onDelete: SetNull)
+  
+  // ========== INDEXES ==========
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([status])
+  
+  // ========== TABLE MAPPING ==========
+  @@map("patient_treatment_plans")
+}

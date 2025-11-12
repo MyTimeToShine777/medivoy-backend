@@ -1,0 +1,119 @@
+model Appointment {
+  appointmentId           String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  userId                  String?   @db.Uuid
+  patientId               String    @db.Uuid
+  doctorId                String    @db.Uuid
+  hospitalId              String?   @db.Uuid
+  departmentId            String?   @db.Uuid
+  bookingId               String?   @db.Uuid
+  
+  // APPOINTMENT DETAILS
+  appointmentNumber       String    @unique @db.VarChar(50)
+  appointmentType         String    @db.VarChar(50)
+  appointmentDate         DateTime  @db.Date
+  appointmentTime         DateTime  @db.Time
+  duration                Int       @default(30)
+  endTime                 DateTime? @db.Time
+  status                  String    @default("scheduled") @db.VarChar(50)
+  
+  // SYMPTOMS & REASON
+  reasonForVisit          String?   @db.Text
+  symptoms                Json?
+  chiefComplaint          String?   @db.Text
+  presentingIssue         String?   @db.Text
+  urgencyLevel            String?   @default("normal") @db.VarChar(20)
+  
+  // CONSULTATION MODE
+  consultationType        String    @default("in-person") @db.VarChar(50)
+  meetingLink             String?   @db.VarChar(500)
+  meetingId               String?   @db.VarChar(255)
+  meetingPassword         String?   @db.VarChar(255)
+  roomNumber              String?   @db.VarChar(50)
+  
+  // APPOINTMENT LIFECYCLE
+  scheduledAt             DateTime  @default(now())
+  confirmedAt             DateTime?
+  checkedInAt             DateTime?
+  startedAt               DateTime?
+  completedAt             DateTime?
+  cancelledAt             DateTime?
+  cancellationReason      String?   @db.Text
+  cancelledBy             String?   @db.Uuid
+  rescheduledFrom         String?   @db.Uuid
+  rescheduledTo           String?   @db.Uuid
+  noShowAt                DateTime?
+  
+  // REMINDERS & NOTIFICATIONS
+  reminderSent            Boolean   @default(false)
+  reminderSentAt          DateTime?
+  confirmationSent        Boolean   @default(false)
+  confirmationSentAt      DateTime?
+  followUpRequired        Boolean   @default(false)
+  followUpDate            DateTime?
+  
+  // PAYMENT & BILLING
+  consultationFee         Decimal   @db.Decimal(10, 2)
+  currency                String    @default("USD") @db.VarChar(3)
+  isPaid                  Boolean   @default(false)
+  paymentId               Int?      // Changed to Int? to match Payment.id type
+  paymentMethod           String?   @db.VarChar(50)
+  paidAt                  DateTime?
+  invoiceId               String?   @db.Uuid
+  
+  // MEDICAL RECORDS
+  vitalSigns              Json?
+  diagnosis               String?   @db.Text
+  prescriptionId          String?   @db.Uuid @unique  // Unique for 1:1 relation
+  
+  labTestsOrdered         Json?
+  referralGiven           Boolean   @default(false)
+  referralDoctorId        String?   @db.Uuid
+  referralNotes           String?   @db.Text
+  
+  // NOTES & OBSERVATIONS
+  doctorNotes             String?   @db.Text
+  nurseNotes              String?   @db.Text
+  internalNotes           String?   @db.Text
+  patientNotes            String?   @db.Text
+  
+  // RATINGS & FEEDBACK
+  patientRating           Int?
+  patientFeedback         String?   @db.Text
+  feedbackSubmittedAt     DateTime?
+  
+  // TECHNICAL
+  source                  String?   @default("web") @db.VarChar(50)
+  ipAddress               String?   @db.VarChar(45)
+  userAgent               String?   @db.Text
+  
+  // METADATA
+  isActive                Boolean   @default(true)
+  tags                    Json?
+  metadata                Json?
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  user                    User?     @relation(fields: [userId], references: [userId], onDelete: SetNull)
+  doctor                  Doctor    @relation(fields: [doctorId], references: [doctorId], onDelete: Cascade)
+  hospital                Hospital? @relation(fields: [hospitalId], references: [hospitalId], onDelete: SetNull)
+  department              Department? @relation(fields: [departmentId], references: [departmentId], onDelete: SetNull)
+  booking                 Booking?  @relation(fields: [bookingId], references: [bookingId], onDelete: SetNull)
+  payment                 Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  invoice                 Invoice?  @relation(fields: [invoiceId], references: [invoiceId], onDelete: SetNull)
+  prescription            Prescription? @relation(fields: [prescriptionId], references: [prescriptionId], onDelete: SetNull)
+  labTests               LabTest[]
+  
+  @@index([userId])
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([hospitalId])
+  @@index([bookingId])
+  @@index([appointmentDate])
+  @@index([status])
+  @@index([appointmentType])
+  @@map("appointments")
+}

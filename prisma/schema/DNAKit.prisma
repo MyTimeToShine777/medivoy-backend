@@ -1,0 +1,83 @@
+model DNAKit {
+  dnaKitId                String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  patientId               String    @db.Uuid
+  orderedBy               String?   @db.Uuid
+  
+  // KIT DETAILS
+  kitNumber               String    @unique @db.VarChar(100)
+  kitType                 String    @db.VarChar(100)
+  kitName                 String    @db.VarChar(255)
+  manufacturer            String?   @db.VarChar(255)
+  
+  // ORDER STATUS
+  status                  String    @default("ordered") @db.VarChar(50)
+  orderedAt               DateTime  @default(now())
+  shippedAt               DateTime?
+  deliveredAt             DateTime?
+  sampleCollectedAt       DateTime?
+  receivedAtLabAt         DateTime?
+  resultsReadyAt          DateTime?
+  
+  // SHIPPING
+  trackingNumber          String?   @db.VarChar(100)
+  shippingCarrier         String?   @db.VarChar(100)
+  shippingAddress         String?   @db.Text
+  
+  // SAMPLE DETAILS
+  sampleType              String?   @db.VarChar(100)
+  sampleId                String?   @db.VarChar(100)
+  sampleQuality           String?   @db.VarChar(50)
+  sampleNotes             String?   @db.Text
+  
+  // TESTING
+  testType                String?   @db.VarChar(255)
+  testsIncluded           Json?
+  laboratoryName          String?   @db.VarChar(255)
+  labTechnician           String?   @db.VarChar(255)
+  
+  // RESULTS
+  resultsUrl              String?   @db.VarChar(500)
+  resultsDocument         String?   @db.VarChar(500)
+  resultsSummary          String?   @db.Text
+  findings                Json?
+  recommendations         String?   @db.Text
+  
+  // GENETIC INFO
+  geneticMarkers          Json?
+  riskFactors             Json?
+  healthInsights          Json?
+  ancestryInfo            Json?
+  
+  // PRIVACY
+  consentGiven            Boolean   @default(false)
+  consentDate             DateTime?
+  dataSharing             Boolean   @default(false)
+  anonymized              Boolean   @default(false)
+  
+  // PRICING
+  kitPrice                Decimal   @db.Decimal(10, 2)
+  shippingFee             Decimal   @default(0) @db.Decimal(10, 2)
+  totalPrice              Decimal   @db.Decimal(10, 2)
+  currency                String    @default("USD") @db.VarChar(3)
+  isPaid                  Boolean   @default(false)
+  paymentId               String?   @db.Uuid
+  
+  // NOTES
+  notes                   String?   @db.Text
+  internalNotes           String?   @db.Text
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  patient                 Patient   @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+  laboratoryId            String?   @db.Uuid
+  laboratory              Laboratory? @relation(fields: [laboratoryId], references: [laboratoryId], onDelete: SetNull)
+  
+  @@index([patientId])
+  @@index([kitNumber])
+  @@index([status])
+  @@map("dna_kits")
+}

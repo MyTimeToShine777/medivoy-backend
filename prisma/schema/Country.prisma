@@ -1,0 +1,96 @@
+model Country {
+  countryId               String    @id @default(uuid()) @db.Uuid
+  
+  // COUNTRY DETAILS
+  countryName             String    @unique @db.VarChar(255)
+  countryNameLocal        String?   @db.VarChar(255)
+  officialName            String?   @db.VarChar(255)
+  
+  // CODES
+  iso2Code                String    @unique @db.VarChar(2)
+  iso3Code                String    @unique @db.VarChar(3)
+  numericCode             String?   @db.VarChar(10)
+  callingCode             String?   @db.VarChar(10)
+  
+  // GEOGRAPHIC
+  continent               String?   @db.VarChar(50)
+  region                  String?   @db.VarChar(100)
+  subregion               String?   @db.VarChar(100)
+  latitude                Decimal?  @db.Decimal(10, 8)
+  longitude               Decimal?  @db.Decimal(11, 8)
+  
+  // DEMOGRAPHICS
+  capital                 String?   @db.VarChar(255)
+  population              BigInt?
+  area                    Decimal?  @db.Decimal(15, 2)
+  
+  // CURRENCY
+  currencyCode            String?   @db.VarChar(3)
+  currencyName            String?   @db.VarChar(100)
+  currencySymbol          String?   @db.VarChar(10)
+  
+  // LANGUAGE
+  languages               Json?
+  primaryLanguage         String?   @db.VarChar(100)
+  
+  // DESCRIPTION
+  description             String?   @db.Text
+  descriptionLocal        String?   @db.Text
+  shortDescription        String?   @db.VarChar(500)
+  
+  // MEDICAL TOURISM
+  isMedicalTourismDestination Boolean @default(false)
+  popularFor              Json?
+  specialties             Json?
+  medicalTourismRanking   Int?
+  
+  // VISA INFORMATION
+  visaRequired            Boolean   @default(true)
+  visaOnArrival           Boolean   @default(false)
+  eVisaAvailable          Boolean   @default(false)
+  visaFee                 Decimal?  @db.Decimal(10, 2)
+  visaProcessingDays      Int?
+  visaValidityDays        Int?
+  visaInfo                String?   @db.Text
+  
+  // STATISTICS
+  hospitalCount           Int       @default(0)
+  doctorCount             Int       @default(0)
+  cityCount               Int       @default(0)
+  treatmentCount          Int       @default(0)
+  averageRating           Decimal?  @db.Decimal(3, 2)
+  totalReviews            Int       @default(0)
+  
+  // MEDIA
+  flagUrl                 String?   @db.VarChar(500)
+  imageUrl                String?   @db.VarChar(500)
+  images                  Json?
+  
+  // SEO
+  slug                    String    @unique @db.VarChar(255)
+  metaTitle               String?   @db.VarChar(255)
+  metaDescription         String?   @db.VarChar(500)
+  metaKeywords            String?   @db.VarChar(500)
+  
+  // VISIBILITY
+  isActive                Boolean   @default(true)
+  isFeatured              Boolean   @default(false)
+  displayOrder            Int       @default(0)
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  cities                  City[]
+  hospitals               Hospital[]
+  bookings                Booking[]
+  packages                Package[]
+  states                  State[]
+  
+  @@index([countryName])
+  @@index([iso2Code])
+  @@index([slug])
+  @@index([isActive])
+  @@index([isFeatured])
+  @@map("countries")
+}

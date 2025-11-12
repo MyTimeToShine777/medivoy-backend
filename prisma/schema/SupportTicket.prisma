@@ -1,0 +1,30 @@
+model SupportTicket {
+  ticketId               String    @id @default(uuid()) @db.Uuid
+  userId                 String    @db.Uuid
+  ticketNumber           String    @unique @db.VarChar(50)
+  subject                String    @db.VarChar(255)
+  description            String    @db.Text
+  category               String    @db.VarChar(100)
+  priority               String    @default("medium") @db.VarChar(20)
+  status                 String    @default("open") @db.VarChar(50)
+  assignedTo             String?   @db.Uuid
+  relatedEntityType      String?   @db.VarChar(50)
+  relatedEntityId        String?   @db.Uuid
+  resolution             String?   @db.Text
+  resolvedAt             DateTime?
+  closedAt               DateTime?
+  tags                   Json?
+  attachments            Json?
+  metadata               Json?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  
+  user                   User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([ticketNumber])
+  @@index([status])
+  @@index([category])
+  @@index([priority])
+  @@map("support_tickets")
+}

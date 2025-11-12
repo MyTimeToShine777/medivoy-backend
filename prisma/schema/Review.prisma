@@ -1,0 +1,32 @@
+model Review {
+  reviewId                String    @id @default(uuid()) @db.Uuid
+  userId                  String    @db.Uuid
+  entityType              String    @db.VarChar(50)
+  entityId                String    @db.Uuid
+  rating                  Int
+  title                   String?   @db.VarChar(255)
+  comment                 String?   @db.Text
+  pros                    String?   @db.Text
+  cons                    String?   @db.Text
+  isVerified              Boolean   @default(false)
+  verifiedAt              DateTime?
+  isAnonymous             Boolean   @default(false)
+  helpfulCount            Int       @default(0)
+  unhelpfulCount          Int       @default(0)
+  status                  String    @default("pending") @db.VarChar(50)
+  moderatedBy             String?   @db.Uuid
+  moderatedAt             DateTime?
+  moderationNotes         String?   @db.Text
+  isPublished             Boolean   @default(false)
+  publishedAt             DateTime?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  user                    User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([rating])
+  @@index([status])
+  @@map("reviews")
+}

@@ -1,0 +1,80 @@
+model City {
+  cityId                  String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  countryId               String    @db.Uuid
+  stateId                 String?   @db.Uuid
+  
+  // CITY DETAILS
+  cityName                String    @db.VarChar(255)
+  cityNameLocal           String?   @db.VarChar(255)
+  stateOrProvince         String?   @db.VarChar(255)
+  
+  // GEOGRAPHIC
+  latitude                Decimal?  @db.Decimal(10, 8)
+  longitude               Decimal?  @db.Decimal(11, 8)
+  timezone                String?   @db.VarChar(100)
+  elevation               Int?
+  
+  // CODES
+  isoCode                 String?   @db.VarChar(10)
+  postalCode              String?   @db.VarChar(20)
+  areaCode                String?   @db.VarChar(10)
+  
+  // DEMOGRAPHICS
+  population              BigInt?
+  populationYear          Int?
+  area                    Decimal?  @db.Decimal(10, 2)
+  density                 Decimal?  @db.Decimal(10, 2)
+  
+  // DESCRIPTION
+  description             String?   @db.Text
+  descriptionLocal        String?   @db.Text
+  shortDescription        String?   @db.VarChar(500)
+  
+  // MEDICAL TOURISM
+  isMedicalTourismHub     Boolean   @default(false)
+  popularFor              Json?
+  specialties             Json?
+  
+  // STATISTICS
+  hospitalCount           Int       @default(0)
+  doctorCount             Int       @default(0)
+  treatmentCount          Int       @default(0)
+  averageRating           Decimal?  @db.Decimal(3, 2)
+  totalReviews            Int       @default(0)
+  
+  // MEDIA
+  imageUrl                String?   @db.VarChar(500)
+  images                  Json?
+  videoUrl                String?   @db.VarChar(500)
+  
+  // SEO
+  slug                    String    @unique @db.VarChar(255)
+  metaTitle               String?   @db.VarChar(255)
+  metaDescription         String?   @db.VarChar(500)
+  metaKeywords            String?   @db.VarChar(500)
+  
+  // VISIBILITY
+  isActive                Boolean   @default(true)
+  isFeatured              Boolean   @default(false)
+  displayOrder            Int       @default(0)
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  country                 Country   @relation(fields: [countryId], references: [countryId], onDelete: Cascade)
+  state                   State?    @relation(fields: [stateId], references: [stateId], onDelete: SetNull)
+  hospitals               Hospital[]
+  bookings                Booking[]
+  accommodations          Accommodation[]
+  packages                Package[]
+  
+  @@index([countryId])
+  @@index([cityName])
+  @@index([slug])
+  @@index([isActive])
+  @@index([isFeatured])
+  @@map("cities")
+}

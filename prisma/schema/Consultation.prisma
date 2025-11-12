@@ -1,0 +1,114 @@
+model Consultation {
+  consultationId          String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  userId                  String    @db.Uuid
+  patientId               String    @db.Uuid
+  doctorId                String    @db.Uuid
+  bookingId               String?   @db.Uuid
+  hospitalId              String?   @db.Uuid
+  
+  // CONSULTATION DETAILS
+  consultationNumber      String    @unique @db.VarChar(50)
+  consultationType        String    @db.VarChar(50)
+  consultationDate        DateTime  @db.Date
+  consultationTime        DateTime  @db.Time
+  duration                Int       @default(30)
+  status                  String    @default("scheduled") @db.VarChar(50)
+  
+  // CHIEF COMPLAINT
+  chiefComplaint          String    @db.Text
+  symptoms                Json?
+  symptomDuration         String?   @db.VarChar(100)
+  symptomSeverity         String?   @db.VarChar(50)
+  
+  // HISTORY
+  presentIllness          String?   @db.Text
+  pastMedicalHistory      String?   @db.Text
+  familyHistory           String?   @db.Text
+  socialHistory           String?   @db.Text
+  allergies               Json?
+  currentMedications      Json?
+  
+  // PHYSICAL EXAMINATION
+  vitalSigns              Json?
+  generalAppearance       String?   @db.Text
+  systemicExamination     Json?
+  physicalFindings        String?   @db.Text
+  
+  // INVESTIGATIONS
+  investigationsOrdered   Json?
+  labTestsOrdered         Json?
+  imagingOrdered          Json?
+  investigationResults    Json?
+  
+  // DIAGNOSIS
+  provisionalDiagnosis    String?   @db.Text
+  finalDiagnosis          String?   @db.Text
+  differentialDiagnosis   Json?
+  icdCodes                Json?
+  
+  // TREATMENT PLAN
+  treatmentPlan           String?   @db.Text
+  prescriptions           Json?
+  proceduresRecommended   Json?
+  surgeryRecommended      Boolean   @default(false)
+  surgeryDetails          String?   @db.Text
+  
+  // FOLLOW-UP
+  followUpRequired        Boolean   @default(false)
+  followUpDate            DateTime? @db.Date
+  followUpNotes           String?   @db.Text
+  
+  // REFERRAL
+  referralRequired        Boolean   @default(false)
+  referralTo              String?   @db.Uuid
+  referralSpecialty       String?   @db.VarChar(255)
+  referralReason          String?   @db.Text
+  referralNotes           String?   @db.Text
+  
+  // DOCTOR NOTES
+  doctorNotes             String?   @db.Text
+  clinicalNotes           String?   @db.Text
+  privateNotes            String?   @db.Text
+  
+  // PATIENT EDUCATION
+  adviceGiven             String?   @db.Text
+  lifestyleModifications  Json?
+  dietaryAdvice           String?   @db.Text
+  exerciseAdvice          String?   @db.Text
+  
+  // DOCUMENTATION
+  attachments             Json?
+  recordingUrl            String?   @db.VarChar(500)
+  transcriptUrl           String?   @db.VarChar(500)
+  
+  // PAYMENT
+  consultationFee         Decimal   @db.Decimal(10, 2)
+  currency                String    @default("USD") @db.VarChar(3)
+  isPaid                  Boolean   @default(false)
+  paymentId               String?   @db.Uuid
+  
+  // METADATA
+  completedAt             DateTime?
+  cancelledAt             DateTime?
+  cancellationReason      String?   @db.Text
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  user                    User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  patient                 Patient   @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+  doctor                  Doctor    @relation(fields: [doctorId], references: [doctorId], onDelete: Cascade)
+  booking                 Booking?  @relation(fields: [bookingId], references: [bookingId], onDelete: SetNull)
+  hospital                Hospital? @relation(fields: [hospitalId], references: [hospitalId], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([bookingId])
+  @@index([consultationDate])
+  @@index([status])
+  @@map("consultations")
+}

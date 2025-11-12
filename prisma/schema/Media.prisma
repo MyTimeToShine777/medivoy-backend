@@ -1,0 +1,43 @@
+model Media {
+  mediaId                 String    @id @default(uuid()) @db.Uuid
+  filename                String    @db.VarChar(255)
+  originalFilename        String?   @db.VarChar(255)
+  fileSize                Int
+  mimeType                String    @db.VarChar(100)
+  fileExtension           String?   @db.VarChar(10)
+  url                     String    @db.VarChar(500)
+  storagePath             String?   @db.VarChar(500)
+  storageProvider         String    @default("s3") @db.VarChar(50)
+  storageKey              String?   @db.VarChar(500)
+  type                    String    @db.VarChar(50)
+  category                String?   @db.VarChar(100)
+  width                   Int?
+  height                  Int?
+  aspectRatio             String?   @db.VarChar(20)
+  thumbnailUrl            String?   @db.VarChar(500)
+  optimizedUrl            String?   @db.VarChar(500)
+  duration                Int?
+  videoCodec              String?   @db.VarChar(50)
+  audioCodec              String?   @db.VarChar(50)
+  uploadedBy              String?   @db.Uuid
+  entityType              String?   @db.VarChar(50)
+  entityId                String?   @db.Uuid
+  title                   String?   @db.VarChar(255)
+  description             String?   @db.Text
+  altText                 String?   @db.VarChar(255)
+  caption                 String?   @db.Text
+  metadata                Json?
+  exif                    Json?
+  tags                    Json?
+  isPublic                Boolean   @default(false)
+  isPrimary               Boolean   @default(false)
+  displayOrder            Int       @default(0)
+  isActive                Boolean   @default(true)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  @@index([entityType, entityId])
+  @@index([category])
+  @@index([uploadedBy])
+  @@map("media")
+}

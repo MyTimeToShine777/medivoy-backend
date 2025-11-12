@@ -1,0 +1,27 @@
+model PrivacyPolicy {
+  policyId                String    @id @default(uuid()) @db.Uuid
+  version                 String    @db.VarChar(50)
+  title                   String    @db.VarChar(255)
+  content                 String    @db.Text
+  effectiveDate           DateTime  @db.Date
+  expiryDate              DateTime? @db.Date
+  isActive                Boolean   @default(false)
+  isCurrent               Boolean   @default(false)
+  language                String    @default("en") @db.VarChar(10)
+  publishedAt             DateTime?
+  publishedBy             String?   @db.Uuid
+  approvedBy              String?   @db.Uuid
+  approvedAt              DateTime?
+  summary                 String?   @db.Text
+  changes                 String?   @db.Text
+  metadata                Json?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  @@unique([version, language])
+  @@index([isActive])
+  @@index([isCurrent])
+  @@index([effectiveDate])
+  @@map("privacy_policies")
+}
+

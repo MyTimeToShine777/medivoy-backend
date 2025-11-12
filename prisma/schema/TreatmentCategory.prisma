@@ -1,0 +1,22 @@
+model TreatmentCategory {
+  categoryId             String    @id @default(uuid()) @db.Uuid
+  name                   String    @unique @db.VarChar(255)
+  code                   String?   @unique @db.VarChar(50)
+  description            String?   @db.Text
+  icon                   String?   @db.VarChar(255)
+  imageUrl               String?   @db.VarChar(500)
+  isActive               Boolean   @default(true)
+  displayOrder           Int       @default(0)
+  slug                   String    @unique @db.VarChar(255)
+  metaTitle              String?   @db.VarChar(255)
+  metaDescription        String?   @db.VarChar(500)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  
+  treatments             Treatment[]
+  subcategories          TreatmentSubcategory[]
+  
+  @@index([slug])
+  @@index([isActive])
+  @@map("treatment_categories")
+}

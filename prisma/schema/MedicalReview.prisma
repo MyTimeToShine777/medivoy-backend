@@ -1,0 +1,43 @@
+model MedicalReview {
+  reviewId                String    @id @default(uuid()) @db.Uuid
+  patientId               String    @db.Uuid
+  doctorId                String?   @db.Uuid
+  appointmentId           String?   @db.Uuid
+  bookingId               String?   @db.Uuid
+  hospitalId              String?   @db.Uuid
+  treatmentId             String?   @db.Uuid
+  reviewType              String    @db.VarChar(50)
+  rating                  Int
+  title                   String?   @db.VarChar(255)
+  review                  String?   @db.Text
+  pros                    String?   @db.Text
+  cons                    String?   @db.Text
+  medicalOutcome          String?   @db.Text
+  treatmentEffectiveness  Int?
+  hospitalCleanliness     Int?
+  staffBehavior           Int?
+  facilityQuality         Int?
+  valueForMoney           Int?
+  waitTime                Int?
+  wouldRecommend          Boolean?
+  verificationStatus      String    @default("pending") @db.VarChar(50)
+  verifiedAt              DateTime?
+  verifiedBy              String?   @db.Uuid
+  isPublished             Boolean   @default(false)
+  publishedAt             DateTime?
+  helpfulCount            Int       @default(0)
+  reportedCount           Int       @default(0)
+  moderationNotes         String?   @db.Text
+  images                  Json?
+  videos                  Json?
+  metadata                Json?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([hospitalId])
+  @@index([rating])
+  @@index([verificationStatus])
+  @@map("medical_reviews")
+}

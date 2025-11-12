@@ -1,0 +1,96 @@
+model Insurance {
+  insuranceId             String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS  
+  userId                  String    @db.Uuid
+  patientId               String?   @db.Uuid
+  
+  // INSURANCE PROVIDER
+  providerName            String    @db.VarChar(255)
+  providerCode            String?   @db.VarChar(100)
+  providerPhone           String?   @db.VarChar(20)
+  providerEmail           String?   @db.VarChar(255)
+  providerWebsite         String?   @db.VarChar(255)
+  
+  // POLICY DETAILS
+  policyNumber            String    @unique @db.VarChar(100)
+  policyType              String    @db.VarChar(100)
+  policyName              String?   @db.VarChar(255)
+  groupNumber             String?   @db.VarChar(100)
+  
+  // HOLDER DETAILS
+  policyHolderName        String    @db.VarChar(255)
+  policyHolderRelation    String?   @db.VarChar(50)
+  policyHolderDOB         DateTime? @db.Date
+  
+  // COVERAGE
+  coverageType            String?   @db.VarChar(100)
+  coverageAmount          Decimal?  @db.Decimal(12, 2)
+  deductible              Decimal?  @db.Decimal(10, 2)
+  copay                   Decimal?  @db.Decimal(10, 2)
+  coinsurance             Decimal?  @db.Decimal(5, 2)
+  outOfPocketMax          Decimal?  @db.Decimal(12, 2)
+  currency                String    @default("USD") @db.VarChar(3)
+  
+  // COVERAGE DETAILS
+  coverageDetails         Json?
+  coveredServices         Json?
+  excludedServices        Json?
+  limitations             Json?
+  
+  // VALIDITY
+  startDate               DateTime  @db.Date
+  endDate                 DateTime  @db.Date
+  isActive                Boolean   @default(true)
+  renewalDate             DateTime? @db.Date
+  
+  // NETWORK
+  networkType             String?   @db.VarChar(50)
+  networkProviders        Json?
+  isInNetwork             Boolean   @default(true)
+  
+  // AUTHORIZATION
+  requiresPreAuth         Boolean   @default(false)
+  preAuthNumber           String?   @db.VarChar(100)
+  preAuthDate             DateTime?
+  preAuthExpiry           DateTime?
+  
+  // CLAIM INFORMATION
+  claimAddress            String?   @db.Text
+  claimPhone              String?   @db.VarChar(20)
+  claimEmail              String?   @db.VarChar(255)
+  claimSubmissionMethod   String?   @db.VarChar(50)
+  
+  // VERIFICATION
+  isVerified              Boolean   @default(false)
+  verifiedAt              DateTime?
+  verifiedBy              String?   @db.Uuid
+  verificationNotes       String?   @db.Text
+  lastVerificationDate    DateTime?
+  
+  // DOCUMENTS
+  insuranceCardFront      String?   @db.VarChar(500)
+  insuranceCardBack       String?   @db.VarChar(500)
+  policyDocument          String?   @db.VarChar(500)
+  
+  // CONTACT
+  memberServicePhone      String?   @db.VarChar(20)
+  memberServiceEmail      String?   @db.VarChar(255)
+  
+  // NOTES
+  notes                   String?   @db.Text
+  internalNotes           String?   @db.Text
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  user                    User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  documents               InsuranceDocument[]
+  
+  @@index([userId])
+  @@index([policyNumber])
+  @@index([isActive])
+  @@index([isVerified])
+  @@map("insurances")
+}

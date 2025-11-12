@@ -1,0 +1,29 @@
+model Session {
+  sessionId              String    @id @default(uuid()) @db.Uuid
+  userId                 String    @db.Uuid
+  token                  String    @unique @db.VarChar(500)
+  refreshToken           String?   @unique @db.VarChar(500)
+  ipAddress              String?   @db.VarChar(45)
+  userAgent              String?   @db.Text
+  deviceId               String?   @db.Uuid
+  deviceName             String?   @db.VarChar(255)
+  deviceType             String?   @db.VarChar(50)
+  browser                String?   @db.VarChar(100)
+  os                     String?   @db.VarChar(100)
+  location               String?   @db.VarChar(255)
+  isActive               Boolean   @default(true)
+  expiresAt              DateTime
+  lastActivityAt         DateTime  @default(now())
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  
+  user                   User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  device                 Device?   @relation(fields: [deviceId], references: [deviceId], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([deviceId])
+  @@index([token])
+  @@index([isActive])
+  @@index([expiresAt])
+  @@map("sessions")
+}

@@ -1,330 +1,254 @@
 'use strict';
 
-import express from 'express';
-import helmet from 'helmet';
-import cors from 'cors';
-import compression from 'compression';
-import morgan from 'morgan';
+import { Sequelize } from 'sequelize';
 import dotenv from 'dotenv';
-import mongoSanitize from 'express-mongo-sanitize';
-import hpp from 'hpp';
-import cookieParser from 'cookie-parser';
-import passport from 'passport';
-import session from 'express-session';
-
-// Import ALL Middleware
-import { errorHandler } from './middleware/errorHandler.js';
-import { requestLogger, errorLogger } from './middleware/logger.js';
-import { loggingMiddleware } from './middleware/logging.middleware.js';
-import { notFoundHandler } from './middleware/notFound.js';
-import { healthCheckHandler } from './middleware/healthCheck.js';
-import { authenticateToken, authMiddleware } from './middleware/auth.middleware.js';
-import { verifyRoleAccess, authorizationMiddleware } from './middleware/authorization.middleware.js';
-import { asyncHandler } from './middleware/asyncHandler.middleware.js';
-import { authRateLimiter, globalRateLimiter, apiRateLimiter, createRateLimiter, uploadRateLimiter, deleteRateLimiter, searchRateLimiter } from './middleware/rateLimit.middleware.js';
-import { validateLogin, validateRegister, validatePagination, validationMiddleware } from './middleware/validation.middleware.js';
-import { corsMiddleware } from './middleware/cors.middleware.js';
-import { cacheMiddleware } from './middleware/cache.middleware.js';
-import { detectLanguage, loadTranslations, i18nHelper } from './middleware/multilingual.middleware.js';
-import { permissionMiddleware } from './middleware/permission.middleware.js';
-import { roleBasedAccessMiddleware, roleAccessMiddleware } from './middleware/roleBasedAccess.middleware.js';
-import { uploadMiddleware, handleUploadError } from './middleware/upload.middleware.js';
-
-// Import Routes
-import authRoutes from './routes/authRoutes.js';
-//import patientRoutes from './routes/patientRoutes.js';
-//import doctorRoutes from './routes/doctorRoutes.js';
-//import staffRoutes from './routes/staffRoutes.js';
-//import adminRoutes from './routes/adminRoutes.js';
-//import superAdminRoutes from './routes/superAdminRoutes.js';
 
 dotenv.config();
 
-// Development fallbacks: some route files may be intentionally commented out
-// or not present in this environment. Provide empty routers so startup
-// continues while those modules are being implemented.
-const patientRoutes = express.Router();
-const doctorRoutes = express.Router();
-const staffRoutes = express.Router();
-const adminRoutes = express.Router();
-const superAdminRoutes = express.Router();
+let sequelize;
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// INITIALIZE EXPRESS APP
-// ═══════════════════════════════════════════════════════════════════════════════
+// Xata connection - schema managed via Xata dashboard, NOT sequelize.sync()
+if (process.env.DATABASE_URL) {
+    sequelize = new Sequelize(process.env.DATABASE_URL, {
+        dialect: 'postgres',
+        logging: process.env.DB_LOGGING === 'true' ? console.log : false,
 
-const app = express();
+        pool: {
+            max: parseInt(process.env.DB_POOL_MAX, 10) || 10,
+            min: parseInt(process.env.DB_POOL_MIN, 10) || 0,
+            acquire: parseInt(process.env.DB_POOL_ACQUIRE, 10) || 30000,
+            idle: parseInt(process.env.DB_POOL_IDLE, 10) || 10000
+        },
 
-console.log(`🚀 Initializing Medivoy Backend API...`);
+        dialectOptions: {
+            ssl: {
+                require: true,
+                rejectUnauthorized: false
+            },
+            connectTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT, 10) || 10000,
+            keepAlive: true,
+            statement_timeout: parseInt(process.env.DB_STATEMENT_TIMEOUT, 10) || 30000,
+            idle_in_transaction_session_timeout: parseInt(process.env.DB_IDLE_TRANSACTION_TIMEOUT, 10) || 30000
+        },
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// LEVEL 1: SECURITY HEADERS (FIRST)
-// ═══════════════════════════════════════════════════════════════════════════════
+        define: {
+            timestamps: true,
+            underscored: true,
+            freezeTableName: true
+        },
 
-if (process.env.HELMET_ENABLED === 'true') {
-    app.use(helmet({
-        contentSecurityPolicy: process.env.HELMET_CSP_ENABLED === 'true' ? {} : false,
-        frameguard: { action: 'deny' },
-        noSniff: true,
-        xssFilter: true,
-        referrerPolicy: { policy: 'no-referrer' }
-    }));
-    console.log(`✅ [1] Helmet security headers enabled`);
-}
+        retry: {
+            max: 3,
+            timeout: 3000,
+            match: [
+                /SequelizeConnectionError/,
+                /SequelizeConnectionRefusedError/,
+                /SequelizeHostNotFoundError/,
+                /SequelizeHostNotReachableError/,
+                /SequelizeInvalidConnectionError/,
+                /SequelizeConnectionTimedOutError/,
+                /ECONNREFUSED/,
+                /ETIMEDOUT/,
+                /EHOSTUNREACH/
+            ]
+        },
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// LEVEL 2: CORS CONFIGURATION
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const corsOptions = {
-    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : 'http://localhost:3000',
-    credentials: process.env.CORS_CREDENTIALS === 'true',
-    methods: (process.env.CORS_METHODS || 'GET,POST,PUT,DELETE,PATCH,OPTIONS').split(','),
-    allowedHeaders: (process.env.CORS_ALLOW_HEADERS || 'Content-Type,Authorization').split(','),
-    exposedHeaders: ['X-Cache', 'X-Request-ID', 'X-RateLimit-Limit', 'X-RateLimit-Remaining'],
-    optionsSuccessStatus: 200,
-    maxAge: 86400
-};
-app.use(cors(corsOptions));
-console.log(`✅ [2] CORS enabled`);
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// LEVEL 3: SECURITY PROTECTION
-// ═══════════════════════════════════════════════════════════════════════════════
-
-app.use(hpp({
-    whitelist: ['sort', 'fields', 'filter', 'page', 'limit', 'search', 'status']
-}));
-console.log(`✅ [3] HPP (HTTP Parameter Pollution) protection enabled`);
-
-app.use(mongoSanitize());
-console.log(`✅ [3] MongoDB query sanitization enabled`);
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// LEVEL 4: BODY PARSING & COOKIES
-// ═══════════════════════════════════════════════════════════════════════════════
-
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use(cookieParser());
-console.log(`✅ [4] Body parsing & cookie parsing enabled`);
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// LEVEL 5: COMPRESSION
-// ═══════════════════════════════════════════════════════════════════════════════
-
-if (process.env.RESPONSE_COMPRESSION === 'gzip') {
-    app.use(compression({
-        level: parseInt(process.env.RESPONSE_COMPRESSION_LEVEL) || 6,
-        threshold: 1024
-    }));
-    console.log(`✅ [5] Response compression (gzip) enabled`);
-}
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// LEVEL 6: LOGGING MIDDLEWARE
-// ═══════════════════════════════════════════════════════════════════════════════
-
-if (process.env.VERBOSE_LOGGING === 'true') {
-    app.use(morgan(process.env.LOG_FORMAT || 'combined', {
-        skip: (req, res) => req.path === '/health' || req.path === '/'
-    }));
-}
-app.use(requestLogger);
-app.use(errorLogger);
-app.use(loggingMiddleware);
-console.log(`✅ [6] Request/error logging enabled`);
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// LEVEL 7: SESSION & AUTHENTICATION SETUP
-// ═══════════════════════════════════════════════════════════════════════════════
-
-app.use(session({
-    secret: process.env.SESSION_SECRET || 'your-session-secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        secure: process.env.COOKIE_SECURE === 'true',
-        httpOnly: process.env.COOKIE_HTTP_ONLY === 'true',
-        sameSite: process.env.COOKIE_SAME_SITE || 'Strict',
-        domain: process.env.COOKIE_DOMAIN || 'localhost',
-        maxAge: parseInt(process.env.SESSION_TIMEOUT) || 3600000
-    }
-}));
-
-app.use(passport.initialize());
-app.use(passport.session());
-console.log(`✅ [7] Session & Passport authentication initialized`);
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// LEVEL 8: RATE LIMITING (GLOBAL)
-// ═══════════════════════════════════════════════════════════════════════════════
-
-app.use(globalRateLimiter);
-console.log(`✅ [8] Global rate limiting enabled`);
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// LEVEL 9: REQUEST ID GENERATION
-// ═══════════════════════════════════════════════════════════════════════════════
-
-app.use((req, res, next) => {
-    req.id = require('crypto').randomUUID();
-    res.setHeader('X-Request-ID', req.id);
-    next();
-});
-console.log(`✅ [9] Request ID generation enabled`);
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// LEVEL 10: LANGUAGE DETECTION & TRANSLATION
-// ═══════════════════════════════════════════════════════════════════════════════
-
-app.use(detectLanguage);
-app.use(loadTranslations);
-app.use(i18nHelper);
-console.log(`✅ [10] Multilingual support (i18n) enabled`);
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// HEALTH CHECK ENDPOINT (NO MIDDLEWARE)
-// ═══════════════════════════════════════════════════════════════════════════════
-
-app.get('/health', healthCheckHandler);
-app.get('/', (req, res) => {
-    res.json({
-        success: true,
-        message: 'Medivoy Backend API is running',
-        version: process.env.APP_VERSION || '1.0.0',
-        environment: process.env.NODE_ENV || 'development',
-        timestamp: new Date().toISOString()
+        benchmark: process.env.NODE_ENV === 'development',
+        logQueryParameters: process.env.NODE_ENV === 'development'
     });
-});
-console.log(`✅ Health check endpoints registered`);
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// API ROUTES WITH SPECIFIC MIDDLEWARE STACKS
-// ═══════════════════════════════════════════════════════════════════════════════
+    console.log('🔗 Using DATABASE_URL for Xata connection');
+} else {
+    sequelize = new Sequelize(
+        process.env.DB_NAME || 'medivoy',
+        process.env.DB_USER || 'postgres',
+        process.env.DB_PASSWORD || 'password', {
+            host: process.env.DB_HOST || 'localhost',
+            port: parseInt(process.env.DB_PORT, 10) || 5432,
+            dialect: 'postgres',
+            logging: process.env.DB_LOGGING === 'true' ? console.log : false,
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AUTH ROUTES (PUBLIC - NO AUTHENTICATION REQUIRED)
-// Middleware Stack: Rate Limiting + Translation + Logging
-// ─────────────────────────────────────────────────────────────────────────────
+            pool: {
+                max: parseInt(process.env.DB_POOL_MAX, 10) || 10,
+                min: parseInt(process.env.DB_POOL_MIN, 10) || 0,
+                acquire: parseInt(process.env.DB_POOL_ACQUIRE, 10) || 30000,
+                idle: parseInt(process.env.DB_POOL_IDLE, 10) || 10000
+            },
 
-app.use('/api/auth', [
-    authRateLimiter, // Strict rate limiting for login attempts
-    detectLanguage, // Language detection
-    loadTranslations, // Load translations
-    loggingMiddleware // Log all auth requests
-], authRoutes);
-console.log(`✅ Auth routes registered [Rate Limited + i18n + Logging]`);
+            dialectOptions: {
+                ssl: process.env.DB_SSL === 'true' ? {
+                    require: true,
+                    rejectUnauthorized: false
+                } : false,
+                connectTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT, 10) || 10000,
+                keepAlive: true,
+                statement_timeout: parseInt(process.env.DB_STATEMENT_TIMEOUT, 10) || 30000,
+                idle_in_transaction_session_timeout: parseInt(process.env.DB_IDLE_TRANSACTION_TIMEOUT, 10) || 30000
+            },
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PATIENT ROUTES (AUTHENTICATED + ROLE-BASED)
-// Middleware Stack: Auth + Role Check + Cache + Translation + Logging
-// ─────────────────────────────────────────────────────────────────────────────
+            define: {
+                timestamps: true,
+                underscored: true,
+                freezeTableName: true
+            },
 
-app.use('/api/patient', [
-    authenticateToken, // JWT authentication
-    roleBasedAccessMiddleware(['patient', 'staff', 'admin', 'superadmin']), // Role check
-    cacheMiddleware(3600), // Cache for 1 hour
-    detectLanguage, // Language detection
-    loadTranslations, // Load translations
-    loggingMiddleware // Log requests
-], patientRoutes);
-console.log(`✅ Patient routes registered [Auth + Role + Cache(1h) + i18n + Logging]`);
+            retry: {
+                max: 3,
+                timeout: 3000,
+                match: [
+                    /SequelizeConnectionError/,
+                    /SequelizeConnectionRefusedError/,
+                    /SequelizeHostNotFoundError/,
+                    /SequelizeHostNotReachableError/,
+                    /SequelizeInvalidConnectionError/,
+                    /SequelizeConnectionTimedOutError/,
+                    /ECONNREFUSED/,
+                    /ETIMEDOUT/,
+                    /EHOSTUNREACH/
+                ]
+            },
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DOCTOR ROUTES (AUTHENTICATED + ROLE-BASED)
-// Middleware Stack: Auth + Role Check + Cache + Translation + Logging
-// ─────────────────────────────────────────────────────────────────────────────
+            benchmark: process.env.NODE_ENV === 'development',
+            logQueryParameters: process.env.NODE_ENV === 'development'
+        }
+    );
 
-app.use('/api/doctor', [
-    authenticateToken, // JWT authentication
-    roleBasedAccessMiddleware(['doctor', 'staff', 'admin', 'superadmin']), // Role check
-    cacheMiddleware(1800), // Cache for 30 minutes
-    detectLanguage, // Language detection
-    loadTranslations, // Load translations
-    loggingMiddleware // Log requests
-], doctorRoutes);
-console.log(`✅ Doctor routes registered [Auth + Role + Cache(30m) + i18n + Logging]`);
+    console.log('🔗 Using individual credentials for connection');
+}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// STAFF ROUTES (AUTHENTICATED + ROLE-BASED + PERMISSION)
-// Middleware Stack: Auth + Role Check + Permission + Cache + Translation + Logging
-// ─────────────────────────────────────────────────────────────────────────────
-
-app.use('/api/staff', [
-    authenticateToken, // JWT authentication
-    roleBasedAccessMiddleware(['staff', 'admin', 'superadmin']), // Role check
-    cacheMiddleware(3600), // Cache for 1 hour
-    detectLanguage, // Language detection
-    loadTranslations, // Load translations
-    loggingMiddleware // Log requests
-], staffRoutes);
-console.log(`✅ Staff routes registered [Auth + Role + Cache(1h) + i18n + Logging]`);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ADMIN ROUTES (AUTHENTICATED + ADMIN ROLE + PERMISSION)
-// Middleware Stack: Auth + Admin Role + Permission + Cache + Translation + Logging
-// ─────────────────────────────────────────────────────────────────────────────
-
-app.use('/api/admin', [
-    authenticateToken, // JWT authentication
-    roleBasedAccessMiddleware(['admin', 'superadmin']), // Admin role check
-    cacheMiddleware(1800), // Cache for 30 minutes
-    detectLanguage, // Language detection
-    loadTranslations, // Load translations
-    loggingMiddleware // Log requests
-], adminRoutes);
-console.log(`✅ Admin routes registered [Auth + AdminRole + Cache(30m) + i18n + Logging]`);
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SUPER ADMIN ROUTES (AUTHENTICATED + SUPER ADMIN ONLY + NO CACHE)
-// Middleware Stack: Auth + SuperAdmin Role + Permission + Translation + Logging
-// ─────────────────────────────────────────────────────────────────────────────
-
-app.use('/api/superadmin', [
-    authenticateToken, // JWT authentication
-    roleBasedAccessMiddleware(['superadmin']), // Super admin only
-    detectLanguage, // Language detection
-    loadTranslations, // Load translations
-    loggingMiddleware // Log requests
-    // NO CACHING for super admin routes (sensitive operations)
-], superAdminRoutes);
-console.log(`✅ SuperAdmin routes registered [Auth + SuperAdminRole + i18n + Logging] [NO CACHE]`);
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// 404 NOT FOUND HANDLER (MUST BE AFTER ALL ROUTES)
-// ═══════════════════════════════════════════════════════════════════════════════
-
-app.use(notFoundHandler);
-console.log(`✅ 404 Not Found handler registered`);
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// ERROR HANDLER (MUST BE LAST)
-// ═══════════════════════════════════════════════════════════════════════════════
-
-app.use(errorHandler);
-console.log(`✅ Global error handler registered`);
-
-console.log(`\n✅ All middleware and routes initialized successfully\n`);
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// EXPORT APP
-// ═══════════════════════════════════════════════════════════════════════════════
-
-export default app;
-export {
-    authRateLimiter,
-    globalRateLimiter,
-    apiRateLimiter,
-    createRateLimiter,
-    uploadRateLimiter,
-    deleteRateLimiter,
-    searchRateLimiter,
-    authenticateToken,
-    roleBasedAccessMiddleware,
-    permissionMiddleware,
-    cacheMiddleware,
-    uploadMiddleware,
-    handleUploadError,
-    asyncHandler
+const parseDatabaseUrl = (url) => {
+    try {
+        if (!url) return null;
+        const urlPattern = /^postgresql:\/\/([^:]+):([^@]+)@([^:\/]+)(?::(\d+))?\/(.+?)(?:\?(.*))?$/;
+        const match = url.match(urlPattern);
+        if (match) {
+            return {
+                user: match[1],
+                password: match[2],
+                host: match[3],
+                port: match[4] || '5432',
+                database: match[5].split(':')[0]
+            };
+        }
+        return null;
+    } catch (error) {
+        return null;
+    }
 };
+
+export const testConnection = async() => {
+    try {
+        await sequelize.authenticate();
+        console.log(`✅ PostgreSQL connection established successfully`);
+
+        let dbInfo;
+        if (process.env.DATABASE_URL) {
+            const parsed = parseDatabaseUrl(process.env.DATABASE_URL);
+            if (parsed) {
+                dbInfo = {
+                    host: parsed.host,
+                    port: parsed.port,
+                    database: parsed.database,
+                    user: parsed.user
+                };
+            } else {
+                dbInfo = {
+                    host: 'parsed from URL',
+                    port: 'parsed from URL',
+                    database: 'parsed from URL',
+                    user: 'parsed from URL'
+                };
+            }
+        } else {
+            dbInfo = {
+                host: process.env.DB_HOST || 'localhost',
+                port: process.env.DB_PORT || 5432,
+                database: process.env.DB_NAME || 'medivoy',
+                user: process.env.DB_USER || 'postgres'
+            };
+        }
+
+        console.log(`   Host: ${dbInfo.host}:${dbInfo.port}`);
+        console.log(`   Database: ${dbInfo.database}`);
+        console.log(`   User: ${dbInfo.user}`);
+        return true;
+    } catch (error) {
+        const errorMessage = error && error.message ? error.message : 'Unknown connection error';
+        console.error(`❌ Unable to connect to PostgreSQL: ${errorMessage}`);
+        throw error;
+    }
+};
+
+export const testConnectionWithRetry = async(maxRetries = 3, retryDelay = 5000) => {
+    let lastError = null;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`📡 Connecting to PostgreSQL... (Attempt ${attempt}/${maxRetries})`);
+            const result = await testConnection();
+            return result;
+        } catch (error) {
+            lastError = error;
+            if (attempt < maxRetries) {
+                console.log(`🔄 Retrying PostgreSQL in ${retryDelay / 1000}s...`);
+                await new Promise(resolve => setTimeout(resolve, retryDelay));
+            }
+        }
+    }
+    console.error(`❌ PostgreSQL failed after ${maxRetries} attempts`);
+    throw lastError;
+};
+
+// REMOVED sync functionality - Xata manages schema via dashboard
+export const syncDatabase = async() => {
+    console.log(`⚠️  Xata detected - schema managed via Xata dashboard`);
+    console.log(`⚠️  Sequelize sync disabled (not supported on Xata)`);
+    console.log(`✅ Using existing Xata schema`);
+    return true;
+};
+
+export const checkDatabaseHealth = async() => {
+    try {
+        const result = await sequelize.query('SELECT NOW() as current_time, version() as version', {
+            type: Sequelize.QueryTypes.SELECT
+        });
+        if (result && result.length > 0) {
+            const info = result[0];
+            console.log(`✅ Database health check passed`);
+            console.log(`   Current Time: ${info.current_time}`);
+            return { healthy: true, info: info };
+        }
+        return { healthy: false, error: 'No response from database' };
+    } catch (error) {
+        const errorMessage = error && error.message ? error.message : 'Unknown error';
+        console.error(`❌ Database health check failed: ${errorMessage}`);
+        return { healthy: false, error: errorMessage };
+    }
+};
+
+export const disconnectDatabase = async() => {
+    try {
+        await sequelize.close();
+        console.log(`✅ PostgreSQL disconnected successfully`);
+        return true;
+    } catch (error) {
+        const errorMessage = error && error.message ? error.message : 'Unknown error';
+        console.error(`❌ Database disconnect failed: ${errorMessage}`);
+        throw error;
+    }
+};
+
+export const gracefulShutdown = async() => {
+    try {
+        console.log(`\n🔄 Initiating graceful database shutdown...`);
+        await sequelize.close();
+        console.log(`✅ Database connections closed successfully`);
+        return true;
+    } catch (error) {
+        const errorMessage = error && error.message ? error.message : 'Unknown error';
+        console.error(`❌ Error during graceful shutdown: ${errorMessage}`);
+        return false;
+    }
+};
+
+export { sequelize, Sequelize };
+export default sequelize;

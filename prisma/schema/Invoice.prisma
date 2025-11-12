@@ -1,0 +1,76 @@
+model Invoice {
+  invoiceId               String    @id @default(uuid()) @db.Uuid
+  bookingId               String    @db.Uuid
+  userId                  String    @db.Uuid
+  hospitalId              String?   @db.Uuid
+  paymentId               Int?      // changed to Int? to match Payment.id type
+  invoiceNumber           String    @unique @db.VarChar(255)
+  invoiceDate             DateTime  @db.Date
+  dueDate                 DateTime? @db.Date
+  status                  String    @default("draft") @db.VarChar(50)
+  type                    String    @default("invoice") @db.VarChar(50)
+  billTo                  Json
+  shipTo                  Json?
+  billFrom                Json?
+  lineItems               Json
+  itemCount               Int       @default(0)
+  subtotal                Decimal   @db.Decimal(12, 2)
+  taxable                 Decimal?  @db.Decimal(12, 2)
+  discount                Decimal   @default(0) @db.Decimal(10, 2)
+  discountPercentage      Decimal?  @db.Decimal(5, 2)
+  discountReason          String?   @db.VarChar(255)
+  taxAmount               Decimal   @default(0) @db.Decimal(10, 2)
+  taxRate                 Decimal?  @db.Decimal(5, 2)
+  shippingCharges         Decimal   @default(0) @db.Decimal(10, 2)
+  otherCharges            Decimal   @default(0) @db.Decimal(10, 2)
+  totalAmount             Decimal   @db.Decimal(12, 2)
+  currency                String    @default("USD") @db.VarChar(3)
+  amountPaid              Decimal   @default(0) @db.Decimal(12, 2)
+  amountDue               Decimal?  @db.Decimal(12, 2)
+  paymentTerms            String    @default("immediate") @db.VarChar(50)
+  paymentMethod           String?   @db.VarChar(50)
+  paymentDueDate          DateTime? @db.Date
+  sentAt                  DateTime?
+  viewedAt                DateTime?
+  paidAt                  DateTime?
+  notes                   String?   @db.Text
+  internalNotes           String?   @db.Text
+  purchaseOrderNumber     String?   @db.VarChar(255)
+  referenceNumber         String?   @db.VarChar(255)
+  terms                   String?   @db.Text
+  taxId                   String?   @db.VarChar(255)
+  hsn                     Json?
+  gst                     Json?
+  invoicePdf              String?   @db.VarChar(500)
+  attachment              String?   @db.VarChar(500)
+  receipt                 String?   @db.VarChar(500)
+  createdBy               String?   @db.Uuid
+  lastModifiedBy          String?   @db.Uuid
+  modificationHistory     Json?
+  isArchived              Boolean   @default(false)
+  isCancelled             Boolean   @default(false)
+  cancellationReason      String?   @db.Text
+  cancelledAt             DateTime?
+  paymentReminderSent     Boolean   @default(false)
+  reminderSentAt          DateTime?
+  dueReminderSent         Boolean   @default(false)
+  overdueReminderSent     Boolean   @default(false)
+  tags                    Json?
+  metadata                Json?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  // Add opposite relation here for Appointment
+  appointments            Appointment[]
+
+  user                    User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  booking                 Booking   @relation(fields: [bookingId], references: [bookingId], onDelete: Cascade)
+  hospital                Hospital? @relation(fields: [hospitalId], references: [hospitalId], onDelete: SetNull)
+  payment                 Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([bookingId])
+  @@index([userId])
+  @@index([status])
+  @@index([invoiceDate])
+  @@map("invoices")
+}

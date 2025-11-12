@@ -1,0 +1,20 @@
+model Settings {
+  settingId              String    @id @default(uuid()) @db.Uuid
+  userId                 String?   @db.Uuid
+  category               String    @db.VarChar(100)
+  key                    String    @db.VarChar(255)
+  value                  String?   @db.Text
+  valueType              String    @default("string") @db.VarChar(50)
+  isPublic               Boolean   @default(false)
+  isEditable             Boolean   @default(true)
+  description            String?   @db.Text
+  metadata               Json?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  
+  @@unique([userId, category, key])
+  @@index([userId])
+  @@index([category])
+  @@index([key])
+  @@map("settings")
+}

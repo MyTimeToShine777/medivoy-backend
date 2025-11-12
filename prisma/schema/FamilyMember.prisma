@@ -1,0 +1,38 @@
+model FamilyMember {
+  familyMemberId          String    @id @default(uuid()) @db.Uuid
+  primaryUserId           String    @db.Uuid
+  patientId               String?   @unique @db.Uuid
+  firstName               String    @db.VarChar(100)
+  lastName                String    @db.VarChar(100)
+  relationship            String    @db.VarChar(50)
+  dateOfBirth             DateTime? @db.Date
+  age                     Int?
+  gender                  String?   @db.VarChar(20)
+  bloodType               String?   @db.VarChar(10)
+  phone                   String?   @db.VarChar(20)
+  email                   String?   @db.VarChar(255)
+  allergies               Json?
+  chronicConditions       Json?
+  currentMedications      Json?
+  medicalHistory          Json?
+  disabilities            Json?
+  profilePicture          String?   @db.VarChar(500)
+  idProof                 String?   @db.VarChar(500)
+  medicalDocuments        Json?
+  canBookTreatment        Boolean   @default(true)
+  isEmergencyContact      Boolean   @default(false)
+  requiresGuardianConsent Boolean   @default(false)
+  isActive                Boolean   @default(true)
+  isVerified              Boolean   @default(false)
+  notes                   String?   @db.Text
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  primaryUser             User      @relation(fields: [primaryUserId], references: [userId], onDelete: Cascade)
+  patient                 Patient?  @relation(fields: [patientId], references: [patientId], onDelete: SetNull)
+  
+  @@index([primaryUserId])
+  @@index([patientId])
+  @@index([isActive])
+  @@map("family_members")
+}

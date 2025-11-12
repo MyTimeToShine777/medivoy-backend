@@ -1,4 +1,6 @@
-import { Op, sequelize } from 'sequelize';
+'use strict';
+
+import { Op } from 'sequelize';
 import {
     Booking,
     BookingHistory,
@@ -13,8 +15,10 @@ import {
     Country,
     City,
     User,
-    AuditLog
+    Companion,
+    Transaction
 } from '../models/index.js';
+import { sequelize } from '../config/database.js';
 import { ValidationService } from './ValidationService.js';
 import { NotificationService } from './NotificationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
@@ -28,6 +32,11 @@ import {
 } from '../constants/index.js';
 import { AppError } from '../utils/errors/AppError.js';
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// BOOKING SERVICE - ULTRA-COMPREHENSIVE - NO OPTIONAL CHAINING
+// Production Ready with Database Transaction Handling & Complete Workflow
+// ═══════════════════════════════════════════════════════════════════════════════
+
 export class BookingService {
     constructor() {
         this.validationService = new ValidationService();
@@ -37,27 +46,28 @@ export class BookingService {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
-    // CORE BOOKING MANAGEMENT (from BookingService)
+    // CORE BOOKING MANAGEMENT
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createBooking(userId, treatmentId, countryId, bookingData) {
         const transaction = await sequelize.transaction();
+
         try {
             if (!userId || !treatmentId || !countryId) {
                 throw new AppError('userId, treatmentId, countryId are required', 400);
             }
 
-            const user = await User.findByPk(userId);
+            const user = await User.findByPk(userId, { transaction });
             if (!user) {
                 throw new AppError('User not found', 404);
             }
 
-            const treatment = await Treatment.findByPk(treatmentId);
+            const treatment = await Treatment.findByPk(treatmentId, { transaction });
             if (!treatment) {
                 throw new AppError('Treatment not found', 404);
             }
 
-            const country = await Country.findByPk(countryId);
+            const country = await Country.findByPk(countryId, { transaction });
             if (!country) {
                 throw new AppError('Country not found', 404);
             }
@@ -74,11 +84,11 @@ export class BookingService {
             });
 
             if (existingBooking) {
-                await transaction.rollback();
                 throw new AppError('Active booking already exists for this treatment', 409);
             }
 
             const bookingId = this._generateBookingId();
+
             const booking = await Booking.create({
                 bookingId: bookingId,
                 userId: userId,
@@ -92,7 +102,16 @@ export class BookingService {
                 totalPrice: 0,
                 notes: bookingData && bookingData.notes ? bookingData.notes : null,
                 createdFrom: bookingData && bookingData.createdFrom ? bookingData.createdFrom : 'web'
-            }, { transaction: transaction });
+            }, { transaction });
+
+            if (bookingData && bookingData.companions && Array.isArray(bookingData.companions) && bookingData.companions.length > 0) {
+                const companionsData = bookingData.companions.map(companion => ({
+                    ...companion,
+                    bookingId: booking.bookingId
+                }));
+
+                await Companion.bulkCreate(companionsData, { transaction });
+            }
 
             await BookingHistory.create({
                 historyId: this._generateHistoryId(),
@@ -101,7 +120,7 @@ export class BookingService {
                 status: BOOKING_STATUSES.PENDING,
                 changes: { initial: true },
                 createdBy: userId
-            }, { transaction: transaction });
+            }, { transaction });
 
             await this.auditLogService.logAction({
                 action: 'BOOKING_CREATED',
@@ -134,15 +153,16 @@ export class BookingService {
             const booking = await Booking.findOne({
                 where: { bookingId: bookingId },
                 include: [
-                    { model: User, attributes: ['userId', 'firstName', 'lastName', 'email', 'phone'] },
-                    { model: Treatment },
-                    { model: Hospital },
-                    { model: Country },
-                    { model: City },
-                    { model: Package },
-                    { model: BookingAddOn, include: [{ model: FeatureAddOn }] },
-                    { model: Payment },
-                    { model: ExpertCall }
+                    { model: User, as: 'user', attributes: ['userId', 'firstName', 'lastName', 'email', 'phone'] },
+                    { model: Treatment, as: 'treatment' },
+                    { model: Hospital, as: 'hospital' },
+                    { model: Country, as: 'country' },
+                    { model: City, as: 'city' },
+                    { model: Package, as: 'package' },
+                    { model: BookingAddOn, as: 'bookingAddOns', include: [{ model: FeatureAddOn, as: 'addOn' }] },
+                    { model: Payment, as: 'payments' },
+                    { model: ExpertCall, as: 'expertCalls' },
+                    { model: Companion, as: 'companions' }
                 ]
             });
 
@@ -165,27 +185,74 @@ export class BookingService {
         }
     }
 
+    async updateBooking(bookingId, updateData) {
+        const transaction = await sequelize.transaction();
+
+        try {
+            if (!bookingId) {
+                throw new AppError('Booking ID is required', 400);
+            }
+
+            const booking = await Booking.findByPk(bookingId, { transaction });
+
+            if (!booking) {
+                throw new AppError('Booking not found', 404);
+            }
+
+            await booking.update(updateData, { transaction });
+
+            await BookingHistory.create({
+                historyId: this._generateHistoryId(),
+                bookingId: bookingId,
+                action: 'BOOKING_UPDATED',
+                status: booking.status,
+                changes: updateData,
+                createdBy: booking.userId
+            }, { transaction });
+
+            await this.auditLogService.logAction({
+                action: 'BOOKING_UPDATED',
+                entityType: 'Booking',
+                entityId: bookingId,
+                userId: booking.userId,
+                details: updateData
+            }, transaction);
+
+            await transaction.commit();
+
+            return {
+                success: true,
+                message: 'Booking updated successfully',
+                booking: booking
+            };
+        } catch (error) {
+            await transaction.rollback();
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
     async updateBookingStep(bookingId, stepNumber, stepData) {
         const transaction = await sequelize.transaction();
+
         try {
             if (!bookingId || !stepNumber) {
                 throw new AppError('Booking ID and step number are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await Booking.findByPk(bookingId, { transaction });
+
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
             const isValidStep = Object.values(BOOKING_WORKFLOW_STEPS).includes(stepNumber);
             if (!isValidStep) {
-                await transaction.rollback();
                 throw new AppError('Invalid step number', 400);
             }
 
             const previousStep = booking.currentStep;
             const workflowData = booking.workflowData || {};
+
             workflowData['step_' + stepNumber] = {
                 data: stepData,
                 completedAt: new Date()
@@ -193,7 +260,8 @@ export class BookingService {
 
             booking.currentStep = stepNumber;
             booking.workflowData = workflowData;
-            await booking.save({ transaction: transaction });
+
+            await booking.save({ transaction });
 
             await BookingHistory.create({
                 historyId: this._generateHistoryId(),
@@ -202,7 +270,7 @@ export class BookingService {
                 status: booking.status,
                 changes: { previousStep: previousStep, newStep: stepNumber },
                 createdBy: booking.userId
-            }, { transaction: transaction });
+            }, { transaction });
 
             await this.auditLogService.logAction({
                 action: 'BOOKING_STEP_UPDATED',
@@ -239,8 +307,7 @@ export class BookingService {
             if (filters && filters.status) {
                 const statusArray = Array.isArray(filters.status) ? filters.status : [filters.status];
                 where.status = {
-                    [Op.in]: statusArray
-                };
+                    [Op.in]: statusArray };
             }
 
             if (filters && filters.treatmentId) {
@@ -250,10 +317,10 @@ export class BookingService {
             const bookings = await Booking.findAll({
                 where: where,
                 include: [
-                    { model: Treatment, attributes: ['treatmentName'] },
-                    { model: Hospital, attributes: ['hospitalName'] },
-                    { model: Country, attributes: ['countryName'] },
-                    { model: Package, attributes: ['packageName', 'basePrice'] }
+                    { model: Treatment, as: 'treatment', attributes: ['treatmentName'] },
+                    { model: Hospital, as: 'hospital', attributes: ['hospitalName'] },
+                    { model: Country, as: 'country', attributes: ['countryName'] },
+                    { model: Package, as: 'package', attributes: ['packageName', 'basePrice'] }
                 ],
                 order: [
                     ['createdAt', 'DESC']
@@ -282,32 +349,34 @@ export class BookingService {
 
     async cancelBooking(bookingId, userId, cancellationReason) {
         const transaction = await sequelize.transaction();
+
         try {
             if (!bookingId || !cancellationReason) {
                 throw new AppError('Booking ID and cancellation reason are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await Booking.findByPk(bookingId, { transaction });
+
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
             if (booking.userId !== userId) {
-                await transaction.rollback();
                 throw new AppError('Unauthorized to cancel this booking', 403);
             }
 
             if (booking.status === BOOKING_STATUSES.CANCELLED) {
-                await transaction.rollback();
                 throw new AppError('Booking is already cancelled', 400);
             }
 
             const previousStatus = booking.status;
+
             booking.status = BOOKING_STATUSES.CANCELLED;
             booking.cancellationReason = cancellationReason;
             booking.cancelledAt = new Date();
-            await booking.save({ transaction: transaction });
+            booking.cancelledBy = userId;
+
+            await booking.save({ transaction });
 
             await BookingHistory.create({
                 historyId: this._generateHistoryId(),
@@ -316,7 +385,7 @@ export class BookingService {
                 status: BOOKING_STATUSES.CANCELLED,
                 changes: { previousStatus: previousStatus, reason: cancellationReason },
                 createdBy: userId
-            }, { transaction: transaction });
+            }, { transaction });
 
             const payment = await Payment.findOne({
                 where: { bookingId: bookingId, status: 'completed' },
@@ -326,7 +395,7 @@ export class BookingService {
             if (payment) {
                 payment.status = 'refunded';
                 payment.refundedAt = new Date();
-                await payment.save({ transaction: transaction });
+                await payment.save({ transaction });
             }
 
             await this.auditLogService.logAction({
@@ -356,35 +425,35 @@ export class BookingService {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
-    // WORKFLOW METHODS (from BookingWorkflowService - MERGED)
+    // WORKFLOW METHODS - ALL YOUR EXISTING METHODS PRESERVED
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async startWorkflow(bookingId, userId) {
         const transaction = await sequelize.transaction();
+
         try {
             if (!bookingId || !userId) {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await Booking.findByPk(bookingId, { transaction });
+
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
             if (booking.userId !== userId) {
-                await transaction.rollback();
                 throw new AppError('Unauthorized to start this workflow', 403);
             }
 
             if (booking.workflowStartedAt) {
-                await transaction.rollback();
                 throw new AppError('Workflow already started', 400);
             }
 
             booking.workflowStartedAt = new Date();
             booking.currentStep = BOOKING_WORKFLOW_STEPS.TREATMENT_SELECTION;
-            await booking.save({ transaction: transaction });
+
+            await booking.save({ transaction });
 
             await BookingHistory.create({
                 historyId: this._generateHistoryId(),
@@ -393,7 +462,7 @@ export class BookingService {
                 status: booking.status,
                 changes: { step: BOOKING_WORKFLOW_STEPS.TREATMENT_SELECTION },
                 createdBy: userId
-            }, { transaction: transaction });
+            }, { transaction });
 
             await this.auditLogService.logAction({
                 action: 'WORKFLOW_STARTED',
@@ -419,19 +488,19 @@ export class BookingService {
 
     async proceedToNextStep(bookingId, userId) {
         const transaction = await sequelize.transaction();
+
         try {
             if (!bookingId || !userId) {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await Booking.findByPk(bookingId, { transaction });
+
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
             if (booking.userId !== userId) {
-                await transaction.rollback();
                 throw new AppError('Unauthorized', 403);
             }
 
@@ -439,13 +508,12 @@ export class BookingService {
             const currentIndex = steps.indexOf(booking.currentStep);
 
             if (currentIndex === -1 || currentIndex === steps.length - 1) {
-                await transaction.rollback();
                 throw new AppError('Cannot proceed further in workflow', 400);
             }
 
             const validation = this._validateStepData(booking, booking.currentStep);
+
             if (!validation.isValid) {
-                await transaction.rollback();
                 throw new AppError('Step validation failed: ' + validation.errors.join(', '), 400);
             }
 
@@ -453,7 +521,7 @@ export class BookingService {
             const nextStep = steps[currentIndex + 1];
 
             booking.currentStep = nextStep;
-            await booking.save({ transaction: transaction });
+            await booking.save({ transaction });
 
             await BookingHistory.create({
                 historyId: this._generateHistoryId(),
@@ -462,7 +530,7 @@ export class BookingService {
                 status: booking.status,
                 changes: { fromStep: previousStep, toStep: nextStep },
                 createdBy: userId
-            }, { transaction: transaction });
+            }, { transaction });
 
             await this.auditLogService.logAction({
                 action: 'WORKFLOW_STEP_ADVANCED',
@@ -488,19 +556,19 @@ export class BookingService {
 
     async goToPreviousStep(bookingId, userId) {
         const transaction = await sequelize.transaction();
+
         try {
             if (!bookingId || !userId) {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await Booking.findByPk(bookingId, { transaction });
+
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
             if (booking.userId !== userId) {
-                await transaction.rollback();
                 throw new AppError('Unauthorized', 403);
             }
 
@@ -508,7 +576,6 @@ export class BookingService {
             const currentIndex = steps.indexOf(booking.currentStep);
 
             if (currentIndex <= 0) {
-                await transaction.rollback();
                 throw new AppError('Cannot go to previous step', 400);
             }
 
@@ -516,7 +583,7 @@ export class BookingService {
             const newStep = steps[currentIndex - 1];
 
             booking.currentStep = newStep;
-            await booking.save({ transaction: transaction });
+            await booking.save({ transaction });
 
             await BookingHistory.create({
                 historyId: this._generateHistoryId(),
@@ -525,7 +592,7 @@ export class BookingService {
                 status: booking.status,
                 changes: { fromStep: previousStep, toStep: newStep },
                 createdBy: userId
-            }, { transaction: transaction });
+            }, { transaction });
 
             await this.auditLogService.logAction({
                 action: 'WORKFLOW_STEP_REVERSED',
@@ -551,31 +618,32 @@ export class BookingService {
 
     async completeWorkflow(bookingId, userId) {
         const transaction = await sequelize.transaction();
+
         try {
             if (!bookingId || !userId) {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await Booking.findByPk(bookingId, { transaction });
+
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
             if (booking.userId !== userId) {
-                await transaction.rollback();
                 throw new AppError('Unauthorized', 403);
             }
 
             const lastStep = Math.max(...Object.values(BOOKING_WORKFLOW_STEPS));
+
             if (booking.currentStep !== lastStep) {
-                await transaction.rollback();
                 throw new AppError('All workflow steps must be completed', 400);
             }
 
             booking.status = BOOKING_STATUSES.EXPERT_REVIEW;
             booking.workflowCompletedAt = new Date();
-            await booking.save({ transaction: transaction });
+
+            await booking.save({ transaction });
 
             await BookingHistory.create({
                 historyId: this._generateHistoryId(),
@@ -584,7 +652,7 @@ export class BookingService {
                 status: BOOKING_STATUSES.EXPERT_REVIEW,
                 changes: { completedAt: new Date() },
                 createdBy: userId
-            }, { transaction: transaction });
+            }, { transaction });
 
             await this.auditLogService.logAction({
                 action: 'WORKFLOW_COMPLETED',
@@ -618,6 +686,7 @@ export class BookingService {
             }
 
             const booking = await Booking.findByPk(bookingId);
+
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
@@ -628,6 +697,7 @@ export class BookingService {
 
             const allSteps = Object.values(BOOKING_WORKFLOW_STEPS).sort((a, b) => a - b);
             const workflowData = booking.workflowData || {};
+
             const completedSteps = allSteps.filter(step => {
                 return workflowData['step_' + step] !== undefined;
             });
@@ -659,7 +729,7 @@ export class BookingService {
 
             const history = await BookingHistory.findAll({
                 where: { bookingId: bookingId },
-                include: [{ model: User, attributes: ['firstName', 'lastName'] }],
+                include: [{ model: User, as: 'creator', attributes: ['firstName', 'lastName'] }],
                 order: [
                     ['createdAt', 'ASC']
                 ]
@@ -677,25 +747,26 @@ export class BookingService {
 
     async updateBookingNotes(bookingId, userId, notes) {
         const transaction = await sequelize.transaction();
+
         try {
             if (!bookingId || !userId || !notes) {
                 throw new AppError('Booking ID, User ID, and notes are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await Booking.findByPk(bookingId, { transaction });
+
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
             if (booking.userId !== userId && userId !== 'ADMIN') {
-                await transaction.rollback();
                 throw new AppError('Unauthorized', 403);
             }
 
             const previousNotes = booking.notes;
             booking.notes = notes;
-            await booking.save({ transaction: transaction });
+
+            await booking.save({ transaction });
 
             await BookingHistory.create({
                 historyId: this._generateHistoryId(),
@@ -704,7 +775,7 @@ export class BookingService {
                 status: booking.status,
                 changes: { previousNotes: previousNotes, newNotes: notes },
                 createdBy: userId
-            }, { transaction: transaction });
+            }, { transaction });
 
             await this.auditLogService.logAction({
                 action: 'BOOKING_NOTES_UPDATED',
@@ -728,29 +799,31 @@ export class BookingService {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
-    // STEP DATA METHODS
+    // STEP DATA METHODS - ALL YOUR EXISTING METHODS PRESERVED
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async setTreatmentSelection(bookingId, treatmentId) {
         const transaction = await sequelize.transaction();
+
         try {
             if (!bookingId || !treatmentId) {
                 throw new AppError('Booking ID and Treatment ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await Booking.findByPk(bookingId, { transaction });
+
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
-            const treatment = await Treatment.findByPk(treatmentId, { transaction: transaction });
+            const treatment = await Treatment.findByPk(treatmentId, { transaction });
+
             if (!treatment) {
-                await transaction.rollback();
                 throw new AppError('Treatment not found', 404);
             }
 
             booking.treatmentId = treatmentId;
+
             const workflowData = booking.workflowData || {};
             workflowData.step_1 = {
                 treatmentId: treatmentId,
@@ -758,7 +831,8 @@ export class BookingService {
                 completedAt: new Date()
             };
             booking.workflowData = workflowData;
-            await booking.save({ transaction: transaction });
+
+            await booking.save({ transaction });
 
             await this.auditLogService.logAction({
                 action: 'STEP_1_COMPLETED',
@@ -779,24 +853,26 @@ export class BookingService {
 
     async setCountrySelection(bookingId, countryId) {
         const transaction = await sequelize.transaction();
+
         try {
             if (!bookingId || !countryId) {
                 throw new AppError('Booking ID and Country ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await Booking.findByPk(bookingId, { transaction });
+
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
-            const country = await Country.findByPk(countryId, { transaction: transaction });
+            const country = await Country.findByPk(countryId, { transaction });
+
             if (!country) {
-                await transaction.rollback();
                 throw new AppError('Country not found', 404);
             }
 
             booking.countryId = countryId;
+
             const workflowData = booking.workflowData || {};
             workflowData.step_2 = {
                 countryId: countryId,
@@ -805,7 +881,8 @@ export class BookingService {
                 completedAt: new Date()
             };
             booking.workflowData = workflowData;
-            await booking.save({ transaction: transaction });
+
+            await booking.save({ transaction });
 
             await this.auditLogService.logAction({
                 action: 'STEP_2_COMPLETED',
@@ -826,24 +903,26 @@ export class BookingService {
 
     async setCitySelection(bookingId, cityId) {
         const transaction = await sequelize.transaction();
+
         try {
             if (!bookingId || !cityId) {
                 throw new AppError('Booking ID and City ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await Booking.findByPk(bookingId, { transaction });
+
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
-            const city = await City.findByPk(cityId, { transaction: transaction });
+            const city = await City.findByPk(cityId, { transaction });
+
             if (!city) {
-                await transaction.rollback();
                 throw new AppError('City not found', 404);
             }
 
             booking.cityId = cityId;
+
             const workflowData = booking.workflowData || {};
             workflowData.step_3 = {
                 cityId: cityId,
@@ -852,7 +931,8 @@ export class BookingService {
                 completedAt: new Date()
             };
             booking.workflowData = workflowData;
-            await booking.save({ transaction: transaction });
+
+            await booking.save({ transaction });
 
             await this.auditLogService.logAction({
                 action: 'STEP_3_COMPLETED',
@@ -873,24 +953,26 @@ export class BookingService {
 
     async setHospitalSelection(bookingId, hospitalId) {
         const transaction = await sequelize.transaction();
+
         try {
             if (!bookingId || !hospitalId) {
                 throw new AppError('Booking ID and Hospital ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await Booking.findByPk(bookingId, { transaction });
+
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
-            const hospital = await Hospital.findByPk(hospitalId, { transaction: transaction });
+            const hospital = await Hospital.findByPk(hospitalId, { transaction });
+
             if (!hospital) {
-                await transaction.rollback();
                 throw new AppError('Hospital not found', 404);
             }
 
             booking.hospitalId = hospitalId;
+
             const workflowData = booking.workflowData || {};
             workflowData.step_4 = {
                 hospitalId: hospitalId,
@@ -899,7 +981,8 @@ export class BookingService {
                 completedAt: new Date()
             };
             booking.workflowData = workflowData;
-            await booking.save({ transaction: transaction });
+
+            await booking.save({ transaction });
 
             await this.auditLogService.logAction({
                 action: 'STEP_4_COMPLETED',
@@ -920,20 +1003,21 @@ export class BookingService {
 
     async setPackageSelection(bookingId, packageId) {
         const transaction = await sequelize.transaction();
+
         try {
             if (!bookingId || !packageId) {
                 throw new AppError('Booking ID and Package ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await Booking.findByPk(bookingId, { transaction });
+
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
-            const packageRecord = await Package.findByPk(packageId, { transaction: transaction });
+            const packageRecord = await Package.findByPk(packageId, { transaction });
+
             if (!packageRecord) {
-                await transaction.rollback();
                 throw new AppError('Package not found', 404);
             }
 
@@ -949,7 +1033,8 @@ export class BookingService {
                 completedAt: new Date()
             };
             booking.workflowData = workflowData;
-            await booking.save({ transaction: transaction });
+
+            await booking.save({ transaction });
 
             await this.auditLogService.logAction({
                 action: 'STEP_5_COMPLETED',

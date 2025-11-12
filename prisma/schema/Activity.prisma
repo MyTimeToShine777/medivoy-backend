@@ -1,0 +1,20 @@
+model Activity {
+  activityId              String    @id @default(uuid()) @db.Uuid
+  userId                  String?   @db.Uuid
+  sessionId               String?   @db.Uuid
+  type                    String    @db.VarChar(50)
+  action                  String    @db.VarChar(100)
+  entityType              String?   @db.VarChar(50)
+  entityId                String?   @db.Uuid
+  metadata                Json?
+  ipAddress               String?   @db.VarChar(45)
+  userAgent               String?   @db.Text
+  createdAt               DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([sessionId])
+  @@index([type])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("activities")
+}

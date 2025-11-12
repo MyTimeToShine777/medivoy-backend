@@ -1,0 +1,179 @@
+model Booking {
+  bookingId               String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS (foreign keys)
+  userId                  String    @db.Uuid
+  patientId               String?   @db.Uuid
+  treatmentId             String?   @db.Uuid
+  hospitalId              String?   @db.Uuid
+  doctorId                String?   @db.Uuid
+  countryId               String?   @db.Uuid
+  cityId                  String?   @db.Uuid
+  packageId               String?   @db.Uuid
+  departmentId            String?   @db.Uuid
+  
+  // BOOKING IDENTIFIERS
+  bookingNumber           String    @unique @db.VarChar(50)
+  referenceNumber         String?   @unique @db.VarChar(100)
+  externalBookingId       String?   @db.VarChar(255)
+  
+  // BOOKING TYPE & STATUS
+  bookingType             String    @db.VarChar(50)
+  status                  String    @default("pending") @db.VarChar(50)
+  priority                String?   @default("normal") @db.VarChar(20)
+  
+  // PRICING - DYNAMIC CALCULATION
+  basePrice               Decimal   @db.Decimal(12, 2)
+  addOnsPrice             Decimal   @default(0) @db.Decimal(12, 2)
+  accommodationPrice      Decimal   @default(0) @db.Decimal(12, 2)
+  travelPrice             Decimal   @default(0) @db.Decimal(12, 2)
+  subtotal                Decimal   @db.Decimal(12, 2)
+  discount                Decimal   @default(0) @db.Decimal(12, 2)
+  discountType            String?   @db.VarChar(50)
+  discountCode            String?   @db.VarChar(100)
+  tax                     Decimal   @default(0) @db.Decimal(12, 2)
+  taxPercentage           Decimal   @default(0) @db.Decimal(5, 2)
+  totalPrice              Decimal   @db.Decimal(12, 2)
+  currency                String    @default("USD") @db.VarChar(3)
+  exchangeRate            Decimal?  @db.Decimal(10, 4)
+  
+  // PAYMENT
+  paymentStatus           String    @default("pending") @db.VarChar(50)
+  paidAmount              Decimal   @default(0) @db.Decimal(12, 2)
+  remainingAmount         Decimal?  @db.Decimal(12, 2)
+  paymentMethod           String?   @db.VarChar(50)
+  paymentDueDate          DateTime?
+  
+  // APPOINTMENT DETAILS
+  appointmentDate         DateTime?
+  appointmentTime         DateTime? @db.Time
+  estimatedDuration       Int?
+  appointmentEndTime      DateTime? @db.Time
+  
+  // TRAVEL & ACCOMMODATION
+  arrivalDate             DateTime?
+  departureDate           DateTime?
+  numberOfNights          Int?
+  numberOfTravelers       Int       @default(1)
+  numberOfCompanions      Int       @default(0)
+  
+  // PATIENT INFORMATION
+  patientName             String?   @db.VarChar(255)
+  patientAge              Int?
+  patientGender           String?   @db.VarChar(20)
+  patientEmail            String?   @db.VarChar(255)
+  patientPhone            String?   @db.VarChar(20)
+  patientCity             String?   @db.VarChar(100)
+  
+  // MEDICAL INFORMATION
+  comorbidConditions      Json?
+  allergies               Json?
+  currentMedications      Json?
+  medicalHistory          String?   @db.Text
+  specialRequirements     String?   @db.Text
+  
+  // INSURANCE
+  hasInsurance            Boolean   @default(false)
+  insuranceProvider       String?   @db.VarChar(255)
+  insuranceNumber         String?   @db.VarChar(100)
+  insuranceCoverage       Decimal?  @db.Decimal(12, 2)
+  
+  // EXPERT CALL WORKFLOW
+  expertCallStatus        String    @default("pending") @db.VarChar(50)
+  expertCallScheduledAt   DateTime?
+  expertCallCompletedAt   DateTime?
+  expertCallNotes         String?   @db.Text
+  expertCallRecordingUrl  String?   @db.VarChar(500)
+  
+  // DOCUMENT UPLOAD WORKFLOW
+  documentsRequired       Json?
+  documentsUploaded       Json?
+  documentsVerified       Boolean   @default(false)
+  documentsVerifiedAt     DateTime?
+  documentsVerifiedBy     String?   @db.Uuid
+  
+  // BOOKING LIFECYCLE
+  requestedAt             DateTime  @default(now())
+  confirmedAt             DateTime?
+  approvedAt              DateTime?
+  approvedBy              String?   @db.Uuid
+  startedAt               DateTime?
+  completedAt             DateTime?
+  cancelledAt             DateTime?
+  cancellationReason      String?   @db.Text
+  cancelledBy             String?   @db.Uuid
+  
+  // REFUNDS
+  refundAmount            Decimal?  @db.Decimal(12, 2)
+  refundStatus            String?   @db.VarChar(50)
+  refundRequestedAt       DateTime?
+  refundProcessedAt       DateTime?
+  refundReason            String?   @db.Text
+  
+  // NOTES & COMMUNICATION
+  notes                   String?   @db.Text
+  internalNotes           String?   @db.Text
+  patientNotes            String?   @db.Text
+  adminNotes              String?   @db.Text
+  
+  // RATINGS & FEEDBACK
+  rating                  Int?
+  feedback                String?   @db.Text
+  feedbackSubmittedAt     DateTime?
+  
+  // SOURCE & TRACKING
+  source                  String?   @default("web") @db.VarChar(50)
+  utmSource               String?   @db.VarChar(255)
+  utmMedium               String?   @db.VarChar(255)
+  utmCampaign             String?   @db.VarChar(255)
+  referralCode            String?   @db.VarChar(100)
+  
+  // METADATA
+  metadata                Json?
+  tags                    Json?
+  isActive                Boolean   @default(true)
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  user                    User      @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  patient                 Patient?  @relation(fields: [patientId], references: [patientId], onDelete: SetNull)
+  treatment               Treatment? @relation(fields: [treatmentId], references: [treatmentId], onDelete: SetNull)
+  hospital                Hospital? @relation(fields: [hospitalId], references: [hospitalId], onDelete: SetNull)
+  country                 Country?  @relation(fields: [countryId], references: [countryId], onDelete: SetNull)
+  city                    City?     @relation(fields: [cityId], references: [cityId], onDelete: SetNull)
+  package                 Package?  @relation(fields: [packageId], references: [packageId], onDelete: SetNull)
+  department              Department? @relation(fields: [departmentId], references: [departmentId], onDelete: SetNull)
+
+  expertCalls             ExpertCall[]
+  addOns                  BookingAddOn[]
+  preferences             BookingPreferences?
+  statusHistory           BookingStatusHistory[]
+  reviews                 BookingReview[]
+  payments                Payment[]
+  invoices                Invoice[]
+  documents               Document[]
+  accommodations          Accommodation[]
+  companions              Companion[]
+  consultations           Consultation[]
+  appointments            Appointment[]
+  flights                 Flight[]
+  insuranceDocuments      InsuranceDocument[]
+  refunds                 Refund[]
+  trains                  Train[]
+  travelArrangements      TravelArrangement[]
+  
+  @@index([userId])
+  @@index([patientId])
+  @@index([treatmentId])
+  @@index([hospitalId])
+  @@index([countryId])
+  @@index([cityId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([expertCallStatus])
+  @@index([bookingType])
+  @@index([createdAt])
+  @@map("bookings")
+}

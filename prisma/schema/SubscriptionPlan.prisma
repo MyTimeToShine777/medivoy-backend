@@ -1,0 +1,33 @@
+model SubscriptionPlan {
+  planId                  String    @id @default(uuid()) @db.Uuid
+  name                    String    @db.VarChar(255)
+  code                    String    @unique @db.VarChar(50)
+  description             String?   @db.Text
+  shortDescription        String?   @db.VarChar(500)
+  type                    String    @db.VarChar(50)
+  billingCycle            String    @db.VarChar(50)
+  price                   Decimal   @db.Decimal(12, 2)
+  currency                String    @default("USD") @db.VarChar(3)
+  trialPeriodDays         Int?
+  features                Json
+  limitations             Json?
+  maxUsers                Int?
+  maxBookings             Int?
+  prioritySupport         Boolean   @default(false)
+  telemedicineAccess      Boolean   @default(false)
+  familyMembersAllowed    Int?
+  discountPercentage      Decimal?  @db.Decimal(5, 2)
+  isActive                Boolean   @default(true)
+  isFeatured              Boolean   @default(false)
+  isPopular               Boolean   @default(false)
+  displayOrder            Int       @default(0)
+  metadata                Json?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  subscriptions           Subscription[]
+  
+  @@index([code])
+  @@index([isActive])
+  @@map("subscription_plans")
+}

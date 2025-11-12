@@ -1,0 +1,52 @@
+model MedicalDocument {
+  documentId              String    @id @default(uuid()) @db.Uuid
+  patientId               String    @db.Uuid
+  uploadedBy              String?   @db.Uuid
+  bookingId               String?   @db.Uuid
+  appointmentId           String?   @db.Uuid
+  documentType            String    @db.VarChar(100)
+  documentCategory        String?   @db.VarChar(100)
+  documentName            String    @db.VarChar(255)
+  documentNumber          String?   @db.VarChar(100)
+  description             String?   @db.Text
+  fileName                String    @db.VarChar(255)
+  fileUrl                 String    @db.VarChar(500)
+  fileSize                BigInt
+  fileType                String    @db.VarChar(100)
+  mimeType                String?   @db.VarChar(100)
+  storageProvider         String?   @default("imagekit") @db.VarChar(50)
+  storageKey              String?   @db.VarChar(500)
+  thumbnailUrl            String?   @db.VarChar(500)
+  issueDate               DateTime? @db.Date
+  expiryDate              DateTime? @db.Date
+  issuedBy                String?   @db.VarChar(255)
+  issuingAuthority        String?   @db.VarChar(255)
+  isVerified              Boolean   @default(false)
+  verifiedAt              DateTime?
+  verifiedBy              String?   @db.Uuid
+  verificationNotes       String?   @db.Text
+  status                  String    @default("active") @db.VarChar(50)
+  isConfidential          Boolean   @default(true)
+  accessLevel             String    @default("private") @db.VarChar(50)
+  sharedWith              Json?
+  tags                    Json?
+  notes                   String?   @db.Text
+  metadata                Json?
+  version                 Int       @default(1)
+  previousVersionId       String?   @db.Uuid
+  isLatestVersion         Boolean   @default(true)
+  downloadCount           Int       @default(0)
+  lastDownloadedAt        DateTime?
+  uploadedAt              DateTime  @default(now())
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  patient                 Patient   @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+  
+  @@index([patientId])
+  @@index([bookingId])
+  @@index([documentType])
+  @@index([status])
+  @@index([isVerified])
+  @@map("medical_documents")
+}

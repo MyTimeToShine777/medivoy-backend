@@ -1,0 +1,51 @@
+model BookingAddOn {
+  addOnId                 String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  bookingId               String    @db.Uuid
+  
+  // ADD-ON DETAILS
+  addOnType               String    @db.VarChar(100)
+  addOnName               String    @db.VarChar(255)
+  addOnDescription        String?   @db.Text
+  category                String?   @db.VarChar(50)
+  subcategory             String?   @db.VarChar(50)
+  
+  // PRICING
+  addOnPrice              Decimal   @db.Decimal(10, 2)
+  currency                String    @default("USD") @db.VarChar(3)
+  quantity                Int       @default(1)
+  totalPrice              Decimal   @db.Decimal(10, 2)
+  discount                Decimal   @default(0) @db.Decimal(10, 2)
+  finalPrice              Decimal   @db.Decimal(10, 2)
+  
+  // SELECTION & STATUS
+  isSelected              Boolean   @default(true)
+  isMandatory             Boolean   @default(false)
+  isCustom                Boolean   @default(false)
+  status                  String    @default("active") @db.VarChar(50)
+  
+  // DETAILS
+  details                 Json?
+  specifications          Json?
+  features                Json?
+  
+  // METADATA
+  displayOrder            Int?
+  isActive                Boolean   @default(true)
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  booking                 Booking   @relation(fields: [bookingId], references: [bookingId], onDelete: Cascade)
+  // Optional link to master feature definition
+  featureAddOnId          String?   @db.Uuid
+  featureAddOn            FeatureAddOn? @relation(fields: [featureAddOnId], references: [addOnId], onDelete: SetNull)
+  
+  @@index([bookingId])
+  @@index([addOnType])
+  @@index([category])
+  @@index([isSelected])
+  @@map("booking_add_ons")
+}

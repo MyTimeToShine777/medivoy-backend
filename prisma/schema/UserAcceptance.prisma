@@ -1,0 +1,19 @@
+model UserAcceptance {
+  acceptanceId            String    @id @default(uuid()) @db.Uuid
+  userId                  String    @db.Uuid
+  documentType            String    @db.VarChar(50)
+  documentId              String    @db.Uuid
+  documentVersion         String    @db.VarChar(50)
+  acceptedAt              DateTime  @default(now())
+  ipAddress               String?   @db.VarChar(45)
+  userAgent               String?   @db.Text
+  consentGiven            Boolean   @default(true)
+  metadata                Json?
+  createdAt               DateTime  @default(now())
+  
+  @@unique([userId, documentType, documentVersion])
+  @@index([userId])
+  @@index([documentType])
+  @@index([acceptedAt])
+  @@map("user_acceptances")
+}

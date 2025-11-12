@@ -1,0 +1,28 @@
+model BackupLog {
+  logId                   String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  backupId                String    @db.Uuid
+  
+  // LOG DETAILS
+  logLevel                String    @default("info") @db.VarChar(20)
+  message                 String    @db.Text
+  details                 Json?
+  errorStack              String?   @db.Text
+  
+  // PROGRESS
+  currentStep             String?   @db.VarChar(100)
+  totalSteps              Int?
+  completedSteps          Int?
+  progressPercentage      Decimal?  @db.Decimal(5, 2)
+  
+  createdAt               DateTime  @default(now())
+  
+  // RELATIONS
+  backup                  Backup    @relation(fields: [backupId], references: [backupId], onDelete: Cascade)
+  
+  @@index([backupId])
+  @@index([logLevel])
+  @@index([createdAt])
+  @@map("backup_logs")
+}
