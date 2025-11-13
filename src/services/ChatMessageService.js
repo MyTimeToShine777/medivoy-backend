@@ -1,7 +1,6 @@
 'use strict';
 
-import { getModels } from '../models/index.js';
-import { Op } from 'sequelize';
+import prisma from '../config/prisma.js';
 
 export class ChatMessageService {
     /**
@@ -21,26 +20,31 @@ export class ChatMessageService {
                 return { success: false, error: 'Message text is required' };
             }
 
-            const { ChatMessage, ChatConversation } = getModels();
-
             // Validate conversation exists
-            const conversation = await ChatConversation.findByPk(conversationId);
+            const conversation = await prisma.chatConversation.findUnique({
+                where: { conversationId }
+            });
             if (!conversation) {
                 return { success: false, error: 'Conversation not found' };
             }
 
-            const message = await ChatMessage.create({
-                conversationId,
-                senderId,
-                messageType: 'text',
-                isDelivered: true,
-                deliveredAt: new Date(),
-                ...messageData
+            const message = await prisma.chatMessage.create({
+                data: {
+                    conversationId,
+                    senderId,
+                    messageType: 'text',
+                    isDelivered: true,
+                    deliveredAt: new Date(),
+                    ...messageData
+                }
             });
 
             // Update conversation last message timestamp
-            await conversation.update({
-                lastMessageAt: new Date()
+            await prisma.chatConversation.update({
+                where: { conversationId },
+                data: {
+                    lastMessageAt: new Date()
+                }
             });
 
             return {
@@ -65,25 +69,33 @@ export class ChatMessageService {
                 return { success: false, error: 'Conversation ID is required' };
             }
 
-            const { ChatMessage, User } = getModels();
-
             const { page = 1, limit = 50 } = options;
-            const offset = (page - 1) * limit;
+            const skip = (page - 1) * limit;
 
-            const { rows: messages, count: total } = await ChatMessage.findAndCountAll({
-                where: {
-                    conversationId,
-                    isDeleted: false
-                },
-                include: [
-                    { model: User, as: 'sender', attributes: ['userId', 'firstName', 'lastName', 'avatar'] }
-                ],
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: parseInt(limit),
-                offset: parseInt(offset)
-            });
+            const [messages, total] = await Promise.all([
+                prisma.chatMessage.findMany({
+                    where: {
+                        conversationId,
+                        isDeleted: false
+                    },
+                    include: {
+                        sender: {
+                            select: { userId: true, firstName: true, lastName: true, avatar: true }
+                        }
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
+                    take: parseInt(limit),
+                    skip: parseInt(skip)
+                }),
+                prisma.chatMessage.count({
+                    where: {
+                        conversationId,
+                        isDeleted: false
+                    }
+                })
+            ]);
 
             return {
                 success: true,

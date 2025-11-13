@@ -1,6 +1,6 @@
 'use strict';
 
-import { ChatConversation, ChatMessage, User } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { cacheService } from '../config/redis.js';
 
 export class ChatConversationService {
@@ -9,10 +9,12 @@ export class ChatConversationService {
             return { success: false, error: 'At least two participants required' };
         }
         try {
-            const conv = await ChatConversation.create({
-                participants: participantIds,
-                conversationName: name,
-                updatedAt: new Date()
+            const conv = await prisma.chatConversation.create({
+                data: {
+                    participants: participantIds,
+                    conversationName: name,
+                    updatedAt: new Date()
+                }
             });
             return { success: true, data: conv };
         } catch (error) {
@@ -26,13 +28,18 @@ export class ChatConversationService {
             let cached = await cacheService.get(cacheKey);
             if (cached) return { success: true, data: JSON.parse(cached) };
 
-            const cons = await ChatConversation.findAll({
-                where: { participants: {
-                        [require('sequelize').Op.contains]: [userId] } },
-                order: [
-                    ['updatedAt', 'DESC']
-                ],
-                include: [{ model: User, as: 'participantsInfo', attributes: ['userId', 'firstName', 'lastName'] }]
+            const cons = await prisma.chatConversation.findMany({
+                where: {
+                    participants: { has: userId }
+                },
+                orderBy: {
+                    updatedAt: 'desc'
+                },
+                include: {
+                    participantsInfo: {
+                        select: { userId: true, firstName: true, lastName: true }
+                    }
+                }
             });
 
             await cacheService.set(cacheKey, JSON.stringify(cons), 3600);
@@ -47,15 +54,20 @@ export class ChatConversationService {
             return { success: false, error: 'Missing fields' };
         }
         try {
-            const msg = await ChatMessage.create({
-                conversationId,
-                senderId,
-                message,
-                attachments,
-                isRead: false,
-                createdAt: new Date()
+            const msg = await prisma.chatMessage.create({
+                data: {
+                    conversationId,
+                    senderId,
+                    message,
+                    attachments,
+                    isRead: false,
+                    createdAt: new Date()
+                }
             });
-            await ChatConversation.update({ updatedAt: new Date() }, { where: { conversationId } });
+            await prisma.chatConversation.updateMany({
+                where: { conversationId },
+                data: { updatedAt: new Date() }
+            });
             return { success: true, data: msg };
         } catch (error) {
             return { success: false, error: error.message };
@@ -64,12 +76,12 @@ export class ChatConversationService {
 
     async getMessages(conversationId, limit) {
         try {
-            const msgs = await ChatMessage.findAll({
+            const msgs = await prisma.chatMessage.findMany({
                 where: { conversationId },
-                order: [
-                    ['createdAt', 'ASC']
-                ],
-                limit: limit || 50
+                orderBy: {
+                    createdAt: 'asc'
+                },
+                take: limit || 50
             });
             return { success: true, data: msgs };
         } catch (error) {
@@ -79,8 +91,13 @@ export class ChatConversationService {
 
     async markAsRead(conversationId, readerId) {
         try {
-            await ChatMessage.update({ isRead: true }, { where: { conversationId, senderId: {
-                        [require('sequelize').Op.ne]: readerId } } });
+            await prisma.chatMessage.updateMany({
+                where: {
+                    conversationId,
+                    senderId: { not: readerId }
+                },
+                data: { isRead: true }
+            });
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
