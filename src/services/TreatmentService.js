@@ -1,13 +1,13 @@
 // Treatment Service - Treatment catalog and management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Treatment, TreatmentCategory, TreatmentSubcategory, Hospital, Doctor } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class TreatmentService {
     // ========== CREATE TREATMENT ==========
     async createTreatment(treatmentData) {
         try {
-            const treatment = await Treatment.create({
+            const treatment = await prisma.treatment.create({
+                data: {
                 ...treatmentData,
             });
 
@@ -27,7 +27,8 @@ class TreatmentService {
     // ========== GET TREATMENT ==========
     async getTreatmentById(treatmentId) {
         try {
-            const treatment = await Treatment.findByPk(treatmentId, {
+            const treatment = await prisma.treatment.findUnique({
+                where: { treatmentId }, {
                 include: [
                     { model: TreatmentCategory, as: 'category' },
                     { model: TreatmentSubcategory, as: 'subcategory' },
@@ -57,7 +58,7 @@ class TreatmentService {
 
     async getTreatmentBySlug(slug) {
         try {
-            const treatment = await Treatment.findOne({
+            const treatment = await prisma.treatment.findFirst({
                 where: { slug },
                 include: [
                     { model: TreatmentCategory, as: 'category' },
@@ -118,7 +119,7 @@ class TreatmentService {
                 ];
             }
 
-            const treatments = await Treatment.findAll({
+            const treatments = await prisma.treatment.findMany({
                 where,
                 include: [
                     { model: TreatmentCategory, as: 'category' },
@@ -147,7 +148,7 @@ class TreatmentService {
 
     async getTreatmentsByCategory(categoryId) {
         try {
-            const treatments = await Treatment.findAll({
+            const treatments = await prisma.treatment.findMany({
                 where: { categoryId, isActive: true },
                 order: [
                     ['name', 'ASC']
@@ -168,7 +169,7 @@ class TreatmentService {
 
     async getFeaturedTreatments() {
         try {
-            const treatments = await Treatment.findAll({
+            const treatments = await prisma.treatment.findMany({
                 where: { isFeatured: true, isActive: true },
                 order: [
                     ['displayOrder', 'ASC']

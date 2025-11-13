@@ -1,8 +1,6 @@
 'use strict';
 
-import { Op } from 'sequelize';
-import { sequelize } from '../config/database.js';
-import { Settings, Backup } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { cacheService } from '../config/redis.js';
 import { AppError } from '../utils/errors/AppError.js';
 import crypto from 'crypto';
@@ -45,7 +43,7 @@ export class SettingsService {
 
             // Use explicit column names in order to avoid driver/DB column name
             // mismatches when the database uses snake_case column names.
-            const settings = await Settings.findAll({
+            const settings = await prisma.settings.findMany({
                 where: where,
                 order: [
                     ['setting_type', 'ASC'],
@@ -76,7 +74,7 @@ export class SettingsService {
             let cached = await cacheService.get(cacheKey);
             if (cached) return { success: true, data: cached };
 
-            const settings = await Settings.findOne({
+            const settings = await prisma.settings.findFirst({
                 where: { settingType: settingType, isActive: true }
             });
 
@@ -117,7 +115,8 @@ export class SettingsService {
             const encryptedValue = updateData.isEncrypted ? this.encryptValue(updateData) : updateData;
 
             if (!settings) {
-                settings = await Settings.create({
+                settings = await prisma.settings.create({
+                data: {
                     settingType: settingType,
                     settingData: mergedData,
                     settingValue: encryptedValue,
@@ -150,7 +149,7 @@ export class SettingsService {
 
     async validateSettings(settingType, data) {
         try {
-            const settings = await Settings.findOne({
+            const settings = await prisma.settings.findFirst({
                 where: { settingType: settingType }
             });
 
@@ -393,7 +392,7 @@ export class SettingsService {
 
     async exportSettings(format = 'json') {
         try {
-            const settings = await Settings.findAll({
+            const settings = await prisma.settings.findMany({
                 where: { isActive: true }
             });
 

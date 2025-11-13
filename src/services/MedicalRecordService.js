@@ -1,13 +1,13 @@
 // Medical Record Service - Patient medical records
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { MedicalRecord, User, Doctor, Hospital, Appointment } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class MedicalRecordService {
     // ========== CREATE MEDICAL RECORD ==========
     async createMedicalRecord(recordData) {
         try {
-            const record = await MedicalRecord.create({
+            const record = await prisma.medicalRecord.create({
+                data: {
                 ...recordData,
                 status: 'active',
             });
@@ -21,7 +21,8 @@ class MedicalRecordService {
     // ========== GET RECORD ==========
     async getMedicalRecordById(recordId) {
         try {
-            const record = await MedicalRecord.findByPk(recordId, {
+            const record = await prisma.medicalRecord.findUnique({
+                where: { recordId }, {
                 include: [
                     { model: User, as: 'patient' },
                     { model: Doctor, as: 'doctor' },
@@ -43,7 +44,7 @@ class MedicalRecordService {
 
             if (filters.recordType) where.recordType = filters.recordType;
 
-            const records = await MedicalRecord.findAll({
+            const records = await prisma.medicalRecord.findMany({
                 where,
                 order: [
                     ['recordDate', 'DESC']
@@ -61,11 +62,11 @@ class MedicalRecordService {
     // ========== ARCHIVE RECORD ==========
     async archiveRecord(recordId) {
         try {
-            const record = await MedicalRecord.findByPk(recordId);
+            const record = await prisma.medicalRecord.findUnique({ where: { recordId } });
             if (!record) return { success: false, error: 'Not found' };
 
             record.status = 'archived';
-            await record.save();
+            await prisma.medicalRecord.update({ where: { recordId }, data: { status: record.status } });
 
             return { success: true, data: record };
         } catch (error) {

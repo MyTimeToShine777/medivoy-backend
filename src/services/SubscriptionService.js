@@ -1,13 +1,13 @@
 // Subscription Service - Subscription management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Subscription, SubscriptionPlan, User, Payment } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class SubscriptionService {
     // ========== CREATE SUBSCRIPTION ==========
     async createSubscription(subscriptionData) {
         try {
-            const subscription = await Subscription.create({
+            const subscription = await prisma.subscription.create({
+                data: {
                 subscriptionNumber: await this.generateSubscriptionNumber(),
                 status: 'trial',
                 ...subscriptionData,
@@ -22,7 +22,8 @@ class SubscriptionService {
     // ========== GET SUBSCRIPTION ==========
     async getSubscriptionById(subscriptionId) {
         try {
-            const subscription = await Subscription.findByPk(subscriptionId, {
+            const subscription = await prisma.subscription.findUnique({
+                where: { subscriptionId }, {
                 include: [
                     { model: User, as: 'user' },
                     { model: SubscriptionPlan, as: 'plan' },
@@ -39,7 +40,7 @@ class SubscriptionService {
     // ========== GET USER SUBSCRIPTION ==========
     async getUserSubscription(userId) {
         try {
-            const subscription = await Subscription.findOne({
+            const subscription = await prisma.subscription.findFirst({
                 where: {
                     userId,
                     status: {
@@ -64,10 +65,10 @@ class SubscriptionService {
     // ========== UPGRADE SUBSCRIPTION ==========
     async upgradeSubscription(subscriptionId, newPlanId) {
         try {
-            const subscription = await Subscription.findByPk(subscriptionId);
+            const subscription = await prisma.subscription.findUnique({ where: { subscriptionId } });
             if (!subscription) return { success: false, error: 'Not found' };
 
-            const newPlan = await SubscriptionPlan.findByPk(newPlanId);
+            const newPlan = await prisma.subscriptionPlan.findUnique({ where: { planId: newPlanId } });
             if (!newPlan) return { success: false, error: 'Plan not found' };
 
             subscription.upgradedFrom = subscription.planId;
@@ -75,7 +76,7 @@ class SubscriptionService {
             subscription.status = 'active';
             subscription.amount = newPlan.amount;
 
-            await subscription.save();
+            await prisma.subscription.update({ where: { subscriptionId }, data: { upgradedFrom: subscription.upgradedFrom, planId: subscription.planId, status: subscription.status, amount: subscription.amount } });
 
             return { success: true, data: subscription };
         } catch (error) {
@@ -86,14 +87,14 @@ class SubscriptionService {
     // ========== CANCEL SUBSCRIPTION ==========
     async cancelSubscription(subscriptionId, reason = null) {
         try {
-            const subscription = await Subscription.findByPk(subscriptionId);
+            const subscription = await prisma.subscription.findUnique({ where: { subscriptionId } });
             if (!subscription) return { success: false, error: 'Not found' };
 
             subscription.status = 'cancelled';
             subscription.cancelledAt = new Date();
             if (reason) subscription.cancellationReason = reason;
 
-            await subscription.save();
+            await prisma.subscription.update({ where: { subscriptionId }, data: { upgradedFrom: subscription.upgradedFrom, planId: subscription.planId, status: subscription.status, amount: subscription.amount } });
 
             return { success: true, data: subscription };
         } catch (error) {
@@ -104,7 +105,7 @@ class SubscriptionService {
     // ========== RENEW SUBSCRIPTION ==========
     async renewSubscription(subscriptionId) {
         try {
-            const subscription = await Subscription.findByPk(subscriptionId);
+            const subscription = await prisma.subscription.findUnique({ where: { subscriptionId } });
             if (!subscription) return { success: false, error: 'Not found' };
 
             subscription.status = 'active';
@@ -118,7 +119,7 @@ class SubscriptionService {
             }
 
             subscription.currentPeriodEnd = endDate;
-            await subscription.save();
+            await prisma.subscription.update({ where: { subscriptionId }, data: { upgradedFrom: subscription.upgradedFrom, planId: subscription.planId, status: subscription.status, amount: subscription.amount } });
 
             return { success: true, data: subscription };
         } catch (error) {

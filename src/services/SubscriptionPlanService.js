@@ -1,13 +1,13 @@
 // Subscription Plan Service - Plan management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { SubscriptionPlan } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class SubscriptionPlanService {
     // ========== CREATE PLAN ==========
     async createPlan(planData) {
         try {
-            const plan = await SubscriptionPlan.create({
+            const plan = await prisma.subscriptionPlan.create({
+                data: {
                 ...planData,
                 isActive: true,
             });
@@ -21,7 +21,7 @@ class SubscriptionPlanService {
     // ========== GET PLAN ==========
     async getPlanById(planId) {
         try {
-            const plan = await SubscriptionPlan.findByPk(planId);
+            const plan = await prisma.subscriptionPlan.findUnique({ where: { planId } });
             if (!plan) return { success: false, error: 'Not found' };
             return { success: true, data: plan };
         } catch (error) {
@@ -32,7 +32,7 @@ class SubscriptionPlanService {
     // ========== GET ALL PLANS ==========
     async getAllPlans() {
         try {
-            const plans = await SubscriptionPlan.findAll({
+            const plans = await prisma.subscriptionPlan.findMany({
                 where: { isActive: true },
                 order: [
                     ['amount', 'ASC']
@@ -48,10 +48,10 @@ class SubscriptionPlanService {
     // ========== UPDATE PLAN ==========
     async updatePlan(planId, updateData) {
         try {
-            const plan = await SubscriptionPlan.findByPk(planId);
+            const plan = await prisma.subscriptionPlan.findUnique({ where: { planId } });
             if (!plan) return { success: false, error: 'Not found' };
 
-            const updated = await plan.update(updateData);
+            const updated = await prisma.subscriptionPlan.update({ where: { planId }, data: updateData });
             return { success: true, data: updated };
         } catch (error) {
             return { success: false, error: error.message };
@@ -61,11 +61,11 @@ class SubscriptionPlanService {
     // ========== DEACTIVATE PLAN ==========
     async deactivatePlan(planId) {
         try {
-            const plan = await SubscriptionPlan.findByPk(planId);
+            const plan = await prisma.subscriptionPlan.findUnique({ where: { planId } });
             if (!plan) return { success: false, error: 'Not found' };
 
             plan.isActive = false;
-            await plan.save();
+            await prisma.subscriptionPlan.update({ where: { planId }, data: { isActive: plan.isActive } });
 
             return { success: true, data: plan };
         } catch (error) {
