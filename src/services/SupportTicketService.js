@@ -1,16 +1,17 @@
 // Support Ticket Service - Customer support management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { SupportTicket, User, Booking } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class SupportTicketService {
     // ========== CREATE TICKET ==========
     async createTicket(ticketData) {
         try {
-            const ticket = await SupportTicket.create({
-                ticketNumber: await this.generateTicketNumber(),
-                status: 'new',
-                ...ticketData,
+            const ticket = await prisma.supportTicket.create({
+                data: {
+                    ticketNumber: await this.generateTicketNumber(),
+                    status: 'new',
+                    ...ticketData,
+                }
             });
 
             return { success: true, data: ticket };
@@ -22,11 +23,12 @@ class SupportTicketService {
     // ========== GET TICKET ==========
     async getTicketById(ticketId) {
         try {
-            const ticket = await SupportTicket.findByPk(ticketId, {
-                include: [
-                    { model: User, as: 'customer' },
-                    { model: Booking, as: 'booking' },
-                ],
+            const ticket = await prisma.supportTicket.findUnique({
+                where: { ticketId },
+                include: {
+                    customer: true,
+                    booking: true
+                }
             });
 
             if (!ticket) return { success: false, error: 'Not found' };
@@ -43,13 +45,13 @@ class SupportTicketService {
 
             if (filters.status) where.status = filters.status;
 
-            const tickets = await SupportTicket.findAll({
+            const tickets = await prisma.supportTicket.findMany({
                 where,
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: filters.limit || 20,
-                offset: filters.offset || 0,
+                orderBy: {
+                    createdAt: 'desc'
+                },
+                take: filters.limit || 20,
+                skip: filters.offset || 0,
             });
 
             return { success: true, data: tickets };
@@ -61,16 +63,21 @@ class SupportTicketService {
     // ========== UPDATE TICKET STATUS ==========
     async updateTicketStatus(ticketId, newStatus) {
         try {
-            const ticket = await SupportTicket.findByPk(ticketId);
+            const ticket = await prisma.supportTicket.findUnique({
+                where: { ticketId }
+            });
             if (!ticket) return { success: false, error: 'Not found' };
 
-            ticket.status = newStatus;
+            const updateData = { status: newStatus };
             if (newStatus === 'resolved') {
-                ticket.resolvedAt = new Date();
+                updateData.resolvedAt = new Date();
             }
 
-            await ticket.save();
-            return { success: true, data: ticket };
+            const updated = await prisma.supportTicket.update({
+                where: { ticketId },
+                data: updateData
+            });
+            return { success: true, data: updated };
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -79,14 +86,20 @@ class SupportTicketService {
     // ========== ASSIGN TICKET ==========
     async assignTicket(ticketId, staffId) {
         try {
-            const ticket = await SupportTicket.findByPk(ticketId);
+            const ticket = await prisma.supportTicket.findUnique({
+                where: { ticketId }
+            });
             if (!ticket) return { success: false, error: 'Not found' };
 
-            ticket.assignedToId = staffId;
-            ticket.status = 'open';
-            await ticket.save();
+            const updated = await prisma.supportTicket.update({
+                where: { ticketId },
+                data: {
+                    assignedToId: staffId,
+                    status: 'open'
+                }
+            });
 
-            return { success: true, data: ticket };
+            return { success: true, data: updated };
         } catch (error) {
             return { success: false, error: error.message };
         }
