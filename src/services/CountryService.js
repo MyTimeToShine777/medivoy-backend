@@ -1,13 +1,14 @@
 // Country Service - Country management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Country } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class CountryService {
     // ========== GET COUNTRY ==========
     async getCountryById(countryId) {
         try {
-            const country = await Country.findByPk(countryId);
+            const country = await prisma.country.findUnique({
+                where: { countryId }
+            });
             if (!country) return { success: false, error: 'Not found' };
             return { success: true, data: country };
         } catch (error) {
@@ -18,10 +19,8 @@ class CountryService {
     // ========== GET ALL COUNTRIES ==========
     async getAllCountries() {
         try {
-            const countries = await Country.findAll({
-                order: [
-                    ['name', 'ASC']
-                ],
+            const countries = await prisma.country.findMany({
+                orderBy: { name: 'asc' }
             });
 
             return { success: true, data: countries };
@@ -33,20 +32,13 @@ class CountryService {
     // ========== SEARCH COUNTRIES ==========
     async searchCountries(searchTerm) {
         try {
-            const countries = await Country.findAll({
+            const countries = await prisma.country.findMany({
                 where: {
-                    [Op.or]: [{
-                            name: {
-                                [Op.iLike]: `%${searchTerm}%`
-                            }
-                        },
-                        {
-                            code: {
-                                [Op.iLike]: `%${searchTerm}%`
-                            }
-                        },
-                    ],
-                },
+                    OR: [
+                        { name: { contains: searchTerm, mode: 'insensitive' } },
+                        { code: { contains: searchTerm, mode: 'insensitive' } }
+                    ]
+                }
             });
 
             return { success: true, data: countries };
