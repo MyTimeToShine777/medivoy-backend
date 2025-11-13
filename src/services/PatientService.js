@@ -1,13 +1,13 @@
 // Patient Service - Patient profile and health management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Patient, User, Consultation, MedicalRecord } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class PatientService {
     // ========== CREATE PATIENT PROFILE ==========
     async createPatientProfile(userId, patientData) {
         try {
-            const patient = await Patient.create({
+            const patient = await prisma.patient.create({
+                data: {
                 userId,
                 ...patientData,
             });
@@ -21,7 +21,7 @@ class PatientService {
     // ========== GET PATIENT PROFILE ==========
     async getPatientProfile(userId) {
         try {
-            const patient = await Patient.findOne({
+            const patient = await prisma.patient.findFirst({
                 where: { userId },
                 include: [
                     { model: User, as: 'user' },
@@ -56,7 +56,7 @@ class PatientService {
                 patient.bmi = this.calculateBMI(patient.height, healthData.weight);
             }
 
-            await patient.save();
+            await prisma.patient.update({ where: { userId }, data: { allergies: patient.allergies, chronicConditions: patient.chronicConditions, currentMedications: patient.currentMedications, height: patient.height, weight: patient.weight, bmi: patient.bmi } });
             return { success: true, data: patient };
         } catch (error) {
             return { success: false, error: error.message };
@@ -66,7 +66,7 @@ class PatientService {
     // ========== GET PATIENT MEDICAL HISTORY ==========
     async getPatientMedicalHistory(userId) {
         try {
-            const records = await MedicalRecord.findAll({
+            const records = await prisma.medicalRecord.findMany({
                 where: { userId },
                 order: [
                     ['recordDate', 'DESC']

@@ -1,7 +1,7 @@
 // Google Meet Service - Video conference integration
 // NO optional chaining - Production Ready
 import { google } from 'googleapis';
-import { VideoCall, Appointment, User } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class GoogleMeetService {
     constructor() {
@@ -55,7 +55,8 @@ class GoogleMeetService {
                 conferenceDataVersion: 1,
             });
 
-            const videoCall = await VideoCall.create({
+            const videoCall = await prisma.videoCall.create({
+                data: {
                 appointmentId: eventData.appointmentId,
                 organizer: eventData.organizer,
                 attendees: eventData.attendees,

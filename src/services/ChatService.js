@@ -1,7 +1,6 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { Chat, ChatMessage, User, AuditLog } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
 import { AuditLogService } from './AuditLogService.js';
@@ -17,13 +16,13 @@ export class ChatService {
     }
 
     async createChatRoom(userId1, userId2, chatData = {}) {
-        const transaction = await sequelize.transaction();
+        const transaction = await prisma.$transaction(async (tx) => {
         try {
             if (!userId1 || !userId2) {
                 throw new AppError('Both user IDs required', 400);
             }
 
-            const existingChat = await Chat.findOne({
+            const existingChat = await tx.chat.findFirst({
                 where: {
                     [Op.or]: [
                         { userId1: userId1, userId2: userId2 },
@@ -38,7 +37,8 @@ export class ChatService {
                 return { success: true, message: 'Chat room already exists', chat: existingChat };
             }
 
-            const chat = await Chat.create({
+            const chat = await tx.chat.create({
+                data: {
                 chatId: this._generateChatId(),
                 userId1: userId1,
                 userId2: userId2,
@@ -69,7 +69,8 @@ export class ChatService {
                 return { success: false, error: 'Chat ID and User ID required' };
             }
 
-            const chat = await Chat.findByPk(chatId, {
+            const chat = await prisma.chat.findUnique({
+                where: { chatId }, {
                 include: [
                     { model: User, as: 'User1', attributes: ['userId', 'firstName', 'lastName'] },
                     { model: User, as: 'User2', attributes: ['userId', 'firstName', 'lastName'] }
@@ -137,13 +138,14 @@ export class ChatService {
     }
 
     async sendMessage(chatId, userId, messageContent) {
-        const transaction = await sequelize.transaction();
+        const transaction = await prisma.$transaction(async (tx) => {
         try {
             if (!chatId || !userId || !messageContent) {
                 throw new AppError('All parameters required', 400);
             }
 
-            const chat = await Chat.findByPk(chatId, { transaction: transaction });
+            const chat = await prisma.chat.findUnique({
+                where: { chatId }, { transaction: transaction });
             if (!chat) {
                 await transaction.rollback();
                 return { success: false, error: 'Chat room not found' };
