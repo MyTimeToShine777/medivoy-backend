@@ -1,6 +1,6 @@
 'use strict';
 
-import { AuditLog } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 export class AuditService {
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -9,13 +9,15 @@ export class AuditService {
 
     async logAuthEvent(userId, action, details, ipAddress, userAgent) {
         try {
-            const auditLog = await AuditLog.create({
-                userId: userId || null,
-                action,
-                details: JSON.stringify(details),
-                ipAddress,
-                userAgent,
-                timestamp: new Date()
+            const auditLog = await prisma.auditLog.create({
+                data: {
+                    userId: userId || null,
+                    action,
+                    details: JSON.stringify(details),
+                    ipAddress,
+                    userAgent,
+                    timestamp: new Date()
+                }
             });
 
             console.log(`📝 Audit logged: ${action} by user ${userId}`);
@@ -32,12 +34,12 @@ export class AuditService {
 
     async getUserAuditLogs(userId, limit = 50) {
         try {
-            const logs = await AuditLog.findAll({
+            const logs = await prisma.auditLog.findMany({
                 where: { userId },
-                order: [
-                    ['timestamp', 'DESC']
-                ],
-                limit
+                orderBy: {
+                    timestamp: 'desc'
+                },
+                take: limit
             });
 
             return logs;
@@ -53,12 +55,12 @@ export class AuditService {
 
     async getActionHistory(action, limit = 100) {
         try {
-            const logs = await AuditLog.findAll({
+            const logs = await prisma.auditLog.findMany({
                 where: { action },
-                order: [
-                    ['timestamp', 'DESC']
-                ],
-                limit
+                orderBy: {
+                    timestamp: 'desc'
+                },
+                take: limit
             });
 
             return logs;
