@@ -1,17 +1,18 @@
 // Prescription Service - Prescription management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Prescription, Doctor, Patient } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 
 class PrescriptionService {
     // ========== CREATE PRESCRIPTION ==========
     async createPrescription(prescriptionData) {
         try {
-            const prescription = await Prescription.create({
+            const prescription = await prisma.prescription.create({
+                data: {
                 prescriptionNumber: await this.generatePrescriptionNumber(),
                 status: 'draft',
                 ...prescriptionData,
+                }
             });
 
             return {
@@ -30,7 +31,8 @@ class PrescriptionService {
     // ========== GET PRESCRIPTION ==========
     async getPrescriptionById(prescriptionId) {
         try {
-            const prescription = await Prescription.findByPk(prescriptionId, {
+            const prescription = await prisma.prescription.findUnique({
+                where: { prescriptionId }, {
                 include: [
                     { model: User, as: 'patient' },
                     { model: Doctor, as: 'doctor' },
@@ -59,7 +61,7 @@ class PrescriptionService {
 
     async getPrescriptionByNumber(prescriptionNumber) {
         try {
-            const prescription = await Prescription.findOne({
+            const prescription = await prisma.prescription.findFirst({
                 where: { prescriptionNumber },
                 include: [
                     { model: Doctor, as: 'doctor' },

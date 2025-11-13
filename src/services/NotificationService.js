@@ -1,6 +1,6 @@
 // Notification Service - Notification management
 // NO optional chaining - Production Ready
-import { Notification, User } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import nodemailer from 'nodemailer';
 import twilio from 'twilio';
 
@@ -25,10 +25,12 @@ class NotificationService {
     // ========== CREATE NOTIFICATION ==========
     async createNotification(notificationData) {
         try {
-            const notification = await Notification.create({
-                ...notificationData,
-                status: 'pending',
-                isRead: false,
+            const notification = await prisma.notification.create({
+                data: {
+                    ...notificationData,
+                    status: 'pending',
+                    isRead: false,
+                }
             });
 
             return {

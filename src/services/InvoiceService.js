@@ -1,14 +1,14 @@
 // Invoice Service - Invoice generation and management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Invoice, Booking, Payment, User } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import PDFDocument from 'pdfkit';
 
 class InvoiceService {
     // ========== CREATE INVOICE ==========
     async createInvoice(invoiceData) {
         try {
-            const invoice = await Invoice.create({
+            const invoice = await prisma.invoice.create({
+                data: {
                 invoiceNumber: await this.generateInvoiceNumber(),
                 status: 'draft',
                 ...invoiceData,
@@ -23,7 +23,8 @@ class InvoiceService {
     // ========== GET INVOICE ==========
     async getInvoiceById(invoiceId) {
         try {
-            const invoice = await Invoice.findByPk(invoiceId, {
+            const invoice = await prisma.invoice.findUnique({
+                where: { invoiceId }, {
                 include: [
                     { model: Booking, as: 'booking' },
                     { model: User, as: 'user' },
@@ -40,7 +41,7 @@ class InvoiceService {
     // ========== GET USER INVOICES ==========
     async getUserInvoices(userId) {
         try {
-            const invoices = await Invoice.findAll({
+            const invoices = await prisma.invoice.findMany({
                 where: { userId },
                 order: [
                     ['createdAt', 'DESC']
@@ -56,12 +57,12 @@ class InvoiceService {
     // ========== FINALIZE INVOICE ==========
     async finalizeInvoice(invoiceId) {
         try {
-            const invoice = await Invoice.findByPk(invoiceId);
+            const invoice = await prisma.invoice.findUnique({ where: { invoiceId } });
             if (!invoice) return { success: false, error: 'Not found' };
 
             invoice.status = 'finalized';
             invoice.finalizedAt = new Date();
-            await invoice.save();
+            await prisma.invoice.update({ where: { invoiceId }, data: { status: invoice.status, finalizedAt: invoice.finalizedAt, paidAt: invoice.paidAt, paymentMethod: invoice.paymentMethod } });
 
             return { success: true, data: invoice };
         } catch (error) {
@@ -72,7 +73,7 @@ class InvoiceService {
     // ========== MARK AS PAID ==========
     async markInvoiceAsPaid(invoiceId, paymentDetails) {
         try {
-            const invoice = await Invoice.findByPk(invoiceId);
+            const invoice = await prisma.invoice.findUnique({ where: { invoiceId } });
             if (!invoice) return { success: false, error: 'Not found' };
 
             invoice.status = 'paid';
@@ -80,7 +81,7 @@ class InvoiceService {
             invoice.paymentMethod = paymentDetails.method;
             invoice.transactionId = paymentDetails.transactionId;
 
-            await invoice.save();
+            await prisma.invoice.update({ where: { invoiceId }, data: { status: invoice.status, finalizedAt: invoice.finalizedAt, paidAt: invoice.paidAt, paymentMethod: invoice.paymentMethod } });
 
             return { success: true, data: invoice };
         } catch (error) {
@@ -91,7 +92,8 @@ class InvoiceService {
     // ========== GENERATE PDF ==========
     async generateInvoicePDF(invoiceId) {
         try {
-            const invoice = await Invoice.findByPk(invoiceId, {
+            const invoice = await prisma.invoice.findUnique({
+                where: { invoiceId }, {
                 include: [
                     { model: Booking, as: 'booking' },
                     { model: User, as: 'user' },
