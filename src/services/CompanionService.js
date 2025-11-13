@@ -1,7 +1,6 @@
 'use strict';
 
-import { getModels } from '../models/index.js';
-import { Op } from 'sequelize';
+import prisma from '../config/prisma.js';
 
 export class CompanionService {
     /**
@@ -25,24 +24,28 @@ export class CompanionService {
                 return { success: false, error: 'Relationship is required' };
             }
 
-            const { Companion, Booking, Patient } = getModels();
-
             // Validate booking exists
-            const booking = await Booking.findByPk(bookingId);
+            const booking = await prisma.booking.findUnique({
+                where: { bookingId }
+            });
             if (!booking) {
                 return { success: false, error: 'Booking not found' };
             }
 
             // Validate patient exists
-            const patient = await Patient.findByPk(patientId);
+            const patient = await prisma.patient.findUnique({
+                where: { patientId }
+            });
             if (!patient) {
                 return { success: false, error: 'Patient not found' };
             }
 
-            const companion = await Companion.create({
-                bookingId,
-                patientId,
-                ...companionData
+            const companion = await prisma.companion.create({
+                data: {
+                    bookingId,
+                    patientId,
+                    ...companionData
+                }
             });
 
             return {
@@ -67,13 +70,11 @@ export class CompanionService {
                 return { success: false, error: 'Booking ID is required' };
             }
 
-            const { Companion } = getModels();
-
-            const companions = await Companion.findAll({
+            const companions = await prisma.companion.findMany({
                 where: { bookingId },
-                order: [
-                    ['createdAt', 'ASC']
-                ]
+                orderBy: {
+                    createdAt: 'asc'
+                }
             });
 
             return {
@@ -98,13 +99,16 @@ export class CompanionService {
                 return { success: false, error: 'Companion ID is required' };
             }
 
-            const { Companion, Booking, Patient } = getModels();
-
-            const companion = await Companion.findByPk(companionId, {
-                include: [
-                    { model: Booking, as: 'booking', attributes: ['bookingId', 'bookingNumber', 'status'] },
-                    { model: Patient, as: 'patient', attributes: ['patientId', 'firstName', 'lastName'] }
-                ]
+            const companion = await prisma.companion.findUnique({
+                where: { companionId },
+                include: {
+                    booking: {
+                        select: { bookingId: true, bookingNumber: true, status: true }
+                    },
+                    patient: {
+                        select: { patientId: true, firstName: true, lastName: true }
+                    }
+                }
             });
 
             if (!companion) {
@@ -136,19 +140,22 @@ export class CompanionService {
                 return { success: false, error: 'Update data is required' };
             }
 
-            const { Companion } = getModels();
-
-            const companion = await Companion.findByPk(companionId);
+            const companion = await prisma.companion.findUnique({
+                where: { companionId }
+            });
 
             if (!companion) {
                 return { success: false, error: 'Companion not found' };
             }
 
-            await companion.update(updateData);
+            const updated = await prisma.companion.update({
+                where: { companionId },
+                data: updateData
+            });
 
             return {
                 success: true,
-                data: companion,
+                data: updated,
                 message: 'Companion updated successfully'
             };
         } catch (error) {
@@ -168,11 +175,11 @@ export class CompanionService {
                 return { success: false, error: 'Companion ID is required' };
             }
 
-            const { Companion } = getModels();
+            const deleted = await prisma.companion.delete({
+                where: { companionId }
+            }).catch(() => null);
 
-            const deleted = await Companion.destroy({ where: { companionId } });
-
-            if (deleted === 0) {
+            if (!deleted) {
                 return { success: false, error: 'Companion not found' };
             }
 
@@ -197,16 +204,16 @@ export class CompanionService {
                 return { success: false, error: 'Patient ID is required' };
             }
 
-            const { Companion, Booking } = getModels();
-
-            const companions = await Companion.findAll({
+            const companions = await prisma.companion.findMany({
                 where: { patientId },
-                include: [
-                    { model: Booking, as: 'booking', attributes: ['bookingId', 'bookingNumber', 'status'] }
-                ],
-                order: [
-                    ['createdAt', 'DESC']
-                ]
+                include: {
+                    booking: {
+                        select: { bookingId: true, bookingNumber: true, status: true }
+                    }
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                }
             });
 
             return {
