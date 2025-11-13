@@ -44,7 +44,7 @@ class SubscriptionService {
                 where: {
                     userId,
                     status: {
-                        [Op.ne]: 'cancelled'
+                        not: 'cancelled'
                     }
                 },
                 include: [

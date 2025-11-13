@@ -241,7 +241,7 @@ export class SettingsService {
 
             if (filters.startDate && filters.endDate) {
                 where.createdAt = {
-                    [Op.between]: [new Date(filters.startDate), new Date(filters.endDate)]
+                     [new Date(filters.startDate), new Date(filters.endDate)]
                 };
             }
 

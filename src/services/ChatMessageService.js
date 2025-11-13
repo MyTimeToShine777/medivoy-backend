@@ -124,7 +124,7 @@ export class ChatMessageService {
                 return { success: false, error: 'Message ID is required' };
             }
 
-            const { ChatMessage } = getModels();
+            
 
             const message = await ChatMessage.findByPk(messageId);
 
@@ -168,7 +168,7 @@ export class ChatMessageService {
                 return { success: false, error: 'Conversation ID is required' };
             }
 
-            const { ChatMessage } = getModels();
+            
 
             const updated = await ChatMessage.update({ isRead: true, readAt: new Date() }, {
                 where: {
@@ -200,7 +200,7 @@ export class ChatMessageService {
                 return { success: false, error: 'Message ID is required' };
             }
 
-            const { ChatMessage } = getModels();
+            
 
             const message = await ChatMessage.findByPk(messageId);
 
@@ -240,7 +240,7 @@ export class ChatMessageService {
                 return { success: false, error: 'Conversation ID is required' };
             }
 
-            const { ChatMessage } = getModels();
+            
 
             const count = await ChatMessage.count({
                 where: {

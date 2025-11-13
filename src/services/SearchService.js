@@ -38,11 +38,11 @@ export class SearchService {
             const hospitals = await Hospital.findAll({
                 where: {
                     isActive: true,
-                    [Op.or]: [
+                    OR: [
                         { hospitalName: {
-                                [Op.like]: searchTerm } },
+                                 searchTerm } },
                         { address: {
-                                [Op.like]: searchTerm } }
+                                 searchTerm } }
                     ]
                 },
                 include: [{ model: City }, { model: Country }],
@@ -52,13 +52,13 @@ export class SearchService {
             const doctors = await Doctor.findAll({
                 where: {
                     isActive: true,
-                    [Op.or]: [
+                    OR: [
                         { firstName: {
-                                [Op.like]: searchTerm } },
+                                 searchTerm } },
                         { lastName: {
-                                [Op.like]: searchTerm } },
+                                 searchTerm } },
                         { specialization: {
-                                [Op.like]: searchTerm } }
+                                 searchTerm } }
                     ]
                 },
                 include: [{ model: Hospital }, { model: Specialization }],
@@ -68,13 +68,13 @@ export class SearchService {
             const treatments = await Treatment.findAll({
                 where: {
                     isActive: true,
-                    [Op.or]: [
+                    OR: [
                         { treatmentName: {
-                                [Op.like]: searchTerm } },
+                                 searchTerm } },
                         { category: {
-                                [Op.like]: searchTerm } },
+                                 searchTerm } },
                         { description: {
-                                [Op.like]: searchTerm } }
+                                 searchTerm } }
                     ]
                 },
                 limit: limit
@@ -117,21 +117,21 @@ export class SearchService {
 
             const where = {
                 isActive: true,
-                [Op.or]: [
+                OR: [
                     { hospitalName: {
-                            [Op.like]: '%' + query + '%' } },
+                             '%' + query + '%' } },
                     { address: {
-                            [Op.like]: '%' + query + '%' } }
+                             '%' + query + '%' } }
                 ]
             };
 
             if (filters.cityId) where.cityId = filters.cityId;
             if (filters.countryId) where.countryId = filters.countryId;
             if (filters.minRating) where.averageRating = {
-                [Op.gte]: filters.minRating };
+                gte: filters.minRating };
             if (filters.accreditation) {
                 where.accreditation = {
-                    [Op.like]: '%' + filters.accreditation + '%' };
+                     '%' + filters.accreditation + '%' };
             }
 
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
@@ -174,22 +174,22 @@ export class SearchService {
 
             const where = {
                 isActive: true,
-                [Op.or]: [
+                OR: [
                     { firstName: {
-                            [Op.like]: '%' + query + '%' } },
+                             '%' + query + '%' } },
                     { lastName: {
-                            [Op.like]: '%' + query + '%' } },
+                             '%' + query + '%' } },
                     { specialization: {
-                            [Op.like]: '%' + query + '%' } }
+                             '%' + query + '%' } }
                 ]
             };
 
             if (filters.specializationId) where.specializationId = filters.specializationId;
             if (filters.hospitalId) where.hospitalId = filters.hospitalId;
             if (filters.minRating) where.averageRating = {
-                [Op.gte]: filters.minRating };
+                gte: filters.minRating };
             if (filters.minExperience) where.experience = {
-                [Op.gte]: filters.minExperience };
+                gte: filters.minExperience };
             if (filters.availability === true) where.isAvailable = true;
 
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
@@ -233,24 +233,24 @@ export class SearchService {
 
             const where = {
                 isActive: true,
-                [Op.or]: [
+                OR: [
                     { treatmentName: {
-                            [Op.like]: '%' + query + '%' } },
+                             '%' + query + '%' } },
                     { category: {
-                            [Op.like]: '%' + query + '%' } },
+                             '%' + query + '%' } },
                     { description: {
-                            [Op.like]: '%' + query + '%' } }
+                             '%' + query + '%' } }
                 ]
             };
 
             if (filters.category) where.category = filters.category;
             if (filters.minPrice || filters.maxPrice) {
                 where.basePrice = {};
-                if (filters.minPrice) where.basePrice[Op.gte] = filters.minPrice;
-                if (filters.maxPrice) where.basePrice[Op.lte] = filters.maxPrice;
+                if (filters.minPrice) where.basePrice = { gte: filters.minPrice };
+                if (filters.maxPrice) where.basePrice = { lte: filters.maxPrice };
             }
             if (filters.minRating) where.averageRating = {
-                [Op.gte]: filters.minRating };
+                gte: filters.minRating };
 
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
@@ -288,11 +288,11 @@ export class SearchService {
 
             const where = {
                 isActive: true,
-                [Op.or]: [
+                OR: [
                     { packageName: {
-                            [Op.like]: '%' + query + '%' } },
+                             '%' + query + '%' } },
                     { description: {
-                            [Op.like]: '%' + query + '%' } }
+                             '%' + query + '%' } }
                 ]
             };
 
@@ -300,8 +300,8 @@ export class SearchService {
             if (filters.hospitalId) where.hospitalId = filters.hospitalId;
             if (filters.minPrice || filters.maxPrice) {
                 where.finalPrice = {};
-                if (filters.minPrice) where.finalPrice[Op.gte] = filters.minPrice;
-                if (filters.maxPrice) where.finalPrice[Op.lte] = filters.maxPrice;
+                if (filters.minPrice) where.finalPrice = { gte: filters.minPrice };
+                if (filters.maxPrice) where.finalPrice = { lte: filters.maxPrice };
             }
 
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
@@ -384,7 +384,7 @@ export class SearchService {
                     where: {
                         isActive: true,
                         hospitalName: {
-                            [Op.like]: searchTerm }
+                             searchTerm }
                     },
                     attributes: ['hospitalId', 'hospitalName'],
                     limit: 5
@@ -396,11 +396,11 @@ export class SearchService {
                 const doctors = await Doctor.findAll({
                     where: {
                         isActive: true,
-                        [Op.or]: [
+                        OR: [
                             { firstName: {
-                                    [Op.like]: searchTerm } },
+                                     searchTerm } },
                             { lastName: {
-                                    [Op.like]: searchTerm } }
+                                     searchTerm } }
                         ]
                     },
                     attributes: ['doctorId', 'firstName', 'lastName'],
@@ -414,7 +414,7 @@ export class SearchService {
                     where: {
                         isActive: true,
                         treatmentName: {
-                            [Op.like]: searchTerm }
+                             searchTerm }
                     },
                     attributes: ['treatmentId', 'treatmentName'],
                     limit: 5

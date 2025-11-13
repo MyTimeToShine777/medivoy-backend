@@ -220,11 +220,11 @@ class GoogleMeetService {
     async getVideoCallHistory(userId, filters = {}) {
         try {
             const where = {
-                [Op.or]: [
+                OR: [
                     { organizer: userId },
                     {
                         attendees: {
-                            [Op.contains]: [userId]
+                            hasSome: [userId]
                         }
                     },
                 ],

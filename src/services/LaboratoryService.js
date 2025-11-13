@@ -84,7 +84,7 @@ export class LaboratoryService {
 
             if (filters && filters.search) {
                 where.testName = {
-                    [Op.like]: '%' + filters.search + '%'
+                     '%' + filters.search + '%'
                 };
             }
 

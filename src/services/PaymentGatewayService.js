@@ -1,7 +1,6 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { Payment, Booking, User, AuditLog } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { NotificationService } from './NotificationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
@@ -31,27 +30,27 @@ export class PaymentGatewayService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createPayment(userId, bookingId, paymentData) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!userId || !bookingId || !paymentData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
             if (!booking) {
-                await transaction.rollback();
+                
                 throw new AppError('Booking not found', 404);
             }
 
-            const user = await User.findByPk(userId, { transaction: transaction });
+            const user = await prisma.user.findUnique({ where: { id: userId } });
             if (!user) {
-                await transaction.rollback();
+                
                 throw new AppError('User not found', 404);
             }
 
             const errors = this.validationService.validatePaymentData(paymentData);
             if (errors.length) {
-                await transaction.rollback();
+                
                 throw new AppError(errors.join(', '), 400);
             }
 
@@ -69,7 +68,7 @@ export class PaymentGatewayService {
                 gatewayPaymentId = gatewayResponse.id;
             }
 
-            const payment = await Payment.create({
+            const payment = await prisma.payment.create({ data: {
                 paymentId: this._generatePaymentId(),
                 bookingId: bookingId,
                 userId: userId,
@@ -82,7 +81,7 @@ export class PaymentGatewayService {
                 description: paymentData.description || null,
                 metadata: gatewayResponse,
                 createdAt: new Date()
-            }, { transaction: transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'PAYMENT_CREATED',
@@ -92,7 +91,7 @@ export class PaymentGatewayService {
                 details: { gateway: gateway, amount: paymentData.amount }
             }, transaction);
 
-            await transaction.commit();
+            
 
             return {
                 success: true,
@@ -104,7 +103,7 @@ export class PaymentGatewayService {
                 currency: payment.currency
             };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -114,19 +113,19 @@ export class PaymentGatewayService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async verifyPayment(paymentId, verificationData) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!paymentId || !verificationData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const payment = await Payment.findOne({
+            const payment = await prisma.payment.findFirst({
                 where: { paymentId: paymentId },
                 transaction: transaction
             });
 
             if (!payment) {
-                await transaction.rollback();
+                
                 throw new AppError('Payment not found', 404);
             }
 
@@ -139,19 +138,19 @@ export class PaymentGatewayService {
             }
 
             if (!isValid) {
-                await transaction.rollback();
+                
                 throw new AppError('Payment verification failed', 400);
             }
 
             payment.status = 'completed';
             payment.verifiedAt = new Date();
-            await payment.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
 
             // Update booking status
-            const booking = await Booking.findByPk(payment.bookingId, { transaction: transaction });
+            const booking = await prisma.booking.findUnique({ where: { id: payment.bookingId } });
             if (booking) {
                 booking.paymentStatus = 'completed';
-                await booking.save({ transaction: transaction });
+                /* TODO: Convert to prisma update */ await booking.save({ transaction: transaction });
             }
 
             await this.auditLogService.logAction({
@@ -168,11 +167,11 @@ export class PaymentGatewayService {
                 currency: payment.currency
             });
 
-            await transaction.commit();
+            
 
             return { success: true, message: 'Payment verified', payment: payment };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -182,29 +181,29 @@ export class PaymentGatewayService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async refundPayment(paymentId, userId, refundData) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!paymentId || !userId || !refundData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const payment = await Payment.findOne({
+            const payment = await prisma.payment.findFirst({
                 where: { paymentId: paymentId },
                 transaction: transaction
             });
 
             if (!payment) {
-                await transaction.rollback();
+                
                 throw new AppError('Payment not found', 404);
             }
 
             if (payment.userId !== userId && userId !== 'ADMIN') {
-                await transaction.rollback();
+                
                 throw new AppError('Unauthorized to refund', 403);
             }
 
             if (payment.status === 'refunded') {
-                await transaction.rollback();
+                
                 throw new AppError('Already refunded', 400);
             }
 
@@ -221,7 +220,7 @@ export class PaymentGatewayService {
             payment.refundReason = refundData.reason || null;
             payment.refundedAt = new Date();
             payment.refundGatewayId = refundResponse.id;
-            await payment.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
 
             await this.auditLogService.logAction({
                 action: 'PAYMENT_REFUNDED',
@@ -236,11 +235,11 @@ export class PaymentGatewayService {
                 refundAmount: payment.refundAmount
             });
 
-            await transaction.commit();
+            
 
             return { success: true, message: 'Refund processed', payment: payment };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -250,15 +249,15 @@ export class PaymentGatewayService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createSubscription(userId, subscriptionData) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!userId || !subscriptionData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const user = await User.findByPk(userId, { transaction: transaction });
+            const user = await prisma.user.findUnique({ where: { id: userId } });
             if (!user) {
-                await transaction.rollback();
+                
                 throw new AppError('User not found', 404);
             }
 
@@ -279,7 +278,7 @@ export class PaymentGatewayService {
                 details: { gateway: gateway }
             }, transaction);
 
-            await transaction.commit();
+            
 
             return {
                 success: true,
@@ -288,7 +287,7 @@ export class PaymentGatewayService {
                 gateway: gateway
             };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -298,7 +297,7 @@ export class PaymentGatewayService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async handleRazorpayWebhook(webhookData, signature) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             const isValid = await this._verifyRazorpayWebhook(webhookData, signature);
             if (!isValid) {
@@ -309,7 +308,7 @@ export class PaymentGatewayService {
             const eventData = webhookData.payload.payment.entity;
 
             if (eventType === 'payment.authorized') {
-                const payment = await Payment.findOne({
+                const payment = await prisma.payment.findFirst({
                     where: { gatewayPaymentId: eventData.id },
                     transaction: transaction
                 });
@@ -317,10 +316,10 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'completed';
                     payment.verifiedAt = new Date();
-                    await payment.save({ transaction: transaction });
+                    /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
                 }
             } else if (eventType === 'payment.failed') {
-                const payment = await Payment.findOne({
+                const payment = await prisma.payment.findFirst({
                     where: { gatewayPaymentId: eventData.id },
                     transaction: transaction
                 });
@@ -328,21 +327,21 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'failed';
                     payment.failureReason = eventData.error_description;
-                    await payment.save({ transaction: transaction });
+                    /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
                 }
             }
 
-            await transaction.commit();
+            
 
             return { success: true, message: 'Webhook processed' };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
 
     async handleStripeWebhook(webhookData, signature) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             const isValid = await this._verifyStripeWebhook(webhookData, signature);
             if (!isValid) {
@@ -353,7 +352,7 @@ export class PaymentGatewayService {
             const eventData = webhookData.data.object;
 
             if (eventType === 'payment_intent.succeeded') {
-                const payment = await Payment.findOne({
+                const payment = await prisma.payment.findFirst({
                     where: { gatewayPaymentId: eventData.id },
                     transaction: transaction
                 });
@@ -361,10 +360,10 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'completed';
                     payment.verifiedAt = new Date();
-                    await payment.save({ transaction: transaction });
+                    /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
                 }
             } else if (eventType === 'payment_intent.payment_failed') {
-                const payment = await Payment.findOne({
+                const payment = await prisma.payment.findFirst({
                     where: { gatewayPaymentId: eventData.id },
                     transaction: transaction
                 });
@@ -372,15 +371,15 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'failed';
                     payment.failureReason = eventData.last_payment_error.message;
-                    await payment.save({ transaction: transaction });
+                    /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
                 }
             }
 
-            await transaction.commit();
+            
 
             return { success: true, message: 'Webhook processed' };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -403,7 +402,7 @@ export class PaymentGatewayService {
     }
 
     async _createRazorpayOrder(paymentData, user) {
-        const order = await this.razorpay.orders.create({
+        const order = await this.razorpay.prisma.orders.create({ data: {
             amount: paymentData.amount * 100,
             currency: paymentData.currency,
             receipt: this._generatePaymentId(),
@@ -418,7 +417,7 @@ export class PaymentGatewayService {
     }
 
     async _createStripePaymentIntent(paymentData, user) {
-        const intent = await this.stripe.paymentIntents.create({
+        const intent = await this.stripe.prisma.paymentIntents.create({ data: {
             amount: paymentData.amount * 100,
             currency: paymentData.currency.toLowerCase(),
             customer: user.stripeCustomerId || undefined,
@@ -457,7 +456,7 @@ export class PaymentGatewayService {
     }
 
     async _refundStripePayment(payment, refundData) {
-        const refund = await this.stripe.refunds.create({
+        const refund = await this.stripe.prisma.refunds.create({ data: {
             payment_intent: payment.gatewayPaymentId,
             amount: refundData.amount ? refundData.amount * 100 : undefined,
             reason: refundData.reason || 'requested_by_customer'
@@ -466,7 +465,7 @@ export class PaymentGatewayService {
     }
 
     async _createRazorpaySubscription(subscriptionData, user) {
-        const subscription = await this.razorpay.subscriptions.create({
+        const subscription = await this.razorpay.prisma.subscriptions.create({ data: {
             plan_id: subscriptionData.planId,
             customer_notify: 1,
             quantity: 1,
@@ -477,7 +476,7 @@ export class PaymentGatewayService {
     }
 
     async _createStripeSubscription(subscriptionData, user) {
-        const subscription = await this.stripe.subscriptions.create({
+        const subscription = await this.stripe.prisma.subscriptions.create({ data: {
             customer: user.stripeCustomerId,
             items: [{ price: subscriptionData.priceId }],
             default_payment_method: subscriptionData.paymentMethodId

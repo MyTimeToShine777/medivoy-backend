@@ -1,7 +1,6 @@
 'use strict';
 
-import { Translation, TranslationLog } from '../models/index.js';
-import { sequelize } from '../config/database.js';
+import prisma from '../config/prisma.js';
 
 const SUPPORTED_LANGUAGES = ['en', 'ar', 'hi', 'es', 'fr', 'de', 'pt'];
 const DEFAULT_LANGUAGE = 'en';
@@ -14,20 +13,20 @@ export class TranslationWorkerService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async triggerTranslationWorker(newLocale) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!SUPPORTED_LANGUAGES.includes(newLocale)) {
                 throw new Error(`Unsupported language: ${newLocale}`);
             }
 
             // Get all translations in default language
-            const defaultTranslations = await Translation.findAll({
+            const defaultTranslations = await prisma.translation.findMany({
                 where: { language: DEFAULT_LANGUAGE, isActive: true },
                 transaction: transaction
             });
 
             if (defaultTranslations.length === 0) {
-                await transaction.rollback();
+                
                 return { success: false, error: 'No base translations found' };
             }
 
@@ -44,19 +43,19 @@ export class TranslationWorkerService {
             }));
 
             // Batch insert translation placeholders
-            await Translation.bulkCreate(translationJobs, { transaction: transaction });
+            await Translation.bulkCreate(translationJobs);
 
             // Log the action
-            await TranslationLog.create({
+            await prisma.translationLog.create({ data: {
                 logId: this._generateLogId(),
                 action: 'TRANSLATION_WORKER_TRIGGERED',
                 language: newLocale,
                 totalItems: defaultTranslations.length,
                 status: 'initiated',
                 createdAt: new Date()
-            }, { transaction: transaction });
+            });
 
-            await transaction.commit();
+            
 
             // Emit worker event or trigger async job
             console.log(`✅ Translation worker triggered for language: ${newLocale}`);
@@ -68,7 +67,7 @@ export class TranslationWorkerService {
                 jobId: this._generateJobId()
             };
         } catch (error) {
-            await transaction.rollback();
+            
             return { success: false, error: error.message };
         }
     }
@@ -78,10 +77,10 @@ export class TranslationWorkerService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async processTranslationBatch(language, batchSize = 100) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             // Get pending translations
-            const pendingTranslations = await Translation.findAll({
+            const pendingTranslations = await prisma.translation.findMany({
                 where: {
                     language: language,
                     status: 'pending'
@@ -91,7 +90,7 @@ export class TranslationWorkerService {
             });
 
             if (pendingTranslations.length === 0) {
-                await transaction.rollback();
+                
                 return { success: true, message: 'No pending translations', processed: 0 };
             }
 
@@ -108,16 +107,16 @@ export class TranslationWorkerService {
             }
 
             // Log completion
-            await TranslationLog.create({
+            await prisma.translationLog.create({ data: {
                 logId: this._generateLogId(),
                 action: 'TRANSLATION_BATCH_COMPLETED',
                 language: language,
                 processedItems: pendingTranslations.length,
                 status: 'completed',
                 createdAt: new Date()
-            }, { transaction: transaction });
+            });
 
-            await transaction.commit();
+            
 
             console.log(`✅ Processed ${pendingTranslations.length} translations for ${language}`);
 
@@ -127,7 +126,7 @@ export class TranslationWorkerService {
                 processed: pendingTranslations.length
             };
         } catch (error) {
-            await transaction.rollback();
+            
             console.error(`❌ Translation batch error for ${language}:`, error);
             return { success: false, error: error.message };
         }
@@ -142,9 +141,9 @@ export class TranslationWorkerService {
             console.log('🔄 Starting translation monitor CRON job...');
 
             // Get pending translation counts by language
-            const pendingByLanguage = await Translation.findAll({
+            const pendingByLanguage = await prisma.translation.findMany({
                 attributes: [
-                    'language', [sequelize.fn('COUNT', sequelize.col('translationId')), 'count']
+                    'language', [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('translationId')), 'count']
                 ],
                 where: { status: 'pending' },
                 group: ['language'],
@@ -174,7 +173,7 @@ export class TranslationWorkerService {
 
     async validateTranslations(language) {
         try {
-            const translations = await Translation.findAll({
+            const translations = await prisma.translation.findMany({
                 where: { language: language, status: 'completed' }
             });
 

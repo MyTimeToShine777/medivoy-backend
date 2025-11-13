@@ -90,19 +90,19 @@ class FAQService {
             const where = {
                 isPublished: true,
                 isActive: true,
-                [Op.or]: [{
+                OR: [{
                         question: {
-                            [Op.iLike]: `%${searchTerm}%`
+                            contains: searchTerm, mode: "insensitive"
                         }
                     },
                     {
                         answer: {
-                            [Op.iLike]: `%${searchTerm}%`
+                            contains: searchTerm, mode: "insensitive"
                         }
                     },
                     {
                         tags: {
-                            [Op.contains]: [searchTerm]
+                            hasSome: [searchTerm]
                         }
                     },
                 ],

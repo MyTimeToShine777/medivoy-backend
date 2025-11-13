@@ -103,7 +103,7 @@ export class HospitalService {
             if (filters && filters.countryId) where.countryId = filters.countryId;
             if (filters && filters.search) {
                 where.hospitalName = {
-                    [Op.like]: '%' + filters.search + '%' };
+                    contains: "' + filters.search + '" };
             }
 
             const hospitals = await prisma.hospital.findMany({

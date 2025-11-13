@@ -96,23 +96,23 @@ class DoctorService {
             }
             if (filters.minRating) {
                 where.averageRating = {
-                    [Op.gte]: filters.minRating
+                    gte: filters.minRating
                 };
             }
             if (filters.search) {
-                where[Op.or] = [{
+                where.OR = [{
                         firstName: {
-                            [Op.iLike]: `%${filters.search}%`
+                            contains: filters.search, mode: "insensitive"
                         }
                     },
                     {
                         lastName: {
-                            [Op.iLike]: `%${filters.search}%`
+                            contains: filters.search, mode: "insensitive"
                         }
                     },
                     {
                         specialization: {
-                            [Op.iLike]: `%${filters.search}%`
+                            contains: filters.search, mode: "insensitive"
                         }
                     },
                 ];
@@ -301,7 +301,7 @@ class DoctorService {
                     appointmentDate: date,
                     timeSlot,
                     status: {
-                        [Op.ne]: 'cancelled'
+                        not: 'cancelled'
                     },
                 },
             });

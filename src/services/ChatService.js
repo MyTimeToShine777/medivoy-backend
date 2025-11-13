@@ -24,7 +24,7 @@ export class ChatService {
 
             const existingChat = await tx.chat.findFirst({
                 where: {
-                    [Op.or]: [
+                    OR: [
                         { userId1: userId1, userId2: userId2 },
                         { userId1: userId2, userId2: userId1 }
                     ]
@@ -102,7 +102,7 @@ export class ChatService {
 
             const chats = await Chat.findAll({
                 where: {
-                    [Op.or]: [
+                    OR: [
                         { userId1: userId },
                         { userId2: userId }
                     ]
@@ -120,7 +120,7 @@ export class ChatService {
 
             const total = await Chat.count({
                 where: {
-                    [Op.or]: [
+                    OR: [
                         { userId1: userId },
                         { userId2: userId }
                     ]
@@ -211,7 +211,7 @@ export class ChatService {
 
             // Mark as read
             await ChatMessage.update({ isRead: true }, { where: { chatId: chatId, senderId: {
-                        [Op.ne]: userId } } });
+                        not: userId } } });
 
             return {
                 success: true,

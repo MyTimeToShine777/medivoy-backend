@@ -88,7 +88,7 @@ export class SpecializationService {
 
             if (filters && filters.search) {
                 where.specializationName = {
-                    [Op.like]: '%' + filters.search + '%' };
+                    contains: "' + filters.search + '" };
             }
 
             const specializations = await prisma.specialization.findMany({

@@ -97,23 +97,23 @@ class TreatmentService {
             }
             if (filters.minPrice && filters.maxPrice) {
                 where.cost = {
-                    [Op.between]: [filters.minPrice, filters.maxPrice],
+                    { gte: filters.minPrice, lte: filters.maxPrice },
                 };
             }
             if (filters.minRating) {
                 where.averageRating = {
-                    [Op.gte]: filters.minRating
+                    gte: filters.minRating
                 };
             }
             if (filters.search) {
-                where[Op.or] = [{
+                where.OR = [{
                         name: {
-                            [Op.iLike]: `%${filters.search}%`
+                            contains: filters.search, mode: "insensitive"
                         }
                     },
                     {
                         description: {
-                            [Op.iLike]: `%${filters.search}%`
+                            contains: filters.search, mode: "insensitive"
                         }
                     },
                 ];

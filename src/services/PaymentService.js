@@ -1,13 +1,12 @@
 // Payment Service - Payment processing and management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Payment, Booking, User, Invoice, Refund } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class PaymentService {
     // ========== CREATE PAYMENT ==========
     async createPayment(paymentData) {
         try {
-            const payment = await Payment.create({
+            const payment = await prisma.payment.create({ data: {
                 paymentNumber: await this.generatePaymentNumber(),
                 status: 'pending',
                 ...paymentData,
@@ -30,13 +29,13 @@ class PaymentService {
     // ========== GET PAYMENT ==========
     async getPaymentById(paymentId) {
         try {
-            const payment = await Payment.findByPk(paymentId, {
+            const payment = await prisma.payment.findUnique({ where: { id: paymentId, {
                 include: [
                     { model: Booking, as: 'booking' },
                     { model: User, as: 'user' },
                     { model: Invoice, as: 'invoice' },
                 ],
-            });
+            } } });
 
             if (!payment) {
                 return {
@@ -59,7 +58,7 @@ class PaymentService {
 
     async getPaymentByNumber(paymentNumber) {
         try {
-            const payment = await Payment.findOne({
+            const payment = await prisma.payment.findFirst({
                 where: { paymentNumber },
             });
 
@@ -94,7 +93,7 @@ class PaymentService {
                 where.method = filters.method;
             }
 
-            const payments = await Payment.findAll({
+            const payments = await prisma.payment.findMany({
                 where,
                 include: [{ model: Booking, as: 'booking' }],
                 order: [
@@ -104,7 +103,7 @@ class PaymentService {
                 offset: filters.offset || 0,
             });
 
-            const total = await Payment.count({ where });
+            const total = await prisma.payment.count({ where });
 
             return {
                 success: true,
@@ -122,7 +121,7 @@ class PaymentService {
     // ========== PROCESS PAYMENT ==========
     async processPayment(paymentId, gatewayResponse) {
         try {
-            const payment = await Payment.findByPk(paymentId);
+            const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
             if (!payment) {
                 return {
                     success: false,
@@ -139,7 +138,7 @@ class PaymentService {
                 await payment.save();
 
                 // Update booking as paid
-                const booking = await Booking.findByPk(payment.bookingId);
+                const booking = await prisma.booking.findUnique({ where: { id: payment.bookingId } });
                 if (booking) {
                     booking.isPaid = true;
                     booking.paidAt = new Date();
@@ -173,7 +172,7 @@ class PaymentService {
     // ========== REFUND ==========
     async refundPayment(paymentId, refundAmount = null, reason = null) {
         try {
-            const payment = await Payment.findByPk(paymentId);
+            const payment = await prisma.payment.findUnique({ where: { id: paymentId } });
             if (!payment) {
                 return {
                     success: false,
@@ -188,7 +187,7 @@ class PaymentService {
                 };
             }
 
-            const refund = await Refund.create({
+            const refund = await prisma.refund.create({ data: {
                 paymentId,
                 bookingId: payment.bookingId,
                 userId: payment.userId,
@@ -217,7 +216,7 @@ class PaymentService {
     // ========== PAYMENT VERIFICATION ==========
     async verifyPayment(transactionId, expectedAmount) {
         try {
-            const payment = await Payment.findOne({
+            const payment = await prisma.payment.findFirst({
                 where: { transactionId },
             });
 
@@ -262,17 +261,17 @@ class PaymentService {
 
             if (filters.startDate && filters.endDate) {
                 where.completedAt = {
-                    [Op.between]: [filters.startDate, filters.endDate],
+                    { gte: [filters.startDate, filters.endDate],
                 };
             }
 
-            const totalPayments = await Payment.count({ where });
+            const totalPayments = await prisma.payment.count({ where });
             const totalAmount = await Payment.sum('amount', { where });
             const averageAmount = await Payment.avg('amount', { where });
 
-            const paymentsByMethod = await Payment.findAll({
+            const paymentsByMethod = await prisma.payment.findMany({
                 where,
-                attributes: ['method', [this.sequelize.fn('COUNT', this.sequelize.col('paymentId')), 'count']],
+                attributes: ['method', [this./* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', this./* TODO: Check field name */ sequelize.col('paymentId')), 'count']],
                 group: ['method'],
                 raw: true,
             });

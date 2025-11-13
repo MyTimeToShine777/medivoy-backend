@@ -38,7 +38,7 @@ class RecommendationService {
             const recommendedDoctors = await prisma.doctor.findMany({
                 where: {
                     specialization: {
-                        [Op.in]: specializations
+                        in: specializations
                     },
                     isActive: true,
                 },
@@ -84,7 +84,7 @@ class RecommendationService {
             const recommendedHospitals = await prisma.hospital.findMany({
                 where: {
                     city: {
-                        [Op.in]: cities
+                        in: cities
                     },
                     isActive: true,
                 },
@@ -129,7 +129,7 @@ class RecommendationService {
             const recommendedTreatments = await Treatment.findAll({
                 where: {
                     treatmentId: {
-                        [Op.notIn]: treatmentIds
+                        notIn: treatmentIds
                     },
                     isActive: true,
                 },

@@ -1,6 +1,6 @@
 // Auth Service - Complete authentication with OAuth + Email
 // NO optional chaining - Production Ready
-import { User, RefreshToken, PasswordReset } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import passport from 'passport';
@@ -34,12 +34,12 @@ class AuthService {
                 },
                 async(accessToken, refreshToken, profile, done) => {
                     try {
-                        let user = await User.findOne({
+                        let user = await prisma.user.findFirst({
                             where: { email: profile.emails[0].value },
                         });
 
                         if (!user) {
-                            user = await User.create({
+                            user = await prisma.user.create({ data: {
                                 firstName: profile.name.givenName || '',
                                 lastName: profile.name.familyName || '',
                                 email: profile.emails[0].value,
@@ -74,12 +74,12 @@ class AuthService {
                 },
                 async(accessToken, refreshToken, profile, done) => {
                     try {
-                        let user = await User.findOne({
+                        let user = await prisma.user.findFirst({
                             where: { email: profile.emails[0].value },
                         });
 
                         if (!user) {
-                            user = await User.create({
+                            user = await prisma.user.create({ data: {
                                 firstName: profile.name.givenName || '',
                                 lastName: profile.name.familyName || '',
                                 email: profile.emails[0].value,
@@ -112,7 +112,7 @@ class AuthService {
         // Deserialize user
         passport.deserializeUser(async(userId, done) => {
             try {
-                const user = await User.findByPk(userId);
+                const user = await prisma.user.findUnique({ where: { id: userId } });
                 done(null, user);
             } catch (error) {
                 done(error, null);
@@ -123,7 +123,7 @@ class AuthService {
     // ========== TRADITIONAL EMAIL/PASSWORD SIGNUP ==========
     async signupWithEmail(signupData) {
         try {
-            const existingUser = await User.findOne({
+            const existingUser = await prisma.user.findFirst({
                 where: { email: signupData.email },
             });
 
@@ -143,7 +143,7 @@ class AuthService {
 
             const hashedPassword = await bcrypt.hash(signupData.password, 10);
 
-            const user = await User.create({
+            const user = await prisma.user.create({ data: {
                 firstName: signupData.firstName,
                 lastName: signupData.lastName,
                 email: signupData.email,
@@ -171,7 +171,7 @@ class AuthService {
     // ========== TRADITIONAL EMAIL/PASSWORD LOGIN ==========
     async loginWithEmail(email, password) {
         try {
-            const user = await User.findOne({ where: { email } });
+            const user = await prisma.user.findFirst({ where: { email } });
 
             if (!user) {
                 return {
@@ -215,12 +215,12 @@ class AuthService {
     // ========== GOOGLE OAUTH LOGIN ==========
     async handleGoogleCallback(profile) {
         try {
-            let user = await User.findOne({
+            let user = await prisma.user.findFirst({
                 where: { email: profile.emails[0].value },
             });
 
             if (!user) {
-                user = await User.create({
+                user = await prisma.user.create({ data: {
                     firstName: profile.name.givenName || '',
                     lastName: profile.name.familyName || '',
                     email: profile.emails[0].value,
@@ -265,10 +265,10 @@ class AuthService {
                 };
             }
 
-            let user = await User.findOne({ where: { email } });
+            let user = await prisma.user.findFirst({ where: { email } });
 
             if (!user) {
-                user = await User.create({
+                user = await prisma.user.create({ data: {
                     firstName: profile.name.givenName || '',
                     lastName: profile.name.familyName || '',
                     email,
@@ -304,7 +304,7 @@ class AuthService {
     // ========== REFRESH TOKEN ==========
     async refreshAccessToken(refreshToken) {
         try {
-            const token = await RefreshToken.findOne({
+            const token = await prisma.refreshToken.findFirst({
                 where: { token: refreshToken, isRevoked: false },
             });
 
@@ -316,7 +316,7 @@ class AuthService {
                 return { success: false, error: 'Refresh token expired' };
             }
 
-            const user = await User.findByPk(token.userId);
+            const user = await prisma.user.findUnique({ where: { id: token.userId } });
 
             if (!user) {
                 return { success: false, error: 'User not found' };
@@ -336,7 +336,7 @@ class AuthService {
     // ========== LOGOUT ==========
     async logout(refreshToken) {
         try {
-            const token = await RefreshToken.findOne({
+            const token = await prisma.refreshToken.findFirst({
                 where: { token: refreshToken },
             });
 
@@ -378,7 +378,7 @@ class AuthService {
     // ========== VERIFY EMAIL ==========
     async verifyEmail(email) {
         try {
-            const user = await User.findOne({ where: { email } });
+            const user = await prisma.user.findFirst({ where: { email } });
 
             if (!user) {
                 return { success: false, error: 'User not found' };
@@ -397,7 +397,7 @@ class AuthService {
     // ========== REQUEST PASSWORD RESET ==========
     async requestPasswordReset(email) {
         try {
-            const user = await User.findOne({ where: { email } });
+            const user = await prisma.user.findFirst({ where: { email } });
 
             if (!user) {
                 return {
@@ -409,7 +409,7 @@ class AuthService {
             const resetToken = crypto.randomBytes(32).toString('hex');
             const hashedToken = await bcrypt.hash(resetToken, 10);
 
-            await PasswordReset.create({
+            await prisma.passwordReset.create({ data: {
                 userId: user.userId,
                 token: hashedToken,
                 expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -444,7 +444,7 @@ class AuthService {
     // ========== RESET PASSWORD ==========
     async resetPassword(token, newPassword) {
         try {
-            const resetRecord = await PasswordReset.findOne({
+            const resetRecord = await prisma.passwordReset.findFirst({
                 where: { used: false },
             });
 
@@ -469,7 +469,7 @@ class AuthService {
                 };
             }
 
-            const user = await User.findByPk(resetRecord.userId);
+            const user = await prisma.user.findUnique({ where: { id: resetRecord.userId } });
 
             if (!user) {
                 return { success: false, error: 'User not found' };
@@ -492,7 +492,7 @@ class AuthService {
     // ========== CHANGE PASSWORD ==========
     async changePassword(userId, oldPassword, newPassword) {
         try {
-            const user = await User.findByPk(userId);
+            const user = await prisma.user.findUnique({ where: { id: userId } });
 
             if (!user) {
                 return { success: false, error: 'User not found' };
@@ -552,7 +552,7 @@ class AuthService {
             process.env.JWT_REFRESH_SECRET || 'your-refresh-secret', { expiresIn: '7d' }
         );
 
-        await RefreshToken.create({
+        await prisma.refreshToken.create({ data: {
             userId: user.userId,
             token,
             expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),

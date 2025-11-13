@@ -1,17 +1,6 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import {
-    Booking,
-    Payment,
-    Review,
-    User,
-    Hospital,
-    Doctor,
-    Appointment,
-    LabOrder,
-    AuditLog
-} from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
 import { AuditLogService } from './AuditLogService.js';
@@ -31,26 +20,26 @@ export class AnalyticsService {
 
     async getDashboardMetrics() {
         try {
-            const totalBookings = await Booking.count();
-            const totalRevenue = await Payment.sum('amount', { where: { status: 'completed' } });
-            const totalUsers = await User.count();
-            const totalDoctors = await Doctor.count();
-            const totalHospitals = await Hospital.count();
+            const totalBookings = await prisma.booking.count();
+            const totalRevenue = await (await prisma.payment.aggregate({ where: { status: 'completed' }, _sum: { amount: true } }))._sum.amount;
+            const totalUsers = await prisma.user.count();
+            const totalDoctors = await prisma.doctor.count();
+            const totalHospitals = await prisma.hospital.count();
 
-            const pendingBookings = await Booking.count({ where: { status: 'pending' } });
-            const confirmedBookings = await Booking.count({ where: { status: 'confirmed' } });
-            const completedBookings = await Booking.count({ where: { status: 'completed' } });
-            const cancelledBookings = await Booking.count({ where: { status: 'cancelled' } });
+            const pendingBookings = await prisma.booking.count({ where: { status: 'pending' } });
+            const confirmedBookings = await prisma.booking.count({ where: { status: 'confirmed' } });
+            const completedBookings = await prisma.booking.count({ where: { status: 'completed' } });
+            const cancelledBookings = await prisma.booking.count({ where: { status: 'cancelled' } });
 
-            const completedPayments = await Payment.count({ where: { status: 'completed' } });
-            const failedPayments = await Payment.count({ where: { status: 'failed' } });
-            const refundedPayments = await Payment.count({ where: { status: 'refunded' } });
+            const completedPayments = await prisma.payment.count({ where: { status: 'completed' } });
+            const failedPayments = await prisma.payment.count({ where: { status: 'failed' } });
+            const refundedPayments = await prisma.payment.count({ where: { status: 'refunded' } });
 
-            const totalReviews = await Review.count({ where: { isPublished: true } });
-            const avgRating = await Review.findAll({
+            const totalReviews = await prisma.review.count({ where: { isPublished: true } });
+            const avgRating = await prisma.review.findMany({
                 where: { isPublished: true },
                 attributes: [
-                    [sequelize.fn('AVG', sequelize.col('rating')), 'avgRating']
+                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('AVG', /* TODO: Check field name */ sequelize.col('rating')), 'avgRating']
                 ],
                 raw: true
             });
@@ -92,20 +81,20 @@ export class AnalyticsService {
         try {
             if (!startDate || !endDate) throw new AppError('Date range required', 400);
 
-            const payments = await Payment.findAll({
+            const payments = await prisma.payment.findMany({
                 where: {
                     status: 'completed',
                     createdAt: {
-                        [Op.between]: [startDate, endDate] }
+                        { gte: [startDate, endDate] }
                 },
                 attributes: [
-                    [sequelize.fn('DATE', sequelize.col('createdAt')), 'date'],
-                    [sequelize.fn('SUM', sequelize.col('amount')), 'totalAmount'],
-                    [sequelize.fn('COUNT', sequelize.col('paymentId')), 'transactionCount']
+                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'date'],
+                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('SUM', /* TODO: Check field name */ sequelize.col('amount')), 'totalAmount'],
+                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('paymentId')), 'transactionCount']
                 ],
-                group: [sequelize.fn('DATE', sequelize.col('createdAt'))],
+                group: [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt'))],
                 order: [
-                    [sequelize.fn('DATE', sequelize.col('createdAt')), 'ASC']
+                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'ASC']
                 ],
                 raw: true
             });
@@ -132,18 +121,18 @@ export class AnalyticsService {
         try {
             if (!startDate || !endDate) throw new AppError('Date range required', 400);
 
-            const bookingTrends = await Booking.findAll({
+            const bookingTrends = await prisma.booking.findMany({
                 where: {
                     createdAt: {
-                        [Op.between]: [startDate, endDate] }
+                        { gte: [startDate, endDate] }
                 },
                 attributes: [
-                    [sequelize.fn('DATE', sequelize.col('createdAt')), 'date'],
-                    'status', [sequelize.fn('COUNT', sequelize.col('bookingId')), 'count']
+                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'date'],
+                    'status', [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('bookingId')), 'count']
                 ],
-                group: [sequelize.fn('DATE', sequelize.col('createdAt')), 'status'],
+                group: [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'status'],
                 order: [
-                    [sequelize.fn('DATE', sequelize.col('createdAt')), 'ASC']
+                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'ASC']
                 ],
                 raw: true
             });
@@ -168,7 +157,7 @@ export class AnalyticsService {
 
             if (filters && filters.startDate && filters.endDate) {
                 where.createdAt = {
-                    [Op.between]: [filters.startDate, filters.endDate] };
+                    { gte: [filters.startDate, filters.endDate] };
             }
 
             if (filters && filters.status) {
@@ -179,7 +168,7 @@ export class AnalyticsService {
                 where.hospitalId = filters.hospitalId;
             }
 
-            const bookings = await Booking.findAll({
+            const bookings = await prisma.booking.findMany({
                 where: where,
                 include: [
                     { model: User, attributes: ['firstName', 'lastName', 'email'] },
@@ -214,11 +203,11 @@ export class AnalyticsService {
         try {
             if (!startDate || !endDate) throw new AppError('Date range required', 400);
 
-            const payments = await Payment.findAll({
+            const payments = await prisma.payment.findMany({
                 where: {
                     status: 'completed',
                     createdAt: {
-                        [Op.between]: [startDate, endDate] }
+                        { gte: [startDate, endDate] }
                 },
                 include: [
                     { model: Booking, attributes: ['bookingId'] }
@@ -272,7 +261,7 @@ export class AnalyticsService {
                 where.userType = 'doctor';
             }
 
-            const users = await User.findAll({
+            const users = await prisma.user.findMany({
                 where: where,
                 order: [
                     ['createdAt', 'DESC']
@@ -299,31 +288,31 @@ export class AnalyticsService {
         try {
             if (!hospitalId) throw new AppError('Hospital ID required', 400);
 
-            const bookings = await Booking.count({
+            const bookings = await prisma.booking.count({
                 where: {
                     hospitalId: hospitalId,
                     createdAt: {
-                        [Op.between]: [startDate, endDate] }
+                        { gte: [startDate, endDate] }
                 }
             });
 
-            const completedBookings = await Booking.count({
+            const completedBookings = await prisma.booking.count({
                 where: {
                     hospitalId: hospitalId,
                     status: 'completed',
                     createdAt: {
-                        [Op.between]: [startDate, endDate] }
+                        { gte: [startDate, endDate] }
                 }
             });
 
-            const reviews = await Review.findAll({
+            const reviews = await prisma.review.findMany({
                 where: {
                     hospitalId: hospitalId,
                     isPublished: true
                 },
                 attributes: [
-                    [sequelize.fn('AVG', sequelize.col('rating')), 'avgRating'],
-                    [sequelize.fn('COUNT', sequelize.col('reviewId')), 'totalReviews']
+                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('AVG', /* TODO: Check field name */ sequelize.col('rating')), 'avgRating'],
+                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('reviewId')), 'totalReviews']
                 ],
                 raw: true
             });
@@ -332,7 +321,7 @@ export class AnalyticsService {
                 where: {
                     status: 'completed',
                     createdAt: {
-                        [Op.between]: [startDate, endDate] }
+                        { gte: [startDate, endDate] }
                 }
             });
 
@@ -363,10 +352,10 @@ export class AnalyticsService {
 
     async getTopHospitals(limit) {
         try {
-            const hospitals = await Hospital.findAll({
+            const hospitals = await prisma.hospital.findMany({
                 attributes: {
                     include: [
-                        [sequelize.fn('COUNT', sequelize.col('Bookings.bookingId')), 'bookingCount']
+                        [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('Bookings.bookingId')), 'bookingCount']
                     ]
                 },
                 include: [{
@@ -376,7 +365,7 @@ export class AnalyticsService {
                 }],
                 group: ['Hospital.hospitalId'],
                 order: [
-                    [sequelize.fn('COUNT', sequelize.col('Bookings.bookingId')), 'DESC']
+                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('Bookings.bookingId')), 'DESC']
                 ],
                 limit: limit || 10,
                 raw: false,
@@ -391,10 +380,10 @@ export class AnalyticsService {
 
     async getTopDoctors(limit) {
         try {
-            const doctors = await Doctor.findAll({
+            const doctors = await prisma.doctor.findMany({
                 attributes: {
                     include: [
-                        [sequelize.fn('COUNT', sequelize.col('Appointments.appointmentId')), 'appointmentCount']
+                        [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('Appointments.appointmentId')), 'appointmentCount']
                     ]
                 },
                 include: [{
@@ -404,7 +393,7 @@ export class AnalyticsService {
                 }],
                 group: ['Doctor.doctorId'],
                 order: [
-                    [sequelize.fn('COUNT', sequelize.col('Appointments.appointmentId')), 'DESC']
+                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('Appointments.appointmentId')), 'DESC']
                 ],
                 limit: limit || 10,
                 raw: false,
@@ -427,10 +416,10 @@ export class AnalyticsService {
                 date.setMonth(date.getMonth() - i);
                 const monthKey = date.toISOString().substring(0, 7);
 
-                const newUsers = await User.count({
+                const newUsers = await prisma.user.count({
                     where: {
                         createdAt: {
-                            [Op.between]: [new Date(monthKey + '-01'), new Date(monthKey + '-31')] }
+                            { gte: [new Date(monthKey + '-01'), new Date(monthKey + '-31')] }
                     }
                 });
 

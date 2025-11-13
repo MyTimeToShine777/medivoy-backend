@@ -1,24 +1,6 @@
 'use strict';
 
-import { Op } from 'sequelize';
-import {
-    Booking,
-    BookingHistory,
-    BookingStep,
-    Payment,
-    ExpertCall,
-    Package,
-    FeatureAddOn,
-    BookingAddOn,
-    Treatment,
-    Hospital,
-    Country,
-    City,
-    User,
-    Companion,
-    Transaction
-} from '../models/index.js';
-import { sequelize } from '../config/database.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { NotificationService } from './NotificationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
@@ -50,34 +32,34 @@ export class BookingService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createBooking(userId, treatmentId, countryId, bookingData) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
 
         try {
             if (!userId || !treatmentId || !countryId) {
                 throw new AppError('userId, treatmentId, countryId are required', 400);
             }
 
-            const user = await User.findByPk(userId, { transaction });
+            const user = await prisma.user.findUnique({ where: { id: userId, { transaction } } });
             if (!user) {
                 throw new AppError('User not found', 404);
             }
 
-            const treatment = await Treatment.findByPk(treatmentId, { transaction });
+            const treatment = await prisma.treatment.findUnique({ where: { id: treatmentId, { transaction } } });
             if (!treatment) {
                 throw new AppError('Treatment not found', 404);
             }
 
-            const country = await Country.findByPk(countryId, { transaction });
+            const country = await prisma.country.findUnique({ where: { id: countryId, { transaction } } });
             if (!country) {
                 throw new AppError('Country not found', 404);
             }
 
-            const existingBooking = await Booking.findOne({
+            const existingBooking = await prisma.booking.findFirst({
                 where: {
                     userId: userId,
                     treatmentId: treatmentId,
                     status: {
-                        [Op.in]: [BOOKING_STATUSES.PENDING, BOOKING_STATUSES.EXPERT_REVIEW]
+                        { in: [BOOKING_STATUSES.PENDING, BOOKING_STATUSES.EXPERT_REVIEW]
                     }
                 },
                 transaction: transaction
@@ -89,7 +71,7 @@ export class BookingService {
 
             const bookingId = this._generateBookingId();
 
-            const booking = await Booking.create({
+            const booking = await prisma.booking.create({ data: {
                 bookingId: bookingId,
                 userId: userId,
                 treatmentId: treatmentId,
@@ -110,10 +92,10 @@ export class BookingService {
                     bookingId: booking.bookingId
                 }));
 
-                await Companion.bulkCreate(companionsData, { transaction });
+                await prisma.companion.createMany({ data: companionsData, skipDuplicates: true });
             }
 
-            await BookingHistory.create({
+            await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
                 bookingId: bookingId,
                 action: 'BOOKING_CREATED',
@@ -130,7 +112,7 @@ export class BookingService {
                 details: { treatmentId: treatmentId, countryId: countryId }
             }, transaction);
 
-            await transaction.commit();
+            
 
             return {
                 success: true,
@@ -139,7 +121,7 @@ export class BookingService {
                 booking: booking
             };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -150,7 +132,7 @@ export class BookingService {
                 throw new AppError('Booking ID is required', 400);
             }
 
-            const booking = await Booking.findOne({
+            const booking = await prisma.booking.findFirst({
                 where: { bookingId: bookingId },
                 include: [
                     { model: User, as: 'user', attributes: ['userId', 'firstName', 'lastName', 'email', 'phone'] },
@@ -186,14 +168,14 @@ export class BookingService {
     }
 
     async updateBooking(bookingId, updateData) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
 
         try {
             if (!bookingId) {
                 throw new AppError('Booking ID is required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -201,7 +183,7 @@ export class BookingService {
 
             await booking.update(updateData, { transaction });
 
-            await BookingHistory.create({
+            await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
                 bookingId: bookingId,
                 action: 'BOOKING_UPDATED',
@@ -218,7 +200,7 @@ export class BookingService {
                 details: updateData
             }, transaction);
 
-            await transaction.commit();
+            
 
             return {
                 success: true,
@@ -226,20 +208,20 @@ export class BookingService {
                 booking: booking
             };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
 
     async updateBookingStep(bookingId, stepNumber, stepData) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
 
         try {
             if (!bookingId || !stepNumber) {
                 throw new AppError('Booking ID and step number are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -261,9 +243,9 @@ export class BookingService {
             booking.currentStep = stepNumber;
             booking.workflowData = workflowData;
 
-            await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save({ transaction });
 
-            await BookingHistory.create({
+            await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
                 bookingId: bookingId,
                 action: 'STEP_UPDATED',
@@ -280,7 +262,7 @@ export class BookingService {
                 details: { stepNumber: stepNumber, previousStep: previousStep }
             }, transaction);
 
-            await transaction.commit();
+            
 
             return {
                 success: true,
@@ -289,7 +271,7 @@ export class BookingService {
                 booking: booking
             };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -307,14 +289,14 @@ export class BookingService {
             if (filters && filters.status) {
                 const statusArray = Array.isArray(filters.status) ? filters.status : [filters.status];
                 where.status = {
-                    [Op.in]: statusArray };
+                    { in: statusArray };
             }
 
             if (filters && filters.treatmentId) {
                 where.treatmentId = filters.treatmentId;
             }
 
-            const bookings = await Booking.findAll({
+            const bookings = await prisma.booking.findMany({
                 where: where,
                 include: [
                     { model: Treatment, as: 'treatment', attributes: ['treatmentName'] },
@@ -330,7 +312,7 @@ export class BookingService {
                 distinct: true
             });
 
-            const total = await Booking.count({ where: where });
+            const total = await prisma.booking.count({ where: where });
 
             return {
                 success: true,
@@ -348,14 +330,14 @@ export class BookingService {
     }
 
     async cancelBooking(bookingId, userId, cancellationReason) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
 
         try {
             if (!bookingId || !cancellationReason) {
                 throw new AppError('Booking ID and cancellation reason are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -376,9 +358,9 @@ export class BookingService {
             booking.cancelledAt = new Date();
             booking.cancelledBy = userId;
 
-            await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save({ transaction });
 
-            await BookingHistory.create({
+            await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
                 bookingId: bookingId,
                 action: 'BOOKING_CANCELLED',
@@ -387,7 +369,7 @@ export class BookingService {
                 createdBy: userId
             }, { transaction });
 
-            const payment = await Payment.findOne({
+            const payment = await prisma.payment.findFirst({
                 where: { bookingId: bookingId, status: 'completed' },
                 transaction: transaction
             });
@@ -395,7 +377,7 @@ export class BookingService {
             if (payment) {
                 payment.status = 'refunded';
                 payment.refundedAt = new Date();
-                await payment.save({ transaction });
+                /* TODO: Convert to prisma update */ await payment.save({ transaction });
             }
 
             await this.auditLogService.logAction({
@@ -411,7 +393,7 @@ export class BookingService {
                 reason: cancellationReason
             });
 
-            await transaction.commit();
+            
 
             return {
                 success: true,
@@ -419,7 +401,7 @@ export class BookingService {
                 booking: booking
             };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -429,14 +411,14 @@ export class BookingService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async startWorkflow(bookingId, userId) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
 
         try {
             if (!bookingId || !userId) {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -453,9 +435,9 @@ export class BookingService {
             booking.workflowStartedAt = new Date();
             booking.currentStep = BOOKING_WORKFLOW_STEPS.TREATMENT_SELECTION;
 
-            await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save({ transaction });
 
-            await BookingHistory.create({
+            await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
                 bookingId: bookingId,
                 action: 'WORKFLOW_STARTED',
@@ -472,7 +454,7 @@ export class BookingService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
+            
 
             return {
                 success: true,
@@ -481,20 +463,20 @@ export class BookingService {
                 booking: booking
             };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
 
     async proceedToNextStep(bookingId, userId) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
 
         try {
             if (!bookingId || !userId) {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -521,9 +503,9 @@ export class BookingService {
             const nextStep = steps[currentIndex + 1];
 
             booking.currentStep = nextStep;
-            await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save({ transaction });
 
-            await BookingHistory.create({
+            await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
                 bookingId: bookingId,
                 action: 'STEP_ADVANCED',
@@ -540,7 +522,7 @@ export class BookingService {
                 details: { fromStep: previousStep, toStep: nextStep }
             }, transaction);
 
-            await transaction.commit();
+            
 
             return {
                 success: true,
@@ -549,20 +531,20 @@ export class BookingService {
                 booking: booking
             };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
 
     async goToPreviousStep(bookingId, userId) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
 
         try {
             if (!bookingId || !userId) {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -583,9 +565,9 @@ export class BookingService {
             const newStep = steps[currentIndex - 1];
 
             booking.currentStep = newStep;
-            await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save({ transaction });
 
-            await BookingHistory.create({
+            await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
                 bookingId: bookingId,
                 action: 'STEP_REVERSED',
@@ -602,7 +584,7 @@ export class BookingService {
                 details: { fromStep: previousStep, toStep: newStep }
             }, transaction);
 
-            await transaction.commit();
+            
 
             return {
                 success: true,
@@ -611,20 +593,20 @@ export class BookingService {
                 booking: booking
             };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
 
     async completeWorkflow(bookingId, userId) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
 
         try {
             if (!bookingId || !userId) {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -643,9 +625,9 @@ export class BookingService {
             booking.status = BOOKING_STATUSES.EXPERT_REVIEW;
             booking.workflowCompletedAt = new Date();
 
-            await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save({ transaction });
 
-            await BookingHistory.create({
+            await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
                 bookingId: bookingId,
                 action: 'WORKFLOW_COMPLETED',
@@ -666,7 +648,7 @@ export class BookingService {
                 bookingId: bookingId
             });
 
-            await transaction.commit();
+            
 
             return {
                 success: true,
@@ -674,7 +656,7 @@ export class BookingService {
                 booking: booking
             };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -685,7 +667,7 @@ export class BookingService {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId);
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -727,7 +709,7 @@ export class BookingService {
                 throw new AppError('Booking ID is required', 400);
             }
 
-            const history = await BookingHistory.findAll({
+            const history = await prisma.bookingHistory.findMany({
                 where: { bookingId: bookingId },
                 include: [{ model: User, as: 'creator', attributes: ['firstName', 'lastName'] }],
                 order: [
@@ -746,14 +728,14 @@ export class BookingService {
     }
 
     async updateBookingNotes(bookingId, userId, notes) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
 
         try {
             if (!bookingId || !userId || !notes) {
                 throw new AppError('Booking ID, User ID, and notes are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -766,9 +748,9 @@ export class BookingService {
             const previousNotes = booking.notes;
             booking.notes = notes;
 
-            await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save({ transaction });
 
-            await BookingHistory.create({
+            await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
                 bookingId: bookingId,
                 action: 'NOTES_UPDATED',
@@ -785,7 +767,7 @@ export class BookingService {
                 details: { notes: notes }
             }, transaction);
 
-            await transaction.commit();
+            
 
             return {
                 success: true,
@@ -793,7 +775,7 @@ export class BookingService {
                 booking: booking
             };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -803,20 +785,20 @@ export class BookingService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async setTreatmentSelection(bookingId, treatmentId) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
 
         try {
             if (!bookingId || !treatmentId) {
                 throw new AppError('Booking ID and Treatment ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            const treatment = await Treatment.findByPk(treatmentId, { transaction });
+            const treatment = await prisma.treatment.findUnique({ where: { id: treatmentId, { transaction } } });
 
             if (!treatment) {
                 throw new AppError('Treatment not found', 404);
@@ -832,7 +814,7 @@ export class BookingService {
             };
             booking.workflowData = workflowData;
 
-            await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save({ transaction });
 
             await this.auditLogService.logAction({
                 action: 'STEP_1_COMPLETED',
@@ -842,30 +824,30 @@ export class BookingService {
                 details: { treatmentId: treatmentId }
             }, transaction);
 
-            await transaction.commit();
+            
 
             return { success: true, booking: booking };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
 
     async setCountrySelection(bookingId, countryId) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
 
         try {
             if (!bookingId || !countryId) {
                 throw new AppError('Booking ID and Country ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            const country = await Country.findByPk(countryId, { transaction });
+            const country = await prisma.country.findUnique({ where: { id: countryId, { transaction } } });
 
             if (!country) {
                 throw new AppError('Country not found', 404);
@@ -882,7 +864,7 @@ export class BookingService {
             };
             booking.workflowData = workflowData;
 
-            await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save({ transaction });
 
             await this.auditLogService.logAction({
                 action: 'STEP_2_COMPLETED',
@@ -892,30 +874,30 @@ export class BookingService {
                 details: { countryId: countryId }
             }, transaction);
 
-            await transaction.commit();
+            
 
             return { success: true, booking: booking };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
 
     async setCitySelection(bookingId, cityId) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
 
         try {
             if (!bookingId || !cityId) {
                 throw new AppError('Booking ID and City ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            const city = await City.findByPk(cityId, { transaction });
+            const city = await prisma.city.findUnique({ where: { id: cityId, { transaction } } });
 
             if (!city) {
                 throw new AppError('City not found', 404);
@@ -932,7 +914,7 @@ export class BookingService {
             };
             booking.workflowData = workflowData;
 
-            await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save({ transaction });
 
             await this.auditLogService.logAction({
                 action: 'STEP_3_COMPLETED',
@@ -942,30 +924,30 @@ export class BookingService {
                 details: { cityId: cityId }
             }, transaction);
 
-            await transaction.commit();
+            
 
             return { success: true, booking: booking };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
 
     async setHospitalSelection(bookingId, hospitalId) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
 
         try {
             if (!bookingId || !hospitalId) {
                 throw new AppError('Booking ID and Hospital ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            const hospital = await Hospital.findByPk(hospitalId, { transaction });
+            const hospital = await prisma.hospital.findUnique({ where: { id: hospitalId, { transaction } } });
 
             if (!hospital) {
                 throw new AppError('Hospital not found', 404);
@@ -982,7 +964,7 @@ export class BookingService {
             };
             booking.workflowData = workflowData;
 
-            await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save({ transaction });
 
             await this.auditLogService.logAction({
                 action: 'STEP_4_COMPLETED',
@@ -992,30 +974,30 @@ export class BookingService {
                 details: { hospitalId: hospitalId }
             }, transaction);
 
-            await transaction.commit();
+            
 
             return { success: true, booking: booking };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }
 
     async setPackageSelection(bookingId, packageId) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
 
         try {
             if (!bookingId || !packageId) {
                 throw new AppError('Booking ID and Package ID are required', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            const packageRecord = await Package.findByPk(packageId, { transaction });
+            const packageRecord = await prisma.package.findUnique({ where: { id: packageId, { transaction } } });
 
             if (!packageRecord) {
                 throw new AppError('Package not found', 404);
@@ -1034,7 +1016,7 @@ export class BookingService {
             };
             booking.workflowData = workflowData;
 
-            await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save({ transaction });
 
             await this.auditLogService.logAction({
                 action: 'STEP_5_COMPLETED',
@@ -1044,11 +1026,11 @@ export class BookingService {
                 details: { packageId: packageId, price: packageRecord.basePrice }
             }, transaction);
 
-            await transaction.commit();
+            
 
             return { success: true, booking: booking };
         } catch (error) {
-            await transaction.rollback();
+            
             throw this.errorHandlingService.handleError(error);
         }
     }

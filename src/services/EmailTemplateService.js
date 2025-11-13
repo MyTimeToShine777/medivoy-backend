@@ -113,11 +113,11 @@ export class EmailTemplateService {
             const where = { isActive: true };
 
             if (filters && filters.search) {
-                where[Op.or] = [
+                where.OR = [
                     { templateName: {
-                            [Op.like]: '%' + filters.search + '%' } },
+                            contains: "' + filters.search + '" } },
                     { templateCode: {
-                            [Op.like]: '%' + filters.search + '%' } }
+                            contains: "' + filters.search + '" } }
                 ];
             }
 

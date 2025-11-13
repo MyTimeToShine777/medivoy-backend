@@ -285,7 +285,7 @@ class PrescriptionService {
             const where = {
                 doctorId,
                 createdAt: {
-                    [Op.between]: [startDate, endDate],
+                    { gte: startDate, lte: endDate },
                 },
             };
 

@@ -68,7 +68,7 @@ export class AppointmentService {
                     doctorId: appointmentData.doctorId,
                     appointmentDate: appointmentData.appointmentDate,
                     status: {
-                        [Op.in]: ['scheduled', 'confirmed'] }
+                        in: ['scheduled', 'confirmed'] }
                 },
                 transaction: transaction
             });
@@ -164,7 +164,7 @@ export class AppointmentService {
 
             if (filters && filters.appointmentDate) {
                 where.appointmentDate = {
-                    [Op.gte]: filters.appointmentDate };
+                    gte: filters.appointmentDate };
             }
 
             const appointments = await Appointment.findAll({
