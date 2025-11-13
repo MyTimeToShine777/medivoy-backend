@@ -1,7 +1,6 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { SMSTemplate, AuditLog } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
 import { AuditLogService } from './AuditLogService.js';
@@ -19,7 +18,7 @@ export class SMSTemplateService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createSMSTemplate(templateData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!templateData || !templateData.templateName || !templateData.messageContent) {
                 throw new AppError('Template name and content required', 400);
@@ -29,7 +28,7 @@ export class SMSTemplateService {
                 throw new AppError('SMS content must be 160 characters or less', 400);
             }
 
-            const existing = await SMSTemplate.findOne({
+            const existing = await tx.sMSTemplate.findFirst({
                 where: { templateCode: templateData.templateCode },
                 transaction: transaction
             });
@@ -39,7 +38,8 @@ export class SMSTemplateService {
                 throw new AppError('Template already exists', 409);
             }
 
-            const template = await SMSTemplate.create({
+            const template = await tx.sMSTemplate.create({
+                data: {
                 templateId: this._generateTemplateId(),
                 templateName: templateData.templateName,
                 templateCode: templateData.templateCode,
@@ -78,7 +78,7 @@ export class SMSTemplateService {
                 return { success: false, error: 'Template ID required' };
             }
 
-            const template = await SMSTemplate.findByPk(templateId);
+            const template = await prisma.sMSTemplate.findUnique({ where: { templateId } });
             if (!template) {
                 return { success: false, error: 'Template not found' };
             }
@@ -124,7 +124,7 @@ export class SMSTemplateService {
                 ];
             }
 
-            const templates = await SMSTemplate.findAll({
+            const templates = await prisma.sMSTemplate.findMany({
                 where: where,
                 order: [
                     ['templateName', 'ASC']
@@ -146,7 +146,7 @@ export class SMSTemplateService {
     }
 
     async updateSMSTemplate(templateId, updateData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!templateId || !updateData) {
                 return { success: false, error: 'Required parameters missing' };

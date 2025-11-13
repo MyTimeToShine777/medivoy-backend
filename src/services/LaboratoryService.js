@@ -1,15 +1,6 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import {
-    LabTest,
-    LabOrder,
-    LabResult,
-    LabPackage,
-    User,
-    Hospital,
-    AuditLog
-} from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { NotificationService } from './NotificationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
@@ -32,13 +23,13 @@ export class LaboratoryService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createLabTest(hospitalId, testData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!hospitalId || !testData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const hospital = await Hospital.findByPk(hospitalId, { transaction: transaction });
+            const hospital = await tx.hospital.findUnique({ where: { hospitalId } });
             if (!hospital) {
                 await transaction.rollback();
                 throw new AppError('Hospital not found', 404);
@@ -50,7 +41,8 @@ export class LaboratoryService {
                 throw new AppError(errors.join(', '), 400);
             }
 
-            const labTest = await LabTest.create({
+            const labTest = await tx.labTest.create({
+                data: {
                 testId: this._generateTestId(),
                 hospitalId: hospitalId,
                 testName: testData.testName,
@@ -122,7 +114,7 @@ export class LaboratoryService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async orderLabTest(userId, orderData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!userId || !orderData) {
                 throw new AppError('Required parameters missing', 400);
@@ -146,7 +138,8 @@ export class LaboratoryService {
 
             const totalPrice = tests.reduce((sum, test) => sum + test.price, 0);
 
-            const labOrder = await LabOrder.create({
+            const labOrder = await tx.labOrder.create({
+                data: {
                 orderId: this._generateOrderId(),
                 userId: userId,
                 totalPrice: totalPrice,
@@ -221,7 +214,7 @@ export class LaboratoryService {
     }
 
     async uploadLabResult(orderId, userId, resultData, fileBuffer) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!orderId || !userId || !resultData || !fileBuffer) {
                 throw new AppError('Required parameters missing', 400);
@@ -326,13 +319,13 @@ export class LaboratoryService {
     }
 
     async createLabPackage(hospitalId, packageData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!hospitalId || !packageData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const hospital = await Hospital.findByPk(hospitalId, { transaction: transaction });
+            const hospital = await tx.hospital.findUnique({ where: { hospitalId } });
             if (!hospital) {
                 await transaction.rollback();
                 throw new AppError('Hospital not found', 404);

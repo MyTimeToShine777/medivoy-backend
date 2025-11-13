@@ -1,15 +1,6 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import {
-    TravelArrangement,
-    Booking,
-    Hotel,
-    Flight,
-    Transportation,
-    User,
-    AuditLog
-} from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { NotificationService } from './NotificationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
@@ -29,13 +20,13 @@ export class TravelArrangementService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async bookFlight(userId, bookingId, flightData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!userId || !bookingId || !flightData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await tx.booking.findUnique({ where: { bookingId } });
             if (!booking) {
                 await transaction.rollback();
                 throw new AppError('Booking not found', 404);
@@ -47,7 +38,8 @@ export class TravelArrangementService {
                 throw new AppError(errors.join(', '), 400);
             }
 
-            const flight = await Flight.create({
+            const flight = await tx.flight.create({
+                data: {
                 flightId: this._generateFlightId(),
                 bookingId: bookingId,
                 airline: flightData.airline,
@@ -106,7 +98,7 @@ export class TravelArrangementService {
     }
 
     async cancelFlight(flightId, userId, reason) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!flightId || !userId) throw new AppError('Required params missing', 400);
 
@@ -143,13 +135,13 @@ export class TravelArrangementService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async bookHotel(userId, bookingId, hotelData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!userId || !bookingId || !hotelData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await tx.booking.findUnique({ where: { bookingId } });
             if (!booking) {
                 await transaction.rollback();
                 throw new AppError('Booking not found', 404);
@@ -161,7 +153,8 @@ export class TravelArrangementService {
                 throw new AppError(errors.join(', '), 400);
             }
 
-            const hotel = await Hotel.create({
+            const hotel = await tx.hotel.create({
+                data: {
                 hotelId: this._generateHotelId(),
                 bookingId: bookingId,
                 hotelName: hotelData.hotelName,
@@ -215,7 +208,7 @@ export class TravelArrangementService {
     }
 
     async updateHotelBooking(hotelId, userId, updateData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!hotelId || !userId) throw new AppError('Required params missing', 400);
 
@@ -250,7 +243,7 @@ export class TravelArrangementService {
     }
 
     async cancelHotel(hotelId, userId, reason) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!hotelId || !userId) throw new AppError('Required params missing', 400);
 
@@ -287,13 +280,13 @@ export class TravelArrangementService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async bookTransportation(userId, bookingId, transportData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!userId || !bookingId || !transportData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await tx.booking.findUnique({ where: { bookingId } });
             if (!booking) {
                 await transaction.rollback();
                 throw new AppError('Booking not found', 404);

@@ -1,7 +1,6 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { EmailTemplate, AuditLog } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
 import { AuditLogService } from './AuditLogService.js';
@@ -19,13 +18,13 @@ export class EmailTemplateService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createEmailTemplate(templateData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!templateData || !templateData.templateName || !templateData.subject) {
                 throw new AppError('Template name and subject required', 400);
             }
 
-            const existing = await EmailTemplate.findOne({
+            const existing = await tx.emailTemplate.findFirst({
                 where: { templateCode: templateData.templateCode },
                 transaction: transaction
             });
@@ -35,7 +34,8 @@ export class EmailTemplateService {
                 throw new AppError('Template already exists', 409);
             }
 
-            const template = await EmailTemplate.create({
+            const template = await tx.emailTemplate.create({
+                data: {
                 templateId: this._generateTemplateId(),
                 templateName: templateData.templateName,
                 templateCode: templateData.templateCode,
@@ -75,7 +75,7 @@ export class EmailTemplateService {
                 return { success: false, error: 'Template ID required' };
             }
 
-            const template = await EmailTemplate.findByPk(templateId);
+            const template = await prisma.emailTemplate.findUnique({ where: { templateId } });
             if (!template) {
                 return { success: false, error: 'Template not found' };
             }
@@ -121,7 +121,7 @@ export class EmailTemplateService {
                 ];
             }
 
-            const templates = await EmailTemplate.findAll({
+            const templates = await prisma.emailTemplate.findMany({
                 where: where,
                 order: [
                     ['templateName', 'ASC']
@@ -143,7 +143,7 @@ export class EmailTemplateService {
     }
 
     async updateEmailTemplate(templateId, updateData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!templateId || !updateData) {
                 return { success: false, error: 'Required parameters missing' };
@@ -182,7 +182,7 @@ export class EmailTemplateService {
     }
 
     async deleteEmailTemplate(templateId) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!templateId) {
                 return { success: false, error: 'Template ID required' };

@@ -1,7 +1,6 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { Specialization, Doctor, AuditLog } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
 import { AuditLogService } from './AuditLogService.js';
@@ -19,13 +18,13 @@ export class SpecializationService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createSpecialization(specializationData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!specializationData || !specializationData.specializationName) {
                 throw new AppError('Specialization name required', 400);
             }
 
-            const existing = await Specialization.findOne({
+            const existing = await tx.specialization.findFirst({
                 where: { specializationName: specializationData.specializationName },
                 transaction: transaction
             });
@@ -35,7 +34,8 @@ export class SpecializationService {
                 throw new AppError('Specialization already exists', 409);
             }
 
-            const specialization = await Specialization.create({
+            const specialization = await tx.specialization.create({
+                data: {
                 specializationId: this._generateSpecId(),
                 specializationName: specializationData.specializationName,
                 specializationDescription: specializationData.specializationDescription || null,
@@ -65,7 +65,8 @@ export class SpecializationService {
         try {
             if (!specializationId) throw new AppError('Specialization ID required', 400);
 
-            const specialization = await Specialization.findByPk(specializationId, {
+            const specialization = await prisma.specialization.findUnique({
+                where: { specializationId }, {
                 include: [
                     { model: Doctor, attributes: ['doctorId', 'firstName', 'lastName'] }
                 ]
@@ -90,7 +91,7 @@ export class SpecializationService {
                     [Op.like]: '%' + filters.search + '%' };
             }
 
-            const specializations = await Specialization.findAll({
+            const specializations = await prisma.specialization.findMany({
                 where: where,
                 order: [
                     ['specializationName', 'ASC']
@@ -112,11 +113,12 @@ export class SpecializationService {
     }
 
     async updateSpecialization(specializationId, updateData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!specializationId || !updateData) throw new AppError('Required params missing', 400);
 
-            const specialization = await Specialization.findByPk(specializationId, { transaction: transaction });
+            const specialization = await prisma.specialization.findUnique({
+                where: { specializationId }, { transaction: transaction });
             if (!specialization) {
                 await transaction.rollback();
                 throw new AppError('Specialization not found', 404);
