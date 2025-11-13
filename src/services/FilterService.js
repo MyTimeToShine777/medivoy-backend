@@ -1,7 +1,6 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { Hospital, Doctor, Treatment, Package, Specialization, AuditLog } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
 import { AuditLogService } from './AuditLogService.js';
@@ -25,39 +24,33 @@ export class FilterService {
             if (filters.cityId) where.cityId = filters.cityId;
             if (filters.countryId) where.countryId = filters.countryId;
             if (filters.accreditation) {
-                where.accreditation = {
-                    [Op.like]: '%' + filters.accreditation + '%' };
+                where.accreditation = { contains: filters.accreditation };
             }
-            if (filters.minRating) {
-                where.averageRating = {
-                    [Op.gte]: filters.minRating };
-            }
-            if (filters.maxRating) {
-                if (!where.averageRating) where.averageRating = {};
-                where.averageRating[Op.lte] = filters.maxRating;
+            if (filters.minRating || filters.maxRating) {
+                where.averageRating = {};
+                if (filters.minRating) where.averageRating.gte = filters.minRating;
+                if (filters.maxRating) where.averageRating.lte = filters.maxRating;
             }
             if (filters.minBeds) {
-                where.totalBeds = {
-                    [Op.gte]: filters.minBeds };
+                where.totalBeds = { gte: filters.minBeds };
             }
 
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const hospitals = await Hospital.findAll({
-                where: where,
-                include: [
-                    { model: City },
-                    { model: Country }
-                ],
-                order: [
-                    [filters.sortBy || 'averageRating', filters.sortOrder || 'DESC']
-                ],
-                limit: limit,
-                offset: offset
-            });
-
-            const total = await Hospital.count({ where: where });
+            const [hospitals, total] = await Promise.all([
+                prisma.hospital.findMany({
+                    where,
+                    include: {
+                        city: true,
+                        country: true
+                    },
+                    orderBy: { [filters.sortBy || 'averageRating']: filters.sortOrder?.toLowerCase() || 'desc' },
+                    take: limit,
+                    skip: offset
+                }),
+                prisma.hospital.count({ where })
+            ]);
 
             await this.auditLogService.logAction({
                 action: 'HOSPITALS_FILTERED',
@@ -88,21 +81,15 @@ export class FilterService {
 
             if (filters.specializationId) where.specializationId = filters.specializationId;
             if (filters.hospitalId) where.hospitalId = filters.hospitalId;
-            if (filters.minExperience) {
-                where.experience = {
-                    [Op.gte]: filters.minExperience };
+            if (filters.minExperience || filters.maxExperience) {
+                where.experience = {};
+                if (filters.minExperience) where.experience.gte = filters.minExperience;
+                if (filters.maxExperience) where.experience.lte = filters.maxExperience;
             }
-            if (filters.maxExperience) {
-                if (!where.experience) where.experience = {};
-                where.experience[Op.lte] = filters.maxExperience;
-            }
-            if (filters.minRating) {
-                where.averageRating = {
-                    [Op.gte]: filters.minRating };
-            }
-            if (filters.maxRating) {
-                if (!where.averageRating) where.averageRating = {};
-                where.averageRating[Op.lte] = filters.maxRating;
+            if (filters.minRating || filters.maxRating) {
+                where.averageRating = {};
+                if (filters.minRating) where.averageRating.gte = filters.minRating;
+                if (filters.maxRating) where.averageRating.lte = filters.maxRating;
             }
             if (filters.availability === true) {
                 where.isAvailable = true;
@@ -111,21 +98,22 @@ export class FilterService {
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const doctors = await Doctor.findAll({
-                where: where,
-                include: [
-                    { model: Hospital },
-                    { model: Specialization }
-                ],
-                order: [
-                    [filters.sortBy || 'averageRating', filters.sortOrder || 'DESC'],
-                    ['experience', 'DESC']
-                ],
-                limit: limit,
-                offset: offset
-            });
-
-            const total = await Doctor.count({ where: where });
+            const [doctors, total] = await Promise.all([
+                prisma.doctor.findMany({
+                    where,
+                    include: {
+                        hospital: true,
+                        specialization: true
+                    },
+                    orderBy: [
+                        { [filters.sortBy || 'averageRating']: filters.sortOrder?.toLowerCase() || 'desc' },
+                        { experience: 'desc' }
+                    ],
+                    take: limit,
+                    skip: offset
+                }),
+                prisma.doctor.count({ where })
+            ]);
 
             return {
                 success: true,
@@ -149,31 +137,28 @@ export class FilterService {
             if (filters.category) where.category = filters.category;
             if (filters.minPrice || filters.maxPrice) {
                 where.basePrice = {};
-                if (filters.minPrice) where.basePrice[Op.gte] = filters.minPrice;
-                if (filters.maxPrice) where.basePrice[Op.lte] = filters.maxPrice;
+                if (filters.minPrice) where.basePrice.gte = filters.minPrice;
+                if (filters.maxPrice) where.basePrice.lte = filters.maxPrice;
             }
             if (filters.minRating) {
-                where.averageRating = {
-                    [Op.gte]: filters.minRating };
+                where.averageRating = { gte: filters.minRating };
             }
             if (filters.minDuration) {
-                where.duration = {
-                    [Op.gte]: filters.minDuration };
+                where.duration = { gte: filters.minDuration };
             }
 
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const treatments = await Treatment.findAll({
-                where: where,
-                order: [
-                    [filters.sortBy || 'basePrice', filters.sortOrder || 'ASC']
-                ],
-                limit: limit,
-                offset: offset
-            });
-
-            const total = await Treatment.count({ where: where });
+            const [treatments, total] = await Promise.all([
+                prisma.treatment.findMany({
+                    where,
+                    orderBy: { [filters.sortBy || 'basePrice']: filters.sortOrder?.toLowerCase() || 'asc' },
+                    take: limit,
+                    skip: offset
+                }),
+                prisma.treatment.count({ where })
+            ]);
 
             return {
                 success: true,
@@ -198,31 +183,29 @@ export class FilterService {
             if (filters.hospitalId) where.hospitalId = filters.hospitalId;
             if (filters.minPrice || filters.maxPrice) {
                 where.finalPrice = {};
-                if (filters.minPrice) where.finalPrice[Op.gte] = filters.minPrice;
-                if (filters.maxPrice) where.finalPrice[Op.lte] = filters.maxPrice;
+                if (filters.minPrice) where.finalPrice.gte = filters.minPrice;
+                if (filters.maxPrice) where.finalPrice.lte = filters.maxPrice;
             }
             if (filters.minDiscount) {
-                where.discountPercentage = {
-                    [Op.gte]: filters.minDiscount };
+                where.discountPercentage = { gte: filters.minDiscount };
             }
 
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const packages = await Package.findAll({
-                where: where,
-                include: [
-                    { model: Treatment },
-                    { model: Hospital }
-                ],
-                order: [
-                    [filters.sortBy || 'finalPrice', filters.sortOrder || 'ASC']
-                ],
-                limit: limit,
-                offset: offset
-            });
-
-            const total = await Package.count({ where: where });
+            const [packages, total] = await Promise.all([
+                prisma.package.findMany({
+                    where,
+                    include: {
+                        treatment: true,
+                        hospital: true
+                    },
+                    orderBy: { [filters.sortBy || 'finalPrice']: filters.sortOrder?.toLowerCase() || 'asc' },
+                    take: limit,
+                    skip: offset
+                }),
+                prisma.package.count({ where })
+            ]);
 
             return {
                 success: true,
@@ -283,9 +266,9 @@ export class FilterService {
             const options = {};
 
             if (entityType === 'doctors') {
-                const specializations = await Specialization.findAll({
+                const specializations = await prisma.specialization.findMany({
                     where: { isActive: true },
-                    attributes: ['specializationId', 'specializationName']
+                    select: { specializationId: true, specializationName: true }
                 });
                 options.specializations = specializations;
                 options.experienceRanges = [
@@ -298,11 +281,10 @@ export class FilterService {
             }
 
             if (entityType === 'treatments') {
-                const categories = await Treatment.findAll({
-                    attributes: ['category'],
+                const categories = await prisma.treatment.findMany({
                     where: { isActive: true },
-                    group: ['category'],
-                    raw: true
+                    select: { category: true },
+                    distinct: ['category']
                 });
                 options.categories = categories.map(c => c.category);
                 options.priceRanges = [
