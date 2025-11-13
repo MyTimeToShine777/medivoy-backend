@@ -1,7 +1,6 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { Hospital, Doctor, Treatment, Package, City, Country, Specialization, AuditLog } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
 import { AuditLogService } from './AuditLogService.js';
