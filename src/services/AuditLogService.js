@@ -1,6 +1,6 @@
 'use strict';
 
-import { AuditLog } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import fs from 'fs';
 import path from 'path';
 
@@ -27,15 +27,17 @@ export class AuditLogService {
                 return { success: false, error: 'User ID and action required' };
             }
 
-            const auditLog = await AuditLog.create({
-                userId: userId,
-                action: action,
-                resourceType: resourceType || null,
-                resourceId: resourceId || null,
-                details: details || {},
-                ipAddress: ipAddress || 'unknown',
-                timestamp: new Date(),
-                userAgent: details && details.userAgent ? details.userAgent : null
+            const auditLog = await prisma.auditLog.create({
+                data: {
+                    userId: userId,
+                    action: action,
+                    resourceType: resourceType || null,
+                    resourceId: resourceId || null,
+                    details: details || {},
+                    ipAddress: ipAddress || 'unknown',
+                    timestamp: new Date(),
+                    userAgent: details && details.userAgent ? details.userAgent : null
+                }
             });
 
             this.writeToFile(auditLog);
@@ -66,7 +68,8 @@ export class AuditLogService {
 
             if (filters.startDate && filters.endDate) {
                 where.timestamp = {
-                    [require('sequelize').Op.between]: [filters.startDate, filters.endDate]
+                    gte: filters.startDate,
+                    lte: filters.endDate
                 };
             }
 
@@ -74,16 +77,16 @@ export class AuditLogService {
                 where.resourceType = filters.resourceType;
             }
 
-            const logs = await AuditLog.findAll({
+            const logs = await prisma.auditLog.findMany({
                 where: where,
-                order: [
-                    ['timestamp', 'DESC']
-                ],
-                limit: filters.limit || 100,
-                offset: filters.offset || 0
+                orderBy: {
+                    timestamp: 'desc'
+                },
+                take: filters.limit || 100,
+                skip: filters.offset || 0
             });
 
-            const total = await AuditLog.count({ where: where });
+            const total = await prisma.auditLog.count({ where: where });
 
             console.log(`✅ User logs retrieved: ${userId}`);
 
@@ -104,11 +107,11 @@ export class AuditLogService {
                 return { success: false, error: 'Resource type and ID required' };
             }
 
-            const logs = await AuditLog.findAll({
+            const logs = await prisma.auditLog.findMany({
                 where: { resourceType: resourceType, resourceId: resourceId },
-                order: [
-                    ['timestamp', 'DESC']
-                ]
+                orderBy: {
+                    timestamp: 'desc'
+                }
             });
 
             console.log(`✅ Resource logs retrieved: ${resourceType}/${resourceId}`);
@@ -134,17 +137,18 @@ export class AuditLogService {
 
             if (filters.startDate && filters.endDate) {
                 where.timestamp = {
-                    [require('sequelize').Op.between]: [filters.startDate, filters.endDate]
+                    gte: filters.startDate,
+                    lte: filters.endDate
                 };
             }
 
-            const logs = await AuditLog.findAll({
+            const logs = await prisma.auditLog.findMany({
                 where: where,
-                order: [
-                    ['timestamp', 'DESC']
-                ],
-                limit: filters.limit || 100,
-                offset: filters.offset || 0
+                orderBy: {
+                    timestamp: 'desc'
+                },
+                take: filters.limit || 100,
+                skip: filters.offset || 0
             });
 
             console.log(`✅ Action logs retrieved: ${action}`);
@@ -168,7 +172,8 @@ export class AuditLogService {
 
             const where = {
                 timestamp: {
-                    [require('sequelize').Op.between]: [startDate, endDate]
+                    gte: startDate,
+                    lte: endDate
                 }
             };
 
@@ -180,7 +185,7 @@ export class AuditLogService {
                 where.action = filters.action;
             }
 
-            const logs = await AuditLog.findAll({ where: where });
+            const logs = await prisma.auditLog.findMany({ where: where });
 
             const actionBreakdown = {};
             const resourceBreakdown = {};
@@ -227,28 +232,24 @@ export class AuditLogService {
             }
 
             const where = {
-                [require('sequelize').Op.or]: [
-                    { userId: {
-                            [require('sequelize').Op.iLike]: `%${searchTerm}%` } },
-                    { action: {
-                            [require('sequelize').Op.iLike]: `%${searchTerm}%` } },
-                    { resourceType: {
-                            [require('sequelize').Op.iLike]: `%${searchTerm}%` } },
-                    { ipAddress: {
-                            [require('sequelize').Op.iLike]: `%${searchTerm}%` } }
+                OR: [
+                    { userId: { contains: searchTerm, mode: 'insensitive' } },
+                    { action: { contains: searchTerm, mode: 'insensitive' } },
+                    { resourceType: { contains: searchTerm, mode: 'insensitive' } },
+                    { ipAddress: { contains: searchTerm, mode: 'insensitive' } }
                 ]
             };
 
-            const logs = await AuditLog.findAll({
+            const logs = await prisma.auditLog.findMany({
                 where: where,
-                order: [
-                    ['timestamp', 'DESC']
-                ],
-                limit: filters.limit || 50,
-                offset: filters.offset || 0
+                orderBy: {
+                    timestamp: 'desc'
+                },
+                take: filters.limit || 50,
+                skip: filters.offset || 0
             });
 
-            const total = await AuditLog.count({ where: where });
+            const total = await prisma.auditLog.count({ where: where });
 
             console.log(`✅ Search completed: ${searchTerm}`);
 
@@ -269,15 +270,16 @@ export class AuditLogService {
                 return { success: false, error: 'Start and end dates required' };
             }
 
-            const logs = await AuditLog.findAll({
+            const logs = await prisma.auditLog.findMany({
                 where: {
                     timestamp: {
-                        [require('sequelize').Op.between]: [startDate, endDate]
+                        gte: startDate,
+                        lte: endDate
                     }
                 },
-                order: [
-                    ['timestamp', 'DESC']
-                ]
+                orderBy: {
+                    timestamp: 'desc'
+                }
             });
 
             let content;

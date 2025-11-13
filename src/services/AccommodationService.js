@@ -1,6 +1,6 @@
 'use strict';
 
-import { Accommodation } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { cacheService } from '../config/redis.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -14,25 +14,26 @@ export class AccommodationService {
 
     async createAccommodation(data) {
         try {
-            const accommodation = await Accommodation.create({
-                accommodationName: data.accommodationName,
-                accommodationType: data.accommodationType,
-                location: data.location,
-                city: data.city,
-                country: data.country,
-                pricePerNight: data.pricePerNight,
-                currency: data.currency || 'INR',
-                totalRooms: data.totalRooms,
-                availableRooms: data.availableRooms || data.totalRooms,
-                amenities: data.amenities || [],
-                checkInTime: data.checkInTime,
-                checkOutTime: data.checkOutTime,
-                description: data.description,
-                contactEmail: data.contactEmail,
-                contactPhone: data.contactPhone,
-                rating: data.rating || 0,
-                isActive: data.isActive !== false,
-                createdAt: new Date()
+            const accommodation = await prisma.accommodation.create({
+                data: {
+                    userId: data.userId,
+                    type: data.accommodationType,
+                    name: data.accommodationName,
+                    address: data.location,
+                    city: data.city,
+                    checkInDate: data.checkInDate || new Date(),
+                    checkOutDate: data.checkOutDate || new Date(),
+                    numberOfGuests: data.numberOfGuests || 1,
+                    pricePerNight: data.pricePerNight,
+                    totalPrice: data.totalPrice || data.pricePerNight,
+                    finalPrice: data.finalPrice || data.totalPrice || data.pricePerNight,
+                    currency: data.currency || 'INR',
+                    phone: data.contactPhone,
+                    email: data.contactEmail,
+                    amenities: data.amenities || [],
+                    rating: data.rating || 0,
+                    isActive: data.isActive !== false,
+                }
             });
 
             await cacheService.delete('accommodations');
@@ -51,7 +52,9 @@ export class AccommodationService {
 
     async getAccommodationById(accommodationId) {
         try {
-            const accommodation = await Accommodation.findByPk(accommodationId);
+            const accommodation = await prisma.accommodation.findUnique({
+                where: { accommodationId }
+            });
 
             if (!accommodation) {
                 return { success: false, error: 'Accommodation not found', code: 'NOT_FOUND' };
@@ -76,20 +79,20 @@ export class AccommodationService {
 
             const where = { isActive: true };
             if (filters.city) where.city = filters.city;
-            if (filters.accommodationType) where.accommodationType = filters.accommodationType;
+            if (filters.accommodationType) where.type = filters.accommodationType;
             if (filters.minPrice || filters.maxPrice) {
                 where.pricePerNight = {};
-                if (filters.minPrice) where.pricePerNight[require('sequelize').Op.gte] = filters.minPrice;
-                if (filters.maxPrice) where.pricePerNight[require('sequelize').Op.lte] = filters.maxPrice;
+                if (filters.minPrice) where.pricePerNight.gte = filters.minPrice;
+                if (filters.maxPrice) where.pricePerNight.lte = filters.maxPrice;
             }
 
-            const accommodations = await Accommodation.findAll({
+            const accommodations = await prisma.accommodation.findMany({
                 where,
-                limit,
-                offset,
-                order: [
-                    ['rating', 'DESC']
-                ]
+                take: limit,
+                skip: offset,
+                orderBy: {
+                    rating: 'desc'
+                }
             });
 
             await cacheService.set(cacheKey, accommodations, 3600);
@@ -106,25 +109,29 @@ export class AccommodationService {
 
     async updateAccommodation(accommodationId, data) {
         try {
-            const accommodation = await Accommodation.findByPk(accommodationId);
+            const accommodation = await prisma.accommodation.findUnique({
+                where: { accommodationId }
+            });
 
             if (!accommodation) {
                 return { success: false, error: 'Accommodation not found', code: 'NOT_FOUND' };
             }
 
-            await accommodation.update({
-                accommodationName: data.accommodationName || accommodation.accommodationName,
-                location: data.location || accommodation.location,
-                pricePerNight: data.pricePerNight || accommodation.pricePerNight,
-                totalRooms: data.totalRooms || accommodation.totalRooms,
-                availableRooms: data.availableRooms !== undefined ? data.availableRooms : accommodation.availableRooms,
-                amenities: data.amenities || accommodation.amenities,
-                description: data.description || accommodation.description,
-                contactEmail: data.contactEmail || accommodation.contactEmail,
-                contactPhone: data.contactPhone || accommodation.contactPhone,
-                rating: data.rating || accommodation.rating,
-                isActive: data.isActive !== undefined ? data.isActive : accommodation.isActive,
-                updatedAt: new Date()
+            const updated = await prisma.accommodation.update({
+                where: { accommodationId },
+                data: {
+                    name: data.accommodationName,
+                    address: data.location,
+                    pricePerNight: data.pricePerNight,
+                    numberOfRooms: data.totalRooms,
+                    amenities: data.amenities,
+                    specialRequirements: data.description,
+                    email: data.contactEmail,
+                    phone: data.contactPhone,
+                    rating: data.rating,
+                    isActive: data.isActive,
+                    updatedAt: new Date()
+                }
             });
 
             await cacheService.delete('accommodations');
@@ -143,13 +150,17 @@ export class AccommodationService {
 
     async deleteAccommodation(accommodationId) {
         try {
-            const accommodation = await Accommodation.findByPk(accommodationId);
+            const accommodation = await prisma.accommodation.findUnique({
+                where: { accommodationId }
+            });
 
             if (!accommodation) {
                 return { success: false, error: 'Accommodation not found', code: 'NOT_FOUND' };
             }
 
-            await accommodation.destroy();
+            await prisma.accommodation.delete({
+                where: { accommodationId }
+            });
             await cacheService.delete('accommodations');
             console.log(`✅ Accommodation deleted: ${accommodationId}`);
 
@@ -166,18 +177,13 @@ export class AccommodationService {
 
     async searchAccommodations(query) {
         try {
-            const accommodations = await Accommodation.findAll({
+            const accommodations = await prisma.accommodation.findMany({
                 where: {
                     isActive: true,
-                    [require('sequelize').Op.or]: [
-                        { accommodationName: {
-                                [require('sequelize').Op.iLike]: `%${query}%` } },
-                        { location: {
-                                [require('sequelize').Op.iLike]: `%${query}%` } },
-                        { city: {
-                                [require('sequelize').Op.iLike]: `%${query}%` } },
-                        { country: {
-                                [require('sequelize').Op.iLike]: `%${query}%` } }
+                    OR: [
+                        { name: { contains: query, mode: 'insensitive' } },
+                        { address: { contains: query, mode: 'insensitive' } },
+                        { city: { contains: query, mode: 'insensitive' } }
                     ]
                 }
             });
@@ -195,20 +201,25 @@ export class AccommodationService {
 
     async updateAvailability(accommodationId, availableRooms) {
         try {
-            const accommodation = await Accommodation.findByPk(accommodationId);
+            const accommodation = await prisma.accommodation.findUnique({
+                where: { accommodationId }
+            });
 
             if (!accommodation) {
                 return { success: false, error: 'Accommodation not found', code: 'NOT_FOUND' };
             }
 
-            if (availableRooms < 0 || availableRooms > accommodation.totalRooms) {
+            if (availableRooms < 0 || availableRooms > accommodation.numberOfRooms) {
                 return { success: false, error: 'Invalid availability', code: 'VALIDATION_ERROR' };
             }
 
-            await accommodation.update({ availableRooms, updatedAt: new Date() });
+            const updated = await prisma.accommodation.update({
+                where: { accommodationId },
+                data: { numberOfRooms: availableRooms, updatedAt: new Date() }
+            });
             await cacheService.delete('accommodations');
 
-            return { success: true, data: accommodation };
+            return { success: true, data: updated };
         } catch (error) {
             console.error('❌ Update availability error:', error.message);
             return { success: false, error: error.message };
