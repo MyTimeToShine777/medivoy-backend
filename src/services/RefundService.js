@@ -1,16 +1,17 @@
 // Refund Service - Refund processing and management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Refund, Payment, Booking, User } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class RefundService {
     // ========== CREATE REFUND ==========
     async createRefund(refundData) {
         try {
-            const refund = await Refund.create({
-                refundNumber: await this.generateRefundNumber(),
-                status: 'initiated',
-                ...refundData,
+            const refund = await prisma.refund.create({
+                data: {
+                    refundNumber: await this.generateRefundNumber(),
+                    status: 'initiated',
+                    ...refundData,
+                }
             });
 
             return {
@@ -29,12 +30,13 @@ class RefundService {
     // ========== GET REFUND ==========
     async getRefundById(refundId) {
         try {
-            const refund = await Refund.findByPk(refundId, {
-                include: [
-                    { model: Payment, as: 'payment' },
-                    { model: Booking, as: 'booking' },
-                    { model: User, as: 'user' },
-                ],
+            const refund = await prisma.refund.findUnique({
+                where: { refundId },
+                include: {
+                    payment: true,
+                    booking: true,
+                    user: true
+                }
             });
 
             if (!refund) {
@@ -58,8 +60,8 @@ class RefundService {
 
     async getRefundByNumber(refundNumber) {
         try {
-            const refund = await Refund.findOne({
-                where: { refundNumber },
+            const refund = await prisma.refund.findFirst({
+                where: { refundNumber }
             });
 
             if (!refund) {
@@ -90,19 +92,19 @@ class RefundService {
                 where.status = filters.status;
             }
 
-            const refunds = await Refund.findAll({
+            const refunds = await prisma.refund.findMany({
                 where,
-                include: [
-                    { model: Booking, as: 'booking' },
-                ],
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: filters.limit || 20,
-                offset: filters.offset || 0,
+                include: {
+                    booking: true
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                },
+                take: filters.limit || 20,
+                skip: filters.offset || 0,
             });
 
-            const total = await Refund.count({ where });
+            const total = await prisma.refund.count({ where });
 
             return {
                 success: true,
@@ -120,7 +122,9 @@ class RefundService {
     // ========== VALIDATE REFUND ELIGIBILITY ==========
     async validateRefundEligibility(bookingId) {
         try {
-            const booking = await Booking.findByPk(bookingId);
+            const booking = await prisma.booking.findUnique({
+                where: { bookingId }
+            });
             if (!booking) {
                 return {
                     success: false,
@@ -167,7 +171,9 @@ class RefundService {
     // ========== PROCESS REFUND ==========
     async processRefund(refundId, gatewayResponse) {
         try {
-            const refund = await Refund.findByPk(refundId);
+            const refund = await prisma.refund.findUnique({
+                where: { refundId }
+            });
             if (!refund) {
                 return {
                     success: false,
@@ -176,30 +182,43 @@ class RefundService {
             }
 
             if (gatewayResponse.status === 'success') {
-                refund.status = 'completed';
-                refund.completedAt = new Date();
-                refund.transactionId = gatewayResponse.transactionId;
-                refund.gatewayResponse = gatewayResponse;
-
-                await refund.save();
+                const updated = await prisma.refund.update({
+                    where: { refundId },
+                    data: {
+                        status: 'completed',
+                        completedAt: new Date(),
+                        transactionId: gatewayResponse.transactionId,
+                        gatewayResponse: gatewayResponse
+                    }
+                });
 
                 // Update payment status
-                const payment = await Payment.findByPk(refund.paymentId);
+                const payment = await prisma.payment.findUnique({
+                    where: { paymentId: refund.paymentId }
+                });
                 if (payment) {
-                    payment.refundedAmount = (payment.refundedAmount || 0) + refund.amount;
-                    payment.status = 'refunded';
-                    await payment.save();
+                    await prisma.payment.update({
+                        where: { paymentId: refund.paymentId },
+                        data: {
+                            refundedAmount: (payment.refundedAmount || 0) + refund.amount,
+                            status: 'refunded'
+                        }
+                    });
                 }
 
                 return {
                     success: true,
-                    data: refund,
+                    data: updated,
                     message: 'Refund processed successfully',
                 };
             } else {
-                refund.status = 'failed';
-                refund.failureReason = gatewayResponse.reason;
-                await refund.save();
+                const failed = await prisma.refund.update({
+                    where: { refundId },
+                    data: {
+                        status: 'failed',
+                        failureReason: gatewayResponse.reason
+                    }
+                });
 
                 return {
                     success: false,
@@ -217,7 +236,9 @@ class RefundService {
     // ========== APPROVE REFUND ==========
     async approveRefund(refundId, approvalNotes = null) {
         try {
-            const refund = await Refund.findByPk(refundId);
+            const refund = await prisma.refund.findUnique({
+                where: { refundId }
+            });
             if (!refund) {
                 return {
                     success: false,
@@ -225,17 +246,22 @@ class RefundService {
                 };
             }
 
-            refund.status = 'approved';
-            refund.approvedAt = new Date();
+            const updateData = {
+                status: 'approved',
+                approvedAt: new Date()
+            };
             if (approvalNotes) {
-                refund.approvalNotes = approvalNotes;
+                updateData.approvalNotes = approvalNotes;
             }
 
-            await refund.save();
+            const updated = await prisma.refund.update({
+                where: { refundId },
+                data: updateData
+            });
 
             return {
                 success: true,
-                data: refund,
+                data: updated,
                 message: 'Refund approved',
             };
         } catch (error) {
@@ -249,7 +275,9 @@ class RefundService {
     // ========== REJECT REFUND ==========
     async rejectRefund(refundId, rejectionReason) {
         try {
-            const refund = await Refund.findByPk(refundId);
+            const refund = await prisma.refund.findUnique({
+                where: { refundId }
+            });
             if (!refund) {
                 return {
                     success: false,
@@ -257,15 +285,18 @@ class RefundService {
                 };
             }
 
-            refund.status = 'rejected';
-            refund.rejectionReason = rejectionReason;
-            refund.rejectedAt = new Date();
-
-            await refund.save();
+            const updated = await prisma.refund.update({
+                where: { refundId },
+                data: {
+                    status: 'rejected',
+                    rejectionReason: rejectionReason,
+                    rejectedAt: new Date()
+                }
+            });
 
             return {
                 success: true,
-                data: refund,
+                data: updated,
                 message: 'Refund rejected',
             };
         } catch (error) {
@@ -284,15 +315,23 @@ class RefundService {
 
             const where = {
                 createdAt: {
-                    [Op.between]: [startDate, endDate],
-                },
+                    gte: startDate,
+                    lte: endDate
+                }
             };
 
-            const totalRefunds = await Refund.count({ where });
-            const approvedRefunds = await Refund.count({
-                where: {...where, status: 'approved' },
-            });
-            const totalRefundAmount = await Refund.sum('amount', { where: {...where, status: 'completed' } });
+            const [totalRefunds, approvedRefunds, totalRefundAmountResult] = await Promise.all([
+                prisma.refund.count({ where }),
+                prisma.refund.count({
+                    where: {...where, status: 'approved' }
+                }),
+                prisma.refund.aggregate({
+                    where: {...where, status: 'completed' },
+                    _sum: { amount: true }
+                })
+            ]);
+            
+            const totalRefundAmount = totalRefundAmountResult._sum.amount || 0;
 
             return {
                 success: true,
