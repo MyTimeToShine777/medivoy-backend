@@ -74,6 +74,28 @@ router.post(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
+// MOBILE/EMAIL OTP AUTHENTICATION
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.post(
+    '/send-otp',
+    authRateLimiter,
+    AuthController.sendOTP.bind(AuthController)
+);
+
+router.post(
+    '/verify-otp',
+    authRateLimiter,
+    AuthController.verifyOTP.bind(AuthController)
+);
+
+router.post(
+    '/resend-otp',
+    authRateLimiter,
+    AuthController.resendOTP.bind(AuthController)
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // OAUTH - GOOGLE
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -100,6 +122,21 @@ router.get(
 router.get(
     '/facebook/callback',
     passport.authenticate('facebook', { failureRedirect: '/login' }),
+    AuthController.oauthCallback.bind(AuthController)
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OAUTH - APPLE
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.get(
+    '/apple',
+    passport.authenticate('apple')
+);
+
+router.post(
+    '/apple/callback',
+    passport.authenticate('apple', { failureRedirect: '/login' }),
     AuthController.oauthCallback.bind(AuthController)
 );
 

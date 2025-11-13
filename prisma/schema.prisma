@@ -1361,6 +1361,90 @@ model Coupon {
   @@map("coupons")
 }
 
+model DNAKit {
+  dnaKitId                String    @id @default(uuid()) @db.Uuid
+  
+  // RELATIONSHIPS
+  patientId               String    @db.Uuid
+  orderedBy               String?   @db.Uuid
+  
+  // KIT DETAILS
+  kitNumber               String    @unique @db.VarChar(100)
+  kitType                 String    @db.VarChar(100)
+  kitName                 String    @db.VarChar(255)
+  manufacturer            String?   @db.VarChar(255)
+  
+  // ORDER STATUS
+  status                  String    @default("ordered") @db.VarChar(50)
+  orderedAt               DateTime  @default(now())
+  shippedAt               DateTime?
+  deliveredAt             DateTime?
+  sampleCollectedAt       DateTime?
+  receivedAtLabAt         DateTime?
+  resultsReadyAt          DateTime?
+  
+  // SHIPPING
+  trackingNumber          String?   @db.VarChar(100)
+  shippingCarrier         String?   @db.VarChar(100)
+  shippingAddress         String?   @db.Text
+  
+  // SAMPLE DETAILS
+  sampleType              String?   @db.VarChar(100)
+  sampleId                String?   @db.VarChar(100)
+  sampleQuality           String?   @db.VarChar(50)
+  sampleNotes             String?   @db.Text
+  
+  // TESTING
+  testType                String?   @db.VarChar(255)
+  testsIncluded           Json?
+  laboratoryName          String?   @db.VarChar(255)
+  labTechnician           String?   @db.VarChar(255)
+  
+  // RESULTS
+  resultsUrl              String?   @db.VarChar(500)
+  resultsDocument         String?   @db.VarChar(500)
+  resultsSummary          String?   @db.Text
+  findings                Json?
+  recommendations         String?   @db.Text
+  
+  // GENETIC INFO
+  geneticMarkers          Json?
+  riskFactors             Json?
+  healthInsights          Json?
+  ancestryInfo            Json?
+  
+  // PRIVACY
+  consentGiven            Boolean   @default(false)
+  consentDate             DateTime?
+  dataSharing             Boolean   @default(false)
+  anonymized              Boolean   @default(false)
+  
+  // PRICING
+  kitPrice                Decimal   @db.Decimal(10, 2)
+  shippingFee             Decimal   @default(0) @db.Decimal(10, 2)
+  totalPrice              Decimal   @db.Decimal(10, 2)
+  currency                String    @default("USD") @db.VarChar(3)
+  isPaid                  Boolean   @default(false)
+  paymentId               String?   @db.Uuid
+  
+  // NOTES
+  notes                   String?   @db.Text
+  internalNotes           String?   @db.Text
+  
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  // RELATIONS
+  patient                 Patient   @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
+  laboratoryId            String?   @db.Uuid
+  laboratory              Laboratory? @relation(fields: [laboratoryId], references: [laboratoryId], onDelete: SetNull)
+  
+  @@index([patientId])
+  @@index([kitNumber])
+  @@index([status])
+  @@map("dna_kits")
+}
+
 model Department {
   departmentId            String    @id @default(uuid()) @db.Uuid
   
@@ -1481,90 +1565,6 @@ model Device {
   @@index([isTrusted])
   @@index([fingerprint])
   @@map("devices")
-}
-
-model DNAKit {
-  dnaKitId                String    @id @default(uuid()) @db.Uuid
-  
-  // RELATIONSHIPS
-  patientId               String    @db.Uuid
-  orderedBy               String?   @db.Uuid
-  
-  // KIT DETAILS
-  kitNumber               String    @unique @db.VarChar(100)
-  kitType                 String    @db.VarChar(100)
-  kitName                 String    @db.VarChar(255)
-  manufacturer            String?   @db.VarChar(255)
-  
-  // ORDER STATUS
-  status                  String    @default("ordered") @db.VarChar(50)
-  orderedAt               DateTime  @default(now())
-  shippedAt               DateTime?
-  deliveredAt             DateTime?
-  sampleCollectedAt       DateTime?
-  receivedAtLabAt         DateTime?
-  resultsReadyAt          DateTime?
-  
-  // SHIPPING
-  trackingNumber          String?   @db.VarChar(100)
-  shippingCarrier         String?   @db.VarChar(100)
-  shippingAddress         String?   @db.Text
-  
-  // SAMPLE DETAILS
-  sampleType              String?   @db.VarChar(100)
-  sampleId                String?   @db.VarChar(100)
-  sampleQuality           String?   @db.VarChar(50)
-  sampleNotes             String?   @db.Text
-  
-  // TESTING
-  testType                String?   @db.VarChar(255)
-  testsIncluded           Json?
-  laboratoryName          String?   @db.VarChar(255)
-  labTechnician           String?   @db.VarChar(255)
-  
-  // RESULTS
-  resultsUrl              String?   @db.VarChar(500)
-  resultsDocument         String?   @db.VarChar(500)
-  resultsSummary          String?   @db.Text
-  findings                Json?
-  recommendations         String?   @db.Text
-  
-  // GENETIC INFO
-  geneticMarkers          Json?
-  riskFactors             Json?
-  healthInsights          Json?
-  ancestryInfo            Json?
-  
-  // PRIVACY
-  consentGiven            Boolean   @default(false)
-  consentDate             DateTime?
-  dataSharing             Boolean   @default(false)
-  anonymized              Boolean   @default(false)
-  
-  // PRICING
-  kitPrice                Decimal   @db.Decimal(10, 2)
-  shippingFee             Decimal   @default(0) @db.Decimal(10, 2)
-  totalPrice              Decimal   @db.Decimal(10, 2)
-  currency                String    @default("USD") @db.VarChar(3)
-  isPaid                  Boolean   @default(false)
-  paymentId               String?   @db.Uuid
-  
-  // NOTES
-  notes                   String?   @db.Text
-  internalNotes           String?   @db.Text
-  
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
-  
-  // RELATIONS
-  patient                 Patient   @relation(fields: [patientId], references: [patientId], onDelete: Cascade)
-  laboratoryId            String?   @db.Uuid
-  laboratory              Laboratory? @relation(fields: [laboratoryId], references: [laboratoryId], onDelete: SetNull)
-  
-  @@index([patientId])
-  @@index([kitNumber])
-  @@index([status])
-  @@map("dna_kits")
 }
 
 model Doctor {
@@ -1991,45 +1991,6 @@ model ExpertCall {
   @@map("expert_calls")
 }
 
-model FamilyMember {
-  familyMemberId          String    @id @default(uuid()) @db.Uuid
-  primaryUserId           String    @db.Uuid
-  patientId               String?   @unique @db.Uuid
-  firstName               String    @db.VarChar(100)
-  lastName                String    @db.VarChar(100)
-  relationship            String    @db.VarChar(50)
-  dateOfBirth             DateTime? @db.Date
-  age                     Int?
-  gender                  String?   @db.VarChar(20)
-  bloodType               String?   @db.VarChar(10)
-  phone                   String?   @db.VarChar(20)
-  email                   String?   @db.VarChar(255)
-  allergies               Json?
-  chronicConditions       Json?
-  currentMedications      Json?
-  medicalHistory          Json?
-  disabilities            Json?
-  profilePicture          String?   @db.VarChar(500)
-  idProof                 String?   @db.VarChar(500)
-  medicalDocuments        Json?
-  canBookTreatment        Boolean   @default(true)
-  isEmergencyContact      Boolean   @default(false)
-  requiresGuardianConsent Boolean   @default(false)
-  isActive                Boolean   @default(true)
-  isVerified              Boolean   @default(false)
-  notes                   String?   @db.Text
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
-  
-  primaryUser             User      @relation(fields: [primaryUserId], references: [userId], onDelete: Cascade)
-  patient                 Patient?  @relation(fields: [patientId], references: [patientId], onDelete: SetNull)
-  
-  @@index([primaryUserId])
-  @@index([patientId])
-  @@index([isActive])
-  @@map("family_members")
-}
-
 model FAQ {
   faqId                   String    @id @default(uuid()) @db.Uuid
   
@@ -2098,6 +2059,45 @@ model FAQVote {
   @@index([faqId])
   @@index([userId])
   @@map("faq_votes")
+}
+
+model FamilyMember {
+  familyMemberId          String    @id @default(uuid()) @db.Uuid
+  primaryUserId           String    @db.Uuid
+  patientId               String?   @unique @db.Uuid
+  firstName               String    @db.VarChar(100)
+  lastName                String    @db.VarChar(100)
+  relationship            String    @db.VarChar(50)
+  dateOfBirth             DateTime? @db.Date
+  age                     Int?
+  gender                  String?   @db.VarChar(20)
+  bloodType               String?   @db.VarChar(10)
+  phone                   String?   @db.VarChar(20)
+  email                   String?   @db.VarChar(255)
+  allergies               Json?
+  chronicConditions       Json?
+  currentMedications      Json?
+  medicalHistory          Json?
+  disabilities            Json?
+  profilePicture          String?   @db.VarChar(500)
+  idProof                 String?   @db.VarChar(500)
+  medicalDocuments        Json?
+  canBookTreatment        Boolean   @default(true)
+  isEmergencyContact      Boolean   @default(false)
+  requiresGuardianConsent Boolean   @default(false)
+  isActive                Boolean   @default(true)
+  isVerified              Boolean   @default(false)
+  notes                   String?   @db.Text
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  primaryUser             User      @relation(fields: [primaryUserId], references: [userId], onDelete: Cascade)
+  patient                 Patient?  @relation(fields: [patientId], references: [patientId], onDelete: SetNull)
+  
+  @@index([primaryUserId])
+  @@index([patientId])
+  @@index([isActive])
+  @@map("family_members")
 }
 
 model FeatureAddOn {
@@ -2639,37 +2639,6 @@ model Invoice {
   @@map("invoices")
 }
 
-model Laboratory {
-  laboratoryId            String    @id @default(uuid()) @db.Uuid
-  hospitalId              String    @db.Uuid
-  name                    String    @db.VarChar(150)
-  code                    String?   @unique @db.VarChar(50)
-  type                    String?   @db.VarChar(100)
-  description             String?   @db.Text
-  accreditations          Json?
-  certifications          Json?
-  phone                   String?   @db.VarChar(20)
-  email                   String?   @db.VarChar(255)
-  address                 String?   @db.Text
-  city                    String?   @db.VarChar(100)
-  state                   String?   @db.VarChar(100)
-  postalCode              String?   @db.VarChar(20)
-  workingHours            Json?
-  is24x7                  Boolean   @default(false)
-  testCapacity            Int?
-  equipment               Json?
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
-  
-  hospital                Hospital  @relation(fields: [hospitalId], references: [hospitalId], onDelete: Cascade)
-  labTests                LabTest[]
-  labReports              LabReport[]
-  dnaKits                 DNAKit[]
-  
-  @@index([hospitalId])
-  @@map("laboratories")
-}
-
 model LabReport {
   reportId                String    @id @default(uuid()) @db.Uuid
   patientId               String    @db.Uuid
@@ -2755,6 +2724,37 @@ model LabTest {
   @@index([userId])
   @@index([status])
   @@map("lab_tests")
+}
+
+model Laboratory {
+  laboratoryId            String    @id @default(uuid()) @db.Uuid
+  hospitalId              String    @db.Uuid
+  name                    String    @db.VarChar(150)
+  code                    String?   @unique @db.VarChar(50)
+  type                    String?   @db.VarChar(100)
+  description             String?   @db.Text
+  accreditations          Json?
+  certifications          Json?
+  phone                   String?   @db.VarChar(20)
+  email                   String?   @db.VarChar(255)
+  address                 String?   @db.Text
+  city                    String?   @db.VarChar(100)
+  state                   String?   @db.VarChar(100)
+  postalCode              String?   @db.VarChar(20)
+  workingHours            Json?
+  is24x7                  Boolean   @default(false)
+  testCapacity            Int?
+  equipment               Json?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  
+  hospital                Hospital  @relation(fields: [hospitalId], references: [hospitalId], onDelete: Cascade)
+  labTests                LabTest[]
+  labReports              LabReport[]
+  dnaKits                 DNAKit[]
+  
+  @@index([hospitalId])
+  @@map("laboratories")
 }
 
 model Media {
@@ -3471,6 +3471,32 @@ model Review {
   @@map("reviews")
 }
 
+model SMSLog {
+  smsId                   String    @id @default(uuid()) @db.Uuid
+  userId                  String?   @db.Uuid
+  recipient               String    @db.VarChar(20)
+  countryCode             String?   @db.VarChar(10)
+  message                 String    @db.Text
+  smsType                 String    @db.VarChar(50)
+  provider                String?   @db.VarChar(50)
+  providerId              String?   @db.VarChar(255)
+  status                  String    @default("pending") @db.VarChar(50)
+  sentAt                  DateTime?
+  deliveredAt             DateTime?
+  failedAt                DateTime?
+  errorMessage            String?   @db.Text
+  cost                    Decimal?  @db.Decimal(10, 4)
+  currency                String?   @default("USD") @db.VarChar(3)
+  metadata                Json?
+  createdAt               DateTime  @default(now())
+  
+  @@index([userId])
+  @@index([recipient])
+  @@index([status])
+  @@index([sentAt])
+  @@map("sms_logs")
+}
+
 model Session {
   sessionId              String    @id @default(uuid()) @db.Uuid
   userId                 String    @db.Uuid
@@ -3520,32 +3546,6 @@ model Settings {
   @@index([category])
   @@index([key])
   @@map("settings")
-}
-
-model SMSLog {
-  smsId                   String    @id @default(uuid()) @db.Uuid
-  userId                  String?   @db.Uuid
-  recipient               String    @db.VarChar(20)
-  countryCode             String?   @db.VarChar(10)
-  message                 String    @db.Text
-  smsType                 String    @db.VarChar(50)
-  provider                String?   @db.VarChar(50)
-  providerId              String?   @db.VarChar(255)
-  status                  String    @default("pending") @db.VarChar(50)
-  sentAt                  DateTime?
-  deliveredAt             DateTime?
-  failedAt                DateTime?
-  errorMessage            String?   @db.Text
-  cost                    Decimal?  @db.Decimal(10, 4)
-  currency                String?   @default("USD") @db.VarChar(3)
-  metadata                Json?
-  createdAt               DateTime  @default(now())
-  
-  @@index([userId])
-  @@index([recipient])
-  @@index([status])
-  @@index([sentAt])
-  @@map("sms_logs")
 }
 
 model Specialization {
@@ -3988,6 +3988,21 @@ model User {
   metadata                Json?
   referralCode            String?   @unique @db.VarChar(50)
   referredBy              String?   @db.Uuid
+  
+  // OAuth Authentication Fields
+  authProvider            String?   @db.VarChar(50)
+  authProviderId          String?   @db.VarChar(255)
+  
+  // OTP Authentication Fields
+  emailOtp                String?   @db.VarChar(10)
+  emailOtpExpiry          DateTime?
+  phoneOtp                String?   @db.VarChar(10)
+  phoneOtpExpiry          DateTime?
+  
+  // Additional Auth Fields
+  loginCount              Int       @default(0)
+  accountStatus           String    @default("active") @db.VarChar(50)
+  
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
@@ -4025,6 +4040,8 @@ model User {
   @@index([role])
   @@index([isActive])
   @@index([referralCode])
+  @@index([authProvider])
+  @@index([phone])
   @@map("users")
 }
 

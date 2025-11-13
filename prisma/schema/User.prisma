@@ -31,6 +31,21 @@ model User {
   metadata                Json?
   referralCode            String?   @unique @db.VarChar(50)
   referredBy              String?   @db.Uuid
+  
+  // OAuth Authentication Fields
+  authProvider            String?   @db.VarChar(50)
+  authProviderId          String?   @db.VarChar(255)
+  
+  // OTP Authentication Fields
+  emailOtp                String?   @db.VarChar(10)
+  emailOtpExpiry          DateTime?
+  phoneOtp                String?   @db.VarChar(10)
+  phoneOtpExpiry          DateTime?
+  
+  // Additional Auth Fields
+  loginCount              Int       @default(0)
+  accountStatus           String    @default("active") @db.VarChar(50)
+  
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
@@ -68,5 +83,7 @@ model User {
   @@index([role])
   @@index([isActive])
   @@index([referralCode])
+  @@index([authProvider])
+  @@index([phone])
   @@map("users")
 }
