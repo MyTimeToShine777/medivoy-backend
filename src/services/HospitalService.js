@@ -1,7 +1,6 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { Hospital, Doctor, HospitalService as HospService, City, Country, User, AuditLog } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
 import { AuditLogService } from './AuditLogService.js';
@@ -19,13 +18,13 @@ export class HospitalService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createHospital(hospitalData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!hospitalData || !hospitalData.hospitalName) {
                 throw new AppError('Hospital name required', 400);
             }
 
-            const existing = await Hospital.findOne({
+            const existing = await tx.hospital.findFirst({
                 where: { registrationNumber: hospitalData.registrationNumber },
                 transaction: transaction
             });
@@ -35,7 +34,8 @@ export class HospitalService {
                 throw new AppError('Hospital already registered', 409);
             }
 
-            const hospital = await Hospital.create({
+            const hospital = await tx.hospital.create({
+                data: {
                 hospitalId: this._generateHospitalId(),
                 hospitalName: hospitalData.hospitalName,
                 registrationNumber: hospitalData.registrationNumber,
@@ -75,7 +75,8 @@ export class HospitalService {
         try {
             if (!hospitalId) throw new AppError('Hospital ID required', 400);
 
-            const hospital = await Hospital.findByPk(hospitalId, {
+            const hospital = await prisma.hospital.findUnique({
+                where: { hospitalId }, {
                 include: [
                     { model: City, attributes: ['cityName'] },
                     { model: Country, attributes: ['countryName'] },
@@ -105,7 +106,7 @@ export class HospitalService {
                     [Op.like]: '%' + filters.search + '%' };
             }
 
-            const hospitals = await Hospital.findAll({
+            const hospitals = await prisma.hospital.findMany({
                 where: where,
                 include: [
                     { model: City, attributes: ['cityName'] },
@@ -118,7 +119,7 @@ export class HospitalService {
                 offset: offset
             });
 
-            const total = await Hospital.count({ where: where });
+            const total = await prisma.hospital.count({ where });
 
             return {
                 success: true,
@@ -131,11 +132,12 @@ export class HospitalService {
     }
 
     async updateHospital(hospitalId, updateData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!hospitalId || !updateData) throw new AppError('Required params missing', 400);
 
-            const hospital = await Hospital.findByPk(hospitalId, { transaction: transaction });
+            const hospital = await prisma.hospital.findUnique({
+                where: { hospitalId }, { transaction: transaction });
             if (!hospital) {
                 await transaction.rollback();
                 throw new AppError('Hospital not found', 404);
@@ -172,11 +174,12 @@ export class HospitalService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async addHospitalService(hospitalId, serviceData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!hospitalId || !serviceData) throw new AppError('Required params missing', 400);
 
-            const hospital = await Hospital.findByPk(hospitalId, { transaction: transaction });
+            const hospital = await prisma.hospital.findUnique({
+                where: { hospitalId }, { transaction: transaction });
             if (!hospital) {
                 await transaction.rollback();
                 throw new AppError('Hospital not found', 404);
@@ -226,7 +229,7 @@ export class HospitalService {
     }
 
     async removeHospitalService(serviceId, hospitalId) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!serviceId || !hospitalId) throw new AppError('Required params missing', 400);
 

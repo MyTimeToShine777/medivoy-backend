@@ -1,14 +1,13 @@
 // Recommendation Service - Personalized recommendations
 // NO optional chaining - Production Ready
-import { Doctor, Hospital, Treatment, Booking, Review } from '../models/index.js';
-import { Op } from 'sequelize';
+import prisma from '../config/prisma.js';
 
 class RecommendationService {
     // ========== RECOMMEND DOCTORS ==========
     async recommendDoctors(userId, limit = 5) {
         try {
             // Get user's booking history
-            const userBookings = await Booking.findAll({
+            const userBookings = await prisma.booking.findMany({
                 where: { userId },
                 include: [
                     { model: Doctor, as: 'doctor' },
@@ -18,7 +17,7 @@ class RecommendationService {
 
             if (userBookings.length === 0) {
                 // Return top-rated doctors if no booking history
-                const topDoctors = await Doctor.findAll({
+                const topDoctors = await prisma.doctor.findMany({
                     where: { isActive: true },
                     order: [
                         ['averageRating', 'DESC']
@@ -36,7 +35,7 @@ class RecommendationService {
             }).filter(Boolean);
 
             // Recommend doctors with same specialization
-            const recommendedDoctors = await Doctor.findAll({
+            const recommendedDoctors = await prisma.doctor.findMany({
                 where: {
                     specialization: {
                         [Op.in]: specializations
@@ -58,13 +57,13 @@ class RecommendationService {
     // ========== RECOMMEND HOSPITALS ==========
     async recommendHospitals(userId, limit = 5) {
         try {
-            const userBookings = await Booking.findAll({
+            const userBookings = await prisma.booking.findMany({
                 where: { userId },
                 include: [{ model: Hospital, as: 'hospital' }],
             });
 
             if (userBookings.length === 0) {
-                const topHospitals = await Hospital.findAll({
+                const topHospitals = await prisma.hospital.findMany({
                     where: { isActive: true },
                     order: [
                         ['averageRating', 'DESC']
@@ -82,7 +81,7 @@ class RecommendationService {
             }).filter(Boolean);
 
             // Recommend hospitals in same cities
-            const recommendedHospitals = await Hospital.findAll({
+            const recommendedHospitals = await prisma.hospital.findMany({
                 where: {
                     city: {
                         [Op.in]: cities
@@ -104,7 +103,7 @@ class RecommendationService {
     // ========== RECOMMEND TREATMENTS ==========
     async recommendTreatments(userId, limit = 5) {
         try {
-            const userBookings = await Booking.findAll({
+            const userBookings = await prisma.booking.findMany({
                 where: { userId },
                 include: [{ model: Treatment, as: 'treatment' }],
             });

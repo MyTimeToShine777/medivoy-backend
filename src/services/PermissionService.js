@@ -1,7 +1,6 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { Permission, Role, RolePermission, User, AuditLog } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
 import { AuditLogService } from './AuditLogService.js';
@@ -19,13 +18,13 @@ export class PermissionService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createPermission(permissionData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!permissionData || !permissionData.permissionName) {
                 throw new AppError('Permission name required', 400);
             }
 
-            const existing = await Permission.findOne({
+            const existing = await tx.permission.findFirst({
                 where: { permissionName: permissionData.permissionName },
                 transaction: transaction
             });
@@ -35,7 +34,8 @@ export class PermissionService {
                 throw new AppError('Permission already exists', 409);
             }
 
-            const permission = await Permission.create({
+            const permission = await tx.permission.create({
+                data: {
                 permissionId: this._generatePermissionId(),
                 permissionName: permissionData.permissionName,
                 permissionDescription: permissionData.permissionDescription || null,
@@ -67,7 +67,7 @@ export class PermissionService {
         try {
             if (!permissionId) throw new AppError('Permission ID required', 400);
 
-            const permission = await Permission.findByPk(permissionId);
+            const permission = await prisma.permission.findUnique({ where: { permissionId } });
             if (!permission) throw new AppError('Permission not found', 404);
 
             return { success: true, permission: permission };
@@ -86,7 +86,7 @@ export class PermissionService {
             if (filters && filters.action) where.action = filters.action;
             if (filters && filters.isActive !== undefined) where.isActive = filters.isActive;
 
-            const permissions = await Permission.findAll({
+            const permissions = await prisma.permission.findMany({
                 where: where,
                 order: [
                     ['module', 'ASC'],
@@ -96,7 +96,7 @@ export class PermissionService {
                 offset: offset
             });
 
-            const total = await Permission.count({ where: where });
+            const total = await prisma.permission.count({ where });
 
             return {
                 success: true,
@@ -109,7 +109,7 @@ export class PermissionService {
     }
 
     async updatePermission(permissionId, updateData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!permissionId || !updateData) throw new AppError('Required params missing', 400);
 
@@ -143,7 +143,7 @@ export class PermissionService {
     }
 
     async deletePermission(permissionId) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!permissionId) throw new AppError('Permission ID required', 400);
 
@@ -252,7 +252,7 @@ export class PermissionService {
         try {
             if (!module) throw new AppError('Module required', 400);
 
-            const permissions = await Permission.findAll({
+            const permissions = await prisma.permission.findMany({
                 where: { module: module, isActive: true },
                 order: [
                     ['action', 'ASC']

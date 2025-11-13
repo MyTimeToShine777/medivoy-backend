@@ -1,7 +1,6 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { Role, User, Permission, RolePermission, AuditLog } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
 import { AuditLogService } from './AuditLogService.js';
@@ -19,11 +18,11 @@ export class RoleService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createRole(roleData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!roleData || !roleData.roleName) throw new AppError('Role name required', 400);
 
-            const existingRole = await Role.findOne({
+            const existingRole = await tx.role.findFirst({
                 where: { roleName: roleData.roleName },
                 transaction: transaction
             });
@@ -33,7 +32,8 @@ export class RoleService {
                 throw new AppError('Role already exists', 409);
             }
 
-            const role = await Role.create({
+            const role = await tx.role.create({
+                data: {
                 roleId: this._generateRoleId(),
                 roleName: roleData.roleName,
                 roleDescription: roleData.roleDescription || null,
@@ -44,7 +44,8 @@ export class RoleService {
             // Assign permissions if provided
             if (roleData.permissionIds && Array.isArray(roleData.permissionIds)) {
                 for (const permId of roleData.permissionIds) {
-                    await RolePermission.create({
+                    await tx.rolePermission.create({
+                    data: {
                         roleId: role.roleId,
                         permissionId: permId
                     }, { transaction: transaction });
@@ -72,7 +73,8 @@ export class RoleService {
         try {
             if (!roleId) throw new AppError('Role ID required', 400);
 
-            const role = await Role.findByPk(roleId, {
+            const role = await prisma.role.findUnique({
+                where: { roleId }, {
                 include: [{
                     model: Permission,
                     through: { attributes: [] },
@@ -96,7 +98,7 @@ export class RoleService {
 
             if (filters && filters.isActive !== undefined) where.isActive = filters.isActive;
 
-            const roles = await Role.findAll({
+            const roles = await prisma.role.findMany({
                 where: where,
                 include: [{
                     model: Permission,
@@ -110,7 +112,7 @@ export class RoleService {
                 offset: offset
             });
 
-            const total = await Role.count({ where: where });
+            const total = await prisma.role.count({ where });
 
             return {
                 success: true,
@@ -123,11 +125,12 @@ export class RoleService {
     }
 
     async updateRole(roleId, updateData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!roleId || !updateData) throw new AppError('Required params missing', 400);
 
-            const role = await Role.findByPk(roleId, { transaction: transaction });
+            const role = await prisma.role.findUnique({
+                where: { roleId }, { transaction: transaction });
             if (!role) {
                 await transaction.rollback();
                 throw new AppError('Role not found', 404);
@@ -156,11 +159,12 @@ export class RoleService {
     }
 
     async deleteRole(roleId) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!roleId) throw new AppError('Role ID required', 400);
 
-            const role = await Role.findByPk(roleId, { transaction: transaction });
+            const role = await prisma.role.findUnique({
+                where: { roleId }, { transaction: transaction });
             if (!role) {
                 await transaction.rollback();
                 throw new AppError('Role not found', 404);
@@ -197,11 +201,12 @@ export class RoleService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async assignPermissionToRole(roleId, permissionId) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!roleId || !permissionId) throw new AppError('Role and permission IDs required', 400);
 
-            const role = await Role.findByPk(roleId, { transaction: transaction });
+            const role = await prisma.role.findUnique({
+                where: { roleId }, { transaction: transaction });
             if (!role) {
                 await transaction.rollback();
                 throw new AppError('Role not found', 404);
@@ -223,7 +228,8 @@ export class RoleService {
                 throw new AppError('Permission already assigned', 409);
             }
 
-            await RolePermission.create({
+            await tx.rolePermission.create({
+                    data: {
                 roleId: roleId,
                 permissionId: permissionId
             }, { transaction: transaction });
@@ -246,7 +252,7 @@ export class RoleService {
     }
 
     async removePermissionFromRole(roleId, permissionId) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!roleId || !permissionId) throw new AppError('Required params missing', 400);
 
