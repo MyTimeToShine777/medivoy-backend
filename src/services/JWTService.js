@@ -1,7 +1,7 @@
 // JWT Service - JWT token management
 // NO optional chaining - Production Ready
 import jwt from 'jsonwebtoken';
-import { RefreshToken } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class JWTService {
     // ========== GENERATE ACCESS TOKEN ==========
@@ -33,7 +33,8 @@ class JWTService {
                 process.env.JWT_REFRESH_SECRET || 'refresh-secret-key', { expiresIn }
             );
 
-            const refreshTokenRecord = await RefreshToken.create({
+            const refreshTokenRecord = await prisma.refreshToken.create({
+                data: {
                 userId,
                 token,
                 expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -80,7 +81,7 @@ class JWTService {
                 process.env.JWT_REFRESH_SECRET || 'refresh-secret-key'
             );
 
-            const refreshTokenRecord = await RefreshToken.findOne({
+            const refreshTokenRecord = await prisma.refreshToken.findFirst({
                 where: { token, status: 'active' },
             });
 
@@ -137,7 +138,7 @@ class JWTService {
     // ========== REVOKE REFRESH TOKEN ==========
     async revokeRefreshToken(token) {
         try {
-            const refreshTokenRecord = await RefreshToken.findOne({
+            const refreshTokenRecord = await prisma.refreshToken.findFirst({
                 where: { token },
             });
 

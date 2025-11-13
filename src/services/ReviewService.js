@@ -1,13 +1,4 @@
-import { Op, sequelize } from 'sequelize';
-import {
-    Review,
-    ReviewApproval,
-    Booking,
-    User,
-    Hospital,
-    Doctor,
-    AuditLog
-} from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { NotificationService } from './NotificationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
@@ -28,13 +19,13 @@ export class ReviewService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createBookingReview(bookingId, userId, reviewData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!bookingId || !userId || !reviewData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await tx.booking.findUnique({ where: { bookingId } });
             if (!booking) {
                 await transaction.rollback();
                 throw new AppError('Booking not found', 404);
@@ -50,7 +41,7 @@ export class ReviewService {
                 throw new AppError('Only completed bookings can be reviewed', 400);
             }
 
-            const existing = await Review.findOne({
+            const existing = await tx.review.findFirst({
                 where: { bookingId: bookingId, reviewType: 'booking' },
                 transaction: transaction
             });
@@ -66,7 +57,8 @@ export class ReviewService {
                 throw new AppError(errors.join(', '), 400);
             }
 
-            const review = await Review.create({
+            const review = await tx.review.create({
+                data: {
                 reviewId: this._generateReviewId(),
                 bookingId: bookingId,
                 userId: userId,
@@ -85,7 +77,8 @@ export class ReviewService {
                 reviewedAt: new Date()
             }, { transaction: transaction });
 
-            await ReviewApproval.create({
+            await tx.reviewApproval.create({
+                    data: {
                 approvalId: this._generateApprovalId(),
                 reviewId: review.reviewId,
                 status: 'pending'
@@ -116,7 +109,7 @@ export class ReviewService {
             const offset = filters && filters.offset ? filters.offset : 0;
             const where = { hospitalId: hospitalId, reviewType: 'booking', isPublished: true };
 
-            const reviews = await Review.findAll({
+            const reviews = await prisma.review.findMany({
                 where: where,
                 include: [
                     { model: User, attributes: ['firstName', 'lastName'] },
@@ -145,7 +138,7 @@ export class ReviewService {
     }
 
     async publishBookingReview(reviewId, adminUserId, approvalData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!reviewId || !adminUserId) throw new AppError('IDs required', 400);
 
@@ -190,7 +183,7 @@ export class ReviewService {
     }
 
     async rejectBookingReview(reviewId, adminUserId, reason) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!reviewId || !adminUserId || !reason) {
                 throw new AppError('Required params missing', 400);
@@ -232,7 +225,7 @@ export class ReviewService {
     }
 
     async updateBookingReview(reviewId, userId, updateData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!reviewId || !userId) throw new AppError('IDs required', 400);
 
@@ -276,7 +269,7 @@ export class ReviewService {
     }
 
     async deleteBookingReview(reviewId, userId) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!reviewId || !userId) throw new AppError('IDs required', 400);
 
@@ -315,13 +308,13 @@ export class ReviewService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createMedicalReview(bookingId, userId, reviewData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!bookingId || !userId || !reviewData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const booking = await Booking.findByPk(bookingId, { transaction: transaction });
+            const booking = await tx.booking.findUnique({ where: { bookingId } });
             if (!booking) {
                 await transaction.rollback();
                 throw new AppError('Booking not found', 404);
@@ -332,7 +325,7 @@ export class ReviewService {
                 throw new AppError('Cannot review other\'s booking', 403);
             }
 
-            const existing = await Review.findOne({
+            const existing = await tx.review.findFirst({
                 where: { bookingId: bookingId, reviewType: 'medical' },
                 transaction: transaction
             });
@@ -348,7 +341,8 @@ export class ReviewService {
                 throw new AppError(errors.join(', '), 400);
             }
 
-            const review = await Review.create({
+            const review = await tx.review.create({
+                data: {
                 reviewId: this._generateReviewId(),
                 bookingId: bookingId,
                 userId: userId,
@@ -369,7 +363,8 @@ export class ReviewService {
                 reviewedAt: new Date()
             }, { transaction: transaction });
 
-            await ReviewApproval.create({
+            await tx.reviewApproval.create({
+                    data: {
                 approvalId: this._generateApprovalId(),
                 reviewId: review.reviewId,
                 status: 'pending'
@@ -400,7 +395,7 @@ export class ReviewService {
             const offset = filters && filters.offset ? filters.offset : 0;
             const where = { doctorId: doctorId, reviewType: 'medical', isPublished: true };
 
-            const reviews = await Review.findAll({
+            const reviews = await prisma.review.findMany({
                 where: where,
                 include: [
                     { model: User, attributes: ['firstName', 'lastName'] },
@@ -429,7 +424,7 @@ export class ReviewService {
     }
 
     async publishMedicalReview(reviewId, adminUserId, approvalData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!reviewId || !adminUserId) throw new AppError('IDs required', 400);
 
@@ -474,7 +469,7 @@ export class ReviewService {
     }
 
     async rejectMedicalReview(reviewId, adminUserId, reason) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!reviewId || !adminUserId || !reason) {
                 throw new AppError('Required params missing', 400);
@@ -516,7 +511,7 @@ export class ReviewService {
     }
 
     async updateMedicalReview(reviewId, userId, updateData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!reviewId || !userId) throw new AppError('IDs required', 400);
 
@@ -560,7 +555,7 @@ export class ReviewService {
     }
 
     async deleteMedicalReview(reviewId, userId) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!reviewId || !userId) throw new AppError('IDs required', 400);
 
@@ -599,7 +594,7 @@ export class ReviewService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async markReviewHelpful(reviewId) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!reviewId) throw new AppError('Review ID required', 400);
 
@@ -644,7 +639,7 @@ export class ReviewService {
     }
 
     async flagReviewForModeration(reviewId, reason) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!reviewId || !reason) throw new AppError('Required params missing', 400);
 

@@ -1,7 +1,6 @@
 // Google Translate Service - Language translation
 // NO optional chaining - Production Ready
 import { Translate } from '@google-cloud/translate/build/src';
-import { Op } from 'sequelize';
 
 class GoogleTranslateService {
     constructor() {
