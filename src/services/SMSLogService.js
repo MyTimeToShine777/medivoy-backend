@@ -1,7 +1,6 @@
 'use strict';
 
-import { getModels } from '../models/index.js';
-import { Op } from 'sequelize';
+import prisma from '../config/prisma.js';
 
 export class SMSLogService {
     /**
@@ -17,18 +16,18 @@ export class SMSLogService {
                 return { success: false, error: 'SMS message is required' };
             }
 
-            const { SMSLog } = getModels();
-
             // Calculate message length and segments
             const messageLength = smsData.message.length;
             const segmentCount = Math.ceil(messageLength / 160);
 
-            const smsLog = await SMSLog.create({
-                status: 'pending',
-                attempts: 1,
-                messageLength,
-                segmentCount,
-                ...smsData
+            const smsLog = await prisma.sMSLog.create({
+                data: {
+                    status: 'pending',
+                    attempts: 1,
+                    messageLength,
+                    segmentCount,
+                    ...smsData
+                }
             });
 
             return {
@@ -62,9 +61,9 @@ export class SMSLogService {
                 return { success: false, error: 'Invalid status' };
             }
 
-            const { SMSLog } = getModels();
-
-            const smsLog = await SMSLog.findByPk(smsLogId);
+            const smsLog = await prisma.sMSLog.findUnique({
+                where: { smsLogId }
+            });
 
             if (!smsLog) {
                 return { success: false, error: 'SMS log not found' };
@@ -79,11 +78,14 @@ export class SMSLogService {
                 updateData.deliveredAt = new Date();
             }
 
-            await smsLog.update(updateData);
+            const updated = await prisma.sMSLog.update({
+                where: { smsLogId },
+                data: updateData
+            });
 
             return {
                 success: true,
-                data: smsLog,
+                data: updated,
                 message: `SMS status updated to ${status}`
             };
         } catch (error) {
@@ -99,24 +101,25 @@ export class SMSLogService {
      */
     async getSMSLogs(userId, options = {}) {
         try {
-            const { SMSLog } = getModels();
-
             const { page = 1, limit = 50, status, smsType } = options;
-            const offset = (page - 1) * limit;
+            const skip = (page - 1) * limit;
 
             const where = {};
             if (userId) where.userId = userId;
             if (status) where.status = status;
             if (smsType) where.smsType = smsType;
 
-            const { rows: logs, count: total } = await SMSLog.findAndCountAll({
-                where,
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: parseInt(limit),
-                offset: parseInt(offset)
-            });
+            const [logs, total] = await Promise.all([
+                prisma.sMSLog.findMany({
+                    where,
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
+                    take: parseInt(limit),
+                    skip: parseInt(skip)
+                }),
+                prisma.sMSLog.count({ where })
+            ]);
 
             return {
                 success: true,
@@ -145,12 +148,13 @@ export class SMSLogService {
                 return { success: false, error: 'SMS log ID is required' };
             }
 
-            const { SMSLog, User } = getModels();
-
-            const smsLog = await SMSLog.findByPk(smsLogId, {
-                include: [
-                    { model: User, as: 'user', attributes: ['userId', 'email', 'firstName', 'lastName'] }
-                ]
+            const smsLog = await prisma.sMSLog.findUnique({
+                where: { smsLogId },
+                include: {
+                    user: {
+                        select: { userId: true, email: true, firstName: true, lastName: true }
+                    }
+                }
             });
 
             if (!smsLog) {
@@ -178,9 +182,9 @@ export class SMSLogService {
                 return { success: false, error: 'SMS log ID is required' };
             }
 
-            const { SMSLog } = getModels();
-
-            const smsLog = await SMSLog.findByPk(smsLogId);
+            const smsLog = await prisma.sMSLog.findUnique({
+                where: { smsLogId }
+            });
 
             if (!smsLog) {
                 return { success: false, error: 'SMS log not found' };
@@ -190,15 +194,18 @@ export class SMSLogService {
                 return { success: false, error: 'Can only retry failed SMS' };
             }
 
-            await smsLog.update({
-                status: 'pending',
-                attempts: smsLog.attempts + 1,
-                errorMessage: null
+            const updated = await prisma.sMSLog.update({
+                where: { smsLogId },
+                data: {
+                    status: 'pending',
+                    attempts: smsLog.attempts + 1,
+                    errorMessage: null
+                }
             });
 
             return {
                 success: true,
-                data: smsLog,
+                data: updated,
                 message: 'SMS queued for retry'
             };
         } catch (error) {
@@ -214,31 +221,31 @@ export class SMSLogService {
      */
     async getSMSStatistics(userId, dateRange = {}) {
         try {
-            const { SMSLog } = getModels();
-
             const where = {};
             if (userId) where.userId = userId;
 
             if (dateRange.startDate && dateRange.endDate) {
                 where.createdAt = {
-                    [Op.between]: [new Date(dateRange.startDate), new Date(dateRange.endDate)]
+                    gte: new Date(dateRange.startDate),
+                    lte: new Date(dateRange.endDate)
                 };
             }
 
-            const stats = await SMSLog.findAll({
+            const stats = await prisma.sMSLog.groupBy({
+                by: ['status'],
                 where,
-                attributes: [
-                    'status', [sequelize.fn('COUNT', sequelize.col('smsLogId')), 'count'],
-                    [sequelize.fn('SUM', sequelize.col('segmentCount')), 'totalSegments']
-                ],
-                group: ['status'],
-                raw: true
+                _count: {
+                    smsLogId: true
+                },
+                _sum: {
+                    segmentCount: true
+                }
             });
 
             const statsObj = stats.reduce((acc, stat) => {
                 acc[stat.status] = {
-                    count: parseInt(stat.count),
-                    segments: parseInt(stat.totalSegments) || 0
+                    count: stat._count.smsLogId,
+                    segments: stat._sum.segmentCount || 0
                 };
                 return acc;
             }, {});
