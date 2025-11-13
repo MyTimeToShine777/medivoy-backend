@@ -1,15 +1,6 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import {
-    Appointment,
-    AppointmentSlot,
-    Doctor,
-    User,
-    Hospital,
-    ExpertCall,
-    AuditLog
-} from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { ValidationService } from './ValidationService.js';
 import { NotificationService } from './NotificationService.js';
 import { ErrorHandlingService } from './ErrorHandlingService.js';
@@ -30,19 +21,19 @@ export class AppointmentService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async bookAppointment(userId, appointmentData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!userId || !appointmentData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const user = await User.findByPk(userId);
+            const user = await prisma.user.findUnique({ where: { userId } });
             if (!user) {
                 await transaction.rollback();
                 throw new AppError('User not found', 404);
             }
 
-            const doctor = await Doctor.findByPk(appointmentData.doctorId, { transaction: transaction });
+            const doctor = await tx.doctor.findUnique({ where: { doctorId: appointmentData.doctorId } });
             if (!doctor) {
                 await transaction.rollback();
                 throw new AppError('Doctor not found', 404);
@@ -55,7 +46,7 @@ export class AppointmentService {
             }
 
             // Check slot availability
-            const slot = await AppointmentSlot.findOne({
+            const slot = await tx.appointmentSlot.findFirst({
                 where: {
                     doctorId: appointmentData.doctorId,
                     appointmentDate: appointmentData.appointmentDate,
@@ -71,7 +62,7 @@ export class AppointmentService {
             }
 
             // Check for duplicate appointments
-            const existing = await Appointment.findOne({
+            const existing = await tx.appointment.findFirst({
                 where: {
                     userId: userId,
                     doctorId: appointmentData.doctorId,
@@ -87,7 +78,8 @@ export class AppointmentService {
                 throw new AppError('Already have appointment with this doctor on this date', 409);
             }
 
-            const appointment = await Appointment.create({
+            const appointment = await tx.appointment.create({
+                data: {
                 appointmentId: this._generateAppointmentId(),
                 userId: userId,
                 doctorId: appointmentData.doctorId,
@@ -201,7 +193,7 @@ export class AppointmentService {
     }
 
     async rescheduleAppointment(appointmentId, userId, newData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!appointmentId || !userId || !newData) {
                 throw new AppError('Required parameters missing', 400);
@@ -283,7 +275,7 @@ export class AppointmentService {
     }
 
     async cancelAppointment(appointmentId, userId, reason) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!appointmentId || !userId) throw new AppError('Required params missing', 400);
 
@@ -309,7 +301,7 @@ export class AppointmentService {
             await appointment.save({ transaction: transaction });
 
             // Free up the slot
-            const slot = await AppointmentSlot.findOne({
+            const slot = await tx.appointmentSlot.findFirst({
                 where: {
                     doctorId: appointment.doctorId,
                     appointmentDate: appointment.appointmentDate,
@@ -351,7 +343,7 @@ export class AppointmentService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createConsultation(appointmentId, consultationData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!appointmentId || !consultationData) {
                 throw new AppError('Required parameters missing', 400);
@@ -393,7 +385,7 @@ export class AppointmentService {
     }
 
     async startConsultation(callId, userId) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!callId || !userId) throw new AppError('Required params missing', 400);
 
@@ -430,7 +422,7 @@ export class AppointmentService {
     }
 
     async endConsultation(callId, userId, consultationNotes) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!callId || !userId) throw new AppError('Required params missing', 400);
 
@@ -476,7 +468,7 @@ export class AppointmentService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createSlots(doctorId, slotsData) {
-        const transaction = await sequelize.transaction();
+        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!doctorId || !slotsData) throw new AppError('Required params missing', 400);
 

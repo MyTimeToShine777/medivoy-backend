@@ -1,13 +1,13 @@
 // Doctor Service - Doctor management and operations
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Doctor, Hospital, DoctorSchedule, Appointment, Review } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class DoctorService {
     // ========== CREATE DOCTOR ==========
     async createDoctor(doctorData) {
         try {
-            const doctor = await Doctor.create({
+            const doctor = await prisma.doctor.create({
+                data: {
                 doctorNumber: await this.generateDoctorNumber(),
                 ...doctorData,
             });
@@ -28,7 +28,8 @@ class DoctorService {
     // ========== GET DOCTOR ==========
     async getDoctorById(doctorId) {
         try {
-            const doctor = await Doctor.findByPk(doctorId, {
+            const doctor = await prisma.doctor.findUnique({
+                where: { doctorId }, {
                 include: [
                     { model: DoctorSchedule, as: 'schedules' },
                     { model: Review, as: 'reviews' },
@@ -56,7 +57,7 @@ class DoctorService {
 
     async getDoctorByEmail(email) {
         try {
-            const doctor = await Doctor.findOne({
+            const doctor = await prisma.doctor.findFirst({
                 where: { email },
                 include: [
                     { model: Hospital, as: 'hospitals' },
@@ -117,7 +118,7 @@ class DoctorService {
                 ];
             }
 
-            const doctors = await Doctor.findAll({
+            const doctors = await prisma.doctor.findMany({
                 where,
                 include: [
                     { model: Hospital, as: 'hospital' },
@@ -151,7 +152,7 @@ class DoctorService {
                 where.hospitalId = hospitalId;
             }
 
-            const doctors = await Doctor.findAll({
+            const doctors = await prisma.doctor.findMany({
                 where,
                 order: [
                     ['averageRating', 'DESC']
