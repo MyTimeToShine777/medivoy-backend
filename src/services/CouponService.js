@@ -1,6 +1,6 @@
 'use strict';
 
-import { Coupon, Booking } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { cacheService } from '../config/redis.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -14,18 +14,20 @@ export class CouponService {
 
     async createCoupon(data) {
         try {
-            const coupon = await Coupon.create({
-                code: data.code,
-                description: data.description,
-                discountType: data.discountType,
-                discountValue: data.discountValue,
-                maxUsageCount: data.maxUsageCount,
-                usageCount: 0,
-                minOrderAmount: data.minOrderAmount || 0,
-                validFrom: data.validFrom || new Date(),
-                validUpto: data.validUpto,
-                isActive: data.isActive !== false,
-                createdAt: new Date()
+            const coupon = await prisma.coupon.create({
+                data: {
+                    code: data.code,
+                    description: data.description,
+                    discountType: data.discountType,
+                    discountValue: data.discountValue,
+                    maxUsageCount: data.maxUsageCount,
+                    usageCount: 0,
+                    minOrderAmount: data.minOrderAmount || 0,
+                    validFrom: data.validFrom || new Date(),
+                    validUpto: data.validUpto,
+                    isActive: data.isActive !== false,
+                    createdAt: new Date()
+                }
             });
 
             await cacheService.delete('coupons');
@@ -44,7 +46,7 @@ export class CouponService {
 
     async getCouponByCode(code) {
         try {
-            const coupon = await Coupon.findOne({
+            const coupon = await prisma.coupon.findFirst({
                 where: { code: code.toUpperCase(), isActive: true }
             });
 
@@ -65,7 +67,7 @@ export class CouponService {
 
     async validateCoupon(code, orderAmount) {
         try {
-            const coupon = await Coupon.findOne({
+            const coupon = await prisma.coupon.findFirst({
                 where: { code: code.toUpperCase() }
             });
 
@@ -112,7 +114,7 @@ export class CouponService {
 
     async applyCoupon(code) {
         try {
-            const coupon = await Coupon.findOne({
+            const coupon = await prisma.coupon.findFirst({
                 where: { code: code.toUpperCase() }
             });
 
@@ -120,15 +122,18 @@ export class CouponService {
                 return { success: false, error: 'Coupon not found' };
             }
 
-            await coupon.update({
-                usageCount: coupon.usageCount + 1,
-                lastUsedAt: new Date()
+            const updated = await prisma.coupon.update({
+                where: { couponId: coupon.couponId },
+                data: {
+                    usageCount: coupon.usageCount + 1,
+                    lastUsedAt: new Date()
+                }
             });
 
             await cacheService.delete('coupons');
             console.log(`✅ Coupon applied: ${code}`);
 
-            return { success: true, data: coupon };
+            return { success: true, data: updated };
         } catch (error) {
             console.error('❌ Apply coupon error:', error.message);
             return { success: false, error: error.message };
@@ -148,13 +153,13 @@ export class CouponService {
             const where = { isActive: true };
             if (filters.discountType) where.discountType = filters.discountType;
 
-            const coupons = await Coupon.findAll({
+            const coupons = await prisma.coupon.findMany({
                 where,
-                limit,
-                offset,
-                order: [
-                    ['createdAt', 'DESC']
-                ]
+                take: limit,
+                skip: offset,
+                orderBy: {
+                    createdAt: 'desc'
+                }
             });
 
             await cacheService.set(cacheKey, coupons, 3600);
@@ -171,26 +176,31 @@ export class CouponService {
 
     async updateCoupon(couponId, data) {
         try {
-            const coupon = await Coupon.findByPk(couponId);
+            const coupon = await prisma.coupon.findUnique({
+                where: { couponId }
+            });
 
             if (!coupon) {
                 return { success: false, error: 'Coupon not found', code: 'NOT_FOUND' };
             }
 
-            await coupon.update({
-                description: data.description || coupon.description,
-                discountValue: data.discountValue !== undefined ? data.discountValue : coupon.discountValue,
-                maxUsageCount: data.maxUsageCount || coupon.maxUsageCount,
-                minOrderAmount: data.minOrderAmount !== undefined ? data.minOrderAmount : coupon.minOrderAmount,
-                validUpto: data.validUpto || coupon.validUpto,
-                isActive: data.isActive !== undefined ? data.isActive : coupon.isActive,
-                updatedAt: new Date()
+            const updated = await prisma.coupon.update({
+                where: { couponId },
+                data: {
+                    description: data.description || coupon.description,
+                    discountValue: data.discountValue !== undefined ? data.discountValue : coupon.discountValue,
+                    maxUsageCount: data.maxUsageCount || coupon.maxUsageCount,
+                    minOrderAmount: data.minOrderAmount !== undefined ? data.minOrderAmount : coupon.minOrderAmount,
+                    validUpto: data.validUpto || coupon.validUpto,
+                    isActive: data.isActive !== undefined ? data.isActive : coupon.isActive,
+                    updatedAt: new Date()
+                }
             });
 
             await cacheService.delete('coupons');
             console.log(`✅ Coupon updated: ${couponId}`);
 
-            return { success: true, data: coupon };
+            return { success: true, data: updated };
         } catch (error) {
             console.error('❌ Update coupon error:', error.message);
             return { success: false, error: error.message };
@@ -203,13 +213,17 @@ export class CouponService {
 
     async deleteCoupon(couponId) {
         try {
-            const coupon = await Coupon.findByPk(couponId);
+            const coupon = await prisma.coupon.findUnique({
+                where: { couponId }
+            });
 
             if (!coupon) {
                 return { success: false, error: 'Coupon not found', code: 'NOT_FOUND' };
             }
 
-            await coupon.destroy();
+            await prisma.coupon.delete({
+                where: { couponId }
+            });
             await cacheService.delete('coupons');
             console.log(`✅ Coupon deleted: ${couponId}`);
 
