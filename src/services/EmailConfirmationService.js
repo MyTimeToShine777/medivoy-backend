@@ -1,7 +1,7 @@
 'use strict';
 
 import crypto from 'crypto';
-import { User } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { cacheService } from '../config/redis.js';
 
 export class EmailConfirmationService {
@@ -38,7 +38,9 @@ export class EmailConfirmationService {
 
     async resendVerificationEmail(email) {
         try {
-            const user = await User.findOne({ where: { email } });
+            const user = await prisma.user.findFirst({
+                where: { email }
+            });
 
             if (!user) {
                 return { success: false, error: 'User not found' };
@@ -58,9 +60,12 @@ export class EmailConfirmationService {
             const verificationToken = this.generateVerificationToken();
             const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-            await user.update({
-                verificationToken,
-                verificationTokenExpiry
+            await prisma.user.update({
+                where: { userId: user.userId },
+                data: {
+                    verificationToken,
+                    verificationTokenExpiry
+                }
             });
 
             // Send email
@@ -84,11 +89,12 @@ export class EmailConfirmationService {
 
     async verifyEmailToken(token) {
         try {
-            const user = await User.findOne({
+            const user = await prisma.user.findFirst({
                 where: {
                     verificationToken: token,
                     verificationTokenExpiry: {
-                        [require('sequelize').Op.gt]: new Date() }
+                        gt: new Date()
+                    }
                 }
             });
 
@@ -96,10 +102,13 @@ export class EmailConfirmationService {
                 return { success: false, error: 'Invalid or expired token' };
             }
 
-            await user.update({
-                emailVerified: true,
-                verificationToken: null,
-                verificationTokenExpiry: null
+            await prisma.user.update({
+                where: { userId: user.userId },
+                data: {
+                    emailVerified: true,
+                    verificationToken: null,
+                    verificationTokenExpiry: null
+                }
             });
 
             console.log(`✅ Email verified for: ${user.email}`);
@@ -117,7 +126,7 @@ export class EmailConfirmationService {
 
     async checkTokenExpiry(token) {
         try {
-            const user = await User.findOne({
+            const user = await prisma.user.findFirst({
                 where: { verificationToken: token }
             });
 

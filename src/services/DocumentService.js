@@ -1,7 +1,6 @@
 // Document Service - Document upload and management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Document, User, Booking } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import multer from 'multer';
 import path from 'path';
 
@@ -16,12 +15,14 @@ class DocumentService {
     // ========== UPLOAD DOCUMENT ==========
     async uploadDocument(documentData, file) {
         try {
-            const document = await Document.create({
-                ...documentData,
-                filePath: file.path,
-                fileName: file.originalname,
-                fileSize: file.size,
-                mimeType: file.mimetype,
+            const document = await prisma.document.create({
+                data: {
+                    ...documentData,
+                    filePath: file.path,
+                    fileName: file.originalname,
+                    fileSize: file.size,
+                    mimeType: file.mimetype,
+                }
             });
 
             return { success: true, data: document };
@@ -33,11 +34,12 @@ class DocumentService {
     // ========== GET DOCUMENT ==========
     async getDocumentById(documentId) {
         try {
-            const document = await Document.findByPk(documentId, {
-                include: [
-                    { model: User, as: 'uploadedBy' },
-                    { model: Booking, as: 'booking' },
-                ],
+            const document = await prisma.document.findUnique({
+                where: { documentId },
+                include: {
+                    uploadedBy: true,
+                    booking: true
+                }
             });
 
             if (!document) return { success: false, error: 'Not found' };
@@ -50,11 +52,11 @@ class DocumentService {
     // ========== GET USER DOCUMENTS ==========
     async getUserDocuments(userId) {
         try {
-            const documents = await Document.findAll({
+            const documents = await prisma.document.findMany({
                 where: { userId },
-                order: [
-                    ['createdAt', 'DESC']
-                ],
+                orderBy: {
+                    createdAt: 'desc'
+                }
             });
 
             return { success: true, data: documents };
@@ -66,14 +68,20 @@ class DocumentService {
     // ========== VERIFY DOCUMENT ==========
     async verifyDocument(documentId) {
         try {
-            const document = await Document.findByPk(documentId);
+            const document = await prisma.document.findUnique({
+                where: { documentId }
+            });
             if (!document) return { success: false, error: 'Not found' };
 
-            document.isVerified = true;
-            document.verifiedAt = new Date();
-            await document.save();
+            const updated = await prisma.document.update({
+                where: { documentId },
+                data: {
+                    isVerified: true,
+                    verifiedAt: new Date()
+                }
+            });
 
-            return { success: true, data: document };
+            return { success: true, data: updated };
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -82,10 +90,14 @@ class DocumentService {
     // ========== DELETE DOCUMENT ==========
     async deleteDocument(documentId) {
         try {
-            const document = await Document.findByPk(documentId);
+            const document = await prisma.document.findUnique({
+                where: { documentId }
+            });
             if (!document) return { success: false, error: 'Not found' };
 
-            await document.destroy();
+            await prisma.document.delete({
+                where: { documentId }
+            });
             return { success: true, message: 'Document deleted' };
         } catch (error) {
             return { success: false, error: error.message };
