@@ -4,7 +4,7 @@ import prisma from '../config/prisma.js';
 import validationService from './ValidationService.js';
 import errorHandlingService from './ErrorHandlingService.js';
 import auditLogService from './AuditLogService.js';
-import { CacheService } from './CacheService.js';
+import cacheService from './CacheService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class SearchService {
@@ -12,7 +12,7 @@ export class SearchService {
         this.validationService = validationService;
         this.errorHandlingService = errorHandlingService;
         this.auditLogService = auditLogService;
-        this.cacheService = new CacheService();
+        this.cacheService = cacheService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
