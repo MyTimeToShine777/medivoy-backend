@@ -1,10 +1,10 @@
 'use strict';
 
-import { WebsiteContentService } from '../services/WebsiteContentService.js';
+import websiteContentService from '../services/WebsiteContentService.js';
 
 export class WebsiteContentController {
     constructor() {
-        this.websiteContentService = new WebsiteContentService();
+        this.websiteContentService = websiteContentService;
     }
 
     async createContent(req, res) {

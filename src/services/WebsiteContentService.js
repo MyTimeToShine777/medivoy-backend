@@ -240,8 +240,7 @@ class WebsiteContentService {
             const results = await prisma.websiteContent.findMany({
                 where: {
                     isPublished: true,
-                    OR: [
-                        {
+                    OR: [{
                             title: {
                                 contains: searchTerm,
                                 mode: 'insensitive'
@@ -282,4 +281,5 @@ class WebsiteContentService {
     }
 }
 
+export { WebsiteContentService };
 export default new WebsiteContentService();

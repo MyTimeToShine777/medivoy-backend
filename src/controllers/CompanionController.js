@@ -1,10 +1,10 @@
 'use strict';
 
-import CompanionService from '../services/CompanionService.js';
+import companionService from '../services/CompanionService.js';
 
 export class CompanionController {
     constructor() {
-        this.companionService = new CompanionService();
+        this.companionService = companionService;
     }
 
     /**

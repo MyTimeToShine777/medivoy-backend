@@ -15,17 +15,22 @@ class NotificationService {
             },
         });
 
-        // SMS configuration
-        this.twilioClient = twilio(
-            process.env.TWILIO_ACCOUNT_SID,
-            process.env.TWILIO_AUTH_TOKEN
-        );
+        // SMS configuration (only initialize if credentials are provided)
+        const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+        const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+
+        if (twilioSid && twilioToken && twilioSid.startsWith('AC')) {
+            this.twilioClient = twilio(twilioSid, twilioToken);
+        } else {
+            this.twilioClient = null;
+            console.warn('Twilio not configured - SMS notifications will be disabled');
+        }
     }
 
     // ========== CREATE NOTIFICATION ==========
     async createNotification(notificationData) {
         try {
-            const notification = await prisma.notification.create({
+            const notification = await prisma.notifications.create({
                 data: {
                     ...notificationData,
                     status: 'pending',
@@ -350,6 +355,54 @@ class NotificationService {
         };
 
         return templates[template] || '<p>Notification</p>';
+    }
+
+    async getNotifications(userId, filters = {}) {
+        try {
+            const where = { userId: userId };
+
+            if (filters.isRead !== undefined) {
+                where.isRead = filters.isRead;
+            }
+
+            const notifications = await prisma.notifications.findMany({
+                where: where,
+                orderBy: { createdAt: 'desc' },
+                take: filters.limit || 50,
+                skip: filters.offset || 0
+            });
+
+            const total = await prisma.notifications.count({ where: where });
+
+            return {
+                success: true,
+                notifications: notifications,
+                total: total,
+                unreadCount: await prisma.notifications.count({
+                    where: { userId: userId, isRead: false }
+                })
+            };
+        } catch (error) {
+            console.error('Error getting notifications:', error);
+            throw error;
+        }
+    }
+
+    async markAsRead(notificationId, userId) {
+        try {
+            const notification = await prisma.notifications.update({
+                where: {
+                    notificationId: notificationId,
+                    userId: userId
+                },
+                data: { isRead: true, readAt: new Date() }
+            });
+
+            return { success: true, notification: notification };
+        } catch (error) {
+            console.error('Error marking notification as read:', error);
+            throw error;
+        }
     }
 }
 

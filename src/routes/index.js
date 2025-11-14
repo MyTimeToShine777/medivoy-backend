@@ -2,7 +2,7 @@
 
 import { Router } from 'express';
 import { authenticateToken } from '../middleware/auth.middleware.js';
-import { authorizeRole } from '../middleware/authorization.middleware.js';
+import { authorizationMiddleware as authorizeRole } from '../middleware/authorization.middleware.js';
 
 // Import all routes
 import authRoutes from './authRoutes.js';
@@ -27,11 +27,11 @@ router.use('/api/public', publicRoutes);
 router.use('/api/auth', authRoutes);
 
 // Role-Based Protected Routes
-router.use('/api/super-admin', authenticateToken, authorizeRole('SUPER_ADMIN'), superAdminRoutes);
-router.use('/api/admin', authenticateToken, authorizeRole('ADMIN'), adminRoutes);
-router.use('/api/doctor', authenticateToken, authorizeRole('DOCTOR'), doctorRoutes);
-router.use('/api/patient', authenticateToken, authorizeRole('PATIENT'), patientRoutes);
-router.use('/api/staff', authenticateToken, authorizeRole('STAFF'), staffRoutes);
+router.use('/api/super-admin', authenticateToken, authorizeRole('super_admin'), superAdminRoutes);
+router.use('/api/admin', authenticateToken, authorizeRole('admin'), adminRoutes);
+router.use('/api/doctor', authenticateToken, authorizeRole('doctor'), doctorRoutes);
+router.use('/api/patient', authenticateToken, authorizeRole('patient'), patientRoutes);
+router.use('/api/staff', authenticateToken, authorizeRole('staff'), staffRoutes);
 
 // 404 Handler
 router.use((req, res) => {

@@ -1,10 +1,10 @@
 'use strict';
 
-import { TravelArrangementService } from '../services/TravelArrangementService.js';
+import travelArrangementService from '../services/TravelArrangementService.js';
 
 export class TravelController {
     constructor() {
-        this.travelService = new TravelArrangementService();
+        this.travelService = travelArrangementService;
     }
 
     async bookFlight(req, res) {

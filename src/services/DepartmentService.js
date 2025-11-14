@@ -67,8 +67,9 @@ class DepartmentService {
             return { success: true, data: updated };
         } catch (error) {
             return { success: false, error: error.message };
-        }
+        };
     }
 }
 
+export { DepartmentService };
 export default new DepartmentService();

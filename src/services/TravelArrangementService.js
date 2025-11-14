@@ -1,18 +1,18 @@
 'use strict';
 
 import prisma from '../config/prisma.js';
-import { ValidationService } from './ValidationService.js';
-import { NotificationService } from './NotificationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import validationService from './ValidationService.js';
+import notificationService from './NotificationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class TravelArrangementService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.notificationService = new NotificationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.notificationService = notificationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -358,7 +358,7 @@ export class TravelArrangementService {
         try {
             if (!bookingId || !userId) throw new AppError('Required params missing', 400);
 
-            const booking = await prisma.booking.findUnique({ where: { bookingId } });
+            const booking = await prisma.bookings.findUnique({ where: { bookingId } });
             if (!booking) throw new AppError('Booking not found', 404);
 
             if (booking.userId !== userId && userId !== 'ADMIN') {
@@ -451,4 +451,4 @@ export class TravelArrangementService {
     }
 }
 
-export default TravelArrangementService;
+export default new TravelArrangementService();

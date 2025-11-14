@@ -74,7 +74,7 @@ export class FlightService {
                 where: { flightId },
                 data: { availableSeats: flight.availableSeats - seatCount }
             });
-            const booking = await prisma.booking.create({
+            const booking = await prisma.bookings.create({
                 data: {
                     userId,
                     flightId,
@@ -105,4 +105,4 @@ export class FlightService {
 }
 
 export const flightService = new FlightService();
-export default flightService;
+export default new FlightService();

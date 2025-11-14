@@ -1,10 +1,10 @@
 'use strict';
 
-import TransactionService from '../services/TransactionService.js';
+import transactionService from '../services/TransactionService.js';
 
 export class TransactionController {
     constructor() {
-        this.transactionService = new TransactionService();
+        this.transactionService = transactionService;
     }
 
     /**

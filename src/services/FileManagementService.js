@@ -1,17 +1,17 @@
 'use strict';
 
 import prisma from '../config/prisma.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { StorageService } from './StorageService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class FileManagementService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
         this.storageService = new StorageService();
     }
 
@@ -36,7 +36,7 @@ export class FileManagementService {
                 mimeType: fileData.mimeType
             });
 
-            const file = await prisma.$transaction(async (tx) => {
+            const file = await prisma.$transaction(async(tx) => {
                 const newFile = await tx.file.create({
                     data: {
                         fileId: this._generateFileId(),
@@ -155,7 +155,7 @@ export class FileManagementService {
                 return { success: false, error: 'Required parameters missing' };
             }
 
-            await prisma.$transaction(async (tx) => {
+            await prisma.$transaction(async(tx) => {
                 const file = await tx.file.findFirst({
                     where: { fileId, userId }
                 });
@@ -188,7 +188,7 @@ export class FileManagementService {
                 return { success: false, error: 'Required parameters missing' };
             }
 
-            const file = await prisma.$transaction(async (tx) => {
+            const file = await prisma.$transaction(async(tx) => {
                 const existingFile = await tx.file.findFirst({
                     where: { fileId, userId }
                 });

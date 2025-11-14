@@ -360,4 +360,4 @@ export class AuditLogService {
 }
 
 export const auditLogService = new AuditLogService();
-export default auditLogService;
+export default new AuditLogService();

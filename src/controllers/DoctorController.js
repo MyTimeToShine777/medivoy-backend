@@ -1,10 +1,10 @@
 'use strict';
 
-import { DoctorService } from '../services/DoctorService.js';
+import doctorService from '../services/DoctorService.js';
 
 export class DoctorController {
     constructor() {
-        this.doctorService = new DoctorService();
+        this.doctorService = doctorService;
     }
 
     async createDoctor(req, res) {
@@ -56,7 +56,7 @@ export class DoctorController {
                 offset: parseInt(req.query.offset) || 0
             };
 
-            const result = await this.doctorService.listDoctors(filters);
+            const result = await this.doctorService.searchDoctors(filters);
 
             if (!result.success) {
                 return res.status(400).json(result);

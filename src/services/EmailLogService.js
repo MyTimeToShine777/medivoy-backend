@@ -151,7 +151,7 @@ export class EmailLogService {
             const emailLog = await prisma.emailLog.findUnique({
                 where: { emailLogId },
                 include: {
-                    user: {
+                    users: {
                         select: { userId: true, email: true, firstName: true, lastName: true }
                     }
                 }

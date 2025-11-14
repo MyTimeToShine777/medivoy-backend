@@ -7,7 +7,7 @@ class InvoiceService {
     // ========== CREATE INVOICE ==========
     async createInvoice(invoiceData) {
         try {
-            const invoice = await prisma.invoice.create({
+            const invoice = await prisma.invoices.create({
                 data: {
                     invoiceNumber: await this.generateInvoiceNumber(),
                     status: 'draft',
@@ -24,11 +24,11 @@ class InvoiceService {
     // ========== GET INVOICE ==========
     async getInvoiceById(invoiceId) {
         try {
-            const invoice = await prisma.invoice.findUnique({
+            const invoice = await prisma.invoices.findUnique({
                 where: { invoiceId },
                 include: {
                     booking: true,
-                    user: true,
+                    users: true,
                 },
             });
 
@@ -42,7 +42,7 @@ class InvoiceService {
     // ========== GET USER INVOICES ==========
     async getUserInvoices(userId) {
         try {
-            const invoices = await prisma.invoice.findMany({
+            const invoices = await prisma.invoices.findMany({
                 where: { userId },
                 orderBy: {
                     createdAt: 'desc'
@@ -58,12 +58,12 @@ class InvoiceService {
     // ========== FINALIZE INVOICE ==========
     async finalizeInvoice(invoiceId) {
         try {
-            const invoice = await prisma.invoice.findUnique({ where: { invoiceId } });
+            const invoice = await prisma.invoices.findUnique({ where: { invoiceId } });
             if (!invoice) return { success: false, error: 'Not found' };
 
             invoice.status = 'finalized';
             invoice.finalizedAt = new Date();
-            await prisma.invoice.update({ where: { invoiceId }, data: { status: invoice.status, finalizedAt: invoice.finalizedAt, paidAt: invoice.paidAt, paymentMethod: invoice.paymentMethod } });
+            await prisma.invoices.update({ where: { invoiceId }, data: { status: invoice.status, finalizedAt: invoice.finalizedAt, paidAt: invoice.paidAt, paymentMethod: invoice.paymentMethod } });
 
             return { success: true, data: invoice };
         } catch (error) {
@@ -74,7 +74,7 @@ class InvoiceService {
     // ========== MARK AS PAID ==========
     async markInvoiceAsPaid(invoiceId, paymentDetails) {
         try {
-            const invoice = await prisma.invoice.findUnique({ where: { invoiceId } });
+            const invoice = await prisma.invoices.findUnique({ where: { invoiceId } });
             if (!invoice) return { success: false, error: 'Not found' };
 
             invoice.status = 'paid';
@@ -82,7 +82,7 @@ class InvoiceService {
             invoice.paymentMethod = paymentDetails.method;
             invoice.transactionId = paymentDetails.transactionId;
 
-            await prisma.invoice.update({ where: { invoiceId }, data: { status: invoice.status, finalizedAt: invoice.finalizedAt, paidAt: invoice.paidAt, paymentMethod: invoice.paymentMethod } });
+            await prisma.invoices.update({ where: { invoiceId }, data: { status: invoice.status, finalizedAt: invoice.finalizedAt, paidAt: invoice.paidAt, paymentMethod: invoice.paymentMethod } });
 
             return { success: true, data: invoice };
         } catch (error) {
@@ -93,11 +93,11 @@ class InvoiceService {
     // ========== GENERATE PDF ==========
     async generateInvoicePDF(invoiceId) {
         try {
-            const invoice = await prisma.invoice.findUnique({
+            const invoice = await prisma.invoices.findUnique({
                 where: { invoiceId },
                 include: {
                     booking: true,
-                    user: true,
+                    users: true,
                 },
             });
 
@@ -128,4 +128,5 @@ class InvoiceService {
     }
 }
 
+export { InvoiceService };
 export default new InvoiceService();

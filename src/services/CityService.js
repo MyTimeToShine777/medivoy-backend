@@ -52,4 +52,5 @@ class CityService {
     }
 }
 
+export { CityService };
 export default new CityService();

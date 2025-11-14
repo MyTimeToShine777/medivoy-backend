@@ -76,4 +76,5 @@ class MedicalRecordService {
     }
 }
 
+export { MedicalRecordService };
 export default new MedicalRecordService();

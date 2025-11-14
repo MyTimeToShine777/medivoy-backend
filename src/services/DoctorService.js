@@ -6,7 +6,7 @@ class DoctorService {
     // ========== CREATE DOCTOR ==========
     async createDoctor(doctorData) {
         try {
-            const doctor = await prisma.doctor.create({
+            const doctor = await prisma.doctors.create({
                 data: {
                     doctorNumber: await this.generateDoctorNumber(),
                     ...doctorData
@@ -29,7 +29,7 @@ class DoctorService {
     // ========== GET DOCTOR ==========
     async getDoctorById(doctorId) {
         try {
-            const doctor = await prisma.doctor.findUnique({
+            const doctor = await prisma.doctors.findUnique({
                 where: { doctorId },
                 include: {
                     schedules: true,
@@ -58,7 +58,7 @@ class DoctorService {
 
     async getDoctorByEmail(email) {
         try {
-            const doctor = await prisma.doctor.findFirst({
+            const doctor = await prisma.doctors.findFirst({
                 where: { email },
                 include: [
                     { model: Hospital, as: 'hospitals' },
@@ -87,34 +87,38 @@ class DoctorService {
     // ========== SEARCH DOCTORS ==========
     async searchDoctors(filters = {}) {
         try {
-            const where = { isActive: true };
+            const where = { status: 'active' };
 
-            if (filters.specialization) {
-                where.specialization = filters.specialization;
+            if (filters.specializationId) {
+                where.specializationId = filters.specializationId;
             }
             if (filters.hospitalId) {
                 where.hospitalId = filters.hospitalId;
             }
             if (filters.minRating) {
-                where.averageRating = {
+                where.rating = {
                     gte: filters.minRating
                 };
             }
             if (filters.search) {
                 where.OR = [{
-                        firstName: {
-                            contains: filters.search,
-                            mode: "insensitive"
+                        users: {
+                            firstName: {
+                                contains: filters.search,
+                                mode: "insensitive"
+                            }
                         }
                     },
                     {
-                        lastName: {
-                            contains: filters.search,
-                            mode: "insensitive"
+                        users: {
+                            lastName: {
+                                contains: filters.search,
+                                mode: "insensitive"
+                            }
                         }
                     },
                     {
-                        specialization: {
+                        primarySpecialization: {
                             contains: filters.search,
                             mode: "insensitive"
                         }
@@ -122,19 +126,28 @@ class DoctorService {
                 ];
             }
 
-            const doctors = await prisma.doctor.findMany({
+            const doctors = await prisma.doctors.findMany({
                 where,
-                include: [
-                    { model: Hospital, as: 'hospital' },
-                ],
-                order: [
-                    ['averageRating', 'DESC']
-                ],
-                limit: filters.limit || 20,
-                offset: filters.offset || 0,
+                include: {
+                    users: {
+                        select: {
+                            firstName: true,
+                            lastName: true,
+                            email: true,
+                            phone: true,
+                            profilePicture: true,
+                        }
+                    },
+                    specializations: true,
+                },
+                orderBy: {
+                    rating: 'desc'
+                },
+                take: filters.limit || 20,
+                skip: filters.offset || 0,
             });
 
-            const total = await Doctor.count({ where });
+            const total = await prisma.doctors.count({ where });
 
             return {
                 success: true,
@@ -156,7 +169,7 @@ class DoctorService {
                 where.hospitalId = hospitalId;
             }
 
-            const doctors = await prisma.doctor.findMany({
+            const doctors = await prisma.doctors.findMany({
                 where,
                 order: [
                     ['averageRating', 'DESC']
@@ -446,4 +459,5 @@ class DoctorService {
     }
 }
 
+export { DoctorService };
 export default new DoctorService();

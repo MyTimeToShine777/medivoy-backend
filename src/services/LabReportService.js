@@ -21,7 +21,7 @@ export class LabReportService {
             }
 
             // Validate patient exists
-            const patient = await prisma.patient.findUnique({
+            const patient = await prisma.patients.findUnique({
                 where: { patientId }
             });
             if (!patient) {

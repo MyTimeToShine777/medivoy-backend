@@ -1,10 +1,10 @@
 'use strict';
 
-import { SpecializationService } from '../services/SpecializationService.js';
+import specializationService from '../services/SpecializationService.js';
 
 export class SpecializationController {
     constructor() {
-        this.specializationService = new SpecializationService();
+        this.specializationService = specializationService;
     }
 
     async createSpecialization(req, res) {

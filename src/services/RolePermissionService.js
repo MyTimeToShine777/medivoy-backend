@@ -136,4 +136,5 @@ class RolePermissionService {
     }
 }
 
+export { RolePermissionService };
 export default new RolePermissionService();

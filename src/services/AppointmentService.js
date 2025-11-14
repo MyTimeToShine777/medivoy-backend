@@ -1,19 +1,19 @@
 'use strict';
 
 import prisma from '../config/prisma.js';
-import { ValidationService } from './ValidationService.js';
-import { NotificationService } from './NotificationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import validationService from './ValidationService.js';
+import notificationService from './NotificationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 // CONSOLIDATED: ConsultationService + AppointmentService
 export class AppointmentService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.notificationService = new NotificationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.notificationService = notificationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -118,10 +118,10 @@ export class AppointmentService {
         try {
             if (!appointmentId || !userId) throw new AppError('Required params missing', 400);
 
-            const appointment = await prisma.appointment.findUnique({
+            const appointment = await prisma.appointments.findUnique({
                 where: { appointmentId: appointmentId },
                 include: {
-                    user: {
+                    users: {
                         select: { firstName: true, lastName: true, email: true, phone: true }
                     },
                     doctor: {
@@ -168,13 +168,13 @@ export class AppointmentService {
                 };
             }
 
-            const appointments = await prisma.appointment.findMany({
+            const appointments = await prisma.appointments.findMany({
                 where: where,
                 include: {
-                    doctor: {
+                    doctors: {
                         select: { firstName: true, lastName: true, specialization: true }
                     },
-                    hospital: {
+                    hospitals: {
                         select: { hospitalName: true }
                     }
                 },
@@ -185,7 +185,7 @@ export class AppointmentService {
                 skip: offset
             });
 
-            const total = await prisma.appointment.count({ where: where });
+            const total = await prisma.appointments.count({ where: where });
 
             return {
                 success: true,
@@ -540,4 +540,4 @@ export class AppointmentService {
     }
 }
 
-export default AppointmentService;
+export default new AppointmentService();

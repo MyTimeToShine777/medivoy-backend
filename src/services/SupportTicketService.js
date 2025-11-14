@@ -110,4 +110,5 @@ class SupportTicketService {
     }
 }
 
+export { SupportTicketService };
 export default new SupportTicketService();

@@ -1,11 +1,11 @@
 'use strict';
 
-import { DocumentService } from '../services/DocumentService.js';
+import documentService from '../services/DocumentService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class DocumentController {
     constructor() {
-        this.documentService = new DocumentService();
+        this.documentService = documentService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════

@@ -35,7 +35,7 @@ class RefundService {
                 include: {
                     payment: true,
                     booking: true,
-                    user: true
+                    users: true
                 }
             });
 
@@ -122,7 +122,7 @@ class RefundService {
     // ========== VALIDATE REFUND ELIGIBILITY ==========
     async validateRefundEligibility(bookingId) {
         try {
-            const booking = await prisma.booking.findUnique({
+            const booking = await prisma.bookings.findUnique({
                 where: { bookingId }
             });
             if (!booking) {
@@ -193,11 +193,11 @@ class RefundService {
                 });
 
                 // Update payment status
-                const payment = await prisma.payment.findUnique({
+                const payment = await prisma.payments.findUnique({
                     where: { paymentId: refund.paymentId }
                 });
                 if (payment) {
-                    await prisma.payment.update({
+                    await prisma.payments.update({
                         where: { paymentId: refund.paymentId },
                         data: {
                             refundedAmount: (payment.refundedAmount || 0) + refund.amount,
@@ -330,7 +330,7 @@ class RefundService {
                     _sum: { amount: true }
                 })
             ]);
-            
+
             const totalRefundAmount = totalRefundAmountResult._sum.amount || 0;
 
             return {
@@ -374,4 +374,5 @@ class RefundService {
     }
 }
 
+export { RefundService };
 export default new RefundService();

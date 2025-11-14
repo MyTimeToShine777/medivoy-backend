@@ -118,4 +118,4 @@ export class DoctorScheduleService {
 }
 
 export const doctorScheduleService = new DoctorScheduleService();
-export default doctorScheduleService;
+export default new DoctorScheduleService();

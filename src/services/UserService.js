@@ -1,19 +1,19 @@
 'use strict';
 
 import prisma from '../config/prisma.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
-import { NotificationService } from './NotificationService.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
+import notificationService from './NotificationService.js';
 import { AppError } from '../utils/errors/AppError.js';
 import bcrypt from 'bcryptjs';
 
 export class UserService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
-        this.notificationService = new NotificationService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
+        this.notificationService = notificationService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -24,17 +24,27 @@ export class UserService {
         try {
             if (!userId) throw new AppError('User ID required', 400);
 
-            const user = await prisma.user.findUnique({
-                where: { id: userId },
+            const user = await prisma.users.findUnique({
+                where: { userId: userId },
                 select: {
-                    id: true,
+                    userId: true,
                     email: true,
+                    firstName: true,
+                    lastName: true,
+                    phone: true,
                     role: true,
                     isEmailVerified: true,
+                    profilePicture: true,
+                    address: true,
+                    city: true,
+                    state: true,
+                    country: true,
+                    postalCode: true,
+                    dateOfBirth: true,
+                    gender: true,
                     createdAt: true,
                     updatedAt: true,
-                    preferences: true,
-                    addresses: true
+                    preferences: true
                 }
             });
 
@@ -51,7 +61,7 @@ export class UserService {
         try {
             if (!userId || !updateData) throw new AppError('Required params missing', 400);
 
-            const user = await prisma.user.findUnique({ where: { id: userId } });
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
 
                 throw new AppError('User not found', 404);
@@ -94,7 +104,7 @@ export class UserService {
                 throw new AppError('All parameters required', 400);
             }
 
-            const user = await prisma.user.findUnique({ where: { id: userId } });
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
 
                 throw new AppError('User not found', 404);
@@ -199,7 +209,7 @@ export class UserService {
         try {
             if (!userId || !addressData) throw new AppError('Required params missing', 400);
 
-            const user = await prisma.user.findUnique({ where: { id: userId } });
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
 
                 throw new AppError('User not found', 404);
@@ -344,7 +354,7 @@ export class UserService {
             if (filters && filters.userType) where.userType = filters.userType;
             if (filters && filters.isActive !== undefined) where.isActive = filters.isActive;
 
-            const users = await prisma.user.findMany({
+            const users = await prisma.users.findMany({
                 where: where,
                 attributes: { exclude: ['password'] },
                 order: [
@@ -354,7 +364,7 @@ export class UserService {
                 offset: offset
             });
 
-            const total = await prisma.user.count({ where: where });
+            const total = await prisma.users.count({ where: where });
 
             return {
                 success: true,
@@ -371,7 +381,7 @@ export class UserService {
         try {
             if (!userId) throw new AppError('User ID required', 400);
 
-            const user = await prisma.user.findUnique({ where: { id: userId } });
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
 
                 throw new AppError('User not found', 404);
@@ -405,7 +415,7 @@ export class UserService {
         try {
             if (!userId) throw new AppError('User ID required', 400);
 
-            const user = await prisma.user.findUnique({ where: { id: userId } });
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
 
                 throw new AppError('User not found', 404);
@@ -462,4 +472,4 @@ export class UserService {
     }
 }
 
-export default UserService;
+export default new UserService();

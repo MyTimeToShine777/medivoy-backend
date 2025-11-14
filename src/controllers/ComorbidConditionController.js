@@ -1,6 +1,6 @@
 'use strict';
 
-import ComorbidConditionService from '../services/ComorbidConditionService.js';
+import comorbidConditionService from '../services/ComorbidConditionService.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // COMORBID CONDITION CONTROLLER - ULTRA-COMPREHENSIVE
@@ -9,7 +9,7 @@ import ComorbidConditionService from '../services/ComorbidConditionService.js';
 
 export class ComorbidConditionController {
     constructor() {
-        this.comorbidConditionService = new ComorbidConditionService();
+        this.comorbidConditionService = comorbidConditionService;
     }
 
     /**

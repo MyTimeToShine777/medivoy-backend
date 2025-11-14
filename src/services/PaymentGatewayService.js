@@ -1,10 +1,10 @@
 'use strict';
 
 import prisma from '../config/prisma.js';
-import { ValidationService } from './ValidationService.js';
-import { NotificationService } from './NotificationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import validationService from './ValidationService.js';
+import notificationService from './NotificationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { AppError } from '../utils/errors/AppError.js';
 import Razorpay from 'razorpay';
 import Stripe from 'stripe';
@@ -12,10 +12,10 @@ import Stripe from 'stripe';
 // CONSOLIDATED: RazorpayService + StripeService + PaymentService
 export class PaymentGatewayService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.notificationService = new NotificationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.notificationService = notificationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
 
         this.razorpay = new Razorpay({
             key_id: process.env.RAZORPAY_KEY_ID,
@@ -36,13 +36,13 @@ export class PaymentGatewayService {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
+            const booking = await prisma.bookings.findUnique({ where: { bookingId: bookingId } });
             if (!booking) {
 
                 throw new AppError('Booking not found', 404);
             }
 
-            const user = await prisma.user.findUnique({ where: { id: userId } });
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
 
                 throw new AppError('User not found', 404);
@@ -68,7 +68,7 @@ export class PaymentGatewayService {
                 gatewayPaymentId = gatewayResponse.id;
             }
 
-            const payment = await prisma.payment.create({
+            const payment = await prisma.payments.create({
                 data: {
                     paymentId: this._generatePaymentId(),
                     bookingId: bookingId,
@@ -121,7 +121,7 @@ export class PaymentGatewayService {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const payment = await prisma.payment.findFirst({
+            const payment = await prisma.payments.findFirst({
                 where: { paymentId: paymentId },
                 transaction: transaction
             });
@@ -150,7 +150,7 @@ export class PaymentGatewayService {
             await payment.save({ transaction: transaction });
 
             // Update booking status
-            const booking = await prisma.booking.findUnique({ where: { id: payment.bookingId } });
+            const booking = await prisma.bookings.findUnique({ where: { bookingId: payment.bookingId } });
             if (booking) {
                 booking.paymentStatus = 'completed';
                 /* TODO: Convert to prisma update */
@@ -191,7 +191,7 @@ export class PaymentGatewayService {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const payment = await prisma.payment.findFirst({
+            const payment = await prisma.payments.findFirst({
                 where: { paymentId: paymentId },
                 transaction: transaction
             });
@@ -260,7 +260,7 @@ export class PaymentGatewayService {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const user = await prisma.user.findUnique({ where: { id: userId } });
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
 
                 throw new AppError('User not found', 404);
@@ -313,7 +313,7 @@ export class PaymentGatewayService {
             const eventData = webhookData.payload.payment.entity;
 
             if (eventType === 'payment.authorized') {
-                const payment = await prisma.payment.findFirst({
+                const payment = await prisma.payments.findFirst({
                     where: { gatewayPaymentId: eventData.id },
                     transaction: transaction
                 });
@@ -325,7 +325,7 @@ export class PaymentGatewayService {
                     await payment.save({ transaction: transaction });
                 }
             } else if (eventType === 'payment.failed') {
-                const payment = await prisma.payment.findFirst({
+                const payment = await prisma.payments.findFirst({
                     where: { gatewayPaymentId: eventData.id },
                     transaction: transaction
                 });
@@ -359,7 +359,7 @@ export class PaymentGatewayService {
             const eventData = webhookData.data.object;
 
             if (eventType === 'payment_intent.succeeded') {
-                const payment = await prisma.payment.findFirst({
+                const payment = await prisma.payments.findFirst({
                     where: { gatewayPaymentId: eventData.id },
                     transaction: transaction
                 });
@@ -371,7 +371,7 @@ export class PaymentGatewayService {
                     await payment.save({ transaction: transaction });
                 }
             } else if (eventType === 'payment_intent.payment_failed') {
-                const payment = await prisma.payment.findFirst({
+                const payment = await prisma.payments.findFirst({
                     where: { gatewayPaymentId: eventData.id },
                     transaction: transaction
                 });
@@ -520,4 +520,4 @@ export class PaymentGatewayService {
     }
 }
 
-export default PaymentGatewayService;
+export default new PaymentGatewayService();

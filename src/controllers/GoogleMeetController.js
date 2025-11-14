@@ -1,12 +1,12 @@
 'use strict';
 
-import { GoogleMeetService } from '../services/GoogleMeetService.js';
+import googleMeetService from '../services/GoogleMeetService.js';
 import { ResponseFormatter } from '../utils/helpers/responseFormatter.js';
 import { logger } from '../utils/logger.js';
 
 export class GoogleMeetController {
     constructor() {
-        this.googleMeetService = new GoogleMeetService();
+        this.googleMeetService = googleMeetService;
     }
 
     async createMeeting(req, res) {
@@ -26,8 +26,7 @@ export class GoogleMeetController {
 
             logger.info(`Google Meet created for user ${userId}: ${result.meetLink}`);
 
-            return res.status(201).json(ResponseFormatter.success(
-                { meetLink: result.meetLink, event: result.event },
+            return res.status(201).json(ResponseFormatter.success({ meetLink: result.meetLink, event: result.event },
                 'Google Meet created successfully'
             ));
         } catch (error) {
@@ -123,8 +122,7 @@ export class GoogleMeetController {
                 return res.status(400).json(ResponseFormatter.error(result.error, 400, 'MEET_LIST_FAILED'));
             }
 
-            return res.status(200).json(ResponseFormatter.success(
-                { meetings: result.events, total: result.events.length },
+            return res.status(200).json(ResponseFormatter.success({ meetings: result.events, total: result.events.length },
                 'Meetings retrieved successfully'
             ));
         } catch (error) {
@@ -148,8 +146,7 @@ export class GoogleMeetController {
                 return res.status(400).json(ResponseFormatter.error(result.error, 400, 'CONSULTATION_MEET_FAILED'));
             }
 
-            return res.status(201).json(ResponseFormatter.success(
-                { meetLink: result.meetLink, consultation: result.consultation },
+            return res.status(201).json(ResponseFormatter.success({ meetLink: result.meetLink, consultation: result.consultation },
                 'Consultation meeting created successfully'
             ));
         } catch (error) {
@@ -177,8 +174,7 @@ export class GoogleMeetController {
                 return res.status(400).json(ResponseFormatter.error(result.error, 400, 'INVITATION_FAILED'));
             }
 
-            return res.status(200).json(ResponseFormatter.success(
-                { sent: result.sent },
+            return res.status(200).json(ResponseFormatter.success({ sent: result.sent },
                 'Invitations sent successfully'
             ));
         } catch (error) {

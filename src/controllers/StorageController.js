@@ -1,10 +1,10 @@
 'use strict';
 
-import { StorageService } from '../services/StorageService.js';
+import storageService from '../services/StorageService.js';
 
 export class StorageController {
     constructor() {
-        this.storageService = new StorageService();
+        this.storageService = storageService;
     }
 
     async uploadFile(req, res) {

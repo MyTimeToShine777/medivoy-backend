@@ -1,10 +1,10 @@
 'use strict';
 
-import { SearchService } from '../services/SearchService.js';
+import searchService from '../services/SearchService.js';
 
 export class SearchController {
     constructor() {
-        this.searchService = new SearchService();
+        this.searchService = searchService;
     }
 
     async globalSearch(req, res) {

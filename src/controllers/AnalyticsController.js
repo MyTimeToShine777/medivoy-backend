@@ -1,12 +1,12 @@
 'use strict';
 
-import { AnalyticsService } from '../services/AnalyticsService.js';
-import { StatisticsService } from '../services/StatisticsService.js';
+import analyticsService from '../services/AnalyticsService.js';
+import statisticsService from '../services/StatisticsService.js';
 
 export class AnalyticsController {
     constructor() {
-        this.analyticsService = new AnalyticsService();
-        this.statisticsService = new StatisticsService();
+        this.analyticsService = analyticsService;
+        this.statisticsService = statisticsService;
     }
 
     async getDashboardMetrics(req, res) {

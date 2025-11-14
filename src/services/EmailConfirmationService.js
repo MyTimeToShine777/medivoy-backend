@@ -38,7 +38,7 @@ export class EmailConfirmationService {
 
     async resendVerificationEmail(email) {
         try {
-            const user = await prisma.user.findFirst({
+            const user = await prisma.users.findFirst({
                 where: { email }
             });
 
@@ -60,7 +60,7 @@ export class EmailConfirmationService {
             const verificationToken = this.generateVerificationToken();
             const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-            await prisma.user.update({
+            await prisma.users.update({
                 where: { userId: user.userId },
                 data: {
                     verificationToken,
@@ -89,7 +89,7 @@ export class EmailConfirmationService {
 
     async verifyEmailToken(token) {
         try {
-            const user = await prisma.user.findFirst({
+            const user = await prisma.users.findFirst({
                 where: {
                     verificationToken: token,
                     verificationTokenExpiry: {
@@ -102,7 +102,7 @@ export class EmailConfirmationService {
                 return { success: false, error: 'Invalid or expired token' };
             }
 
-            await prisma.user.update({
+            await prisma.users.update({
                 where: { userId: user.userId },
                 data: {
                     emailVerified: true,
@@ -126,7 +126,7 @@ export class EmailConfirmationService {
 
     async checkTokenExpiry(token) {
         try {
-            const user = await prisma.user.findFirst({
+            const user = await prisma.users.findFirst({
                 where: { verificationToken: token }
             });
 
@@ -150,4 +150,4 @@ export class EmailConfirmationService {
 }
 
 export const emailConfirmationService = new EmailConfirmationService();
-export default emailConfirmationService;
+export default new EmailConfirmationService();

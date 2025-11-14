@@ -18,9 +18,9 @@ class MongoDBService {
             return false;
         }
 
-        const maxRetries = Number(options.maxRetries || process.env.MONGO_CONNECT_RETRIES || 3);
-        const initialDelayMs = Number(options.initialDelayMs || process.env.MONGO_RETRY_DELAY_MS || 2000);
-        const serverSelectionTimeoutMS = Number(options.serverSelectionTimeoutMS || process.env.MONGO_CONNECT_TIMEOUT_MS || 10000);
+        const maxRetries = Number(options.maxRetries || process.env.MONGO_CONNECT_RETRIES || 1);
+        const initialDelayMs = Number(options.initialDelayMs || process.env.MONGO_RETRY_DELAY_MS || 1000);
+        const serverSelectionTimeoutMS = Number(options.serverSelectionTimeoutMS || process.env.MONGO_CONNECT_TIMEOUT_MS || 5000);
         const maxPoolSize = Number(options.maxPoolSize || process.env.MONGODB_POOL_SIZE || 10);
         let attempt = 0;
         let lastErr = null;

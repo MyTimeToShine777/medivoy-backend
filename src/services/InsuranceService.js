@@ -32,7 +32,7 @@ class InsuranceService {
             const insurance = await prisma.insurance.findUnique({
                 where: { insuranceId },
                 include: {
-                    user: true
+                    users: true
                 }
             });
 
@@ -310,4 +310,5 @@ class InsuranceService {
     }
 }
 
+export { InsuranceService };
 export default new InsuranceService();

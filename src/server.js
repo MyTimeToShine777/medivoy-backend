@@ -19,9 +19,9 @@ const APP_NAME = process.env.APP_NAME || 'Medivoy Backend';
 const APP_VERSION = process.env.APP_VERSION || '1.0.0';
 
 // Connection retry configuration
-const MAX_RETRIES = parseInt(process.env.DB_MAX_RETRIES) || 3;
-const RETRY_DELAY = parseInt(process.env.DB_RETRY_DELAY) || 5000;
-const CONNECTION_TIMEOUT = parseInt(process.env.DB_CONNECTION_TIMEOUT) || 10000;
+const MAX_RETRIES = parseInt(process.env.DB_MAX_RETRIES) || 1;
+const RETRY_DELAY = parseInt(process.env.DB_RETRY_DELAY) || 2000;
+const CONNECTION_TIMEOUT = parseInt(process.env.DB_CONNECTION_TIMEOUT) || 5000;
 const ALLOW_SERVER_START_WITHOUT_DB = process.env.ALLOW_SERVER_START_WITHOUT_DB === 'true';
 
 const server = http.createServer(app);

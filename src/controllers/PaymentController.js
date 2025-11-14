@@ -1,11 +1,11 @@
 'use strict';
 
-import { PaymentGatewayService } from '../services/PaymentGatewayService.js';
+import paymentGatewayService from '../services/PaymentGatewayService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class PaymentController {
     constructor() {
-        this.paymentService = new PaymentGatewayService();
+        this.paymentService = paymentGatewayService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════

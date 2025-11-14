@@ -1,17 +1,17 @@
 'use strict';
 
 import prisma from '../config/prisma.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { CacheService } from './CacheService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class SearchService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
         this.cacheService = new CacheService();
     }
 
@@ -34,7 +34,7 @@ export class SearchService {
                 return { success: true, data: cached.value, fromCache: true };
             }
 
-            const hospitals = await prisma.hospital.findMany({
+            const hospitals = await prisma.hospitals.findMany({
                 where: {
                     isActive: true,
                     OR: [
@@ -43,34 +43,33 @@ export class SearchService {
                     ]
                 },
                 include: {
-                    city: true,
-                    country: true
+                    cityRel: { select: { cityName: true } },
+                    country: { select: { countryName: true } }
                 },
                 take: limit
             });
 
-            const doctors = await prisma.doctor.findMany({
+            const doctors = await prisma.doctors.findMany({
                 where: {
-                    isActive: true,
+                    status: 'active',
                     OR: [
-                        { firstName: { contains: query, mode: 'insensitive' } },
-                        { lastName: { contains: query, mode: 'insensitive' } },
-                        { specialization: { contains: query, mode: 'insensitive' } }
+                        { users: { firstName: { contains: query, mode: 'insensitive' } } },
+                        { users: { lastName: { contains: query, mode: 'insensitive' } } },
+                        { primarySpecialization: { contains: query, mode: 'insensitive' } }
                     ]
                 },
                 include: {
-                    hospital: true,
-                    Specialization: true
+                    users: { select: { firstName: true, lastName: true } },
+                    specialization: { select: { name: true } }
                 },
                 take: limit
             });
 
-            const treatments = await prisma.treatment.findMany({
+            const treatments = await prisma.treatments.findMany({
                 where: {
                     isActive: true,
                     OR: [
-                        { treatmentName: { contains: query, mode: 'insensitive' } },
-                        { category: { contains: query, mode: 'insensitive' } },
+                        { name: { contains: query, mode: 'insensitive' } },
                         { description: { contains: query, mode: 'insensitive' } }
                     ]
                 },
@@ -130,10 +129,10 @@ export class SearchService {
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const hospitals = await prisma.hospital.findMany({
+            const hospitals = await prisma.hospitals.findMany({
                 where: where,
                 include: {
-                    city: { select: { cityName: true } },
+                    cityRel: { select: { cityName: true } },
                     country: { select: { countryName: true } }
                 },
                 orderBy: { averageRating: 'desc' },
@@ -141,7 +140,7 @@ export class SearchService {
                 skip: offset
             });
 
-            const total = await prisma.hospital.count({ where: where });
+            const total = await prisma.hospitals.count({ where: where });
 
             return {
                 success: true,
@@ -164,38 +163,38 @@ export class SearchService {
             }
 
             const where = {
-                isActive: true,
+                status: 'active',
                 OR: [
-                    { firstName: { contains: query, mode: 'insensitive' } },
-                    { lastName: { contains: query, mode: 'insensitive' } },
-                    { specialization: { contains: query, mode: 'insensitive' } }
+                    { users: { firstName: { contains: query, mode: 'insensitive' } } },
+                    { users: { lastName: { contains: query, mode: 'insensitive' } } },
+                    { primarySpecialization: { contains: query, mode: 'insensitive' } }
                 ]
             };
 
             if (filters.specializationId) where.specializationId = filters.specializationId;
             if (filters.hospitalId) where.hospitalId = filters.hospitalId;
-            if (filters.minRating) where.averageRating = { gte: filters.minRating };
-            if (filters.minExperience) where.experience = { gte: filters.minExperience };
-            if (filters.availability === true) where.isAvailable = true;
+            if (filters.minRating) where.rating = { gte: filters.minRating };
+            if (filters.minExperience) where.experienceYears = { gte: filters.minExperience };
+            if (filters.availability === true) where.isAcceptingAppointments = true;
 
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const doctors = await prisma.doctor.findMany({
+            const doctors = await prisma.doctors.findMany({
                 where: where,
                 include: {
-                    hospital: { select: { hospitalName: true } },
-                    Specialization: { select: { specializationName: true } }
+                    users: { select: { firstName: true, lastName: true, email: true } },
+                    specialization: { select: { name: true } }
                 },
                 orderBy: [
-                    { averageRating: 'desc' },
-                    { experience: 'desc' }
+                    { rating: 'desc' },
+                    { experienceYears: 'desc' }
                 ],
                 take: limit,
                 skip: offset
             });
 
-            const total = await prisma.doctor.count({ where: where });
+            const total = await prisma.doctors.count({ where: where });
 
             return {
                 success: true,
@@ -220,31 +219,30 @@ export class SearchService {
             const where = {
                 isActive: true,
                 OR: [
-                    { treatmentName: { contains: query, mode: 'insensitive' } },
-                    { category: { contains: query, mode: 'insensitive' } },
+                    { name: { contains: query, mode: 'insensitive' } },
                     { description: { contains: query, mode: 'insensitive' } }
                 ]
             };
 
-            if (filters.category) where.category = filters.category;
+            if (filters.categoryId) where.categoryId = filters.categoryId;
             if (filters.minPrice || filters.maxPrice) {
-                where.basePrice = {};
-                if (filters.minPrice) where.basePrice.gte = filters.minPrice;
-                if (filters.maxPrice) where.basePrice.lte = filters.maxPrice;
+                where.cost = {};
+                if (filters.minPrice) where.cost.gte = filters.minPrice;
+                if (filters.maxPrice) where.cost.lte = filters.maxPrice;
             }
-            if (filters.minRating) where.averageRating = { gte: filters.minRating };
+            if (filters.minRating) where.rating = { gte: filters.minRating };
 
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const treatments = await prisma.treatment.findMany({
+            const treatments = await prisma.treatments.findMany({
                 where: where,
-                orderBy: { basePrice: 'asc' },
+                orderBy: { cost: 'asc' },
                 take: limit,
                 skip: offset
             });
 
-            const total = await prisma.treatment.count({ where: where });
+            const total = await prisma.treatments.count({ where: where });
 
             return {
                 success: true,
@@ -355,7 +353,7 @@ export class SearchService {
             const suggestions = {};
 
             if (entityType === 'all' || entityType === 'hospitals') {
-                const hospitals = await prisma.hospital.findMany({
+                const hospitals = await prisma.hospitals.findMany({
                     where: {
                         isActive: true,
                         hospitalName: { contains: query, mode: 'insensitive' }
@@ -367,7 +365,7 @@ export class SearchService {
             }
 
             if (entityType === 'all' || entityType === 'doctors') {
-                const doctors = await prisma.doctor.findMany({
+                const doctors = await prisma.doctors.findMany({
                     where: {
                         isActive: true,
                         OR: [
@@ -382,7 +380,7 @@ export class SearchService {
             }
 
             if (entityType === 'all' || entityType === 'treatments') {
-                const treatments = await prisma.treatment.findMany({
+                const treatments = await prisma.treatments.findMany({
                     where: {
                         isActive: true,
                         treatmentName: { contains: query, mode: 'insensitive' }

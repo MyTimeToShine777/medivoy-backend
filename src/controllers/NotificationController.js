@@ -1,10 +1,10 @@
 'use strict';
 
-import { NotificationService } from '../services/NotificationService.js';
+import notificationService from '../services/NotificationService.js';
 
 export class NotificationController {
     constructor() {
-        this.notificationService = new NotificationService();
+        this.notificationService = notificationService;
     }
 
     async sendEmailNotification(req, res) {

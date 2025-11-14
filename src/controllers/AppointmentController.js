@@ -1,6 +1,6 @@
 'use strict';
 
-import AppointmentService from '../services/AppointmentService.js';
+import appointmentService from '../services/AppointmentService.js';
 import { ResponseFormatter } from '../utils/helpers/responseFormatter.js';
 import { AppError } from '../utils/errors/AppError.js';
 
@@ -12,7 +12,7 @@ import { AppError } from '../utils/errors/AppError.js';
 
 export class AppointmentController {
     constructor() {
-        this.appointmentService = new AppointmentService();
+        this.appointmentService = appointmentService;
     }
 
     // ─────────────────────────────────────────────────────────────────────────────

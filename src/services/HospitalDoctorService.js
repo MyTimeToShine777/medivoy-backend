@@ -73,4 +73,4 @@ export class HospitalDoctorService {
 }
 
 export const hospitalDoctorService = new HospitalDoctorService();
-export default hospitalDoctorService;
+export default new HospitalDoctorService();

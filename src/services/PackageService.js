@@ -55,8 +55,7 @@ class PackageService {
                 };
             }
             if (filters.search) {
-                where.OR = [
-                    {
+                where.OR = [{
                         name: {
                             contains: filters.search,
                             mode: 'insensitive'
@@ -167,4 +166,5 @@ class PackageService {
     }
 }
 
+export { PackageService };
 export default new PackageService();

@@ -89,4 +89,5 @@ class FeatureAddOnService {
     }
 }
 
+export { FeatureAddOnService };
 export default new FeatureAddOnService();

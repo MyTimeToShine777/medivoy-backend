@@ -1,10 +1,10 @@
 'use strict';
 
-import { LaboratoryService } from '../services/LaboratoryService.js';
+import laboratoryService from '../services/LaboratoryService.js';
 
 export class LaboratoryController {
     constructor() {
-        this.laboratoryService = new LaboratoryService();
+        this.laboratoryService = laboratoryService;
     }
 
     async createLabTest(req, res) {

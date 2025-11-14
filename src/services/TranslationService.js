@@ -209,4 +209,5 @@ class TranslationService {
     }
 }
 
+export { TranslationService };
 export default new TranslationService();

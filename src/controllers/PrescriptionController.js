@@ -1,10 +1,10 @@
 'use strict';
 
-import { PrescriptionService } from '../services/PrescriptionService.js';
+import prescriptionService from '../services/PrescriptionService.js';
 
 export class PrescriptionController {
     constructor() {
-        this.prescriptionService = new PrescriptionService();
+        this.prescriptionService = prescriptionService;
     }
 
     async createPrescription(req, res) {

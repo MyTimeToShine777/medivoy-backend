@@ -1,10 +1,10 @@
 'use strict';
 
-import { FilterService } from '../services/FilterService.js';
+import filterService from '../services/FilterService.js';
 
 export class FilterController {
     constructor() {
-        this.filterService = new FilterService();
+        this.filterService = filterService;
     }
 
     async filterHospitals(req, res) {

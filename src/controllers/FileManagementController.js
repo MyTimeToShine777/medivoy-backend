@@ -1,10 +1,10 @@
 'use strict';
 
-import { FileManagementService } from '../services/FileManagementService.js';
+import fileManagementService from '../services/FileManagementService.js';
 
 export class FileManagementController {
     constructor() {
-        this.fileManagementService = new FileManagementService();
+        this.fileManagementService = fileManagementService;
     }
 
     async uploadFile(req, res) {

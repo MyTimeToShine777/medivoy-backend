@@ -48,4 +48,5 @@ class CountryService {
     }
 }
 
+export { CountryService };
 export default new CountryService();

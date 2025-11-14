@@ -106,4 +106,4 @@ export class ChatConversationService {
 }
 
 export const chatConversationService = new ChatConversationService();
-export default chatConversationService;
+export default new ChatConversationService();

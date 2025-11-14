@@ -151,7 +151,7 @@ export class SMSLogService {
             const smsLog = await prisma.sMSLog.findUnique({
                 where: { smsLogId },
                 include: {
-                    user: {
+                    users: {
                         select: { userId: true, email: true, firstName: true, lastName: true }
                     }
                 }

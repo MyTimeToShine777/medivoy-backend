@@ -29,15 +29,17 @@ class CacheService {
                 url: process.env.REDIS_URL,
                 socket: {
                     reconnectStrategy: (retries) => {
-                        if (retries > 10) {
+                        if (retries > 3) {
                             console.error(`❌ Redis max reconnection attempts exceeded`);
-                            return new Error('Redis max reconnection attempts exceeded');
+                            return false; // Stop reconnecting
                         }
-                        return Math.min(retries * 50, 500);
+                        return Math.min(retries * 1000, 3000);
                     },
-                    connectTimeout: 10000,
-                    keepAlive: 30000
-                }
+                    connectTimeout: 15000,
+                    keepAlive: 5000,
+                    lazyConnect: false
+                },
+                pingInterval: 10000
             });
 
             // Error handler

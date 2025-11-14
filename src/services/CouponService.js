@@ -236,4 +236,4 @@ export class CouponService {
 }
 
 export const couponService = new CouponService();
-export default couponService;
+export default new CouponService();

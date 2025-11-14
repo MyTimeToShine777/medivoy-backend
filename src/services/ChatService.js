@@ -1,18 +1,18 @@
 'use strict';
 
 import prisma from '../config/prisma.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
-import { NotificationService } from './NotificationService.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
+import notificationService from './NotificationService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class ChatService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
-        this.notificationService = new NotificationService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
+        this.notificationService = notificationService;
     }
 
     async createChatRoom(userId1, userId2, chatData = {}) {

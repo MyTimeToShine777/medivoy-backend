@@ -25,7 +25,7 @@ export class CompanionService {
             }
 
             // Validate booking exists
-            const booking = await prisma.booking.findUnique({
+            const booking = await prisma.bookings.findUnique({
                 where: { bookingId }
             });
             if (!booking) {
@@ -33,7 +33,7 @@ export class CompanionService {
             }
 
             // Validate patient exists
-            const patient = await prisma.patient.findUnique({
+            const patient = await prisma.patients.findUnique({
                 where: { patientId }
             });
             if (!patient) {

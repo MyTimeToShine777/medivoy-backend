@@ -6,7 +6,7 @@ class TreatmentService {
     // ========== CREATE TREATMENT ==========
     async createTreatment(treatmentData) {
         try {
-            const treatment = await prisma.treatment.create({
+            const treatment = await prisma.treatments.create({
                 data: {
                     ...treatmentData
                 }
@@ -28,7 +28,7 @@ class TreatmentService {
     // ========== GET TREATMENT ==========
     async getTreatmentById(treatmentId) {
         try {
-            const treatment = await prisma.treatment.findUnique({
+            const treatment = await prisma.treatments.findUnique({
                 where: { treatmentId },
                 include: {
                     category: true,
@@ -59,7 +59,7 @@ class TreatmentService {
 
     async getTreatmentBySlug(slug) {
         try {
-            const treatment = await prisma.treatment.findFirst({
+            const treatment = await prisma.treatments.findFirst({
                 where: { slug },
                 include: [
                     { model: TreatmentCategory, as: 'category' },
@@ -103,7 +103,7 @@ class TreatmentService {
                 };
             }
             if (filters.minRating) {
-                where.averageRating = {
+                where.rating = {
                     gte: filters.minRating
                 };
             }
@@ -123,19 +123,16 @@ class TreatmentService {
                 ];
             }
 
-            const treatments = await prisma.treatment.findMany({
+            const treatments = await prisma.treatments.findMany({
                 where,
-                include: [
-                    { model: TreatmentCategory, as: 'category' },
-                ],
-                order: [
-                    ['averageRating', 'DESC']
-                ],
-                limit: filters.limit || 20,
-                offset: filters.offset || 0,
+                orderBy: {
+                    rating: 'desc'
+                },
+                take: filters.limit || 20,
+                skip: filters.offset || 0,
             });
 
-            const total = await Treatment.count({ where });
+            const total = await prisma.treatments.count({ where });
 
             return {
                 success: true,
@@ -152,7 +149,7 @@ class TreatmentService {
 
     async getTreatmentsByCategory(categoryId) {
         try {
-            const treatments = await prisma.treatment.findMany({
+            const treatments = await prisma.treatments.findMany({
                 where: { categoryId, isActive: true },
                 order: [
                     ['name', 'ASC']
@@ -173,7 +170,7 @@ class TreatmentService {
 
     async getFeaturedTreatments() {
         try {
-            const treatments = await prisma.treatment.findMany({
+            const treatments = await prisma.treatments.findMany({
                 where: { isFeatured: true, isActive: true },
                 order: [
                     ['displayOrder', 'ASC']

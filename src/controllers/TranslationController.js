@@ -1,10 +1,10 @@
 'use strict';
 
-import { TranslationService } from '../services/TranslationService.js';
+import translationService from '../services/TranslationService.js';
 
 export class TranslationController {
     constructor() {
-        this.translationService = new TranslationService();
+        this.translationService = translationService;
     }
 
     async addTranslation(req, res) {

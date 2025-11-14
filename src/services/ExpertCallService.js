@@ -225,4 +225,4 @@ export class ExpertCallService {
 }
 
 export const expertCallService = new ExpertCallService();
-export default expertCallService;
+export default new ExpertCallService();

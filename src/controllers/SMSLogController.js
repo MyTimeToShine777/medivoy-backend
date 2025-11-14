@@ -1,10 +1,10 @@
 'use strict';
 
-import SMSLogService from '../services/SMSLogService.js';
+import smsLogService from '../services/SMSLogService.js';
 
 export class SMSLogController {
     constructor() {
-        this.smsLogService = new SMSLogService();
+        this.smsLogService = smsLogService;
     }
 
     /**

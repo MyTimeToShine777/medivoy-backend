@@ -129,4 +129,4 @@ export class SessionService {
 }
 
 export const sessionService = new SessionService();
-export default sessionService;
+export default new SessionService();

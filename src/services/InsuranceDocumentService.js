@@ -107,4 +107,4 @@ export class InsuranceDocumentService {
 }
 
 export const insuranceDocumentService = new InsuranceDocumentService();
-export default insuranceDocumentService;
+export default new InsuranceDocumentService();

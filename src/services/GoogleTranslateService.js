@@ -184,4 +184,5 @@ class GoogleTranslateService {
     }
 }
 
+export { GoogleTranslateService };
 export default new GoogleTranslateService();

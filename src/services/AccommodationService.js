@@ -228,4 +228,4 @@ export class AccommodationService {
 }
 
 export const accommodationService = new AccommodationService();
-export default accommodationService;
+export default new AccommodationService();

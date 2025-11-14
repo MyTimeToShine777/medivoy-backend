@@ -34,12 +34,12 @@ class AuthService {
                         },
                         async(accessToken, refreshToken, profile, done) => {
                             try {
-                                let user = await prisma.user.findFirst({
+                                let user = await prisma.users.findFirst({
                                     where: { email: profile.emails[0].value },
                                 });
 
                                 if (!user) {
-                                    user = await prisma.user.create({
+                                    user = await prisma.users.create({
                                             data: {
                                                 firstName: profile.name.givenName || '',
                                                 lastName: profile.name.familyName || '',
@@ -76,12 +76,12 @@ class AuthService {
                             },
                             async(accessToken, refreshToken, profile, done) => {
                                 try {
-                                    let user = await prisma.user.findFirst({
+                                    let user = await prisma.users.findFirst({
                                         where: { email: profile.emails[0].value },
                                     });
 
                                     if (!user) {
-                                        user = await prisma.user.create({
+                                        user = await prisma.users.create({
                                                 data: {
                                                     firstName: profile.name.givenName || '',
                                                     lastName: profile.name.familyName || '',
@@ -116,7 +116,7 @@ class AuthService {
                         // Deserialize user
                         passport.deserializeUser(async(userId, done) => {
                             try {
-                                const user = await prisma.user.findUnique({ where: { id: userId } });
+                                const user = await prisma.users.findUnique({ where: { userId: userId } });
                                 done(null, user);
                             } catch (error) {
                                 done(error, null);
@@ -127,7 +127,7 @@ class AuthService {
                     // ========== TRADITIONAL EMAIL/PASSWORD SIGNUP ==========
                     async signupWithEmail(signupData) {
                         try {
-                            const existingUser = await prisma.user.findFirst({
+                            const existingUser = await prisma.users.findFirst({
                                 where: { email: signupData.email },
                             });
 
@@ -147,7 +147,7 @@ class AuthService {
 
                             const hashedPassword = await bcrypt.hash(signupData.password, 10);
 
-                            const user = await prisma.user.create({
+                            const user = await prisma.users.create({
                                     data: {
                                         firstName: signupData.firstName,
                                         lastName: signupData.lastName,
@@ -177,7 +177,7 @@ class AuthService {
                         // ========== TRADITIONAL EMAIL/PASSWORD LOGIN ==========
                         async loginWithEmail(email, password) {
                             try {
-                                const user = await prisma.user.findFirst({ where: { email } });
+                                const user = await prisma.users.findFirst({ where: { email } });
 
                                 if (!user) {
                                     return {
@@ -221,12 +221,12 @@ class AuthService {
                         // ========== GOOGLE OAUTH LOGIN ==========
                         async handleGoogleCallback(profile) {
                                 try {
-                                    let user = await prisma.user.findFirst({
+                                    let user = await prisma.users.findFirst({
                                         where: { email: profile.emails[0].value },
                                     });
 
                                     if (!user) {
-                                        user = await prisma.user.create({
+                                        user = await prisma.users.create({
                                                 data: {
                                                     firstName: profile.name.givenName || '',
                                                     lastName: profile.name.familyName || '',
@@ -273,10 +273,10 @@ class AuthService {
                                                 };
                                             }
 
-                                            let user = await prisma.user.findFirst({ where: { email } });
+                                            let user = await prisma.users.findFirst({ where: { email } });
 
                                             if (!user) {
-                                                user = await prisma.user.create({
+                                                user = await prisma.users.create({
                                                         data: {
                                                             firstName: profile.name.givenName || '',
                                                             lastName: profile.name.familyName || '',
@@ -326,7 +326,7 @@ class AuthService {
                                                     return { success: false, error: 'Refresh token expired' };
                                                 }
 
-                                                const user = await prisma.user.findUnique({ where: { id: token.userId } });
+                                                const user = await prisma.users.findUnique({ where: { userId: token.userId } });
 
                                                 if (!user) {
                                                     return { success: false, error: 'User not found' };
@@ -388,7 +388,7 @@ class AuthService {
                                         // ========== VERIFY EMAIL ==========
                                         async verifyEmail(email) {
                                             try {
-                                                const user = await prisma.user.findFirst({ where: { email } });
+                                                const user = await prisma.users.findFirst({ where: { email } });
 
                                                 if (!user) {
                                                     return { success: false, error: 'User not found' };
@@ -407,7 +407,7 @@ class AuthService {
                                         // ========== REQUEST PASSWORD RESET ==========
                                         async requestPasswordReset(email) {
                                                 try {
-                                                    const user = await prisma.user.findFirst({ where: { email } });
+                                                    const user = await prisma.users.findFirst({ where: { email } });
 
                                                     if (!user) {
                                                         return {
@@ -481,7 +481,7 @@ class AuthService {
                                                             };
                                                         }
 
-                                                        const user = await prisma.user.findUnique({ where: { id: resetRecord.userId } });
+                                                        const user = await prisma.users.findUnique({ where: { userId: resetRecord.userId } });
 
                                                         if (!user) {
                                                             return { success: false, error: 'User not found' };
@@ -504,7 +504,7 @@ class AuthService {
                                                 // ========== CHANGE PASSWORD ==========
                                                 async changePassword(userId, oldPassword, newPassword) {
                                                     try {
-                                                        const user = await prisma.user.findUnique({ where: { id: userId } });
+                                                        const user = await prisma.users.findUnique({ where: { userId: userId } });
 
                                                         if (!user) {
                                                             return { success: false, error: 'User not found' };

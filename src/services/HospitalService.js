@@ -1,16 +1,16 @@
 'use strict';
 
 import prisma from '../config/prisma.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class HospitalService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -71,7 +71,7 @@ export class HospitalService {
         try {
             if (!hospitalId) throw new AppError('Hospital ID required', 400);
 
-            const hospital = await prisma.hospital.findUnique({
+            const hospital = await prisma.hospitals.findUnique({
                 where: { hospitalId },
                 include: {
                     city: true,
@@ -114,20 +114,16 @@ export class HospitalService {
                 };
             }
 
-            const hospitals = await prisma.hospital.findMany({
+            const hospitals = await prisma.hospitals.findMany({
                 where: where,
-                include: [
-                    { model: City, attributes: ['cityName'] },
-                    { model: Country, attributes: ['countryName'] }
-                ],
-                order: [
-                    ['hospitalName', 'ASC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: {
+                    hospitalName: 'asc'
+                },
+                take: limit,
+                skip: offset
             });
 
-            const total = await prisma.hospital.count({ where });
+            const total = await prisma.hospitals.count({ where });
 
             return {
                 success: true,
@@ -135,7 +131,10 @@ export class HospitalService {
                 pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
             };
         } catch (error) {
-            throw this.errorHandlingService.handleError(error);
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 
@@ -345,5 +344,4 @@ export class HospitalService {
     }
 }
 
-export { HospitalService };
 export default new HospitalService();

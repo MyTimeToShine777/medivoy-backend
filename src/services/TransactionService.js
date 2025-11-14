@@ -17,7 +17,7 @@ export class TransactionService {
             }
 
             // Validate payment exists
-            const payment = await prisma.payment.findUnique({
+            const payment = await prisma.payments.findUnique({
                 where: { paymentId }
             });
             if (!payment) {

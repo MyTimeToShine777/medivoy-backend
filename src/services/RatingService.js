@@ -21,7 +21,7 @@ export class RatingService {
             }
 
             // Validate patient exists
-            const patient = await prisma.patient.findUnique({
+            const patient = await prisma.patients.findUnique({
                 where: { patientId }
             });
             if (!patient) {
@@ -30,7 +30,7 @@ export class RatingService {
 
             // Validate doctor if provided
             if (ratingData.doctorId) {
-                const doctor = await prisma.doctor.findUnique({
+                const doctor = await prisma.doctors.findUnique({
                     where: { doctorId: ratingData.doctorId }
                 });
                 if (!doctor) {
@@ -40,7 +40,7 @@ export class RatingService {
 
             // Validate hospital if provided
             if (ratingData.hospitalId) {
-                const hospital = await prisma.hospital.findUnique({
+                const hospital = await prisma.hospitals.findUnique({
                     where: { hospitalId: ratingData.hospitalId }
                 });
                 if (!hospital) {

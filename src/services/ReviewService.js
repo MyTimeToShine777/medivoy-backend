@@ -1,17 +1,17 @@
 import prisma from '../config/prisma.js';
-import { ValidationService } from './ValidationService.js';
-import { NotificationService } from './NotificationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import validationService from './ValidationService.js';
+import notificationService from './NotificationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 // CONSOLIDATED: BookingReviewService + MedicalReviewService + ReviewService
 export class ReviewService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.notificationService = new NotificationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.notificationService = notificationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -99,10 +99,10 @@ export class ReviewService {
             const offset = filters && filters.offset ? filters.offset : 0;
             const where = { hospitalId: hospitalId, reviewType: 'booking', isPublished: true };
 
-            const reviews = await prisma.review.findMany({
+            const reviews = await prisma.reviews.findMany({
                 where: where,
                 include: {
-                    user: {
+                    users: {
                         select: { firstName: true, lastName: true }
                     },
                     booking: true
@@ -114,7 +114,7 @@ export class ReviewService {
                 skip: offset
             });
 
-            const total = await prisma.review.count({ where: where });
+            const total = await prisma.reviews.count({ where: where });
             const avgRating = await this._calculateAverageRating(hospitalId, 'booking');
 
             return {
@@ -361,10 +361,10 @@ export class ReviewService {
             const offset = filters && filters.offset ? filters.offset : 0;
             const where = { doctorId: doctorId, reviewType: 'medical', isPublished: true };
 
-            const reviews = await prisma.review.findMany({
+            const reviews = await prisma.reviews.findMany({
                 where: where,
                 include: {
-                    user: {
+                    users: {
                         select: { firstName: true, lastName: true }
                     },
                     doctor: true
@@ -376,7 +376,7 @@ export class ReviewService {
                 skip: offset
             });
 
-            const total = await prisma.review.count({ where: where });
+            const total = await prisma.reviews.count({ where: where });
             const avgRating = await this._calculateAverageRating(null, 'medical', doctorId);
 
             return {
@@ -570,7 +570,7 @@ export class ReviewService {
             if (hospitalId) where.hospitalId = hospitalId;
             if (doctorId) where.doctorId = doctorId;
 
-            const total = await prisma.review.count({ where: where });
+            const total = await prisma.reviews.count({ where: where });
             const avgRating = await this._calculateAverageRating(hospitalId, null, doctorId);
 
             return {
@@ -639,7 +639,7 @@ export class ReviewService {
             if (reviewType) where.reviewType = reviewType;
             if (doctorId) where.doctorId = doctorId;
 
-            const result = await prisma.review.aggregate({
+            const result = await prisma.reviews.aggregate({
                 where: where,
                 _avg: {
                     rating: true
@@ -653,4 +653,4 @@ export class ReviewService {
     }
 }
 
-export default ReviewService;
+export default new ReviewService();

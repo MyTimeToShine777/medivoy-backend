@@ -43,292 +43,292 @@ const router = Router();
 // SEARCH & DISCOVERY (12 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get('/search', SearchController.globalSearch.bind(SearchController));
-router.get('/search/hospitals', SearchController.searchHospitals.bind(SearchController));
-router.get('/search/doctors', SearchController.searchDoctors.bind(SearchController));
-router.get('/search/treatments', SearchController.searchTreatments.bind(SearchController));
-router.get('/search/advanced', SearchController.advancedSearch.bind(SearchController));
-router.get('/search/nearby', SearchController.searchNearby.bind(SearchController));
-router.get('/search/recommendations', SearchController.getRecommendations.bind(SearchController));
+router.get('/search', (req, res) => SearchController.globalSearch(req, res));
+router.get('/search/hospitals', (req, res) => SearchController.searchHospitals(req, res));
+router.get('/search/doctors', (req, res) => SearchController.searchDoctors(req, res));
+router.get('/search/treatments', (req, res) => SearchController.searchTreatments(req, res));
+router.get('/search/advanced', (req, res) => SearchController.advancedSearch(req, res));
+router.get('/search/nearby', (req, res) => SearchController.searchNearby(req, res));
+router.get('/search/recommendations', (req, res) => SearchController.getRecommendations(req, res));
 
-router.get('/filter/hospitals', FilterController.filterHospitals.bind(FilterController));
-router.get('/filter/doctors', FilterController.filterDoctors.bind(FilterController));
-router.get('/filter/treatments', FilterController.filterTreatments.bind(FilterController));
-router.get('/filter/packages', FilterController.filterPackages.bind(FilterController));
-router.get('/filter/options', FilterController.getFilterOptions.bind(FilterController));
+router.get('/filter/hospitals', (req, res) => FilterController.filterHospitals(req, res));
+router.get('/filter/doctors', (req, res) => FilterController.filterDoctors(req, res));
+router.get('/filter/treatments', (req, res) => FilterController.filterTreatments(req, res));
+router.get('/filter/packages', (req, res) => FilterController.filterPackages(req, res));
+router.get('/filter/options', (req, res) => FilterController.getFilterOptions(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PACKAGES & TREATMENTS (7 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get('/packages', PackageController.listPackages.bind(PackageController));
-router.get('/packages/:packageId', PackageController.getPackageById.bind(PackageController));
-router.get('/packages/featured', PackageController.getFeaturedPackages.bind(PackageController));
-router.get('/packages/treatment/:treatmentId', PackageController.getPackagesByTreatment.bind(PackageController));
-router.post('/packages/:packageId/compare', PackageController.comparePackages.bind(PackageController));
-router.get('/packages/search', PackageController.searchPackages.bind(PackageController));
-router.get('/packages/:packageId/reviews', PackageController.getPackageReviews.bind(PackageController));
+router.get('/packages', (req, res) => PackageController.listPackages(req, res));
+router.get('/packages/:packageId', (req, res) => PackageController.getPackageById(req, res));
+router.get('/packages/featured', (req, res) => PackageController.getFeaturedPackages(req, res));
+router.get('/packages/treatment/:treatmentId', (req, res) => PackageController.getPackagesByTreatment(req, res));
+router.post('/packages/:packageId/compare', (req, res) => PackageController.comparePackages(req, res));
+router.get('/packages/search', (req, res) => PackageController.searchPackages(req, res));
+router.get('/packages/:packageId/reviews', (req, res) => PackageController.getPackageReviews(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // BOOKING MANAGEMENT (9 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.post('/bookings', BookingController.createBooking.bind(BookingController));
-router.get('/bookings', BookingController.getUserBookings.bind(BookingController));
-router.get('/bookings/:bookingId', BookingController.getBookingById.bind(BookingController));
-router.put('/bookings/:bookingId', BookingController.updateBooking.bind(BookingController));
-router.delete('/bookings/:bookingId', BookingController.cancelBooking.bind(BookingController));
-router.get('/bookings/:bookingId/history', BookingController.getBookingHistory.bind(BookingController));
-router.post('/bookings/:bookingId/reschedule', BookingController.rescheduleBooking.bind(BookingController));
-router.get('/bookings/upcoming', BookingController.getUpcomingBookings.bind(BookingController));
-router.get('/bookings/past', BookingController.getPastBookings.bind(BookingController));
+router.post('/bookings', (req, res) => BookingController.createBooking(req, res));
+router.get('/bookings', (req, res) => BookingController.getUserBookings(req, res));
+router.get('/bookings/:bookingId', (req, res) => BookingController.getBookingById(req, res));
+router.put('/bookings/:bookingId', (req, res) => BookingController.updateBooking(req, res));
+router.delete('/bookings/:bookingId', (req, res) => BookingController.cancelBooking(req, res));
+router.get('/bookings/:bookingId/history', (req, res) => BookingController.getBookingHistory(req, res));
+router.post('/bookings/:bookingId/reschedule', (req, res) => BookingController.rescheduleBooking(req, res));
+router.get('/bookings/upcoming', (req, res) => BookingController.getUpcomingBookings(req, res));
+router.get('/bookings/past', (req, res) => BookingController.getPastBookings(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // APPOINTMENTS (15 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.post('/appointments', AppointmentController.bookAppointment.bind(AppointmentController));
-router.post('/appointments/book', AppointmentController.bookAppointment.bind(AppointmentController));
-router.get('/appointments', AppointmentController.getUserAppointments.bind(AppointmentController));
-router.get('/appointments/:appointmentId', AppointmentController.getAppointmentById.bind(AppointmentController));
-router.put('/appointments/:appointmentId/reschedule', AppointmentController.rescheduleAppointment.bind(AppointmentController));
-router.delete('/appointments/:appointmentId', AppointmentController.cancelAppointment.bind(AppointmentController));
-router.get('/doctors/:doctorId/available-slots', AppointmentController.getAvailableSlots.bind(AppointmentController));
-router.post('/appointments/:callId/start', AppointmentController.startConsultation.bind(AppointmentController));
-router.get('/appointments/status/:status', AppointmentController.getAppointmentsByStatus.bind(AppointmentController));
-router.get('/appointments/upcoming', AppointmentController.getUpcomingAppointments.bind(AppointmentController));
-router.get('/appointments/history', AppointmentController.getAppointmentHistory.bind(AppointmentController));
-router.post('/appointments/:appointmentId/reschedule-request', AppointmentController.requestReschedule.bind(AppointmentController));
-router.post('/appointments/:appointmentId/confirm', AppointmentController.confirmAppointment.bind(AppointmentController));
-router.get('/appointments/filter', AppointmentController.filterAppointments.bind(AppointmentController));
-router.post('/appointments/:appointmentId/join-video', AppointmentController.joinVideoConsultation.bind(AppointmentController));
+router.post('/appointments', (req, res) => AppointmentController.bookAppointment(req, res));
+router.post('/appointments/book', (req, res) => AppointmentController.bookAppointment(req, res));
+router.get('/appointments', (req, res) => AppointmentController.getUserAppointments(req, res));
+router.get('/appointments/:appointmentId', (req, res) => AppointmentController.getAppointmentById(req, res));
+router.put('/appointments/:appointmentId/reschedule', (req, res) => AppointmentController.rescheduleAppointment(req, res));
+router.delete('/appointments/:appointmentId', (req, res) => AppointmentController.cancelAppointment(req, res));
+router.get('/doctors/:doctorId/available-slots', (req, res) => AppointmentController.getAvailableSlots(req, res));
+router.post('/appointments/:callId/start', (req, res) => AppointmentController.startConsultation(req, res));
+router.get('/appointments/status/:status', (req, res) => AppointmentController.getAppointmentsByStatus(req, res));
+router.get('/appointments/upcoming', (req, res) => AppointmentController.getUpcomingAppointments(req, res));
+router.get('/appointments/history', (req, res) => AppointmentController.getAppointmentHistory(req, res));
+router.post('/appointments/:appointmentId/reschedule-request', (req, res) => AppointmentController.requestReschedule(req, res));
+router.post('/appointments/:appointmentId/confirm', (req, res) => AppointmentController.confirmAppointment(req, res));
+router.get('/appointments/filter', (req, res) => AppointmentController.filterAppointments(req, res));
+router.post('/appointments/:appointmentId/join-video', (req, res) => AppointmentController.joinVideoConsultation(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CONSULTATIONS (10 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.post('/consultations/:appointmentId/create', AppointmentController.createConsultation.bind(AppointmentController));
-router.get('/consultations', AppointmentController.getUserConsultations.bind(AppointmentController));
-router.post('/consultations/:callId/start', AppointmentController.startConsultation.bind(AppointmentController));
-router.post('/consultations/:callId/end', AppointmentController.endConsultation.bind(AppointmentController));
-router.get('/consultations/:callId', AppointmentController.getConsultationDetails.bind(AppointmentController));
-router.get('/consultations/status/:status', AppointmentController.getConsultationsByStatus.bind(AppointmentController));
-router.post('/consultations/:callId/save-notes', AppointmentController.saveConsultationNotes.bind(AppointmentController));
-router.get('/consultations/:callId/recording', AppointmentController.getConsultationRecording.bind(AppointmentController));
-router.post('/consultations/:callId/prescription', AppointmentController.getPrescription.bind(AppointmentController));
-router.get('/consultations/:callId/summary', AppointmentController.getConsultationSummary.bind(AppointmentController));
+router.post('/consultations/:appointmentId/create', (req, res) => AppointmentController.createConsultation(req, res));
+router.get('/consultations', (req, res) => AppointmentController.getUserConsultations(req, res));
+router.post('/consultations/:callId/start', (req, res) => AppointmentController.startConsultation(req, res));
+router.post('/consultations/:callId/end', (req, res) => AppointmentController.endConsultation(req, res));
+router.get('/consultations/:callId', (req, res) => AppointmentController.getConsultationDetails(req, res));
+router.get('/consultations/status/:status', (req, res) => AppointmentController.getConsultationsByStatus(req, res));
+router.post('/consultations/:callId/save-notes', (req, res) => AppointmentController.saveConsultationNotes(req, res));
+router.get('/consultations/:callId/recording', (req, res) => AppointmentController.getConsultationRecording(req, res));
+router.post('/consultations/:callId/prescription', (req, res) => AppointmentController.getPrescription(req, res));
+router.get('/consultations/:callId/summary', (req, res) => AppointmentController.getConsultationSummary(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PRESCRIPTIONS (5 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get('/prescriptions', PrescriptionController.getUserPrescriptions.bind(PrescriptionController));
-router.get('/prescriptions/:prescriptionId', PrescriptionController.getPrescriptionById.bind(PrescriptionController));
-router.get('/prescriptions/:prescriptionId/download', PrescriptionController.downloadPrescription.bind(PrescriptionController));
-router.post('/prescriptions/:prescriptionId/refill', PrescriptionController.refillPrescription.bind(PrescriptionController));
-router.get('/prescriptions/active', PrescriptionController.getActivePrescriptions.bind(PrescriptionController));
+router.get('/prescriptions', (req, res) => PrescriptionController.getUserPrescriptions(req, res));
+router.get('/prescriptions/:prescriptionId', (req, res) => PrescriptionController.getPrescriptionById(req, res));
+router.get('/prescriptions/:prescriptionId/download', (req, res) => PrescriptionController.downloadPrescription(req, res));
+router.post('/prescriptions/:prescriptionId/refill', (req, res) => PrescriptionController.refillPrescription(req, res));
+router.get('/prescriptions/active', (req, res) => PrescriptionController.getActivePrescriptions(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MEDICAL RECORDS & DOCUMENTS (15 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.post('/medical-records', MedicalRecordController.createMedicalRecord.bind(MedicalRecordController));
-router.get('/medical-records', MedicalRecordController.getUserMedicalRecords.bind(MedicalRecordController));
-router.get('/medical-records/:recordId', MedicalRecordController.getMedicalRecordById.bind(MedicalRecordController));
-router.put('/medical-records/:recordId', MedicalRecordController.updateMedicalRecord.bind(MedicalRecordController));
-router.delete('/medical-records/:recordId', MedicalRecordController.deleteMedicalRecord.bind(MedicalRecordController));
-router.post('/medical-records/:recordId/share', MedicalRecordController.shareMedicalRecord.bind(MedicalRecordController));
-router.get('/medical-records/:recordId/export', MedicalRecordController.exportMedicalRecord.bind(MedicalRecordController));
-router.post('/medical-records/:recordId/archive', MedicalRecordController.archiveMedicalRecord.bind(MedicalRecordController));
+router.post('/medical-records', (req, res) => MedicalRecordController.createMedicalRecord(req, res));
+router.get('/medical-records', (req, res) => MedicalRecordController.getUserMedicalRecords(req, res));
+router.get('/medical-records/:recordId', (req, res) => MedicalRecordController.getMedicalRecordById(req, res));
+router.put('/medical-records/:recordId', (req, res) => MedicalRecordController.updateMedicalRecord(req, res));
+router.delete('/medical-records/:recordId', (req, res) => MedicalRecordController.deleteMedicalRecord(req, res));
+router.post('/medical-records/:recordId/share', (req, res) => MedicalRecordController.shareMedicalRecord(req, res));
+router.get('/medical-records/:recordId/export', (req, res) => MedicalRecordController.exportMedicalRecord(req, res));
+router.post('/medical-records/:recordId/archive', (req, res) => MedicalRecordController.archiveMedicalRecord(req, res));
 
-router.post('/documents/medical/:bookingId', DocumentController.uploadMedicalDocument.bind(DocumentController));
-router.get('/documents/medical/:bookingId', DocumentController.getMedicalDocuments.bind(DocumentController));
-router.post('/documents/patient', DocumentController.uploadPatientDocument.bind(DocumentController));
-router.get('/documents/patient', DocumentController.getPatientDocuments.bind(DocumentController));
-router.put('/documents/:documentId', DocumentController.updatePatientDocument.bind(DocumentController));
-router.delete('/documents/:documentId', DocumentController.deletePatientDocument.bind(DocumentController));
-router.get('/documents/:documentId/download', DocumentController.downloadDocument.bind(DocumentController));
+router.post('/documents/medical/:bookingId', (req, res) => DocumentController.uploadMedicalDocument(req, res));
+router.get('/documents/medical/:bookingId', (req, res) => DocumentController.getMedicalDocuments(req, res));
+router.post('/documents/patient', (req, res) => DocumentController.uploadPatientDocument(req, res));
+router.get('/documents/patient', (req, res) => DocumentController.getPatientDocuments(req, res));
+router.put('/documents/:documentId', (req, res) => DocumentController.updatePatientDocument(req, res));
+router.delete('/documents/:documentId', (req, res) => DocumentController.deletePatientDocument(req, res));
+router.get('/documents/:documentId/download', (req, res) => DocumentController.downloadDocument(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LABORATORY (5 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.post('/laboratory/order', LaboratoryController.orderLabTest.bind(LaboratoryController));
-router.get('/laboratory/orders', LaboratoryController.getUserLabOrders.bind(LaboratoryController));
-router.get('/laboratory/result/:resultId', LaboratoryController.getLabResult.bind(LaboratoryController));
-router.get('/laboratory/result/:resultId/download', LaboratoryController.downloadLabResult.bind(LaboratoryController));
-router.get('/laboratory/tests', LaboratoryController.getAvailableTests.bind(LaboratoryController));
+router.post('/laboratory/order', (req, res) => LaboratoryController.orderLabTest(req, res));
+router.get('/laboratory/orders', (req, res) => LaboratoryController.getUserLabOrders(req, res));
+router.get('/laboratory/result/:resultId', (req, res) => LaboratoryController.getLabResult(req, res));
+router.get('/laboratory/result/:resultId/download', (req, res) => LaboratoryController.downloadLabResult(req, res));
+router.get('/laboratory/tests', (req, res) => LaboratoryController.getAvailableTests(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PAYMENTS & INVOICES (9 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.post('/payments/:bookingId', PaymentController.createPayment.bind(PaymentController));
-router.post('/payments/:paymentId/verify', PaymentController.verifyPayment.bind(PaymentController));
-router.post('/payments/initialize', PaymentController.initializePayment.bind(PaymentController));
-router.get('/payments/history', PaymentController.getPaymentHistory.bind(PaymentController));
-router.get('/payments/:paymentId', PaymentController.getPaymentDetails.bind(PaymentController));
+router.post('/payments/:bookingId', (req, res) => PaymentController.createPayment(req, res));
+router.post('/payments/:paymentId/verify', (req, res) => PaymentController.verifyPayment(req, res));
+router.post('/payments/initialize', (req, res) => PaymentController.initializePayment(req, res));
+router.get('/payments/history', (req, res) => PaymentController.getPaymentHistory(req, res));
+router.get('/payments/:paymentId', (req, res) => PaymentController.getPaymentDetails(req, res));
 
-router.get('/invoices', InvoiceController.listInvoices.bind(InvoiceController));
-router.get('/invoices/:invoiceId', InvoiceController.getInvoiceById.bind(InvoiceController));
-router.post('/invoices/:invoiceId/pay', InvoiceController.markInvoicePaid.bind(InvoiceController));
-router.get('/invoices/:invoiceId/pdf', InvoiceController.generateInvoicePDF.bind(InvoiceController));
+router.get('/invoices', (req, res) => InvoiceController.listInvoices(req, res));
+router.get('/invoices/:invoiceId', (req, res) => InvoiceController.getInvoiceById(req, res));
+router.post('/invoices/:invoiceId/pay', (req, res) => InvoiceController.markInvoicePaid(req, res));
+router.get('/invoices/:invoiceId/pdf', (req, res) => InvoiceController.generateInvoicePDF(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // REVIEWS & RATINGS (3 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.post('/reviews/booking/:bookingId', ReviewController.createBookingReview.bind(ReviewController));
-router.get('/reviews/stats', ReviewController.getReviewStatistics.bind(ReviewController));
-router.get('/reviews/my-reviews', ReviewController.getUserReviews.bind(ReviewController));
+router.post('/reviews/booking/:bookingId', (req, res) => ReviewController.createBookingReview(req, res));
+router.get('/reviews/stats', (req, res) => ReviewController.getReviewStatistics(req, res));
+router.get('/reviews/my-reviews', (req, res) => ReviewController.getUserReviews(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TRAVEL ARRANGEMENTS (10 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.post('/travel/flights/:bookingId', TravelController.bookFlight.bind(TravelController));
-router.get('/travel/flights/:bookingId', TravelController.getFlightsByBooking.bind(TravelController));
-router.delete('/travel/flights/:flightId', TravelController.cancelFlight.bind(TravelController));
-router.post('/travel/hotels/:bookingId', TravelController.bookHotel.bind(TravelController));
-router.get('/travel/hotels/:bookingId', TravelController.getHotelsByBooking.bind(TravelController));
-router.put('/travel/hotels/:hotelId', TravelController.updateHotelBooking.bind(TravelController));
-router.post('/travel/transportation/:bookingId', TravelController.bookTransportation.bind(TravelController));
-router.get('/travel/itinerary/:bookingId', TravelController.getCompleteItinerary.bind(TravelController));
-router.get('/travel/summary/:bookingId', TravelController.generateTravelSummary.bind(TravelController));
-router.get('/travel/bookings', TravelController.getAllTravelBookings.bind(TravelController));
+router.post('/travel/flights/:bookingId', (req, res) => TravelController.bookFlight(req, res));
+router.get('/travel/flights/:bookingId', (req, res) => TravelController.getFlightsByBooking(req, res));
+router.delete('/travel/flights/:flightId', (req, res) => TravelController.cancelFlight(req, res));
+router.post('/travel/hotels/:bookingId', (req, res) => TravelController.bookHotel(req, res));
+router.get('/travel/hotels/:bookingId', (req, res) => TravelController.getHotelsByBooking(req, res));
+router.put('/travel/hotels/:hotelId', (req, res) => TravelController.updateHotelBooking(req, res));
+router.post('/travel/transportation/:bookingId', (req, res) => TravelController.bookTransportation(req, res));
+router.get('/travel/itinerary/:bookingId', (req, res) => TravelController.getCompleteItinerary(req, res));
+router.get('/travel/summary/:bookingId', (req, res) => TravelController.generateTravelSummary(req, res));
+router.get('/travel/bookings', (req, res) => TravelController.getAllTravelBookings(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NOTIFICATIONS (6 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get('/notifications', NotificationController.getNotifications.bind(NotificationController));
-router.put('/notifications/:notificationId/read', NotificationController.markNotificationRead.bind(NotificationController));
-router.put('/notifications/mark-all-read', NotificationController.markAllNotificationsRead.bind(NotificationController));
-router.delete('/notifications/:notificationId', NotificationController.deleteNotification.bind(NotificationController));
-router.get('/notifications/unread', NotificationController.getUnreadCount.bind(NotificationController));
-router.get('/notifications/preferences', NotificationController.getPreferences.bind(NotificationController));
+router.get('/notifications', (req, res) => NotificationController.getNotifications(req, res));
+router.put('/notifications/:notificationId/read', (req, res) => NotificationController.markNotificationRead(req, res));
+router.put('/notifications/mark-all-read', (req, res) => NotificationController.markAllNotificationsRead(req, res));
+router.delete('/notifications/:notificationId', (req, res) => NotificationController.deleteNotification(req, res));
+router.get('/notifications/unread', (req, res) => NotificationController.getUnreadCount(req, res));
+router.get('/notifications/preferences', (req, res) => NotificationController.getPreferences(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SUPPORT TICKETS (7 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.post('/support-tickets', SupportTicketController.createTicket.bind(SupportTicketController));
-router.get('/support-tickets', SupportTicketController.getUserTickets.bind(SupportTicketController));
-router.get('/support-tickets/:ticketId', SupportTicketController.getTicketById.bind(SupportTicketController));
-router.put('/support-tickets/:ticketId', SupportTicketController.updateTicket.bind(SupportTicketController));
-router.post('/support-tickets/:ticketId/reply', SupportTicketController.addTicketReply.bind(SupportTicketController));
-router.post('/support-tickets/:ticketId/close', SupportTicketController.closeTicket.bind(SupportTicketController));
-router.get('/support-tickets/:ticketId/chat', SupportTicketController.getTicketChat.bind(SupportTicketController));
+router.post('/support-tickets', (req, res) => SupportTicketController.createTicket(req, res));
+router.get('/support-tickets', (req, res) => SupportTicketController.getUserTickets(req, res));
+router.get('/support-tickets/:ticketId', (req, res) => SupportTicketController.getTicketById(req, res));
+router.put('/support-tickets/:ticketId', (req, res) => SupportTicketController.updateTicket(req, res));
+router.post('/support-tickets/:ticketId/reply', (req, res) => SupportTicketController.addTicketReply(req, res));
+router.post('/support-tickets/:ticketId/close', (req, res) => SupportTicketController.closeTicket(req, res));
+router.get('/support-tickets/:ticketId/chat', (req, res) => SupportTicketController.getTicketChat(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PROFILE & PREFERENCES (10 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get('/profile', UserController.getUserProfile.bind(UserController));
-router.put('/profile', UserController.updateUserProfile.bind(UserController));
-router.post('/change-password', UserController.changePassword.bind(UserController));
-router.get('/preferences', UserController.getUserPreferences.bind(UserController));
-router.put('/preferences', UserController.updateUserPreferences.bind(UserController));
-router.post('/addresses', UserController.addUserAddress.bind(UserController));
-router.get('/addresses', UserController.getUserAddresses.bind(UserController));
-router.put('/addresses/:addressId', UserController.updateUserAddress.bind(UserController));
-router.delete('/addresses/:addressId', UserController.deleteUserAddress.bind(UserController));
-router.post('/profile/avatar/upload', UserController.uploadAvatar.bind(UserController));
+router.get('/profile', (req, res) => UserController.getUserProfile(req, res));
+router.put('/profile', (req, res) => UserController.updateUserProfile(req, res));
+router.post('/change-password', (req, res) => UserController.changePassword(req, res));
+router.get('/preferences', (req, res) => UserController.getUserPreferences(req, res));
+router.put('/preferences', (req, res) => UserController.updateUserPreferences(req, res));
+router.post('/addresses', (req, res) => UserController.addUserAddress(req, res));
+router.get('/addresses', (req, res) => UserController.getUserAddresses(req, res));
+router.put('/addresses/:addressId', (req, res) => UserController.updateUserAddress(req, res));
+router.delete('/addresses/:addressId', (req, res) => UserController.deleteUserAddress(req, res));
+router.post('/profile/avatar/upload', (req, res) => UserController.uploadAvatar(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PATIENT PROFILE (6 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get('/patient-profile', PatientController.getPatientProfile.bind(PatientController));
-router.put('/patient-profile', PatientController.updatePatientProfile.bind(PatientController));
-router.get('/medical-history', PatientController.getPatientMedicalHistory.bind(PatientController));
-router.post('/medical-history', PatientController.addPatientMedicalHistory.bind(PatientController));
-router.get('/allergies', PatientController.getPatientAllergies.bind(PatientController));
-router.post('/allergies', PatientController.addPatientAllergy.bind(PatientController));
+router.get('/patient-profile', (req, res) => PatientController.getPatientProfile(req, res));
+router.put('/patient-profile', (req, res) => PatientController.updatePatientProfile(req, res));
+router.get('/medical-history', (req, res) => PatientController.getPatientMedicalHistory(req, res));
+router.post('/medical-history', (req, res) => PatientController.addPatientMedicalHistory(req, res));
+router.get('/allergies', (req, res) => PatientController.getPatientAllergies(req, res));
+router.post('/allergies', (req, res) => PatientController.addPatientAllergy(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CHAT & MESSAGING (5 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.post('/chat', ChatController.createChatRoom.bind(ChatController));
-router.get('/chat/:chatId', ChatController.getChatRoom.bind(ChatController));
-router.get('/chat', ChatController.getUserChats.bind(ChatController));
-router.post('/chat/:chatId/message', ChatController.sendMessage.bind(ChatController));
-router.get('/chat/:chatId/messages', ChatController.getChatMessages.bind(ChatController));
+router.post('/chat', (req, res) => ChatController.createChatRoom(req, res));
+router.get('/chat/:chatId', (req, res) => ChatController.getChatRoom(req, res));
+router.get('/chat', (req, res) => ChatController.getUserChats(req, res));
+router.post('/chat/:chatId/message', (req, res) => ChatController.sendMessage(req, res));
+router.get('/chat/:chatId/messages', (req, res) => ChatController.getChatMessages(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INSURANCE MANAGEMENT (13 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.post('/insurance/plans/enroll', InsuranceController.enrollInsurancePlan.bind(InsuranceController));
-router.get('/insurance/my-insurance', InsuranceController.getUserInsurance.bind(InsuranceController));
-router.get('/insurance/plans/:insuranceId', InsuranceController.getInsuranceById.bind(InsuranceController));
-router.get('/insurance/plans', InsuranceController.listInsurances.bind(InsuranceController));
-router.post('/insurance/validate-coverage', InsuranceController.validateCoverage.bind(InsuranceController));
-router.get('/insurance/stats', InsuranceController.getInsuranceStats.bind(InsuranceController));
-router.post('/insurance/claims/create', InsuranceController.createClaim.bind(InsuranceController));
-router.get('/insurance/claims', InsuranceController.getUserClaims.bind(InsuranceController));
-router.put('/insurance/plans/:insuranceId/update', InsuranceController.updateInsurance.bind(InsuranceController));
-router.delete('/insurance/plans/:insuranceId/cancel', InsuranceController.cancelInsurance.bind(InsuranceController));
-router.get('/insurance/claims/:claimId', InsuranceController.getClaimDetails.bind(InsuranceController));
-router.put('/insurance/claims/:claimId/resubmit', InsuranceController.resubmitClaim.bind(InsuranceController));
-router.get('/insurance/coverage-history', InsuranceController.getCoverageHistory.bind(InsuranceController));
+router.post('/insurance/plans/enroll', (req, res) => InsuranceController.enrollInsurancePlan(req, res));
+router.get('/insurance/my-insurance', (req, res) => InsuranceController.getUserInsurance(req, res));
+router.get('/insurance/plans/:insuranceId', (req, res) => InsuranceController.getInsuranceById(req, res));
+router.get('/insurance/plans', (req, res) => InsuranceController.listInsurances(req, res));
+router.post('/insurance/validate-coverage', (req, res) => InsuranceController.validateCoverage(req, res));
+router.get('/insurance/stats', (req, res) => InsuranceController.getInsuranceStats(req, res));
+router.post('/insurance/claims/create', (req, res) => InsuranceController.createClaim(req, res));
+router.get('/insurance/claims', (req, res) => InsuranceController.getUserClaims(req, res));
+router.put('/insurance/plans/:insuranceId/update', (req, res) => InsuranceController.updateInsurance(req, res));
+router.delete('/insurance/plans/:insuranceId/cancel', (req, res) => InsuranceController.cancelInsurance(req, res));
+router.get('/insurance/claims/:claimId', (req, res) => InsuranceController.getClaimDetails(req, res));
+router.put('/insurance/claims/:claimId/resubmit', (req, res) => InsuranceController.resubmitClaim(req, res));
+router.get('/insurance/coverage-history', (req, res) => InsuranceController.getCoverageHistory(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // INSURANCE DOCUMENTS (8 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.post('/insurance-documents/upload', InsuranceDocumentController.uploadDocument.bind(InsuranceDocumentController));
-router.get('/insurance-documents', InsuranceDocumentController.listDocuments.bind(InsuranceDocumentController));
-router.get('/insurance-documents/:documentId', InsuranceDocumentController.getDocumentById.bind(InsuranceDocumentController));
-router.put('/insurance-documents/:documentId/update', InsuranceDocumentController.updateDocument.bind(InsuranceDocumentController));
-router.delete('/insurance-documents/:documentId/delete', InsuranceDocumentController.deleteDocument.bind(InsuranceDocumentController));
-router.post('/insurance-documents/:documentId/download', InsuranceDocumentController.downloadDocument.bind(InsuranceDocumentController));
-router.get('/insurance-documents/status/:status', InsuranceDocumentController.getDocumentsByStatus.bind(InsuranceDocumentController));
-router.post('/insurance-documents/:documentId/share', InsuranceDocumentController.shareDocument.bind(InsuranceDocumentController));
+router.post('/insurance-documents/upload', (req, res) => InsuranceDocumentController.uploadDocument(req, res));
+router.get('/insurance-documents', (req, res) => InsuranceDocumentController.listDocuments(req, res));
+router.get('/insurance-documents/:documentId', (req, res) => InsuranceDocumentController.getDocumentById(req, res));
+router.put('/insurance-documents/:documentId/update', (req, res) => InsuranceDocumentController.updateDocument(req, res));
+router.delete('/insurance-documents/:documentId/delete', (req, res) => InsuranceDocumentController.deleteDocument(req, res));
+router.post('/insurance-documents/:documentId/download', (req, res) => InsuranceDocumentController.downloadDocument(req, res));
+router.get('/insurance-documents/status/:status', (req, res) => InsuranceDocumentController.getDocumentsByStatus(req, res));
+router.post('/insurance-documents/:documentId/share', (req, res) => InsuranceDocumentController.shareDocument(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COUPONS (8 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get('/coupons', CouponController.listCoupons.bind(CouponController));
-router.get('/coupons/:code', CouponController.getCouponByCode.bind(CouponController));
-router.post('/coupons/validate', CouponController.validateCoupon.bind(CouponController));
-router.post('/coupons/apply', CouponController.applyCoupon.bind(CouponController));
-router.get('/coupons/:couponId/details', CouponController.getCouponDetails.bind(CouponController));
-router.get('/coupons/active', CouponController.getActiveCoupons.bind(CouponController));
-router.get('/coupons/my-redeemed', CouponController.getRedeemedCoupons.bind(CouponController));
-router.post('/coupons/:couponId/redeem', CouponController.redeemCoupon.bind(CouponController));
+router.get('/coupons', (req, res) => CouponController.listCoupons(req, res));
+router.get('/coupons/:code', (req, res) => CouponController.getCouponByCode(req, res));
+router.post('/coupons/validate', (req, res) => CouponController.validateCoupon(req, res));
+router.post('/coupons/apply', (req, res) => CouponController.applyCoupon(req, res));
+router.get('/coupons/:couponId/details', (req, res) => CouponController.getCouponDetails(req, res));
+router.get('/coupons/active', (req, res) => CouponController.getActiveCoupons(req, res));
+router.get('/coupons/my-redeemed', (req, res) => CouponController.getRedeemedCoupons(req, res));
+router.post('/coupons/:couponId/redeem', (req, res) => CouponController.redeemCoupon(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FLIGHTS (9 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get('/flights/search', FlightController.searchFlights.bind(FlightController));
-router.get('/flights/:flightId', FlightController.getFlightById.bind(FlightController));
-router.post('/flights/:flightId/book', FlightController.bookFlight.bind(FlightController));
-router.delete('/flights/bookings/:bookingId/cancel', FlightController.cancelFlight.bind(FlightController));
-router.get('/flights/bookings', FlightController.getUserBookings.bind(FlightController));
-router.get('/flights/bookings/:bookingId', FlightController.getBookingDetails.bind(FlightController));
-router.put('/flights/bookings/:bookingId/update', FlightController.updateBooking.bind(FlightController));
-router.post('/flights/bookings/:bookingId/checkin', FlightController.checkInFlight.bind(FlightController));
-router.get('/flights/bookings/:bookingId/boarding-pass', FlightController.getBoardingPass.bind(FlightController));
+router.get('/flights/search', (req, res) => FlightController.searchFlights(req, res));
+router.get('/flights/:flightId', (req, res) => FlightController.getFlightById(req, res));
+router.post('/flights/:flightId/book', (req, res) => FlightController.bookFlight(req, res));
+router.delete('/flights/bookings/:bookingId/cancel', (req, res) => FlightController.cancelFlight(req, res));
+router.get('/flights/bookings', (req, res) => FlightController.getUserBookings(req, res));
+router.get('/flights/bookings/:bookingId', (req, res) => FlightController.getBookingDetails(req, res));
+router.put('/flights/bookings/:bookingId/update', (req, res) => FlightController.updateBooking(req, res));
+router.post('/flights/bookings/:bookingId/checkin', (req, res) => FlightController.checkInFlight(req, res));
+router.get('/flights/bookings/:bookingId/boarding-pass', (req, res) => FlightController.getBoardingPass(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ACCOMMODATION (11 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
 
-router.get('/accommodation', AccommodationController.listAccommodation.bind(AccommodationController));
-router.get('/accommodation/:accommodationId', AccommodationController.getAccommodationById.bind(AccommodationController));
-router.post('/accommodation/:accommodationId/book', AccommodationController.bookAccommodation.bind(AccommodationController));
-router.get('/accommodation/bookings', AccommodationController.getUserBookings.bind(AccommodationController));
-router.get('/accommodation/bookings/:bookingId', AccommodationController.getBookingDetails.bind(AccommodationController));
-router.delete('/accommodation/bookings/:bookingId/cancel', AccommodationController.cancelBooking.bind(AccommodationController));
-router.get('/accommodation/search', AccommodationController.searchAccommodation.bind(AccommodationController));
-router.post('/accommodation/:accommodationId/review', AccommodationController.addReview.bind(AccommodationController));
-router.get('/accommodation/:accommodationId/reviews', AccommodationController.getReviews.bind(AccommodationController));
-router.post('/accommodation/bookings/:bookingId/checkin', AccommodationController.checkIn.bind(AccommodationController));
-router.post('/accommodation/bookings/:bookingId/checkout', AccommodationController.checkOut.bind(AccommodationController));
+router.get('/accommodation', (req, res) => AccommodationController.listAccommodation(req, res));
+router.get('/accommodation/:accommodationId', (req, res) => AccommodationController.getAccommodationById(req, res));
+router.post('/accommodation/:accommodationId/book', (req, res) => AccommodationController.bookAccommodation(req, res));
+router.get('/accommodation/bookings', (req, res) => AccommodationController.getUserBookings(req, res));
+router.get('/accommodation/bookings/:bookingId', (req, res) => AccommodationController.getBookingDetails(req, res));
+router.delete('/accommodation/bookings/:bookingId/cancel', (req, res) => AccommodationController.cancelBooking(req, res));
+router.get('/accommodation/search', (req, res) => AccommodationController.searchAccommodation(req, res));
+router.post('/accommodation/:accommodationId/review', (req, res) => AccommodationController.addReview(req, res));
+router.get('/accommodation/:accommodationId/reviews', (req, res) => AccommodationController.getReviews(req, res));
+router.post('/accommodation/bookings/:bookingId/checkin', (req, res) => AccommodationController.checkIn(req, res));
+router.post('/accommodation/bookings/:bookingId/checkout', (req, res) => AccommodationController.checkOut(req, res));
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // NEW ENDPOINTS - EXTENDED PATIENT FEATURES (42 ENDPOINTS)
@@ -337,71 +337,71 @@ router.post('/accommodation/bookings/:bookingId/checkout', AccommodationControll
 // ─────────────────────────────────────────────────────────────────────────────
 // PROFILE MANAGEMENT (4 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/profile/details', ProfileController.getProfile.bind(ProfileController));
-router.post('/profile/create', ProfileController.createProfile.bind(ProfileController));
-router.put('/profile/details/update', ProfileController.updateProfile.bind(ProfileController));
-router.delete('/profile/details/delete', ProfileController.deleteProfile.bind(ProfileController));
+router.get('/profile/details', (req, res) => ProfileController.getProfile(req, res));
+router.post('/profile/create', (req, res) => ProfileController.createProfile(req, res));
+router.put('/profile/details/update', (req, res) => ProfileController.updateProfile(req, res));
+router.delete('/profile/details/delete', (req, res) => ProfileController.deleteProfile(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RATINGS & REVIEWS (7 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
-router.post('/ratings/create', RatingController.createRating.bind(RatingController));
-router.get('/ratings/doctor/:doctorId', RatingController.getRatingsByDoctor.bind(RatingController));
-router.get('/ratings/hospital/:hospitalId', RatingController.getRatingsByHospital.bind(RatingController));
-router.get('/ratings/average', RatingController.getAverageRating.bind(RatingController));
-router.get('/ratings/:ratingId', RatingController.getRatingById.bind(RatingController));
-router.put('/ratings/:ratingId/update', RatingController.updateRating.bind(RatingController));
-router.delete('/ratings/:ratingId/delete', RatingController.deleteRating.bind(RatingController));
+router.post('/ratings/create', (req, res) => RatingController.createRating(req, res));
+router.get('/ratings/doctor/:doctorId', (req, res) => RatingController.getRatingsByDoctor(req, res));
+router.get('/ratings/hospital/:hospitalId', (req, res) => RatingController.getRatingsByHospital(req, res));
+router.get('/ratings/average', (req, res) => RatingController.getAverageRating(req, res));
+router.get('/ratings/:ratingId', (req, res) => RatingController.getRatingById(req, res));
+router.put('/ratings/:ratingId/update', (req, res) => RatingController.updateRating(req, res));
+router.delete('/ratings/:ratingId/delete', (req, res) => RatingController.deleteRating(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // LAB REPORTS (6 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/lab-reports', LabReportController.getPatientReports.bind(LabReportController));
-router.get('/lab-reports/:reportId', LabReportController.getReportById.bind(LabReportController));
-router.get('/lab-reports/:reportId/download', LabReportController.downloadReport.bind(LabReportController));
-router.get('/lab-reports/status/:status', LabReportController.getReportsByStatus.bind(LabReportController));
-router.get('/lab-reports/search', LabReportController.searchReports.bind(LabReportController));
-router.get('/lab-reports/statistics', LabReportController.getReportStatistics.bind(LabReportController));
+router.get('/lab-reports', (req, res) => LabReportController.getPatientReports(req, res));
+router.get('/lab-reports/:reportId', (req, res) => LabReportController.getReportById(req, res));
+router.get('/lab-reports/:reportId/download', (req, res) => LabReportController.downloadReport(req, res));
+router.get('/lab-reports/status/:status', (req, res) => LabReportController.getReportsByStatus(req, res));
+router.get('/lab-reports/search', (req, res) => LabReportController.searchReports(req, res));
+router.get('/lab-reports/statistics', (req, res) => LabReportController.getReportStatistics(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMPANIONS (6 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
-router.post('/companions/add', CompanionController.addCompanion.bind(CompanionController));
-router.get('/companions/booking/:bookingId', CompanionController.getBookingCompanions.bind(CompanionController));
-router.get('/companions/my-companions', CompanionController.getPatientCompanions.bind(CompanionController));
-router.get('/companions/:companionId', CompanionController.getCompanionById.bind(CompanionController));
-router.put('/companions/:companionId/update', CompanionController.updateCompanion.bind(CompanionController));
-router.delete('/companions/:companionId/remove', CompanionController.removeCompanion.bind(CompanionController));
+router.post('/companions/add', (req, res) => CompanionController.addCompanion(req, res));
+router.get('/companions/booking/:bookingId', (req, res) => CompanionController.getBookingCompanions(req, res));
+router.get('/companions/my-companions', (req, res) => CompanionController.getPatientCompanions(req, res));
+router.get('/companions/:companionId', (req, res) => CompanionController.getCompanionById(req, res));
+router.put('/companions/:companionId/update', (req, res) => CompanionController.updateCompanion(req, res));
+router.delete('/companions/:companionId/remove', (req, res) => CompanionController.removeCompanion(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // COMORBID CONDITIONS (7 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
-router.post('/conditions/add', ComorbidConditionController.addCondition.bind(ComorbidConditionController));
-router.get('/conditions/my-conditions', ComorbidConditionController.getPatientConditions.bind(ComorbidConditionController));
-router.get('/conditions/:conditionId', ComorbidConditionController.getConditionById.bind(ComorbidConditionController));
-router.put('/conditions/:conditionId/update', ComorbidConditionController.updateCondition.bind(ComorbidConditionController));
-router.put('/conditions/:conditionId/status', ComorbidConditionController.updateConditionStatus.bind(ComorbidConditionController));
-router.delete('/conditions/:conditionId/delete', ComorbidConditionController.deleteCondition.bind(ComorbidConditionController));
-router.get('/conditions/count', ComorbidConditionController.getActiveConditionsCount.bind(ComorbidConditionController));
+router.post('/conditions/add', (req, res) => ComorbidConditionController.addCondition(req, res));
+router.get('/conditions/my-conditions', (req, res) => ComorbidConditionController.getPatientConditions(req, res));
+router.get('/conditions/:conditionId', (req, res) => ComorbidConditionController.getConditionById(req, res));
+router.put('/conditions/:conditionId/update', (req, res) => ComorbidConditionController.updateCondition(req, res));
+router.put('/conditions/:conditionId/status', (req, res) => ComorbidConditionController.updateConditionStatus(req, res));
+router.delete('/conditions/:conditionId/delete', (req, res) => ComorbidConditionController.deleteCondition(req, res));
+router.get('/conditions/count', (req, res) => ComorbidConditionController.getActiveConditionsCount(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TRANSACTIONS (6 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
-router.get('/transactions/my-transactions', TransactionController.getUserTransactions.bind(TransactionController));
-router.get('/transactions/payment/:paymentId', TransactionController.getTransactionsByPayment.bind(TransactionController));
-router.get('/transactions/:transactionId', TransactionController.getTransactionById.bind(TransactionController));
-router.get('/transactions/search', TransactionController.searchTransactions.bind(TransactionController));
-router.get('/transactions/status/:status', TransactionController.getTransactionsByStatus.bind(TransactionController));
-router.get('/transactions/statistics', TransactionController.getTransactionStatistics.bind(TransactionController));
+router.get('/transactions/my-transactions', (req, res) => TransactionController.getUserTransactions(req, res));
+router.get('/transactions/payment/:paymentId', (req, res) => TransactionController.getTransactionsByPayment(req, res));
+router.get('/transactions/:transactionId', (req, res) => TransactionController.getTransactionById(req, res));
+router.get('/transactions/search', (req, res) => TransactionController.searchTransactions(req, res));
+router.get('/transactions/status/:status', (req, res) => TransactionController.getTransactionsByStatus(req, res));
+router.get('/transactions/statistics', (req, res) => TransactionController.getTransactionStatistics(req, res));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CHAT MESSAGES (6 ENDPOINTS)
 // ─────────────────────────────────────────────────────────────────────────────
-router.post('/chat-messages/send', ChatMessageController.sendMessage.bind(ChatMessageController));
-router.get('/chat-messages/conversation/:conversationId', ChatMessageController.getConversationMessages.bind(ChatMessageController));
-router.get('/chat-messages/unread/:conversationId', ChatMessageController.getUnreadCount.bind(ChatMessageController));
-router.put('/chat-messages/:messageId/read', ChatMessageController.markAsRead.bind(ChatMessageController));
-router.put('/chat-messages/conversation/:conversationId/read-all', ChatMessageController.markConversationAsRead.bind(ChatMessageController));
-router.delete('/chat-messages/:messageId/delete', ChatMessageController.deleteMessage.bind(ChatMessageController));
+router.post('/chat-messages/send', (req, res) => ChatMessageController.sendMessage(req, res));
+router.get('/chat-messages/conversation/:conversationId', (req, res) => ChatMessageController.getConversationMessages(req, res));
+router.get('/chat-messages/unread/:conversationId', (req, res) => ChatMessageController.getUnreadCount(req, res));
+router.put('/chat-messages/:messageId/read', (req, res) => ChatMessageController.markAsRead(req, res));
+router.put('/chat-messages/conversation/:conversationId/read-all', (req, res) => ChatMessageController.markConversationAsRead(req, res));
+router.delete('/chat-messages/:messageId/delete', (req, res) => ChatMessageController.deleteMessage(req, res));
 
 export default router;

@@ -1,16 +1,16 @@
 'use strict';
 
 import prisma from '../config/prisma.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class FilterService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -39,17 +39,18 @@ export class FilterService {
             const offset = filters.offset || 0;
 
             const [hospitals, total] = await Promise.all([
-                prisma.hospital.findMany({
+                prisma.hospitals.findMany({
                     where,
                     include: {
                         city: true,
                         country: true
                     },
-                    orderBy: { [filters.sortBy || 'averageRating']: filters.sortOrder?.toLowerCase() || 'desc' },
+                    orderBy: {
+                        [filters.sortBy || 'averageRating']: filters.sortOrder ? .toLowerCase() || 'desc' },
                     take: limit,
                     skip: offset
                 }),
-                prisma.hospital.count({ where })
+                prisma.hospitals.count({ where })
             ]);
 
             await this.auditLogService.logAction({
@@ -99,20 +100,21 @@ export class FilterService {
             const offset = filters.offset || 0;
 
             const [doctors, total] = await Promise.all([
-                prisma.doctor.findMany({
+                prisma.doctors.findMany({
                     where,
                     include: {
                         hospital: true,
                         specialization: true
                     },
                     orderBy: [
-                        { [filters.sortBy || 'averageRating']: filters.sortOrder?.toLowerCase() || 'desc' },
+                        {
+                            [filters.sortBy || 'averageRating']: filters.sortOrder ? .toLowerCase() || 'desc' },
                         { experience: 'desc' }
                     ],
                     take: limit,
                     skip: offset
                 }),
-                prisma.doctor.count({ where })
+                prisma.doctors.count({ where })
             ]);
 
             return {
@@ -151,13 +153,14 @@ export class FilterService {
             const offset = filters.offset || 0;
 
             const [treatments, total] = await Promise.all([
-                prisma.treatment.findMany({
+                prisma.treatments.findMany({
                     where,
-                    orderBy: { [filters.sortBy || 'basePrice']: filters.sortOrder?.toLowerCase() || 'asc' },
+                    orderBy: {
+                        [filters.sortBy || 'basePrice']: filters.sortOrder ? .toLowerCase() || 'asc' },
                     take: limit,
                     skip: offset
                 }),
-                prisma.treatment.count({ where })
+                prisma.treatments.count({ where })
             ]);
 
             return {
@@ -200,7 +203,8 @@ export class FilterService {
                         treatment: true,
                         hospital: true
                     },
-                    orderBy: { [filters.sortBy || 'finalPrice']: filters.sortOrder?.toLowerCase() || 'asc' },
+                    orderBy: {
+                        [filters.sortBy || 'finalPrice']: filters.sortOrder ? .toLowerCase() || 'asc' },
                     take: limit,
                     skip: offset
                 }),
@@ -281,7 +285,7 @@ export class FilterService {
             }
 
             if (entityType === 'treatments') {
-                const categories = await prisma.treatment.findMany({
+                const categories = await prisma.treatments.findMany({
                     where: { isActive: true },
                     select: { category: true },
                     distinct: ['category']

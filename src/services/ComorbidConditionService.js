@@ -1,215 +1,222 @@
 'use strict';
 
-import ComorbidConditionService from '../services/ComorbidConditionService.js';
+import prisma from '../config/prisma.js';
 
-export class ComorbidConditionController {
-    constructor() {
-        this.comorbidConditionService = new ComorbidConditionService();
+class ComorbidConditionService {
+    // ADD CONDITION
+    async addCondition(conditionData) {
+        try {
+            const condition = await prisma.comorbidCondition.create({
+                data: conditionData
+            });
+
+            return {
+                success: true,
+                message: 'Condition added successfully',
+                data: condition
+            };
+        } catch (error) {
+            console.error('Error adding condition:', error);
+            return {
+                success: false,
+                error: error.message || 'Failed to add condition'
+            };
+        }
     }
 
-    /**
-     * ADD CONDITION
-     */
-    async addCondition(req, res) {
+    // GET PATIENT CONDITIONS
+    async getPatientConditions(patientId) {
         try {
-            const patientId = req.body.patientId || req.user.patientId;
-            const conditionData = req.body;
+            const conditions = await prisma.comorbidCondition.findMany({
+                where: { patientId }
+            });
 
-            if (!patientId) {
-                return res.status(400).json({
+            return {
+                success: true,
+                data: conditions
+            };
+        } catch (error) {
+            console.error('Error getting patient conditions:', error);
+            return {
+                success: false,
+                error: error.message || 'Failed to get patient conditions'
+            };
+        }
+    }
+
+    // GET CONDITION BY ID
+    async getConditionById(conditionId) {
+        try {
+            const condition = await prisma.comorbidCondition.findUnique({
+                where: { id: conditionId }
+            });
+
+            if (!condition) {
+                return {
                     success: false,
-                    error: 'Patient ID is required'
-                });
+                    error: 'Condition not found'
+                };
             }
 
-            const result = await this.comorbidConditionService.addCondition(patientId, conditionData);
-
-            if (!result.success) {
-                return res.status(400).json(result);
-            }
-
-            return res.status(201).json({
+            return {
                 success: true,
-                message: result.message,
-                data: result.data
-            });
+                data: condition
+            };
         } catch (error) {
-            return res.status(500).json({
+            console.error('Error getting condition:', error);
+            return {
                 success: false,
-                error: error.message
-            });
+                error: error.message || 'Failed to get condition'
+            };
         }
     }
 
-    /**
-     * GET PATIENT CONDITIONS
-     */
-    async getPatientConditions(req, res) {
+    // UPDATE CONDITION
+    async updateCondition(conditionId, updateData) {
         try {
-            const patientId = req.params.patientId || req.user.patientId;
-            const includeResolved = req.query.includeResolved === 'true';
+            const condition = await prisma.comorbidCondition.update({
+                where: { id: conditionId },
+                data: updateData
+            });
 
-            if (!patientId) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Patient ID is required'
-                });
-            }
-
-            const result = await this.comorbidConditionService.getPatientConditions(patientId, includeResolved);
-
-            if (!result.success) {
-                return res.status(400).json(result);
-            }
-
-            return res.status(200).json({
+            return {
                 success: true,
-                data: result.data,
-                total: result.total
-            });
+                message: 'Condition updated successfully',
+                data: condition
+            };
         } catch (error) {
-            return res.status(500).json({
+            console.error('Error updating condition:', error);
+            return {
                 success: false,
-                error: error.message
-            });
+                error: error.message || 'Failed to update condition'
+            };
         }
     }
 
-    /**
-     * GET CONDITION BY ID
-     */
-    async getConditionById(req, res) {
+    // UPDATE CONDITION STATUS
+    async updateConditionStatus(conditionId, status) {
         try {
-            const conditionId = req.params.conditionId;
+            const condition = await prisma.comorbidCondition.update({
+                where: { id: conditionId },
+                data: { status }
+            });
 
-            const result = await this.comorbidConditionService.getConditionById(conditionId);
-
-            if (!result.success) {
-                return res.status(404).json(result);
-            }
-
-            return res.status(200).json({
+            return {
                 success: true,
-                data: result.data
-            });
+                message: 'Condition status updated successfully',
+                data: condition
+            };
         } catch (error) {
-            return res.status(500).json({
+            console.error('Error updating condition status:', error);
+            return {
                 success: false,
-                error: error.message
-            });
+                error: error.message || 'Failed to update condition status'
+            };
         }
     }
 
-    /**
-     * UPDATE CONDITION
-     */
-    async updateCondition(req, res) {
+    // DELETE CONDITION
+    async deleteCondition(conditionId) {
         try {
-            const conditionId = req.params.conditionId;
-            const updateData = req.body;
+            await prisma.comorbidCondition.delete({
+                where: { id: conditionId }
+            });
 
-            const result = await this.comorbidConditionService.updateCondition(conditionId, updateData);
-
-            if (!result.success) {
-                return res.status(400).json(result);
-            }
-
-            return res.status(200).json({
+            return {
                 success: true,
-                message: result.message,
-                data: result.data
-            });
+                message: 'Condition deleted successfully'
+            };
         } catch (error) {
-            return res.status(500).json({
+            console.error('Error deleting condition:', error);
+            return {
                 success: false,
-                error: error.message
-            });
+                error: error.message || 'Failed to delete condition'
+            };
         }
     }
 
-    /**
-     * UPDATE CONDITION STATUS
-     */
-    async updateConditionStatus(req, res) {
+    // GET ACTIVE CONDITIONS COUNT
+    async getActiveConditionsCount(patientId) {
         try {
-            const conditionId = req.params.conditionId;
-            const { status } = req.body;
+            const count = await prisma.comorbidCondition.count({
+                where: {
+                    patientId,
+                    status: 'active'
+                }
+            });
 
-            const result = await this.comorbidConditionService.updateConditionStatus(conditionId, status);
-
-            if (!result.success) {
-                return res.status(400).json(result);
-            }
-
-            return res.status(200).json({
+            return {
                 success: true,
-                message: result.message,
-                data: result.data
-            });
+                data: { count }
+            };
         } catch (error) {
-            return res.status(500).json({
+            console.error('Error getting active conditions count:', error);
+            return {
                 success: false,
-                error: error.message
-            });
+                error: error.message || 'Failed to get active conditions count'
+            };
         }
     }
 
-    /**
-     * DELETE CONDITION
-     */
-    async deleteCondition(req, res) {
+    // GET ALL CONDITIONS
+    async getAllConditions({ page = 1, limit = 10 }) {
         try {
-            const conditionId = req.params.conditionId;
+            const skip = (parseInt(page) - 1) * parseInt(limit);
+            const take = parseInt(limit);
 
-            const result = await this.comorbidConditionService.deleteCondition(conditionId);
+            const [conditions, total] = await Promise.all([
+                prisma.comorbidCondition.findMany({
+                    skip,
+                    take
+                }),
+                prisma.comorbidCondition.count()
+            ]);
 
-            if (!result.success) {
-                return res.status(404).json(result);
-            }
-
-            return res.status(200).json({
+            return {
                 success: true,
-                message: result.message
-            });
+                data: conditions,
+                pagination: {
+                    page: parseInt(page),
+                    limit: parseInt(limit),
+                    total,
+                    totalPages: Math.ceil(total / take)
+                }
+            };
         } catch (error) {
-            return res.status(500).json({
+            console.error('Error getting all conditions:', error);
+            return {
                 success: false,
-                error: error.message
-            });
+                error: error.message || 'Failed to get all conditions'
+            };
         }
     }
 
-    /**
-     * GET ACTIVE CONDITIONS COUNT
-     */
-    async getActiveConditionsCount(req, res) {
+    // GET CONDITION STATISTICS
+    async getConditionStatistics() {
         try {
-            const patientId = req.params.patientId || req.user.patientId;
+            const [total, active, inactive] = await Promise.all([
+                prisma.comorbidCondition.count(),
+                prisma.comorbidCondition.count({ where: { status: 'active' } }),
+                prisma.comorbidCondition.count({ where: { status: 'inactive' } })
+            ]);
 
-            if (!patientId) {
-                return res.status(400).json({
-                    success: false,
-                    error: 'Patient ID is required'
-                });
-            }
-
-            const result = await this.comorbidConditionService.getActiveConditionsCount(patientId);
-
-            if (!result.success) {
-                return res.status(400).json(result);
-            }
-
-            return res.status(200).json({
+            return {
                 success: true,
-                data: result.data
-            });
+                data: {
+                    total,
+                    active,
+                    inactive
+                }
+            };
         } catch (error) {
-            return res.status(500).json({
+            console.error('Error getting condition statistics:', error);
+            return {
                 success: false,
-                error: error.message
-            });
+                error: error.message || 'Failed to get condition statistics'
+            };
         }
     }
 }
 
-export default new ComorbidConditionController();
+export { ComorbidConditionService };
+export default new ComorbidConditionService();

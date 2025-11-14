@@ -1,10 +1,10 @@
 'use strict';
 
-import { CacheService } from '../services/CacheService.js';
+import cacheService from '../services/CacheService.js';
 
 export class CacheController {
     constructor() {
-        this.cacheService = new CacheService();
+        this.cacheService = cacheService;
     }
 
     async setCacheValue(req, res) {

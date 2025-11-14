@@ -92,12 +92,14 @@ class FAQService {
                 isActive: true,
                 OR: [{
                         question: {
-                            contains: searchTerm, mode: "insensitive"
+                            contains: searchTerm,
+                            mode: "insensitive"
                         }
                     },
                     {
                         answer: {
-                            contains: searchTerm, mode: "insensitive"
+                            contains: searchTerm,
+                            mode: "insensitive"
                         }
                     },
                     {
@@ -313,4 +315,5 @@ class FAQService {
     }
 }
 
+export { FAQService };
 export default new FAQService();

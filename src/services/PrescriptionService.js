@@ -7,7 +7,7 @@ class PrescriptionService {
     // ========== CREATE PRESCRIPTION ==========
     async createPrescription(prescriptionData) {
         try {
-            const prescription = await prisma.prescription.create({
+            const prescription = await prisma.prescriptions.create({
                 data: {
                     prescriptionNumber: await this.generatePrescriptionNumber(),
                     status: 'draft',
@@ -31,7 +31,7 @@ class PrescriptionService {
     // ========== GET PRESCRIPTION ==========
     async getPrescriptionById(prescriptionId) {
         try {
-            const prescription = await prisma.prescription.findUnique({
+            const prescription = await prisma.prescriptions.findUnique({
                 where: { prescriptionId },
                 include: {
                     patient: true,
@@ -61,7 +61,7 @@ class PrescriptionService {
 
     async getPrescriptionByNumber(prescriptionNumber) {
         try {
-            const prescription = await prisma.prescription.findFirst({
+            const prescription = await prisma.prescriptions.findFirst({
                 where: { prescriptionNumber },
                 include: {
                     doctor: true,
@@ -99,7 +99,7 @@ class PrescriptionService {
                 where.isValid = filters.isValid;
             }
 
-            const prescriptions = await prisma.prescription.findMany({
+            const prescriptions = await prisma.prescriptions.findMany({
                 where,
                 include: {
                     doctor: true,
@@ -112,7 +112,7 @@ class PrescriptionService {
                 skip: filters.offset || 0,
             });
 
-            const total = await prisma.prescription.count({ where });
+            const total = await prisma.prescriptions.count({ where });
 
             return {
                 success: true,
@@ -130,7 +130,7 @@ class PrescriptionService {
     // ========== UPDATE PRESCRIPTION ==========
     async updatePrescription(prescriptionId, updateData) {
         try {
-            const prescription = await prisma.prescription.findUnique({
+            const prescription = await prisma.prescriptions.findUnique({
                 where: { prescriptionId }
             });
             if (!prescription) {
@@ -140,7 +140,7 @@ class PrescriptionService {
                 };
             }
 
-            const updated = await prisma.prescription.update({
+            const updated = await prisma.prescriptions.update({
                 where: { prescriptionId },
                 data: updateData
             });
@@ -159,7 +159,7 @@ class PrescriptionService {
     // ========== ISSUE PRESCRIPTION ==========
     async issuePrescription(prescriptionId) {
         try {
-            const prescription = await prisma.prescription.findUnique({
+            const prescription = await prisma.prescriptions.findUnique({
                 where: { prescriptionId }
             });
             if (!prescription) {
@@ -169,7 +169,7 @@ class PrescriptionService {
                 };
             }
 
-            const updated = await prisma.prescription.update({
+            const updated = await prisma.prescriptions.update({
                 where: { prescriptionId },
                 data: {
                     status: 'issued',
@@ -193,7 +193,7 @@ class PrescriptionService {
     // ========== DISPENSE PRESCRIPTION ==========
     async dispensePrescription(prescriptionId, dispensedAt, pharmacy, dispensedBy) {
         try {
-            const prescription = await prisma.prescription.findUnique({
+            const prescription = await prisma.prescriptions.findUnique({
                 where: { prescriptionId }
             });
             if (!prescription) {
@@ -203,7 +203,7 @@ class PrescriptionService {
                 };
             }
 
-            const updated = await prisma.prescription.update({
+            const updated = await prisma.prescriptions.update({
                 where: { prescriptionId },
                 data: {
                     status: 'dispensed',
@@ -230,7 +230,7 @@ class PrescriptionService {
     // ========== REFILL PRESCRIPTION ==========
     async refillPrescription(prescriptionId) {
         try {
-            const prescription = await prisma.prescription.findUnique({
+            const prescription = await prisma.prescriptions.findUnique({
                 where: { prescriptionId }
             });
             if (!prescription) {
@@ -247,7 +247,7 @@ class PrescriptionService {
                 };
             }
 
-            const updated = await prisma.prescription.update({
+            const updated = await prisma.prescriptions.update({
                 where: { prescriptionId },
                 data: {
                     refillsUsed: { increment: 1 }
@@ -270,7 +270,7 @@ class PrescriptionService {
     // ========== VALIDATE PRESCRIPTION ==========
     async validatePrescription(prescriptionId) {
         try {
-            const prescription = await prisma.prescription.findUnique({
+            const prescription = await prisma.prescriptions.findUnique({
                 where: { prescriptionId }
             });
             if (!prescription) {
@@ -314,11 +314,11 @@ class PrescriptionService {
                 },
             };
 
-            const totalPrescriptions = await prisma.prescription.count({ where });
-            const issuedPrescriptions = await prisma.prescription.count({
+            const totalPrescriptions = await prisma.prescriptions.count({ where });
+            const issuedPrescriptions = await prisma.prescriptions.count({
                 where: {...where, status: 'issued' },
             });
-            const dispensedPrescriptions = await prisma.prescription.count({
+            const dispensedPrescriptions = await prisma.prescriptions.count({
                 where: {...where, status: 'dispensed' },
             });
 
@@ -363,4 +363,5 @@ class PrescriptionService {
     }
 }
 
+export { PrescriptionService };
 export default new PrescriptionService();

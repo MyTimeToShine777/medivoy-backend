@@ -1,17 +1,17 @@
 'use strict';
 
 import prisma from '../config/prisma.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 // CONSOLIDATED: DashboardService + ReportService + AnalyticsService
 export class AnalyticsService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -20,23 +20,23 @@ export class AnalyticsService {
 
     async getDashboardMetrics() {
         try {
-            const totalBookings = await prisma.booking.count();
-            const totalRevenue = await (await prisma.payment.aggregate({ where: { status: 'completed' }, _sum: { amount: true } }))._sum.amount;
-            const totalUsers = await prisma.user.count();
-            const totalDoctors = await prisma.doctor.count();
-            const totalHospitals = await prisma.hospital.count();
+            const totalBookings = await prisma.bookings.count();
+            const totalRevenue = await (await prisma.payments.aggregate({ where: { status: 'completed' }, _sum: { amount: true } }))._sum.amount;
+            const totalUsers = await prisma.users.count();
+            const totalDoctors = await prisma.doctors.count();
+            const totalHospitals = await prisma.hospitals.count();
 
-            const pendingBookings = await prisma.booking.count({ where: { status: 'pending' } });
-            const confirmedBookings = await prisma.booking.count({ where: { status: 'confirmed' } });
-            const completedBookings = await prisma.booking.count({ where: { status: 'completed' } });
-            const cancelledBookings = await prisma.booking.count({ where: { status: 'cancelled' } });
+            const pendingBookings = await prisma.bookings.count({ where: { status: 'pending' } });
+            const confirmedBookings = await prisma.bookings.count({ where: { status: 'confirmed' } });
+            const completedBookings = await prisma.bookings.count({ where: { status: 'completed' } });
+            const cancelledBookings = await prisma.bookings.count({ where: { status: 'cancelled' } });
 
-            const completedPayments = await prisma.payment.count({ where: { status: 'completed' } });
-            const failedPayments = await prisma.payment.count({ where: { status: 'failed' } });
-            const refundedPayments = await prisma.payment.count({ where: { status: 'refunded' } });
+            const completedPayments = await prisma.payments.count({ where: { status: 'completed' } });
+            const failedPayments = await prisma.payments.count({ where: { status: 'failed' } });
+            const refundedPayments = await prisma.payments.count({ where: { status: 'refunded' } });
 
-            const totalReviews = await prisma.review.count({ where: { isPublished: true } });
-            const avgRating = await prisma.review.findMany({
+            const totalReviews = await prisma.reviews.count({ where: { isPublished: true } });
+            const avgRating = await prisma.reviews.findMany({
                 where: { isPublished: true },
                 attributes: [
                     [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('AVG', /* TODO: Check field name */ sequelize.col('rating')), 'avgRating']
@@ -82,7 +82,7 @@ export class AnalyticsService {
             if (!startDate || !endDate) throw new AppError('Date range required', 400);
 
             // TODO: Implement proper Prisma aggregation with groupBy
-            const payments = await prisma.payment.findMany({
+            const payments = await prisma.payments.findMany({
                 where: {
                     status: 'completed',
                     createdAt: {
@@ -123,7 +123,7 @@ export class AnalyticsService {
             if (!startDate || !endDate) throw new AppError('Date range required', 400);
 
             // TODO: Implement proper Prisma groupBy for booking trends
-            const bookingTrends = await prisma.booking.findMany({
+            const bookingTrends = await prisma.bookings.findMany({
                 where: {
                     createdAt: {
                         gte: startDate,
@@ -173,10 +173,10 @@ export class AnalyticsService {
                 where.hospitalId = filters.hospitalId;
             }
 
-            const bookings = await prisma.booking.findMany({
+            const bookings = await prisma.bookings.findMany({
                 where: where,
                 include: {
-                    user: {
+                    users: {
                         select: {
                             firstName: true,
                             lastName: true,
@@ -222,7 +222,7 @@ export class AnalyticsService {
         try {
             if (!startDate || !endDate) throw new AppError('Date range required', 400);
 
-            const payments = await prisma.payment.findMany({
+            const payments = await prisma.payments.findMany({
                 where: {
                     status: 'completed',
                     createdAt: {
@@ -286,7 +286,7 @@ export class AnalyticsService {
                 where.userType = 'doctor';
             }
 
-            const users = await prisma.user.findMany({
+            const users = await prisma.users.findMany({
                 where: where,
                 order: [
                     ['createdAt', 'DESC']
@@ -313,7 +313,7 @@ export class AnalyticsService {
         try {
             if (!hospitalId) throw new AppError('Hospital ID required', 400);
 
-            const bookings = await prisma.booking.count({
+            const bookings = await prisma.bookings.count({
                 where: {
                     hospitalId: hospitalId,
                     createdAt: {
@@ -323,7 +323,7 @@ export class AnalyticsService {
                 }
             });
 
-            const completedBookings = await prisma.booking.count({
+            const completedBookings = await prisma.bookings.count({
                 where: {
                     hospitalId: hospitalId,
                     status: 'completed',
@@ -334,7 +334,7 @@ export class AnalyticsService {
                 }
             });
 
-            const reviews = await prisma.review.findMany({
+            const reviews = await prisma.reviews.findMany({
                 where: {
                     hospitalId: hospitalId,
                     isPublished: true
@@ -347,7 +347,7 @@ export class AnalyticsService {
             });
 
             // TODO: Implement Prisma aggregate sum
-            const payments = await prisma.payment.findMany({
+            const payments = await prisma.payments.findMany({
                 where: {
                     status: 'completed',
                     createdAt: {
@@ -388,7 +388,7 @@ export class AnalyticsService {
 
     async getTopHospitals(limit) {
         try {
-            const hospitals = await prisma.hospital.findMany({
+            const hospitals = await prisma.hospitals.findMany({
                 attributes: {
                     include: [
                         [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('Bookings.bookingId')), 'bookingCount']
@@ -416,7 +416,7 @@ export class AnalyticsService {
 
     async getTopDoctors(limit) {
         try {
-            const doctors = await prisma.doctor.findMany({
+            const doctors = await prisma.doctors.findMany({
                 attributes: {
                     include: [
                         [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('Appointments.appointmentId')), 'appointmentCount']
@@ -452,7 +452,7 @@ export class AnalyticsService {
                 date.setMonth(date.getMonth() - i);
                 const monthKey = date.toISOString().substring(0, 7);
 
-                const newUsers = await prisma.user.count({
+                const newUsers = await prisma.users.count({
                     where: {
                         createdAt: {
                             gte: new Date(monthKey + '-01'),
@@ -489,4 +489,4 @@ export class AnalyticsService {
     }
 }
 
-export default AnalyticsService;
+export default new AnalyticsService();

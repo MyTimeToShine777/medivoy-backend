@@ -6,7 +6,7 @@ class PatientService {
     // ========== CREATE PATIENT PROFILE ==========
     async createPatientProfile(userId, patientData) {
         try {
-            const patient = await prisma.patient.create({
+            const patient = await prisma.patients.create({
                 data: {
                     userId,
                     ...patientData
@@ -22,10 +22,10 @@ class PatientService {
     // ========== GET PATIENT PROFILE ==========
     async getPatientProfile(userId) {
         try {
-            const patient = await prisma.patient.findFirst({
+            const patient = await prisma.patients.findFirst({
                 where: { userId },
                 include: {
-                    user: true,
+                    users: true,
                 },
             });
 
@@ -42,7 +42,7 @@ class PatientService {
     // ========== UPDATE PATIENT HEALTH INFO ==========
     async updateHealthInfo(userId, healthData) {
         try {
-            const patient = await prisma.patient.findFirst({ where: { userId } });
+            const patient = await prisma.patients.findFirst({ where: { userId } });
             if (!patient) return { success: false, error: 'Not found' };
 
             const updateData = {};
@@ -66,7 +66,7 @@ class PatientService {
                 updateData.bmi = this.calculateBMI(height, weight);
             }
 
-            const updatedPatient = await prisma.patient.update({
+            const updatedPatient = await prisma.patients.update({
                 where: { userId },
                 data: updateData
             });
@@ -95,7 +95,7 @@ class PatientService {
     // ========== GET PATIENT CONSULTATIONS ==========
     async getPatientConsultations(userId) {
         try {
-            const consultations = await prisma.consultation.findMany({
+            const consultations = await prisma.consultations.findMany({
                 where: { userId },
                 include: {
                     doctor: true,
@@ -118,4 +118,5 @@ class PatientService {
     }
 }
 
+export { PatientService };
 export default new PatientService();
