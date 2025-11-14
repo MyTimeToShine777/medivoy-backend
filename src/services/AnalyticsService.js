@@ -1,1 +1,492 @@
-// TODO: Recreate with proper Prisma syntax
+'use strict';
+
+import prisma from '../config/prisma.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
+import { AppError } from '../utils/errors/AppError.js';
+
+// CONSOLIDATED: DashboardService + ReportService + AnalyticsService
+export class AnalyticsService {
+    constructor() {
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // DASHBOARD METRICS (from DashboardService)
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    async getDashboardMetrics() {
+        try {
+            const totalBookings = await prisma.bookings.count();
+            const totalRevenue = await (await prisma.payments.aggregate({ where: { status: 'completed' }, _sum: { amount: true } }))._sum.amount;
+            const totalUsers = await prisma.users.count();
+            const totalDoctors = await prisma.doctors.count();
+            const totalHospitals = await prisma.hospitals.count();
+
+            const pendingBookings = await prisma.bookings.count({ where: { status: 'pending' } });
+            const confirmedBookings = await prisma.bookings.count({ where: { status: 'confirmed' } });
+            const completedBookings = await prisma.bookings.count({ where: { status: 'completed' } });
+            const cancelledBookings = await prisma.bookings.count({ where: { status: 'cancelled' } });
+
+            const completedPayments = await prisma.payments.count({ where: { status: 'completed' } });
+            const failedPayments = await prisma.payments.count({ where: { status: 'failed' } });
+            const refundedPayments = await prisma.payments.count({ where: { status: 'refunded' } });
+
+            const totalReviews = await prisma.reviews.count({ where: { isPublished: true } });
+            const avgRating = await prisma.reviews.findMany({
+                where: { isPublished: true },
+                attributes: [
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('AVG', /* TODO: Check field name */ sequelize.col('rating')), 'avgRating']
+                ],
+                raw: true
+            });
+
+            const metrics = {
+                bookings: {
+                    total: totalBookings,
+                    pending: pendingBookings,
+                    confirmed: confirmedBookings,
+                    completed: completedBookings,
+                    cancelled: cancelledBookings
+                },
+                payments: {
+                    totalRevenue: totalRevenue || 0,
+                    completed: completedPayments,
+                    failed: failedPayments,
+                    refunded: refundedPayments,
+                    avgTransactionValue: totalRevenue && completedPayments ? (totalRevenue / completedPayments).toFixed(2) : 0
+                },
+                reviews: {
+                    total: totalReviews,
+                    averageRating: avgRating && avgRating[0] && avgRating[0].avgRating ? parseFloat(avgRating[0].avgRating).toFixed(2) : 0
+                },
+                users: {
+                    total: totalUsers,
+                    doctors: totalDoctors,
+                    hospitals: totalHospitals,
+                    patients: totalUsers - totalDoctors
+                }
+            };
+
+            return { success: true, metrics: metrics };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async getRevenueAnalytics(startDate, endDate) {
+        try {
+            if (!startDate || !endDate) throw new AppError('Date range required', 400);
+
+            // TODO: Implement proper Prisma aggregation with groupBy
+            const payments = await prisma.payments.findMany({
+                where: {
+                    status: 'completed',
+                    createdAt: {
+                        gte: startDate,
+                        lte: endDate
+                    }
+                },
+                select: {
+                    amount: true,
+                    paymentId: true,
+                    createdAt: true
+                },
+                orderBy: {
+                    createdAt: 'asc'
+                }
+            });
+
+            const totalRevenue = payments.reduce((sum, p) => sum + parseFloat(p.totalAmount || 0), 0);
+            const totalTransactions = payments.reduce((sum, p) => sum + p.transactionCount, 0);
+
+            return {
+                success: true,
+                data: payments,
+                summary: {
+                    totalRevenue: totalRevenue.toFixed(2),
+                    totalTransactions: totalTransactions,
+                    avgDailyRevenue: (totalRevenue / payments.length).toFixed(2),
+                    periodDays: payments.length
+                }
+            };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async getBookingTrendAnalytics(startDate, endDate) {
+        try {
+            if (!startDate || !endDate) throw new AppError('Date range required', 400);
+
+            // TODO: Implement proper Prisma groupBy for booking trends
+            const bookingTrends = await prisma.bookings.findMany({
+                where: {
+                    createdAt: {
+                        gte: startDate,
+                        lte: endDate
+                    }
+                },
+                select: {
+                    bookingId: true,
+                    status: true,
+                    createdAt: true
+                },
+                orderBy: {
+                    createdAt: 'asc'
+                }
+            });
+
+            return {
+                success: true,
+                trends: bookingTrends,
+                period: { startDate: startDate, endDate: endDate }
+            };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // REPORT GENERATION (from ReportService - MERGED)
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    async generateBookingReport(filters) {
+        try {
+            const where = {};
+
+            if (filters && filters.startDate && filters.endDate) {
+                where.createdAt = {
+                    gte: filters.startDate,
+                    lte: filters.endDate
+                };
+            }
+
+            if (filters && filters.status) {
+                where.status = filters.status;
+            }
+
+            if (filters && filters.hospitalId) {
+                where.hospitalId = filters.hospitalId;
+            }
+
+            const bookings = await prisma.bookings.findMany({
+                where: where,
+                include: {
+                    users: {
+                        select: {
+                            firstName: true,
+                            lastName: true,
+                            email: true
+                        }
+                    },
+                    treatment: {
+                        select: {
+                            treatmentName: true
+                        }
+                    },
+                    hospital: {
+                        select: {
+                            hospitalName: true
+                        }
+                    }
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                }
+            });
+
+            const report = {
+                reportType: 'Booking Report',
+                generatedAt: new Date(),
+                totalRecords: bookings.length,
+                statusBreakdown: {
+                    pending: bookings.filter(b => b.status === 'pending').length,
+                    confirmed: bookings.filter(b => b.status === 'confirmed').length,
+                    completed: bookings.filter(b => b.status === 'completed').length,
+                    cancelled: bookings.filter(b => b.status === 'cancelled').length
+                },
+                data: bookings
+            };
+
+            return { success: true, report: report };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async generateRevenueReport(startDate, endDate) {
+        try {
+            if (!startDate || !endDate) throw new AppError('Date range required', 400);
+
+            const payments = await prisma.payments.findMany({
+                where: {
+                    status: 'completed',
+                    createdAt: {
+                        gte: startDate,
+                        lte: endDate
+                    }
+                },
+                include: {
+                    booking: {
+                        select: {
+                            bookingId: true
+                        }
+                    }
+                }
+            });
+
+            const byGateway = {};
+            const byStatus = {};
+            let totalAmount = 0;
+
+            for (const payment of payments) {
+                totalAmount += payment.amount;
+
+                if (!byGateway[payment.gateway]) {
+                    byGateway[payment.gateway] = { count: 0, amount: 0 };
+                }
+                byGateway[payment.gateway].count++;
+                byGateway[payment.gateway].amount += payment.amount;
+
+                if (!byStatus[payment.status]) {
+                    byStatus[payment.status] = { count: 0, amount: 0 };
+                }
+                byStatus[payment.status].count++;
+                byStatus[payment.status].amount += payment.amount;
+            }
+
+            const report = {
+                reportType: 'Revenue Report',
+                generatedAt: new Date(),
+                period: { startDate: startDate, endDate: endDate },
+                totalPayments: payments.length,
+                totalRevenue: totalAmount.toFixed(2),
+                byGateway: byGateway,
+                byStatus: byStatus,
+                data: payments
+            };
+
+            return { success: true, report: report };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async generateUserReport(userType) {
+        try {
+            const where = {};
+
+            if (userType === 'patient') {
+                where.userType = 'patient';
+            } else if (userType === 'doctor') {
+                where.userType = 'doctor';
+            }
+
+            const users = await prisma.users.findMany({
+                where: where,
+                order: [
+                    ['createdAt', 'DESC']
+                ]
+            });
+
+            const report = {
+                reportType: 'User Report',
+                userType: userType || 'all',
+                generatedAt: new Date(),
+                totalUsers: users.length,
+                activeUsers: users.filter(u => u.isActive).length,
+                inactiveUsers: users.filter(u => !u.isActive).length,
+                data: users
+            };
+
+            return { success: true, report: report };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async generateHospitalPerformanceReport(hospitalId, startDate, endDate) {
+        try {
+            if (!hospitalId) throw new AppError('Hospital ID required', 400);
+
+            const bookings = await prisma.bookings.count({
+                where: {
+                    hospitalId: hospitalId,
+                    createdAt: {
+                        gte: startDate,
+                        lte: endDate
+                    }
+                }
+            });
+
+            const completedBookings = await prisma.bookings.count({
+                where: {
+                    hospitalId: hospitalId,
+                    status: 'completed',
+                    createdAt: {
+                        gte: startDate,
+                        lte: endDate
+                    }
+                }
+            });
+
+            const reviews = await prisma.reviews.findMany({
+                where: {
+                    hospitalId: hospitalId,
+                    isPublished: true
+                },
+                attributes: [
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('AVG', /* TODO: Check field name */ sequelize.col('rating')), 'avgRating'],
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('reviewId')), 'totalReviews']
+                ],
+                raw: true
+            });
+
+            // TODO: Implement Prisma aggregate sum
+            const payments = await prisma.payments.findMany({
+                where: {
+                    status: 'completed',
+                    createdAt: {
+                        gte: startDate,
+                        lte: endDate
+                    }
+                },
+                select: {
+                    amount: true
+                }
+            });
+            const revenue = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+
+            const report = {
+                reportType: 'Hospital Performance Report',
+                hospitalId: hospitalId,
+                generatedAt: new Date(),
+                period: { startDate: startDate, endDate: endDate },
+                metrics: {
+                    totalBookings: bookings,
+                    completedBookings: completedBookings,
+                    completionRate: bookings > 0 ? ((completedBookings / bookings) * 100).toFixed(2) + '%' : '0%',
+                    averageRating: reviews[0] && reviews[0].avgRating ? parseFloat(reviews[0].avgRating).toFixed(2) : 0,
+                    totalReviews: reviews[0] ? reviews[0].totalReviews : 0,
+                    revenue: revenue || 0
+                }
+            };
+
+            return { success: true, report: report };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // ANALYTICS & STATISTICS
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    async getTopHospitals(limit) {
+        try {
+            const hospitals = await prisma.hospitals.findMany({
+                attributes: {
+                    include: [
+                        [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('Bookings.bookingId')), 'bookingCount']
+                    ]
+                },
+                include: [{
+                    model: Booking,
+                    attributes: [],
+                    required: false
+                }],
+                group: ['Hospital.hospitalId'],
+                order: [
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('Bookings.bookingId')), 'DESC']
+                ],
+                limit: limit || 10,
+                raw: false,
+                subQuery: false
+            });
+
+            return { success: true, hospitals: hospitals };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async getTopDoctors(limit) {
+        try {
+            const doctors = await prisma.doctors.findMany({
+                attributes: {
+                    include: [
+                        [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('Appointments.appointmentId')), 'appointmentCount']
+                    ]
+                },
+                include: [{
+                    model: Appointment,
+                    attributes: [],
+                    required: false
+                }],
+                group: ['Doctor.doctorId'],
+                order: [
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('Appointments.appointmentId')), 'DESC']
+                ],
+                limit: limit || 10,
+                raw: false,
+                subQuery: false
+            });
+
+            return { success: true, doctors: doctors };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    async getUserRetentionAnalytics(monthsBack) {
+        try {
+            const months = monthsBack || 12;
+            const retention = {};
+
+            for (let i = months; i > 0; i--) {
+                const date = new Date();
+                date.setMonth(date.getMonth() - i);
+                const monthKey = date.toISOString().substring(0, 7);
+
+                const newUsers = await prisma.users.count({
+                    where: {
+                        createdAt: {
+                            gte: new Date(monthKey + '-01'),
+                            lte: new Date(monthKey + '-31')
+                        }
+                    }
+                });
+
+                retention[monthKey] = newUsers;
+            }
+
+            return { success: true, retention: retention };
+        } catch (error) {
+            throw this.errorHandlingService.handleError(error);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // HELPER METHODS
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    async logAnalyticsAccess(userId, reportType) {
+        try {
+            await this.auditLogService.logAction({
+                action: 'ANALYTICS_REPORT_ACCESSED',
+                entityType: 'Report',
+                entityId: reportType + '-' + Date.now(),
+                userId: userId,
+                details: { reportType: reportType }
+            });
+        } catch (error) {
+            console.error('Failed to log analytics access:', error);
+        }
+    }
+}
+
+export default new AnalyticsService();
