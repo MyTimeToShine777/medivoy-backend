@@ -14,11 +14,17 @@ export class StorageService {
         this.errorHandlingService = errorHandlingService;
         this.auditLogService = auditLogService;
 
-        this.imagekit = new ImageKit({
-            publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
-            privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-            urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
-        });
+        // Initialize ImageKit only if credentials are provided
+        if (process.env.IMAGEKIT_PUBLIC_KEY && process.env.IMAGEKIT_PRIVATE_KEY && process.env.IMAGEKIT_URL_ENDPOINT) {
+            this.imagekit = new ImageKit({
+                publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+                privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+                urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
+            });
+        } else {
+            this.imagekit = null;
+            console.warn('ImageKit not configured - File uploads will be disabled');
+        }
 
         this.maxFileSize = 50 * 1024 * 1024; // 50MB
         this.allowedMimeTypes = [
