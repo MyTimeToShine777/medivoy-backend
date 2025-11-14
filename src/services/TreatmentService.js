@@ -1,25 +1,26 @@
 // Treatment Service - Treatment catalog and management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Treatment, TreatmentCategory, TreatmentSubcategory, Hospital, Doctor } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class TreatmentService {
     // ========== CREATE TREATMENT ==========
     async createTreatment(treatmentData) {
         try {
-            const treatment = await Treatment.create({
-                ...treatmentData,
+            const treatment = await prisma.treatments.create({
+                data: {
+                    ...treatmentData
+                }
             });
 
             return {
                 success: true,
                 data: treatment,
-                message: 'Treatment created successfully',
+                message: 'Treatment created successfully'
             };
         } catch (error) {
             return {
                 success: false,
-                error: error.message,
+                error: error.message
             };
         }
     }
@@ -27,13 +28,14 @@ class TreatmentService {
     // ========== GET TREATMENT ==========
     async getTreatmentById(treatmentId) {
         try {
-            const treatment = await Treatment.findByPk(treatmentId, {
-                include: [
-                    { model: TreatmentCategory, as: 'category' },
-                    { model: TreatmentSubcategory, as: 'subcategory' },
-                    { model: Hospital, as: 'hospitals' },
-                    { model: Doctor, as: 'doctors' },
-                ],
+            const treatment = await prisma.treatments.findUnique({
+                where: { treatmentId },
+                include: {
+                    category: true,
+                    subcategory: true,
+                    hospitals: true,
+                    doctors: true
+                }
             });
 
             if (!treatment) {
@@ -57,7 +59,7 @@ class TreatmentService {
 
     async getTreatmentBySlug(slug) {
         try {
-            const treatment = await Treatment.findOne({
+            const treatment = await prisma.treatments.findFirst({
                 where: { slug },
                 include: [
                     { model: TreatmentCategory, as: 'category' },
@@ -96,41 +98,41 @@ class TreatmentService {
             }
             if (filters.minPrice && filters.maxPrice) {
                 where.cost = {
-                    [Op.between]: [filters.minPrice, filters.maxPrice],
+                    gte: filters.minPrice,
+                    lte: filters.maxPrice
                 };
             }
             if (filters.minRating) {
-                where.averageRating = {
-                    [Op.gte]: filters.minRating
+                where.rating = {
+                    gte: filters.minRating
                 };
             }
             if (filters.search) {
-                where[Op.or] = [{
+                where.OR = [{
                         name: {
-                            [Op.iLike]: `%${filters.search}%`
+                            contains: filters.search,
+                            mode: "insensitive"
                         }
                     },
                     {
                         description: {
-                            [Op.iLike]: `%${filters.search}%`
+                            contains: filters.search,
+                            mode: "insensitive"
                         }
-                    },
+                    }
                 ];
             }
 
-            const treatments = await Treatment.findAll({
+            const treatments = await prisma.treatments.findMany({
                 where,
-                include: [
-                    { model: TreatmentCategory, as: 'category' },
-                ],
-                order: [
-                    ['averageRating', 'DESC']
-                ],
-                limit: filters.limit || 20,
-                offset: filters.offset || 0,
+                orderBy: {
+                    rating: 'desc'
+                },
+                take: filters.limit || 20,
+                skip: filters.offset || 0,
             });
 
-            const total = await Treatment.count({ where });
+            const total = await prisma.treatments.count({ where });
 
             return {
                 success: true,
@@ -147,7 +149,7 @@ class TreatmentService {
 
     async getTreatmentsByCategory(categoryId) {
         try {
-            const treatments = await Treatment.findAll({
+            const treatments = await prisma.treatments.findMany({
                 where: { categoryId, isActive: true },
                 order: [
                     ['name', 'ASC']
@@ -168,7 +170,7 @@ class TreatmentService {
 
     async getFeaturedTreatments() {
         try {
-            const treatments = await Treatment.findAll({
+            const treatments = await prisma.treatments.findMany({
                 where: { isFeatured: true, isActive: true },
                 order: [
                     ['displayOrder', 'ASC']
@@ -372,4 +374,5 @@ class TreatmentService {
     }
 }
 
+export { TreatmentService };
 export default new TreatmentService();

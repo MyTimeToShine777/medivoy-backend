@@ -1,10 +1,10 @@
 'use strict';
 
-import LabReportService from '../services/LabReportService.js';
+import labReportService from '../services/LabReportService.js';
 
 export class LabReportController {
     constructor() {
-        this.labReportService = new LabReportService();
+        this.labReportService = labReportService;
     }
 
     /**

@@ -1,7 +1,6 @@
 // Website Content Service - Website & CMS content management
 // NO optional chaining - Production Ready
-import { WebsiteContent, User } from '../models/index.js';
-import { Op } from 'sequelize';
+import prisma from '../config/prisma.js';
 
 class WebsiteContentService {
     constructor() {
@@ -30,19 +29,21 @@ class WebsiteContentService {
     // ========== CREATE CONTENT ==========
     async createContent(contentData) {
         try {
-            const content = await WebsiteContent.create({
-                page: contentData.page,
-                title: contentData.title,
-                slug: contentData.slug || this.generateSlug(contentData.title),
-                content: contentData.content,
-                metadata: contentData.metadata || {},
-                seoTitle: contentData.seoTitle,
-                seoDescription: contentData.seoDescription,
-                seoKeywords: contentData.seoKeywords || [],
-                status: 'draft',
-                isPublished: false,
-                createdBy: contentData.createdBy,
-                version: 1,
+            const content = await prisma.websiteContent.create({
+                data: {
+                    page: contentData.page,
+                    title: contentData.title,
+                    slug: contentData.slug || this.generateSlug(contentData.title),
+                    content: contentData.content,
+                    metadata: contentData.metadata || {},
+                    seoTitle: contentData.seoTitle,
+                    seoDescription: contentData.seoDescription,
+                    seoKeywords: contentData.seoKeywords || [],
+                    status: 'draft',
+                    isPublished: false,
+                    createdBy: contentData.createdBy,
+                    version: 1,
+                }
             });
 
             return { success: true, data: content };
@@ -54,8 +55,8 @@ class WebsiteContentService {
     // ========== GET CONTENT ==========
     async getContent(page) {
         try {
-            const content = await WebsiteContent.findOne({
-                where: { page, isPublished: true },
+            const content = await prisma.websiteContent.findFirst({
+                where: { page, isPublished: true }
             });
 
             if (!content) {
@@ -74,8 +75,9 @@ class WebsiteContentService {
     // ========== GET CONTENT BY ID ==========
     async getContentById(contentId) {
         try {
-            const content = await WebsiteContent.findByPk(contentId, {
-                include: [{ model: User, as: 'creator' }],
+            const content = await prisma.websiteContent.findUnique({
+                where: { contentId },
+                include: { creator: true }
             });
 
             if (!content) {
@@ -91,16 +93,21 @@ class WebsiteContentService {
     // ========== UPDATE CONTENT ==========
     async updateContent(contentId, updateData) {
         try {
-            const content = await WebsiteContent.findByPk(contentId);
+            const content = await prisma.websiteContent.findUnique({
+                where: { contentId }
+            });
 
             if (!content) {
                 return { success: false, error: 'Content not found' };
             }
 
-            const updated = await content.update({
-                ...updateData,
-                version: (content.version || 1) + 1,
-                updatedAt: new Date(),
+            const updated = await prisma.websiteContent.update({
+                where: { contentId },
+                data: {
+                    ...updateData,
+                    version: (content.version || 1) + 1,
+                    updatedAt: new Date(),
+                }
             });
 
             return { success: true, data: updated };
@@ -112,18 +119,24 @@ class WebsiteContentService {
     // ========== PUBLISH CONTENT ==========
     async publishContent(contentId) {
         try {
-            const content = await WebsiteContent.findByPk(contentId);
+            const content = await prisma.websiteContent.findUnique({
+                where: { contentId }
+            });
 
             if (!content) {
                 return { success: false, error: 'Content not found' };
             }
 
-            content.status = 'published';
-            content.isPublished = true;
-            content.publishedAt = new Date();
-            await content.save();
+            const updated = await prisma.websiteContent.update({
+                where: { contentId },
+                data: {
+                    status: 'published',
+                    isPublished: true,
+                    publishedAt: new Date()
+                }
+            });
 
-            return { success: true, data: content };
+            return { success: true, data: updated };
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -132,17 +145,23 @@ class WebsiteContentService {
     // ========== UNPUBLISH CONTENT ==========
     async unpublishContent(contentId) {
         try {
-            const content = await WebsiteContent.findByPk(contentId);
+            const content = await prisma.websiteContent.findUnique({
+                where: { contentId }
+            });
 
             if (!content) {
                 return { success: false, error: 'Content not found' };
             }
 
-            content.isPublished = false;
-            content.status = 'draft';
-            await content.save();
+            const updated = await prisma.websiteContent.update({
+                where: { contentId },
+                data: {
+                    isPublished: false,
+                    status: 'draft'
+                }
+            });
 
-            return { success: true, data: content };
+            return { success: true, data: updated };
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -161,16 +180,16 @@ class WebsiteContentService {
                 where.isPublished = filters.isPublished;
             }
 
-            const pages = await WebsiteContent.findAll({
+            const pages = await prisma.websiteContent.findMany({
                 where,
-                order: [
-                    ['updatedAt', 'DESC']
-                ],
-                limit: filters.limit || 50,
-                offset: filters.offset || 0,
+                orderBy: {
+                    updatedAt: 'desc'
+                },
+                take: filters.limit || 50,
+                skip: filters.offset || 0,
             });
 
-            const total = await WebsiteContent.count({ where });
+            const total = await prisma.websiteContent.count({ where });
 
             return { success: true, data: pages, total };
         } catch (error) {
@@ -181,13 +200,17 @@ class WebsiteContentService {
     // ========== DELETE CONTENT ==========
     async deleteContent(contentId) {
         try {
-            const content = await WebsiteContent.findByPk(contentId);
+            const content = await prisma.websiteContent.findUnique({
+                where: { contentId }
+            });
 
             if (!content) {
                 return { success: false, error: 'Content not found' };
             }
 
-            await content.destroy();
+            await prisma.websiteContent.delete({
+                where: { contentId }
+            });
 
             return { success: true, message: 'Content deleted' };
         } catch (error) {
@@ -198,11 +221,11 @@ class WebsiteContentService {
     // ========== GET CONTENT VERSIONS ==========
     async getContentVersions(page) {
         try {
-            const versions = await WebsiteContent.findAll({
+            const versions = await prisma.websiteContent.findMany({
                 where: { page },
-                order: [
-                    ['version', 'DESC']
-                ],
+                orderBy: {
+                    version: 'desc'
+                }
             });
 
             return { success: true, data: versions };
@@ -214,29 +237,31 @@ class WebsiteContentService {
     // ========== SEARCH CONTENT ==========
     async searchContent(searchTerm) {
         try {
-            const results = await WebsiteContent.findAll({
+            const results = await prisma.websiteContent.findMany({
                 where: {
                     isPublished: true,
-                    [Op.or]: [{
+                    OR: [{
                             title: {
-                                [Op.iLike]: `%${searchTerm}%`
+                                contains: searchTerm,
+                                mode: 'insensitive'
                             }
                         },
                         {
                             content: {
-                                [Op.iLike]: `%${searchTerm}%`
+                                contains: searchTerm,
+                                mode: 'insensitive'
                             }
                         },
                         {
                             seoKeywords: {
-                                [Op.contains]: [searchTerm]
+                                has: searchTerm
                             }
-                        },
-                    ],
+                        }
+                    ]
                 },
-                order: [
-                    ['updatedAt', 'DESC']
-                ],
+                orderBy: {
+                    updatedAt: 'desc'
+                }
             });
 
             return { success: true, data: results };
@@ -256,4 +281,5 @@ class WebsiteContentService {
     }
 }
 
+export { WebsiteContentService };
 export default new WebsiteContentService();

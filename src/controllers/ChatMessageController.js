@@ -1,10 +1,10 @@
 'use strict';
 
-import ChatMessageService from '../services/ChatMessageService.js';
+import chatMessageService from '../services/ChatMessageService.js';
 
 export class ChatMessageController {
     constructor() {
-        this.chatMessageService = new ChatMessageService();
+        this.chatMessageService = chatMessageService;
     }
 
     /**

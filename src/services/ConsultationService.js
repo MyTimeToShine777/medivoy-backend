@@ -1,6 +1,6 @@
 'use strict';
 
-import { Consultation, Doctor, Patient } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { cacheService } from '../config/redis.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -18,7 +18,8 @@ export class ConsultationService {
                 return { success: false, error: 'Patient ID, doctor ID and consultation type required' };
             }
 
-            const consultation = await Consultation.create({
+            const consultation = await prisma.consultations.create({
+                data: {
                 patientId: patientId,
                 doctorId: doctorId,
                 consultationType: consultationType,
@@ -52,7 +53,7 @@ export class ConsultationService {
             let cached = await cacheService.get(cacheKey);
             if (cached) return { success: true, data: cached };
 
-            const consultations = await Consultation.findAll({
+            const consultations = await prisma.consultations.findMany({
                 where: { patientId: patientId },
                 include: [
                     { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] }
@@ -82,13 +83,13 @@ export class ConsultationService {
                 return { success: false, error: 'Consultation ID required' };
             }
 
-            const consultation = await Consultation.findByPk(consultationId);
+            const consultation = await prisma.consultations.findUnique({ where: { consultationId } });
 
             if (!consultation) {
                 return { success: false, error: 'Consultation not found', code: 'NOT_FOUND' };
             }
 
-            await consultation.update({
+            const updated = await prisma.consultations.update({ where: { consultationId }, data: {
                 diagnosis: diagnosis !== undefined ? diagnosis : consultation.diagnosis,
                 treatment: treatment !== undefined ? treatment : consultation.treatment,
                 status: status !== undefined ? status : consultation.status,
@@ -143,7 +144,7 @@ export class ConsultationService {
                 return { success: false, error: 'Consultation ID required' };
             }
 
-            const consultation = await Consultation.findByPk(consultationId);
+            const consultation = await prisma.consultations.findUnique({ where: { consultationId } });
 
             if (!consultation) {
                 return { success: false, error: 'Consultation not found', code: 'NOT_FOUND' };
@@ -162,4 +163,4 @@ export class ConsultationService {
 }
 
 export const consultationService = new ConsultationService();
-export default consultationService;
+export default new ConsultationService();

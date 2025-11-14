@@ -1,10 +1,10 @@
 'use strict';
 
-import { FAQService } from '../services/FAQService.js';
+import faqService from '../services/FAQService.js';
 
 export class FAQController {
     constructor() {
-        this.faqService = new FAQService();
+        this.faqService = faqService;
     }
 
     async createFAQ(req, res) {

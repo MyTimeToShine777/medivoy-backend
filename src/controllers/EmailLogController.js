@@ -1,10 +1,10 @@
 'use strict';
 
-import EmailLogService from '../services/EmailLogService.js';
+import emailLogService from '../services/EmailLogService.js';
 
 export class EmailLogController {
     constructor() {
-        this.emailLogService = new EmailLogService();
+        this.emailLogService = emailLogService;
     }
 
     /**

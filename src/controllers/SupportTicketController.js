@@ -1,10 +1,10 @@
 'use strict';
 
-import { SupportTicketService } from '../services/SupportTicketService.js';
+import supportTicketService from '../services/SupportTicketService.js';
 
 export class SupportTicketController {
     constructor() {
-        this.supportTicketService = new SupportTicketService();
+        this.supportTicketService = supportTicketService;
     }
 
     async createTicket(req, res) {

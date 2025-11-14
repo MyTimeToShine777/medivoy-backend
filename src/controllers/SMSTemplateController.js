@@ -1,10 +1,10 @@
 'use strict';
 
-import { SMSTemplateService } from '../services/SMSTemplateService.js';
+import smsTemplateService from '../services/SMSTemplateService.js';
 
 export class SMSTemplateController {
     constructor() {
-        this.smsTemplateService = new SMSTemplateService();
+        this.smsTemplateService = smsTemplateService;
     }
 
     async createSMSTemplate(req, res) {

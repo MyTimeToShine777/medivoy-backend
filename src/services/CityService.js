@@ -1,14 +1,14 @@
 // City Service - City management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { City, Country } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class CityService {
     // ========== GET CITY ==========
     async getCityById(cityId) {
         try {
-            const city = await City.findByPk(cityId, {
-                include: [{ model: Country, as: 'country' }],
+            const city = await prisma.city.findUnique({
+                where: { cityId },
+                include: { country: true }
             });
 
             if (!city) return { success: false, error: 'Not found' };
@@ -21,11 +21,9 @@ class CityService {
     // ========== GET CITIES BY COUNTRY ==========
     async getCitiesByCountry(countryId) {
         try {
-            const cities = await City.findAll({
+            const cities = await prisma.city.findMany({
                 where: { countryId },
-                order: [
-                    ['name', 'ASC']
-                ],
+                orderBy: { name: 'asc' }
             });
 
             return { success: true, data: cities };
@@ -38,16 +36,14 @@ class CityService {
     async searchCities(searchTerm, countryId = null) {
         try {
             const where = {
-                name: {
-                    [Op.iLike]: `%${searchTerm}%`
-                },
+                name: { contains: searchTerm, mode: 'insensitive' }
             };
 
             if (countryId) {
                 where.countryId = countryId;
             }
 
-            const cities = await City.findAll({ where });
+            const cities = await prisma.city.findMany({ where });
 
             return { success: true, data: cities };
         } catch (error) {
@@ -56,4 +52,5 @@ class CityService {
     }
 }
 
+export { CityService };
 export default new CityService();

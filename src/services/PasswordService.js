@@ -284,4 +284,5 @@ class PasswordService {
     }
 }
 
+export { PasswordService };
 export default new PasswordService();

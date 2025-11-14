@@ -1,15 +1,11 @@
 'use strict';
 
 import http from 'http';
-import dotenv from 'dotenv';
 import chalk from 'chalk';
 import boxen from 'boxen';
 
-dotenv.config();
-
 import app from './app.js';
-import { testConnection, syncDatabase, disconnectDatabase } from './config/database.js';
-import { initializeModels } from './models/index.js';
+import prisma from './config/prisma.js';
 import { cacheService } from './config/redis.js';
 import { mongoDBService } from './config/mongodb.js';
 
@@ -23,9 +19,9 @@ const APP_NAME = process.env.APP_NAME || 'Medivoy Backend';
 const APP_VERSION = process.env.APP_VERSION || '1.0.0';
 
 // Connection retry configuration
-const MAX_RETRIES = parseInt(process.env.DB_MAX_RETRIES) || 3;
-const RETRY_DELAY = parseInt(process.env.DB_RETRY_DELAY) || 5000;
-const CONNECTION_TIMEOUT = parseInt(process.env.DB_CONNECTION_TIMEOUT) || 10000;
+const MAX_RETRIES = parseInt(process.env.DB_MAX_RETRIES) || 1;
+const RETRY_DELAY = parseInt(process.env.DB_RETRY_DELAY) || 2000;
+const CONNECTION_TIMEOUT = parseInt(process.env.DB_CONNECTION_TIMEOUT) || 5000;
 const ALLOW_SERVER_START_WITHOUT_DB = process.env.ALLOW_SERVER_START_WITHOUT_DB === 'true';
 
 const server = http.createServer(app);
@@ -126,32 +122,18 @@ const initializeDatabases = async() => {
         // ─────────────────────────────────────────────────────────────────────
 
         log.info(`Initializing ${chalk.bold('PostgreSQL')} connection...`);
-        const pgResult = await retryWithTimeout(testConnection, MAX_RETRIES, RETRY_DELAY, 'PostgreSQL');
+        const testPrismaConnection = async() => {
+            await prisma.$connect();
+            await prisma.$queryRaw `SELECT 1`;
+        };
+        const pgResult = await retryWithTimeout(testPrismaConnection, MAX_RETRIES, RETRY_DELAY, 'PostgreSQL');
 
         results.postgresql.connected = pgResult.success;
         results.postgresql.duration = pgResult.duration + 's';
         results.postgresql.error = pgResult.error && pgResult.error.message ? pgResult.error.message : null;
 
         if (pgResult.success) {
-            log.info(`Initializing database models...`);
-            try {
-                initializeModels();
-                log.success('Database models initialized');
-            } catch (error) {
-                const errorMessage = error && error.message ? error.message : 'Unknown error';
-                log.error(`Model initialization failed: ${errorMessage}`);
-            }
-
-            if (NODE_ENV === 'development' && process.env.DB_SYNC_ENABLED !== 'false') {
-                log.info('Syncing database schema...');
-                try {
-                    await syncDatabase(false);
-                    log.success('Database schema synced');
-                } catch (error) {
-                    const errorMessage = error && error.message ? error.message : 'Unknown error';
-                    log.warning(`Schema sync failed: ${errorMessage}`);
-                }
-            }
+            log.success('Prisma Client connected successfully');
         } else {
             log.warning(`PostgreSQL unavailable - ${chalk.dim('some features may not work')}`);
             if (!ALLOW_SERVER_START_WITHOUT_DB) {
@@ -315,7 +297,7 @@ const gracefulShutdown = async (signal) => {
 
         if (server.listening) {
             shutdownTasks.push(
-                disconnectDatabase()
+                prisma.$disconnect()
                     .then(() => log.success('PostgreSQL disconnected'))
                     .catch(err => {
                         const errorMessage = err && err.message ? err.message : 'Unknown error';

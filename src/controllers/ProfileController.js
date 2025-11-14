@@ -1,10 +1,10 @@
 'use strict';
 
-import ProfileService from '../services/ProfileService.js';
+import profileService from '../services/ProfileService.js';
 
 export class ProfileController {
     constructor() {
-        this.profileService = new ProfileService();
+        this.profileService = profileService;
     }
 
     /**

@@ -1,17 +1,18 @@
 // Prescription Service - Prescription management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Prescription, Doctor, Patient } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 
 class PrescriptionService {
     // ========== CREATE PRESCRIPTION ==========
     async createPrescription(prescriptionData) {
         try {
-            const prescription = await Prescription.create({
-                prescriptionNumber: await this.generatePrescriptionNumber(),
-                status: 'draft',
-                ...prescriptionData,
+            const prescription = await prisma.prescriptions.create({
+                data: {
+                    prescriptionNumber: await this.generatePrescriptionNumber(),
+                    status: 'draft',
+                    ...prescriptionData,
+                }
             });
 
             return {
@@ -30,12 +31,13 @@ class PrescriptionService {
     // ========== GET PRESCRIPTION ==========
     async getPrescriptionById(prescriptionId) {
         try {
-            const prescription = await Prescription.findByPk(prescriptionId, {
-                include: [
-                    { model: User, as: 'patient' },
-                    { model: Doctor, as: 'doctor' },
-                    { model: Appointment, as: 'appointment' },
-                ],
+            const prescription = await prisma.prescriptions.findUnique({
+                where: { prescriptionId },
+                include: {
+                    patient: true,
+                    doctor: true,
+                    appointment: true,
+                },
             });
 
             if (!prescription) {
@@ -59,11 +61,11 @@ class PrescriptionService {
 
     async getPrescriptionByNumber(prescriptionNumber) {
         try {
-            const prescription = await Prescription.findOne({
+            const prescription = await prisma.prescriptions.findFirst({
                 where: { prescriptionNumber },
-                include: [
-                    { model: Doctor, as: 'doctor' },
-                ],
+                include: {
+                    doctor: true,
+                },
             });
 
             if (!prescription) {
@@ -97,20 +99,20 @@ class PrescriptionService {
                 where.isValid = filters.isValid;
             }
 
-            const prescriptions = await Prescription.findAll({
+            const prescriptions = await prisma.prescriptions.findMany({
                 where,
-                include: [
-                    { model: Doctor, as: 'doctor' },
-                    { model: Appointment, as: 'appointment' },
-                ],
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: filters.limit || 20,
-                offset: filters.offset || 0,
+                include: {
+                    doctor: true,
+                    appointment: true,
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                },
+                take: filters.limit || 20,
+                skip: filters.offset || 0,
             });
 
-            const total = await Prescription.count({ where });
+            const total = await prisma.prescriptions.count({ where });
 
             return {
                 success: true,
@@ -128,7 +130,9 @@ class PrescriptionService {
     // ========== UPDATE PRESCRIPTION ==========
     async updatePrescription(prescriptionId, updateData) {
         try {
-            const prescription = await Prescription.findByPk(prescriptionId);
+            const prescription = await prisma.prescriptions.findUnique({
+                where: { prescriptionId }
+            });
             if (!prescription) {
                 return {
                     success: false,
@@ -136,7 +140,10 @@ class PrescriptionService {
                 };
             }
 
-            const updated = await prescription.update(updateData);
+            const updated = await prisma.prescriptions.update({
+                where: { prescriptionId },
+                data: updateData
+            });
             return {
                 success: true,
                 data: updated,
@@ -152,7 +159,9 @@ class PrescriptionService {
     // ========== ISSUE PRESCRIPTION ==========
     async issuePrescription(prescriptionId) {
         try {
-            const prescription = await Prescription.findByPk(prescriptionId);
+            const prescription = await prisma.prescriptions.findUnique({
+                where: { prescriptionId }
+            });
             if (!prescription) {
                 return {
                     success: false,
@@ -160,13 +169,17 @@ class PrescriptionService {
                 };
             }
 
-            prescription.status = 'issued';
-            prescription.issuedDate = new Date();
-            await prescription.save();
+            const updated = await prisma.prescriptions.update({
+                where: { prescriptionId },
+                data: {
+                    status: 'issued',
+                    issuedDate: new Date(),
+                }
+            });
 
             return {
                 success: true,
-                data: prescription,
+                data: updated,
                 message: 'Prescription issued',
             };
         } catch (error) {
@@ -180,7 +193,9 @@ class PrescriptionService {
     // ========== DISPENSE PRESCRIPTION ==========
     async dispensePrescription(prescriptionId, dispensedAt, pharmacy, dispensedBy) {
         try {
-            const prescription = await Prescription.findByPk(prescriptionId);
+            const prescription = await prisma.prescriptions.findUnique({
+                where: { prescriptionId }
+            });
             if (!prescription) {
                 return {
                     success: false,
@@ -188,17 +203,20 @@ class PrescriptionService {
                 };
             }
 
-            prescription.status = 'dispensed';
-            prescription.dispensedAt = dispensedAt;
-            prescription.pharmacy = pharmacy;
-            prescription.dispensedBy = dispensedBy;
-            prescription.dispensingStatus = 'dispensed';
-
-            await prescription.save();
+            const updated = await prisma.prescriptions.update({
+                where: { prescriptionId },
+                data: {
+                    status: 'dispensed',
+                    dispensedAt: dispensedAt,
+                    pharmacy: pharmacy,
+                    dispensedBy: dispensedBy,
+                    dispensingStatus: 'dispensed',
+                }
+            });
 
             return {
                 success: true,
-                data: prescription,
+                data: updated,
                 message: 'Prescription dispensed',
             };
         } catch (error) {
@@ -212,7 +230,9 @@ class PrescriptionService {
     // ========== REFILL PRESCRIPTION ==========
     async refillPrescription(prescriptionId) {
         try {
-            const prescription = await Prescription.findByPk(prescriptionId);
+            const prescription = await prisma.prescriptions.findUnique({
+                where: { prescriptionId }
+            });
             if (!prescription) {
                 return {
                     success: false,
@@ -227,12 +247,16 @@ class PrescriptionService {
                 };
             }
 
-            prescription.refillsUsed += 1;
-            await prescription.save();
+            const updated = await prisma.prescriptions.update({
+                where: { prescriptionId },
+                data: {
+                    refillsUsed: { increment: 1 }
+                }
+            });
 
             return {
                 success: true,
-                data: prescription,
+                data: updated,
                 message: 'Prescription refilled',
             };
         } catch (error) {
@@ -246,7 +270,9 @@ class PrescriptionService {
     // ========== VALIDATE PRESCRIPTION ==========
     async validatePrescription(prescriptionId) {
         try {
-            const prescription = await Prescription.findByPk(prescriptionId);
+            const prescription = await prisma.prescriptions.findUnique({
+                where: { prescriptionId }
+            });
             if (!prescription) {
                 return {
                     success: false,
@@ -283,15 +309,16 @@ class PrescriptionService {
             const where = {
                 doctorId,
                 createdAt: {
-                    [Op.between]: [startDate, endDate],
+                    gte: startDate,
+                    lte: endDate,
                 },
             };
 
-            const totalPrescriptions = await Prescription.count({ where });
-            const issuedPrescriptions = await Prescription.count({
+            const totalPrescriptions = await prisma.prescriptions.count({ where });
+            const issuedPrescriptions = await prisma.prescriptions.count({
                 where: {...where, status: 'issued' },
             });
-            const dispensedPrescriptions = await Prescription.count({
+            const dispensedPrescriptions = await prisma.prescriptions.count({
                 where: {...where, status: 'dispensed' },
             });
 
@@ -336,4 +363,5 @@ class PrescriptionService {
     }
 }
 
+export { PrescriptionService };
 export default new PrescriptionService();

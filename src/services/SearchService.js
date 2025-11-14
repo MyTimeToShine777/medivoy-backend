@@ -1,18 +1,17 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { Hospital, Doctor, Treatment, Package, City, Country, Specialization, AuditLog } from '../models/index.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import prisma from '../config/prisma.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { CacheService } from './CacheService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class SearchService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
         this.cacheService = new CacheService();
     }
 
@@ -26,7 +25,6 @@ export class SearchService {
                 return { success: false, error: 'Search query must be at least 2 characters' };
             }
 
-            const searchTerm = '%' + query + '%';
             const limit = filters.limit || 10;
 
             // Check cache
@@ -36,49 +34,46 @@ export class SearchService {
                 return { success: true, data: cached.value, fromCache: true };
             }
 
-            const hospitals = await Hospital.findAll({
+            const hospitals = await prisma.hospitals.findMany({
                 where: {
                     isActive: true,
-                    [Op.or]: [
-                        { hospitalName: {
-                                [Op.like]: searchTerm } },
-                        { address: {
-                                [Op.like]: searchTerm } }
+                    OR: [
+                        { hospitalName: { contains: query, mode: 'insensitive' } },
+                        { address: { contains: query, mode: 'insensitive' } }
                     ]
                 },
-                include: [{ model: City }, { model: Country }],
-                limit: limit
+                include: {
+                    cityRel: { select: { cityName: true } },
+                    country: { select: { countryName: true } }
+                },
+                take: limit
             });
 
-            const doctors = await Doctor.findAll({
+            const doctors = await prisma.doctors.findMany({
                 where: {
-                    isActive: true,
-                    [Op.or]: [
-                        { firstName: {
-                                [Op.like]: searchTerm } },
-                        { lastName: {
-                                [Op.like]: searchTerm } },
-                        { specialization: {
-                                [Op.like]: searchTerm } }
+                    status: 'active',
+                    OR: [
+                        { users: { firstName: { contains: query, mode: 'insensitive' } } },
+                        { users: { lastName: { contains: query, mode: 'insensitive' } } },
+                        { primarySpecialization: { contains: query, mode: 'insensitive' } }
                     ]
                 },
-                include: [{ model: Hospital }, { model: Specialization }],
-                limit: limit
+                include: {
+                    users: { select: { firstName: true, lastName: true } },
+                    specialization: { select: { name: true } }
+                },
+                take: limit
             });
 
-            const treatments = await Treatment.findAll({
+            const treatments = await prisma.treatments.findMany({
                 where: {
                     isActive: true,
-                    [Op.or]: [
-                        { treatmentName: {
-                                [Op.like]: searchTerm } },
-                        { category: {
-                                [Op.like]: searchTerm } },
-                        { description: {
-                                [Op.like]: searchTerm } }
+                    OR: [
+                        { name: { contains: query, mode: 'insensitive' } },
+                        { description: { contains: query, mode: 'insensitive' } }
                     ]
                 },
-                limit: limit
+                take: limit
             });
 
             const result = {
@@ -118,40 +113,34 @@ export class SearchService {
 
             const where = {
                 isActive: true,
-                [Op.or]: [
-                    { hospitalName: {
-                            [Op.like]: '%' + query + '%' } },
-                    { address: {
-                            [Op.like]: '%' + query + '%' } }
+                OR: [
+                    { hospitalName: { contains: query, mode: 'insensitive' } },
+                    { address: { contains: query, mode: 'insensitive' } }
                 ]
             };
 
             if (filters.cityId) where.cityId = filters.cityId;
             if (filters.countryId) where.countryId = filters.countryId;
-            if (filters.minRating) where.averageRating = {
-                [Op.gte]: filters.minRating };
+            if (filters.minRating) where.averageRating = { gte: filters.minRating };
             if (filters.accreditation) {
-                where.accreditation = {
-                    [Op.like]: '%' + filters.accreditation + '%' };
+                where.accreditation = { contains: filters.accreditation, mode: 'insensitive' };
             }
 
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const hospitals = await Hospital.findAll({
+            const hospitals = await prisma.hospitals.findMany({
                 where: where,
-                include: [
-                    { model: City, attributes: ['cityName'] },
-                    { model: Country, attributes: ['countryName'] }
-                ],
-                order: [
-                    ['averageRating', 'DESC']
-                ],
-                limit: limit,
-                offset: offset
+                include: {
+                    cityRel: { select: { cityName: true } },
+                    country: { select: { countryName: true } }
+                },
+                orderBy: { averageRating: 'desc' },
+                take: limit,
+                skip: offset
             });
 
-            const total = await Hospital.count({ where: where });
+            const total = await prisma.hospitals.count({ where: where });
 
             return {
                 success: true,
@@ -174,43 +163,38 @@ export class SearchService {
             }
 
             const where = {
-                isActive: true,
-                [Op.or]: [
-                    { firstName: {
-                            [Op.like]: '%' + query + '%' } },
-                    { lastName: {
-                            [Op.like]: '%' + query + '%' } },
-                    { specialization: {
-                            [Op.like]: '%' + query + '%' } }
+                status: 'active',
+                OR: [
+                    { users: { firstName: { contains: query, mode: 'insensitive' } } },
+                    { users: { lastName: { contains: query, mode: 'insensitive' } } },
+                    { primarySpecialization: { contains: query, mode: 'insensitive' } }
                 ]
             };
 
             if (filters.specializationId) where.specializationId = filters.specializationId;
             if (filters.hospitalId) where.hospitalId = filters.hospitalId;
-            if (filters.minRating) where.averageRating = {
-                [Op.gte]: filters.minRating };
-            if (filters.minExperience) where.experience = {
-                [Op.gte]: filters.minExperience };
-            if (filters.availability === true) where.isAvailable = true;
+            if (filters.minRating) where.rating = { gte: filters.minRating };
+            if (filters.minExperience) where.experienceYears = { gte: filters.minExperience };
+            if (filters.availability === true) where.isAcceptingAppointments = true;
 
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const doctors = await Doctor.findAll({
+            const doctors = await prisma.doctors.findMany({
                 where: where,
-                include: [
-                    { model: Hospital, attributes: ['hospitalName'] },
-                    { model: Specialization, attributes: ['specializationName'] }
+                include: {
+                    users: { select: { firstName: true, lastName: true, email: true } },
+                    specialization: { select: { name: true } }
+                },
+                orderBy: [
+                    { rating: 'desc' },
+                    { experienceYears: 'desc' }
                 ],
-                order: [
-                    ['averageRating', 'DESC'],
-                    ['experience', 'DESC']
-                ],
-                limit: limit,
-                offset: offset
+                take: limit,
+                skip: offset
             });
 
-            const total = await Doctor.count({ where: where });
+            const total = await prisma.doctors.count({ where: where });
 
             return {
                 success: true,
@@ -234,38 +218,31 @@ export class SearchService {
 
             const where = {
                 isActive: true,
-                [Op.or]: [
-                    { treatmentName: {
-                            [Op.like]: '%' + query + '%' } },
-                    { category: {
-                            [Op.like]: '%' + query + '%' } },
-                    { description: {
-                            [Op.like]: '%' + query + '%' } }
+                OR: [
+                    { name: { contains: query, mode: 'insensitive' } },
+                    { description: { contains: query, mode: 'insensitive' } }
                 ]
             };
 
-            if (filters.category) where.category = filters.category;
+            if (filters.categoryId) where.categoryId = filters.categoryId;
             if (filters.minPrice || filters.maxPrice) {
-                where.basePrice = {};
-                if (filters.minPrice) where.basePrice[Op.gte] = filters.minPrice;
-                if (filters.maxPrice) where.basePrice[Op.lte] = filters.maxPrice;
+                where.cost = {};
+                if (filters.minPrice) where.cost.gte = filters.minPrice;
+                if (filters.maxPrice) where.cost.lte = filters.maxPrice;
             }
-            if (filters.minRating) where.averageRating = {
-                [Op.gte]: filters.minRating };
+            if (filters.minRating) where.rating = { gte: filters.minRating };
 
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const treatments = await Treatment.findAll({
+            const treatments = await prisma.treatments.findMany({
                 where: where,
-                order: [
-                    ['basePrice', 'ASC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { cost: 'asc' },
+                take: limit,
+                skip: offset
             });
 
-            const total = await Treatment.count({ where: where });
+            const total = await prisma.treatments.count({ where: where });
 
             return {
                 success: true,
@@ -289,11 +266,9 @@ export class SearchService {
 
             const where = {
                 isActive: true,
-                [Op.or]: [
-                    { packageName: {
-                            [Op.like]: '%' + query + '%' } },
-                    { description: {
-                            [Op.like]: '%' + query + '%' } }
+                OR: [
+                    { packageName: { contains: query, mode: 'insensitive' } },
+                    { description: { contains: query, mode: 'insensitive' } }
                 ]
             };
 
@@ -301,27 +276,25 @@ export class SearchService {
             if (filters.hospitalId) where.hospitalId = filters.hospitalId;
             if (filters.minPrice || filters.maxPrice) {
                 where.finalPrice = {};
-                if (filters.minPrice) where.finalPrice[Op.gte] = filters.minPrice;
-                if (filters.maxPrice) where.finalPrice[Op.lte] = filters.maxPrice;
+                if (filters.minPrice) where.finalPrice.gte = filters.minPrice;
+                if (filters.maxPrice) where.finalPrice.lte = filters.maxPrice;
             }
 
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const packages = await Package.findAll({
+            const packages = await prisma.package.findMany({
                 where: where,
-                include: [
-                    { model: Treatment },
-                    { model: Hospital }
-                ],
-                order: [
-                    ['finalPrice', 'ASC']
-                ],
-                limit: limit,
-                offset: offset
+                include: {
+                    treatment: true,
+                    hospital: true
+                },
+                orderBy: { finalPrice: 'asc' },
+                take: limit,
+                skip: offset
             });
 
-            const total = await Package.count({ where: where });
+            const total = await prisma.package.count({ where: where });
 
             return {
                 success: true,
@@ -377,48 +350,43 @@ export class SearchService {
                 return { success: false, error: 'Query required' };
             }
 
-            const searchTerm = '%' + query + '%';
             const suggestions = {};
 
             if (entityType === 'all' || entityType === 'hospitals') {
-                const hospitals = await Hospital.findAll({
+                const hospitals = await prisma.hospitals.findMany({
                     where: {
                         isActive: true,
-                        hospitalName: {
-                            [Op.like]: searchTerm }
+                        hospitalName: { contains: query, mode: 'insensitive' }
                     },
-                    attributes: ['hospitalId', 'hospitalName'],
-                    limit: 5
+                    select: { hospitalId: true, hospitalName: true },
+                    take: 5
                 });
                 suggestions.hospitals = hospitals.map(h => ({ id: h.hospitalId, name: h.hospitalName }));
             }
 
             if (entityType === 'all' || entityType === 'doctors') {
-                const doctors = await Doctor.findAll({
+                const doctors = await prisma.doctors.findMany({
                     where: {
                         isActive: true,
-                        [Op.or]: [
-                            { firstName: {
-                                    [Op.like]: searchTerm } },
-                            { lastName: {
-                                    [Op.like]: searchTerm } }
+                        OR: [
+                            { firstName: { contains: query, mode: 'insensitive' } },
+                            { lastName: { contains: query, mode: 'insensitive' } }
                         ]
                     },
-                    attributes: ['doctorId', 'firstName', 'lastName'],
-                    limit: 5
+                    select: { doctorId: true, firstName: true, lastName: true },
+                    take: 5
                 });
                 suggestions.doctors = doctors.map(d => ({ id: d.doctorId, name: d.firstName + ' ' + d.lastName }));
             }
 
             if (entityType === 'all' || entityType === 'treatments') {
-                const treatments = await Treatment.findAll({
+                const treatments = await prisma.treatments.findMany({
                     where: {
                         isActive: true,
-                        treatmentName: {
-                            [Op.like]: searchTerm }
+                        treatmentName: { contains: query, mode: 'insensitive' }
                     },
-                    attributes: ['treatmentId', 'treatmentName'],
-                    limit: 5
+                    select: { treatmentId: true, treatmentName: true },
+                    take: 5
                 });
                 suggestions.treatments = treatments.map(t => ({ id: t.treatmentId, name: t.treatmentName }));
             }

@@ -1,11 +1,11 @@
 'use strict';
 
-import { ReviewService } from '../services/ReviewService.js';
+import reviewService from '../services/ReviewService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class ReviewController {
     constructor() {
-        this.reviewService = new ReviewService();
+        this.reviewService = reviewService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════

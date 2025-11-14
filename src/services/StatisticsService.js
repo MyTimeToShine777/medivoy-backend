@@ -1,27 +1,16 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import {
-    Booking,
-    Payment,
-    Review,
-    User,
-    Doctor,
-    Hospital,
-    Appointment,
-    LabOrder,
-    AuditLog
-} from '../models/index.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import prisma from '../config/prisma.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class StatisticsService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -34,29 +23,30 @@ export class StatisticsService {
                 return { success: false, error: 'User ID required' };
             }
 
-            const user = await User.findByPk(userId);
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
                 return { success: false, error: 'User not found' };
             }
 
-            const totalBookings = await Booking.count({ where: { userId: userId } });
-            const completedBookings = await Booking.count({
+            const totalBookings = await prisma.bookings.count({ where: { userId: userId } });
+            const completedBookings = await prisma.bookings.count({
                 where: { userId: userId, status: 'completed' }
             });
-            const cancelledBookings = await Booking.count({
+            const cancelledBookings = await prisma.bookings.count({
                 where: { userId: userId, status: 'cancelled' }
             });
 
-            const totalSpent = await Payment.sum('amount', {
+            const totalSpent = await (await prisma.payments.aggregate({
                 where: {
                     userId: userId,
                     status: 'completed'
-                }
-            });
+                },
+                _sum: { amount: true }
+            }))._sum.amount;
 
-            const totalReviews = await Review.count({ where: { userId: userId, isPublished: true } });
+            const totalReviews = await prisma.reviews.count({ where: { userId: userId, isPublished: true } });
 
-            const appointments = await Appointment.count({ where: { userId: userId } });
+            const appointments = await prisma.appointments.count({ where: { userId: userId } });
 
             return {
                 success: true,
@@ -90,20 +80,22 @@ export class StatisticsService {
 
             const where = {
                 createdAt: {
-                    [Op.between]: [startDate, endDate] }
+                    gte: startDate,
+                    lte: endDate
+                }
             };
 
-            const totalBookings = await Booking.count({ where: where });
-            const confirmedBookings = await Booking.count({
+            const totalBookings = await prisma.bookings.count({ where: where });
+            const confirmedBookings = await prisma.bookings.count({
                 where: {...where, status: 'confirmed' }
             });
-            const completedBookings = await Booking.count({
+            const completedBookings = await prisma.bookings.count({
                 where: {...where, status: 'completed' }
             });
-            const cancelledBookings = await Booking.count({
+            const cancelledBookings = await prisma.bookings.count({
                 where: {...where, status: 'cancelled' }
             });
-            const pendingBookings = await Booking.count({
+            const pendingBookings = await prisma.bookings.count({
                 where: {...where, status: 'pending' }
             });
 
@@ -142,31 +134,31 @@ export class StatisticsService {
 
             const where = {
                 createdAt: {
-                    [Op.between]: [startDate, endDate] }
+                    gte: startDate,
+                    lte: endDate
+                }
             };
 
-            const totalTransactions = await Payment.count({ where: where });
-            const completedTransactions = await Payment.count({
+            const totalTransactions = await prisma.payments.count({ where: where });
+            const completedTransactions = await prisma.payments.count({
                 where: {...where, status: 'completed' }
             });
-            const failedTransactions = await Payment.count({
+            const failedTransactions = await prisma.payments.count({
                 where: {...where, status: 'failed' }
             });
-            const refundedTransactions = await Payment.count({
+            const refundedTransactions = await prisma.payments.count({
                 where: {...where, status: 'refunded' }
             });
 
-            const totalRevenue = await Payment.sum('amount', {
-                where: {...where, status: 'completed' }
-            });
+            const totalRevenue = await (await prisma.payments.aggregate({ where: {...where, status: 'completed' }, _sum: { amount: true } }))._sum.amount;
 
             const avgTransactionValue = completedTransactions > 0 ? (totalRevenue / completedTransactions).toFixed(2) : 0;
 
-            const paymentsByGateway = await Payment.findAll({
+            const paymentsByGateway = await prisma.payments.findMany({
                 where: where,
                 attributes: [
-                    'gateway', [sequelize.fn('COUNT', sequelize.col('paymentId')), 'count'],
-                    [sequelize.fn('SUM', sequelize.col('amount')), 'total']
+                    'gateway', [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('paymentId')), 'count'],
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('SUM', /* TODO: Check field name */ sequelize.col('amount')), 'total']
                 ],
                 group: ['gateway'],
                 raw: true
@@ -201,20 +193,20 @@ export class StatisticsService {
                 return { success: false, error: 'Doctor ID required' };
             }
 
-            const doctor = await Doctor.findByPk(doctorId);
+            const doctor = await prisma.doctors.findUnique({ where: { doctorId: doctorId } });
             if (!doctor) {
                 return { success: false, error: 'Doctor not found' };
             }
 
-            const totalAppointments = await Appointment.count({ where: { doctorId: doctorId } });
-            const completedAppointments = await Appointment.count({
+            const totalAppointments = await prisma.appointments.count({ where: { doctorId: doctorId } });
+            const completedAppointments = await prisma.appointments.count({
                 where: { doctorId: doctorId, status: 'completed' }
             });
-            const cancelledAppointments = await Appointment.count({
+            const cancelledAppointments = await prisma.appointments.count({
                 where: { doctorId: doctorId, status: 'cancelled' }
             });
 
-            const totalReviews = await Review.count({
+            const totalReviews = await prisma.reviews.count({
                 where: { doctorId: doctorId, isPublished: true }
             });
 
@@ -248,25 +240,23 @@ export class StatisticsService {
                 return { success: false, error: 'Hospital ID required' };
             }
 
-            const hospital = await Hospital.findByPk(hospitalId);
+            const hospital = await prisma.hospitals.findUnique({ where: { hospitalId: hospitalId } });
             if (!hospital) {
                 return { success: false, error: 'Hospital not found' };
             }
 
-            const totalBookings = await Booking.count({ where: { hospitalId: hospitalId } });
-            const completedBookings = await Booking.count({
+            const totalBookings = await prisma.bookings.count({ where: { hospitalId: hospitalId } });
+            const completedBookings = await prisma.bookings.count({
                 where: { hospitalId: hospitalId, status: 'completed' }
             });
 
-            const totalDoctors = await Doctor.count({ where: { hospitalId: hospitalId, isActive: true } });
+            const totalDoctors = await prisma.doctors.count({ where: { hospitalId: hospitalId, isActive: true } });
 
-            const totalReviews = await Review.count({
+            const totalReviews = await prisma.reviews.count({
                 where: { hospitalId: hospitalId, isPublished: true }
             });
 
-            const totalRevenue = await Payment.sum('amount', {
-                where: { status: 'completed' }
-            });
+            const totalRevenue = await (await prisma.payments.aggregate({ where: { status: 'completed' }, _sum: { amount: true } }))._sum.amount;
 
             return {
                 success: true,
@@ -299,20 +289,20 @@ export class StatisticsService {
                 return { success: false, error: 'Treatment ID required' };
             }
 
-            const treatment = await Treatment.findByPk(treatmentId);
+            const treatment = await prisma.treatments.findUnique({ where: { treatmentId: treatmentId } });
             if (!treatment) {
                 return { success: false, error: 'Treatment not found' };
             }
 
-            const totalBookings = await Booking.count({ where: { treatmentId: treatmentId } });
-            const completedBookings = await Booking.count({
+            const totalBookings = await prisma.bookings.count({ where: { treatmentId: treatmentId } });
+            const completedBookings = await prisma.bookings.count({
                 where: { treatmentId: treatmentId, status: 'completed' }
             });
 
-            const avgRating = await Review.findAll({
+            const avgRating = await prisma.reviews.findMany({
                 where: { treatmentId: treatmentId },
                 attributes: [
-                    [sequelize.fn('AVG', sequelize.col('rating')), 'avgRating']
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('AVG', /* TODO: Check field name */ sequelize.col('rating')), 'avgRating']
                 ],
                 raw: true
             });
@@ -345,20 +335,22 @@ export class StatisticsService {
                 return { success: false, error: 'Date range required' };
             }
 
-            const dailyStats = await Booking.findAll({
+            // TODO: Implement Prisma groupBy for daily statistics
+            const dailyStats = await prisma.bookings.findMany({
                 where: {
                     createdAt: {
-                        [Op.between]: [startDate, endDate] }
+                        gte: startDate,
+                        lte: endDate
+                    }
                 },
-                attributes: [
-                    [sequelize.fn('DATE', sequelize.col('createdAt')), 'date'],
-                    'status', [sequelize.fn('COUNT', sequelize.col('bookingId')), 'count']
-                ],
-                group: [sequelize.fn('DATE', sequelize.col('createdAt')), 'status'],
-                order: [
-                    [sequelize.fn('DATE', sequelize.col('createdAt')), 'ASC']
-                ],
-                raw: true
+                select: {
+                    bookingId: true,
+                    status: true,
+                    createdAt: true
+                },
+                orderBy: {
+                    createdAt: 'asc'
+                }
             });
 
             return { success: true, dailyStatistics: dailyStats };
@@ -373,20 +365,21 @@ export class StatisticsService {
                 return { success: false, error: 'Year required' };
             }
 
-            const monthlyStats = await Booking.findAll({
+            const monthlyStats = await prisma.bookings.findMany({
                 where: sequelize.where(
-                    sequelize.fn('YEAR', sequelize.col('createdAt')),
+                    /* TODO: Replace with Prisma aggregation */
+                    sequelize.fn('YEAR', /* TODO: Check field name */ sequelize.col('createdAt')),
                     Op.eq,
                     year
                 ),
                 attributes: [
-                    [sequelize.fn('MONTH', sequelize.col('createdAt')), 'month'],
-                    [sequelize.fn('COUNT', sequelize.col('bookingId')), 'count'],
-                    [sequelize.fn('SUM', sequelize.col('totalPrice')), 'total']
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('MONTH', /* TODO: Check field name */ sequelize.col('createdAt')), 'month'],
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('bookingId')), 'count'],
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('SUM', /* TODO: Check field name */ sequelize.col('totalPrice')), 'total']
                 ],
-                group: [sequelize.fn('MONTH', sequelize.col('createdAt'))],
+                group: [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('MONTH', /* TODO: Check field name */ sequelize.col('createdAt'))],
                 order: [
-                    [sequelize.fn('MONTH', sequelize.col('createdAt')), 'ASC']
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('MONTH', /* TODO: Check field name */ sequelize.col('createdAt')), 'ASC']
                 ],
                 raw: true
             });

@@ -1,7 +1,6 @@
 'use strict';
 
-import { getModels } from '../models/index.js';
-import { Op } from 'sequelize';
+import prisma from '../config/prisma.js';
 
 export class EmailLogService {
     /**
@@ -17,12 +16,12 @@ export class EmailLogService {
                 return { success: false, error: 'Email subject is required' };
             }
 
-            const { EmailLog } = getModels();
-
-            const emailLog = await EmailLog.create({
-                status: 'pending',
-                attempts: 1,
-                ...emailData
+            const emailLog = await prisma.emailLog.create({
+                data: {
+                    status: 'pending',
+                    attempts: 1,
+                    ...emailData
+                }
             });
 
             return {
@@ -56,9 +55,9 @@ export class EmailLogService {
                 return { success: false, error: 'Invalid status' };
             }
 
-            const { EmailLog } = getModels();
-
-            const emailLog = await EmailLog.findByPk(emailLogId);
+            const emailLog = await prisma.emailLog.findUnique({
+                where: { emailLogId }
+            });
 
             if (!emailLog) {
                 return { success: false, error: 'Email log not found' };
@@ -79,11 +78,14 @@ export class EmailLogService {
                 updateData.clickCount = (emailLog.clickCount || 0) + 1;
             }
 
-            await emailLog.update(updateData);
+            const updated = await prisma.emailLog.update({
+                where: { emailLogId },
+                data: updateData
+            });
 
             return {
                 success: true,
-                data: emailLog,
+                data: updated,
                 message: `Email status updated to ${status}`
             };
         } catch (error) {
@@ -99,24 +101,25 @@ export class EmailLogService {
      */
     async getEmailLogs(userId, options = {}) {
         try {
-            const { EmailLog } = getModels();
-
             const { page = 1, limit = 50, status, emailType } = options;
-            const offset = (page - 1) * limit;
+            const skip = (page - 1) * limit;
 
             const where = {};
             if (userId) where.userId = userId;
             if (status) where.status = status;
             if (emailType) where.emailType = emailType;
 
-            const { rows: logs, count: total } = await EmailLog.findAndCountAll({
-                where,
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: parseInt(limit),
-                offset: parseInt(offset)
-            });
+            const [logs, total] = await Promise.all([
+                prisma.emailLog.findMany({
+                    where,
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
+                    take: parseInt(limit),
+                    skip: parseInt(skip)
+                }),
+                prisma.emailLog.count({ where })
+            ]);
 
             return {
                 success: true,
@@ -145,12 +148,13 @@ export class EmailLogService {
                 return { success: false, error: 'Email log ID is required' };
             }
 
-            const { EmailLog, User } = getModels();
-
-            const emailLog = await EmailLog.findByPk(emailLogId, {
-                include: [
-                    { model: User, as: 'user', attributes: ['userId', 'email', 'firstName', 'lastName'] }
-                ]
+            const emailLog = await prisma.emailLog.findUnique({
+                where: { emailLogId },
+                include: {
+                    users: {
+                        select: { userId: true, email: true, firstName: true, lastName: true }
+                    }
+                }
             });
 
             if (!emailLog) {
@@ -178,9 +182,9 @@ export class EmailLogService {
                 return { success: false, error: 'Email log ID is required' };
             }
 
-            const { EmailLog } = getModels();
-
-            const emailLog = await EmailLog.findByPk(emailLogId);
+            const emailLog = await prisma.emailLog.findUnique({
+                where: { emailLogId }
+            });
 
             if (!emailLog) {
                 return { success: false, error: 'Email log not found' };
@@ -190,15 +194,18 @@ export class EmailLogService {
                 return { success: false, error: 'Can only retry failed emails' };
             }
 
-            await emailLog.update({
-                status: 'pending',
-                attempts: emailLog.attempts + 1,
-                errorMessage: null
+            const updated = await prisma.emailLog.update({
+                where: { emailLogId },
+                data: {
+                    status: 'pending',
+                    attempts: emailLog.attempts + 1,
+                    errorMessage: null
+                }
             });
 
             return {
                 success: true,
-                data: emailLog,
+                data: updated,
                 message: 'Email queued for retry'
             };
         } catch (error) {
@@ -214,35 +221,33 @@ export class EmailLogService {
      */
     async getEmailStatistics(userId, dateRange = {}) {
         try {
-            const { EmailLog } = getModels();
-
             const where = {};
             if (userId) where.userId = userId;
 
             if (dateRange.startDate && dateRange.endDate) {
                 where.createdAt = {
-                    [Op.between]: [new Date(dateRange.startDate), new Date(dateRange.endDate)]
+                    gte: new Date(dateRange.startDate),
+                    lte: new Date(dateRange.endDate)
                 };
             }
 
-            const stats = await EmailLog.findAll({
+            const stats = await prisma.emailLog.groupBy({
+                by: ['status'],
                 where,
-                attributes: [
-                    'status', [sequelize.fn('COUNT', sequelize.col('emailLogId')), 'count']
-                ],
-                group: ['status'],
-                raw: true
+                _count: {
+                    emailLogId: true
+                }
             });
 
             const statsObj = stats.reduce((acc, stat) => {
-                acc[stat.status] = parseInt(stat.count);
+                acc[stat.status] = stat._count.emailLogId;
                 return acc;
             }, {});
 
             return {
                 success: true,
                 data: {
-                    total: stats.reduce((sum, s) => sum + parseInt(s.count), 0),
+                    total: stats.reduce((sum, s) => sum + s._count.emailLogId, 0),
                     breakdown: statsObj
                 }
             };

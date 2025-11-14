@@ -1,6 +1,6 @@
 'use strict';
 
-import { Session, User } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { cacheService } from '../config/redis.js';
 
 export class SessionService {
@@ -12,15 +12,17 @@ export class SessionService {
         try {
             const sessionId = `session_${userId}_${Date.now()}`;
 
-            const session = await Session.create({
-                sessionId,
-                userId,
-                deviceName: deviceInfo.name,
-                deviceType: deviceInfo.type,
-                userAgent: deviceInfo.userAgent,
-                ipAddress,
-                isActive: true,
-                createdAt: new Date()
+            const session = await prisma.session.create({
+                data: {
+                    sessionId,
+                    userId,
+                    deviceName: deviceInfo.name,
+                    deviceType: deviceInfo.type,
+                    userAgent: deviceInfo.userAgent,
+                    ipAddress,
+                    isActive: true,
+                    createdAt: new Date()
+                }
             });
 
             // Cache session for quick lookup
@@ -41,11 +43,11 @@ export class SessionService {
 
     async getUserSessions(userId) {
         try {
-            const sessions = await Session.findAll({
+            const sessions = await prisma.session.findMany({
                 where: { userId, isActive: true },
-                order: [
-                    ['createdAt', 'DESC']
-                ]
+                orderBy: {
+                    createdAt: 'desc'
+                }
             });
 
             return sessions;
@@ -61,7 +63,10 @@ export class SessionService {
 
     async endSession(sessionId) {
         try {
-            await Session.update({ isActive: false, endedAt: new Date() }, { where: { sessionId } });
+            await prisma.session.updateMany({
+                where: { sessionId },
+                data: { isActive: false, endedAt: new Date() }
+            });
 
             // Remove from cache
             await cacheService.delete(`session_${sessionId}`);
@@ -81,9 +86,11 @@ export class SessionService {
 
     async endAllOtherSessions(userId, currentSessionId) {
         try {
-            const sessions = await Session.findAll({
-                where: { userId, sessionId: {
-                        [require('sequelize').Op.ne]: currentSessionId } }
+            const sessions = await prisma.session.findMany({
+                where: {
+                    userId,
+                    sessionId: { not: currentSessionId }
+                }
             });
 
             for (const session of sessions) {
@@ -105,7 +112,7 @@ export class SessionService {
 
     async verifySession(sessionId) {
         try {
-            const session = await Session.findOne({
+            const session = await prisma.session.findFirst({
                 where: { sessionId, isActive: true }
             });
 
@@ -122,4 +129,4 @@ export class SessionService {
 }
 
 export const sessionService = new SessionService();
-export default sessionService;
+export default new SessionService();

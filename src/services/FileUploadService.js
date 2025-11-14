@@ -170,4 +170,5 @@ class FileUploadService {
     }
 }
 
+export { FileUploadService };
 export default new FileUploadService();

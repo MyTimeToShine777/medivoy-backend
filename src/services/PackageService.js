@@ -1,15 +1,16 @@
 // Package Service - Treatment packages management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Package, Treatment, Hospital, FeatureAddOn, Booking } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class PackageService {
     // ========== CREATE PACKAGE ==========
     async createPackage(packageData) {
         try {
-            const pkg = await Package.create({
-                packageNumber: await this.generatePackageNumber(),
-                ...packageData,
+            const pkg = await prisma.package.create({
+                data: {
+                    packageNumber: await this.generatePackageNumber(),
+                    ...packageData,
+                }
             });
 
             return {
@@ -25,12 +26,13 @@ class PackageService {
     // ========== GET PACKAGE ==========
     async getPackageById(packageId) {
         try {
-            const pkg = await Package.findByPk(packageId, {
-                include: [
-                    { model: Treatment, as: 'treatments' },
-                    { model: Hospital, as: 'hospital' },
-                    { model: FeatureAddOn, as: 'addOns' },
-                ],
+            const pkg = await prisma.package.findUnique({
+                where: { packageId },
+                include: {
+                    treatments: true,
+                    hospital: true,
+                    addOns: true
+                }
             });
 
             if (!pkg) return { success: false, error: 'Package not found' };
@@ -48,34 +50,37 @@ class PackageService {
             if (filters.hospitalId) where.hospitalId = filters.hospitalId;
             if (filters.minPrice && filters.maxPrice) {
                 where.price = {
-                    [Op.between]: [filters.minPrice, filters.maxPrice]
+                    gte: filters.minPrice,
+                    lte: filters.maxPrice
                 };
             }
             if (filters.search) {
-                where[Op.or] = [{
+                where.OR = [{
                         name: {
-                            [Op.iLike]: `%${filters.search}%`
+                            contains: filters.search,
+                            mode: 'insensitive'
                         }
                     },
                     {
                         description: {
-                            [Op.iLike]: `%${filters.search}%`
+                            contains: filters.search,
+                            mode: 'insensitive'
                         }
-                    },
+                    }
                 ];
             }
 
-            const packages = await Package.findAll({
+            const packages = await prisma.package.findMany({
                 where,
-                include: [{ model: Treatment, as: 'treatments' }],
-                order: [
-                    ['rating', 'DESC']
-                ],
-                limit: filters.limit || 20,
-                offset: filters.offset || 0,
+                include: { treatments: true },
+                orderBy: {
+                    rating: 'desc'
+                },
+                take: filters.limit || 20,
+                skip: filters.offset || 0,
             });
 
-            const total = await Package.count({ where });
+            const total = await prisma.package.count({ where });
             return { success: true, data: packages, total };
         } catch (error) {
             return { success: false, error: error.message };
@@ -85,14 +90,19 @@ class PackageService {
     // ========== ADD TREATMENT TO PACKAGE ==========
     async addTreatmentToPackage(packageId, treatmentId) {
         try {
-            const pkg = await Package.findByPk(packageId);
+            const pkg = await prisma.package.findUnique({
+                where: { packageId }
+            });
             if (!pkg) return { success: false, error: 'Package not found' };
 
-            if (!pkg.treatmentIds) pkg.treatmentIds = [];
-            if (!pkg.treatmentIds.includes(treatmentId)) {
-                pkg.treatmentIds.push(treatmentId);
+            const treatmentIds = pkg.treatmentIds || [];
+            if (!treatmentIds.includes(treatmentId)) {
+                treatmentIds.push(treatmentId);
             }
-            await pkg.save();
+            const updated = await prisma.package.update({
+                where: { packageId },
+                data: { treatmentIds }
+            });
 
             return { success: true, data: pkg };
         } catch (error) {
@@ -156,4 +166,5 @@ class PackageService {
     }
 }
 
+export { PackageService };
 export default new PackageService();

@@ -1,10 +1,10 @@
 'use strict';
 
-import { MedicalPackageService } from '../services/MedicalPackageService.js';
+import medicalPackageService from '../services/MedicalPackageService.js';
 
 export class PackageController {
     constructor() {
-        this.packageService = new MedicalPackageService();
+        this.packageService = medicalPackageService;
     }
 
     async createPackage(req, res) {

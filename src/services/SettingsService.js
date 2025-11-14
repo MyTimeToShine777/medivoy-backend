@@ -1,8 +1,6 @@
 'use strict';
 
-import { Op } from 'sequelize';
-import { sequelize } from '../config/database.js';
-import { Settings, Backup } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { cacheService } from '../config/redis.js';
 import { AppError } from '../utils/errors/AppError.js';
 import crypto from 'crypto';
@@ -45,7 +43,7 @@ export class SettingsService {
 
             // Use explicit column names in order to avoid driver/DB column name
             // mismatches when the database uses snake_case column names.
-            const settings = await Settings.findAll({
+            const settings = await prisma.settings.findMany({
                 where: where,
                 order: [
                     ['setting_type', 'ASC'],
@@ -76,7 +74,7 @@ export class SettingsService {
             let cached = await cacheService.get(cacheKey);
             if (cached) return { success: true, data: cached };
 
-            const settings = await Settings.findOne({
+            const settings = await prisma.settings.findFirst({
                 where: { settingType: settingType, isActive: true }
             });
 
@@ -117,20 +115,25 @@ export class SettingsService {
             const encryptedValue = updateData.isEncrypted ? this.encryptValue(updateData) : updateData;
 
             if (!settings) {
-                settings = await Settings.create({
-                    settingType: settingType,
-                    settingData: mergedData,
-                    settingValue: encryptedValue,
-                    createdBy: userId,
-                    isEncrypted: updateData.isEncrypted || false
+                settings = await prisma.settings.create({
+                    data: {
+                        settingType: settingType,
+                        settingData: mergedData,
+                        settingValue: encryptedValue,
+                        createdBy: userId,
+                        isEncrypted: updateData.isEncrypted || false
+                    }
                 });
             } else {
-                await settings.update({
-                    settingData: mergedData,
-                    settingValue: encryptedValue,
-                    updatedBy: userId,
-                    version: settings.version + 1,
-                    updatedAt: new Date()
+                settings = await prisma.settings.update({
+                    where: { id: settings.id },
+                    data: {
+                        settingData: mergedData,
+                        settingValue: encryptedValue,
+                        updatedBy: userId,
+                        version: settings.version + 1,
+                        updatedAt: new Date()
+                    }
                 });
             }
 
@@ -150,7 +153,7 @@ export class SettingsService {
 
     async validateSettings(settingType, data) {
         try {
-            const settings = await Settings.findOne({
+            const settings = await prisma.settings.findFirst({
                 where: { settingType: settingType }
             });
 
@@ -242,7 +245,8 @@ export class SettingsService {
 
             if (filters.startDate && filters.endDate) {
                 where.createdAt = {
-                    [Op.between]: [new Date(filters.startDate), new Date(filters.endDate)]
+                    gte: new Date(filters.startDate),
+                    lte: new Date(filters.endDate)
                 };
             }
 
@@ -393,7 +397,7 @@ export class SettingsService {
 
     async exportSettings(format = 'json') {
         try {
-            const settings = await Settings.findAll({
+            const settings = await prisma.settings.findMany({
                 where: { isActive: true }
             });
 
@@ -447,4 +451,4 @@ export class SettingsService {
 }
 
 export const settingsService = new SettingsService();
-export default settingsService;
+export default new SettingsService();

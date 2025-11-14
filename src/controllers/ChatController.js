@@ -1,10 +1,10 @@
 'use strict';
 
-import { ChatService } from '../services/ChatService.js';
+import chatService from '../services/ChatService.js';
 
 export class ChatController {
     constructor() {
-        this.chatService = new ChatService();
+        this.chatService = chatService;
     }
 
     async createChatRoom(req, res) {

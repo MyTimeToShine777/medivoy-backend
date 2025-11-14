@@ -22,25 +22,25 @@ router.post(
     '/register',
     authRateLimiter,
     validateRegister,
-    AuthController.register.bind(AuthController)
+    (req, res) => AuthController.register(req, res)
 );
 
 router.post(
     '/login',
     authRateLimiter,
     validateLogin,
-    AuthController.login.bind(AuthController)
+    (req, res) => AuthController.login(req, res)
 );
 
 router.post(
     '/logout',
     authenticateToken,
-    AuthController.logout.bind(AuthController)
+    (req, res) => AuthController.logout(req, res)
 );
 
 router.post(
     '/refresh-token',
-    AuthController.refreshToken.bind(AuthController)
+    (req, res) => AuthController.refreshToken(req, res)
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -49,13 +49,13 @@ router.post(
 
 router.post(
     '/verify-email',
-    AuthController.verifyEmail.bind(AuthController)
+    (req, res) => AuthController.verifyEmail(req, res)
 );
 
 router.post(
     '/resend-verification-email',
     authRateLimiter,
-    AuthController.resendVerificationEmail.bind(AuthController)
+    (req, res) => AuthController.resendVerificationEmail(req, res)
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -65,12 +65,34 @@ router.post(
 router.post(
     '/forgot-password',
     authRateLimiter,
-    AuthController.forgotPassword.bind(AuthController)
+    (req, res) => AuthController.forgotPassword(req, res)
 );
 
 router.post(
     '/reset-password',
-    AuthController.resetPassword.bind(AuthController)
+    (req, res) => AuthController.resetPassword(req, res)
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MOBILE/EMAIL OTP AUTHENTICATION
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.post(
+    '/send-otp',
+    authRateLimiter,
+    (req, res) => AuthController.sendOTP(req, res)
+);
+
+router.post(
+    '/verify-otp',
+    authRateLimiter,
+    (req, res) => AuthController.verifyOTP(req, res)
+);
+
+router.post(
+    '/resend-otp',
+    authRateLimiter,
+    (req, res) => AuthController.resendOTP(req, res)
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -85,7 +107,7 @@ router.get(
 router.get(
     '/google/callback',
     passport.authenticate('google', { failureRedirect: '/login' }),
-    AuthController.oauthCallback.bind(AuthController)
+    (req, res) => AuthController.oauthCallback(req, res)
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -100,7 +122,22 @@ router.get(
 router.get(
     '/facebook/callback',
     passport.authenticate('facebook', { failureRedirect: '/login' }),
-    AuthController.oauthCallback.bind(AuthController)
+    (req, res) => AuthController.oauthCallback(req, res)
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OAUTH - APPLE
+// ─────────────────────────────────────────────────────────────────────────────
+
+router.get(
+    '/apple',
+    passport.authenticate('apple')
+);
+
+router.post(
+    '/apple/callback',
+    passport.authenticate('apple', { failureRedirect: '/login' }),
+    (req, res) => AuthController.oauthCallback(req, res)
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -110,19 +147,19 @@ router.get(
 router.get(
     '/sessions',
     authenticateToken,
-    AuthController.getUserSessions.bind(AuthController)
+    (req, res) => AuthController.getUserSessions(req, res)
 );
 
 router.post(
     '/sessions/:sessionId/end',
     authenticateToken,
-    AuthController.endSession.bind(AuthController)
+    (req, res) => AuthController.endSession(req, res)
 );
 
 router.post(
     '/sessions/end-all-others',
     authenticateToken,
-    AuthController.endAllOtherSessions.bind(AuthController)
+    (req, res) => AuthController.endAllOtherSessions(req, res)
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -132,19 +169,19 @@ router.post(
 router.get(
     '/devices',
     authenticateToken,
-    AuthController.getUserDevices.bind(AuthController)
+    (req, res) => AuthController.getUserDevices(req, res)
 );
 
 router.delete(
     '/devices/:deviceId',
     authenticateToken,
-    AuthController.removeDevice.bind(AuthController)
+    (req, res) => AuthController.removeDevice(req, res)
 );
 
 router.delete(
     '/devices',
     authenticateToken,
-    AuthController.removeAllDevices.bind(AuthController)
+    (req, res) => AuthController.removeAllDevices(req, res)
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -154,18 +191,18 @@ router.delete(
 router.post(
     '/2fa/enable',
     authenticateToken,
-    AuthController.enable2FA.bind(AuthController)
+    (req, res) => AuthController.enable2FA(req, res)
 );
 
 router.post(
     '/2fa/verify',
-    AuthController.verify2FA.bind(AuthController)
+    (req, res) => AuthController.verify2FA(req, res)
 );
 
 router.post(
     '/2fa/disable',
     authenticateToken,
-    AuthController.disable2FA.bind(AuthController)
+    (req, res) => AuthController.disable2FA(req, res)
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -175,7 +212,7 @@ router.post(
 router.get(
     '/audit-logs',
     authenticateToken,
-    AuthController.getUserAuditLogs.bind(AuthController)
+    (req, res) => AuthController.getUserAuditLogs(req, res)
 );
 
 export default router;

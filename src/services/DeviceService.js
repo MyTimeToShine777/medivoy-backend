@@ -1,6 +1,6 @@
 'use strict';
 
-import { Device } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import UAParser from 'ua-parser-js';
 
 export class DeviceService {
@@ -42,22 +42,26 @@ export class DeviceService {
         try {
             const deviceInfo = this.parseDeviceInfo(userAgent);
 
-            let device = await Device.findOne({
+            let device = await prisma.device.findFirst({
                 where: { userId, userAgent }
             });
 
             if (device) {
                 // Update existing device
-                await device.update({
-                    lastLoginAt: new Date(),
-                    ipAddress,
-                    isActive: true
+                device = await prisma.device.update({
+                    where: { deviceId: device.deviceId },
+                    data: {
+                        lastLoginAt: new Date(),
+                        ipAddress,
+                        isActive: true
+                    }
                 });
             } else {
                 // Create new device
-                device = await Device.create({
-                    userId,
-                    name: deviceInfo.name,
+                device = await prisma.device.create({
+                    data: {
+                        userId,
+                        name: deviceInfo.name,
                     type: deviceInfo.type,
                     browser: deviceInfo.browser,
                     browserVersion: deviceInfo.browserVersion,
@@ -85,11 +89,11 @@ export class DeviceService {
 
     async getUserDevices(userId) {
         try {
-            const devices = await Device.findAll({
+            const devices = await prisma.device.findMany({
                 where: { userId, isActive: true },
-                order: [
-                    ['lastLoginAt', 'DESC']
-                ]
+                orderBy: {
+                    lastLoginAt: 'desc'
+                }
             });
 
             return devices;
@@ -105,7 +109,10 @@ export class DeviceService {
 
     async removeDevice(deviceId, userId) {
         try {
-            await Device.update({ isActive: false }, { where: { deviceId, userId } });
+            await prisma.device.updateMany({
+                where: { deviceId, userId },
+                data: { isActive: false }
+            });
 
             console.log(`✅ Device removed: ${deviceId}`);
 
@@ -122,7 +129,10 @@ export class DeviceService {
 
     async removeAllDevices(userId) {
         try {
-            await Device.update({ isActive: false }, { where: { userId } });
+            await prisma.device.updateMany({
+                where: { userId },
+                data: { isActive: false }
+            });
 
             console.log(`✅ All devices removed for user: ${userId}`);
 
@@ -135,4 +145,4 @@ export class DeviceService {
 }
 
 export const deviceService = new DeviceService();
-export default deviceService;
+export default new DeviceService();

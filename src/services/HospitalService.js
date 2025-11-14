@@ -1,17 +1,16 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { Hospital, Doctor, HospitalService as HospService, City, Country, User, AuditLog } from '../models/index.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import prisma from '../config/prisma.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class HospitalService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -19,40 +18,39 @@ export class HospitalService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createHospital(hospitalData) {
-        const transaction = await sequelize.transaction();
-        try {
+        const result = await prisma.$transaction(async(tx) => {
             if (!hospitalData || !hospitalData.hospitalName) {
                 throw new AppError('Hospital name required', 400);
             }
 
-            const existing = await Hospital.findOne({
-                where: { registrationNumber: hospitalData.registrationNumber },
-                transaction: transaction
+            const existing = await tx.hospital.findFirst({
+                where: { registrationNumber: hospitalData.registrationNumber }
             });
 
             if (existing) {
-                await transaction.rollback();
                 throw new AppError('Hospital already registered', 409);
             }
 
-            const hospital = await Hospital.create({
-                hospitalId: this._generateHospitalId(),
-                hospitalName: hospitalData.hospitalName,
-                registrationNumber: hospitalData.registrationNumber,
-                cityId: hospitalData.cityId,
-                countryId: hospitalData.countryId,
-                address: hospitalData.address,
-                phone: hospitalData.phone,
-                email: hospitalData.email,
-                website: hospitalData.website || null,
-                totalBeds: hospitalData.totalBeds || 0,
-                totalDoctors: 0,
-                accreditation: hospitalData.accreditation || [],
-                certifications: hospitalData.certifications || [],
-                established: hospitalData.established || null,
-                isActive: true,
-                createdAt: new Date()
-            }, { transaction: transaction });
+            const hospital = await tx.hospital.create({
+                data: {
+                    hospitalId: this._generateHospitalId(),
+                    hospitalName: hospitalData.hospitalName,
+                    registrationNumber: hospitalData.registrationNumber,
+                    cityId: hospitalData.cityId,
+                    countryId: hospitalData.countryId,
+                    address: hospitalData.address,
+                    phone: hospitalData.phone,
+                    email: hospitalData.email,
+                    website: hospitalData.website || null,
+                    totalBeds: hospitalData.totalBeds || 0,
+                    totalDoctors: 0,
+                    accreditation: hospitalData.accreditation || [],
+                    certifications: hospitalData.certifications || [],
+                    established: hospitalData.established || null,
+                    isActive: true,
+                    createdAt: new Date()
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'HOSPITAL_CREATED',
@@ -60,28 +58,38 @@ export class HospitalService {
                 entityId: hospital.hospitalId,
                 userId: 'ADMIN',
                 details: { hospitalName: hospitalData.hospitalName }
-            }, transaction);
-
-            await transaction.commit();
+            });
 
             return { success: true, message: 'Hospital created', hospital: hospital };
-        } catch (error) {
-            await transaction.rollback();
+        }).catch(error => {
             throw this.errorHandlingService.handleError(error);
-        }
+        });
+        return result;
     }
 
     async getHospitalById(hospitalId) {
         try {
             if (!hospitalId) throw new AppError('Hospital ID required', 400);
 
-            const hospital = await Hospital.findByPk(hospitalId, {
-                include: [
-                    { model: City, attributes: ['cityName'] },
-                    { model: Country, attributes: ['countryName'] },
-                    { model: Doctor, attributes: ['doctorId', 'firstName', 'lastName'] },
-                    { model: HospService, attributes: ['serviceId', 'serviceName'] }
-                ]
+            const hospital = await prisma.hospitals.findUnique({
+                where: { hospitalId },
+                include: {
+                    city: true,
+                    country: true,
+                    doctors: {
+                        select: {
+                            doctorId: true,
+                            firstName: true,
+                            lastName: true
+                        }
+                    },
+                    services: {
+                        select: {
+                            serviceId: true,
+                            serviceName: true
+                        }
+                    }
+                }
             });
 
             if (!hospital) throw new AppError('Hospital not found', 404);
@@ -102,23 +110,20 @@ export class HospitalService {
             if (filters && filters.countryId) where.countryId = filters.countryId;
             if (filters && filters.search) {
                 where.hospitalName = {
-                    [Op.like]: '%' + filters.search + '%' };
+                    contains: "' + filters.search + '"
+                };
             }
 
-            const hospitals = await Hospital.findAll({
+            const hospitals = await prisma.hospitals.findMany({
                 where: where,
-                include: [
-                    { model: City, attributes: ['cityName'] },
-                    { model: Country, attributes: ['countryName'] }
-                ],
-                order: [
-                    ['hospitalName', 'ASC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: {
+                    hospitalName: 'asc'
+                },
+                take: limit,
+                skip: offset
             });
 
-            const total = await Hospital.count({ where: where });
+            const total = await prisma.hospitals.count({ where });
 
             return {
                 success: true,
@@ -126,29 +131,36 @@ export class HospitalService {
                 pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
             };
         } catch (error) {
-            throw this.errorHandlingService.handleError(error);
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 
     async updateHospital(hospitalId, updateData) {
-        const transaction = await sequelize.transaction();
-        try {
+        const result = await prisma.$transaction(async(tx) => {
             if (!hospitalId || !updateData) throw new AppError('Required params missing', 400);
 
-            const hospital = await Hospital.findByPk(hospitalId, { transaction: transaction });
+            const hospital = await tx.hospital.findUnique({
+                where: { hospitalId }
+            });
             if (!hospital) {
-                await transaction.rollback();
                 throw new AppError('Hospital not found', 404);
             }
 
             const allowedFields = ['hospitalName', 'phone', 'email', 'website', 'totalBeds', 'address', 'accreditation', 'certifications'];
+            const updateFields = {};
             for (const field of allowedFields) {
                 if (updateData[field] !== undefined) {
-                    hospital[field] = updateData[field];
+                    updateFields[field] = updateData[field];
                 }
             }
 
-            await hospital.save({ transaction: transaction });
+            const updatedHospital = await tx.hospital.update({
+                where: { hospitalId },
+                data: updateFields
+            });
 
             await this.auditLogService.logAction({
                 action: 'HOSPITAL_UPDATED',
@@ -156,15 +168,13 @@ export class HospitalService {
                 entityId: hospitalId,
                 userId: 'ADMIN',
                 details: {}
-            }, transaction);
+            });
 
-            await transaction.commit();
-
-            return { success: true, message: 'Hospital updated', hospital: hospital };
-        } catch (error) {
-            await transaction.rollback();
+            return { success: true, message: 'Hospital updated', hospital: updatedHospital };
+        }).catch(error => {
             throw this.errorHandlingService.handleError(error);
-        }
+        });
+        return result;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -172,24 +182,26 @@ export class HospitalService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async addHospitalService(hospitalId, serviceData) {
-        const transaction = await sequelize.transaction();
-        try {
+        const result = await prisma.$transaction(async(tx) => {
             if (!hospitalId || !serviceData) throw new AppError('Required params missing', 400);
 
-            const hospital = await Hospital.findByPk(hospitalId, { transaction: transaction });
+            const hospital = await tx.hospital.findUnique({
+                where: { hospitalId }
+            });
             if (!hospital) {
-                await transaction.rollback();
                 throw new AppError('Hospital not found', 404);
             }
 
-            const service = await HospService.create({
-                serviceId: this._generateServiceId(),
-                hospitalId: hospitalId,
-                serviceName: serviceData.serviceName,
-                serviceDescription: serviceData.serviceDescription || null,
-                isAvailable: true,
-                createdAt: new Date()
-            }, { transaction: transaction });
+            const service = await tx.hospitalService.create({
+                data: {
+                    serviceId: this._generateServiceId(),
+                    hospitalId: hospitalId,
+                    serviceName: serviceData.serviceName,
+                    serviceDescription: serviceData.serviceDescription || null,
+                    isAvailable: true,
+                    createdAt: new Date()
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'HOSPITAL_SERVICE_ADDED',
@@ -197,26 +209,24 @@ export class HospitalService {
                 entityId: service.serviceId,
                 userId: 'ADMIN',
                 details: { hospitalId: hospitalId }
-            }, transaction);
-
-            await transaction.commit();
+            });
 
             return { success: true, message: 'Service added', service: service };
-        } catch (error) {
-            await transaction.rollback();
+        }).catch(error => {
             throw this.errorHandlingService.handleError(error);
-        }
+        });
+        return result;
     }
 
     async getHospitalServices(hospitalId) {
         try {
             if (!hospitalId) throw new AppError('Hospital ID required', 400);
 
-            const services = await HospService.findAll({
+            const services = await prisma.hospitalService.findMany({
                 where: { hospitalId: hospitalId, isAvailable: true },
-                order: [
-                    ['serviceName', 'ASC']
-                ]
+                orderBy: {
+                    serviceName: 'asc'
+                }
             });
 
             return { success: true, services: services, total: services.length };
@@ -226,21 +236,20 @@ export class HospitalService {
     }
 
     async removeHospitalService(serviceId, hospitalId) {
-        const transaction = await sequelize.transaction();
-        try {
+        const result = await prisma.$transaction(async(tx) => {
             if (!serviceId || !hospitalId) throw new AppError('Required params missing', 400);
 
-            const service = await HospService.findOne({
-                where: { serviceId: serviceId, hospitalId: hospitalId },
-                transaction: transaction
+            const service = await tx.hospitalService.findFirst({
+                where: { serviceId: serviceId, hospitalId: hospitalId }
             });
 
             if (!service) {
-                await transaction.rollback();
                 throw new AppError('Service not found', 404);
             }
 
-            await service.destroy({ transaction: transaction });
+            await tx.hospitalService.delete({
+                where: { serviceId: serviceId }
+            });
 
             await this.auditLogService.logAction({
                 action: 'HOSPITAL_SERVICE_REMOVED',
@@ -248,15 +257,13 @@ export class HospitalService {
                 entityId: serviceId,
                 userId: 'ADMIN',
                 details: {}
-            }, transaction);
-
-            await transaction.commit();
+            });
 
             return { success: true, message: 'Service removed' };
-        } catch (error) {
-            await transaction.rollback();
+        }).catch(error => {
             throw this.errorHandlingService.handleError(error);
-        }
+        });
+        return result;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -337,4 +344,4 @@ export class HospitalService {
     }
 }
 
-export default HospitalService;
+export default new HospitalService();

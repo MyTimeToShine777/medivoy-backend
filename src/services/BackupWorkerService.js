@@ -1,8 +1,7 @@
 'use strict';
 
 import AWS from 'aws-sdk';
-import { sequelize } from '../config/database.js';
-import { BackupLog } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 const s3 = new AWS.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -18,51 +17,59 @@ export class BackupWorkerService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async triggerDatabaseBackup() {
-        const transaction = await sequelize.transaction();
         try {
             const backupId = this._generateBackupId();
             const backupDate = new Date().toISOString();
 
-            // Log backup initiation
-            await BackupLog.create({
-                backupId: backupId,
-                backupType: 'DATABASE',
-                status: 'in_progress',
-                startedAt: new Date()
-            }, { transaction: transaction });
+            // Use Prisma transaction
+            const result = await prisma.$transaction(async (tx) => {
+                // Log backup initiation
+                await tx.backupLog.create({
+                    data: {
+                        backupId: backupId,
+                        backupType: 'DATABASE',
+                        status: 'in_progress',
+                        startedAt: new Date()
+                    }
+                });
 
-            console.log(`🔄 Starting database backup: ${backupId}`);
+                console.log(`🔄 Starting database backup: ${backupId}`);
 
-            // Execute database backup using native tools
-            const backupFilename = `db-backup-${backupDate}.sql`;
-            const backupPath = await this._dumpDatabase(backupFilename);
+                // Execute database backup using native tools
+                const backupFilename = `db-backup-${backupDate}.sql`;
+                const backupPath = await this._dumpDatabase(backupFilename);
 
-            console.log(`✅ Database dumped to: ${backupPath}`);
+                console.log(`✅ Database dumped to: ${backupPath}`);
 
-            // Upload to S3
-            const s3Result = await this._uploadToS3(backupPath, backupFilename, 'database');
+                // Upload to S3
+                const s3Result = await this._uploadToS3(backupPath, backupFilename, 'database');
 
-            // Update backup log
-            await BackupLog.update({
-                status: 'completed',
-                s3Url: s3Result.Location,
-                s3Key: s3Result.key,
-                completedAt: new Date(),
-                duration: Date.now() - new Date(backupDate).getTime()
-            }, { where: { backupId: backupId }, transaction: transaction });
+                // Update backup log
+                await tx.backupLog.update({
+                    where: { backupId: backupId },
+                    data: {
+                        status: 'completed',
+                        s3Url: s3Result.Location,
+                        s3Key: s3Result.key,
+                        completedAt: new Date(),
+                        duration: Date.now() - new Date(backupDate).getTime()
+                    }
+                });
 
-            await transaction.commit();
+                return {
+                    backupId,
+                    s3Url: s3Result.Location,
+                    timestamp: backupDate
+                };
+            });
 
-            console.log(`✅ Database backup completed: ${s3Result.Location}`);
+            console.log(`✅ Database backup completed: ${result.s3Url}`);
 
             return {
                 success: true,
-                backupId: backupId,
-                s3Url: s3Result.Location,
-                timestamp: backupDate
+                ...result
             };
         } catch (error) {
-            await transaction.rollback();
             console.error('❌ Database backup error:', error);
             return { success: false, error: error.message };
         }
@@ -76,11 +83,9 @@ export class BackupWorkerService {
         try {
             console.log('🔄 Starting scheduled backup CRON job...');
 
-            const lastBackup = await BackupLog.findOne({
+            const lastBackup = await prisma.backupLog.findFirst({
                 where: { status: 'completed' },
-                order: [
-                    ['completedAt', 'DESC']
-                ]
+                orderBy: { completedAt: 'desc' }
             });
 
             // Check if last backup is older than 24 hours
@@ -104,7 +109,9 @@ export class BackupWorkerService {
 
     async restoreFromBackup(backupId) {
         try {
-            const backup = await BackupLog.findByPk(backupId);
+            const backup = await prisma.backupLog.findUnique({
+                where: { backupId }
+            });
 
             if (!backup || backup.status !== 'completed') {
                 return { success: false, error: 'Backup not found or not completed' };

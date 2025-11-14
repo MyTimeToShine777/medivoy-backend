@@ -1,12 +1,12 @@
 'use strict';
 
-import { RoleService } from '../services/RoleService.js';
-import { PermissionService } from '../services/PermissionService.js';
+import roleService from '../services/RoleService.js';
+import permissionService from '../services/PermissionService.js';
 
 export class RoleController {
     constructor() {
-        this.roleService = new RoleService();
-        this.permissionService = new PermissionService();
+        this.roleService = roleService;
+        this.permissionService = permissionService;
     }
 
     async createRole(req, res) {

@@ -1,7 +1,6 @@
 'use strict';
 
-import { getModels } from '../models/index.js';
-import { Op } from 'sequelize';
+import prisma from '../config/prisma.js';
 
 export class ProfileService {
     /**
@@ -13,9 +12,9 @@ export class ProfileService {
                 return { success: false, error: 'User ID is required' };
             }
 
-            const { Profile } = getModels();
 
-            const profile = await Profile.findOne({
+
+            const profile = await prisma.profile.findFirst({
                 where: { userId }
             });
 
@@ -48,7 +47,7 @@ export class ProfileService {
                 return { success: false, error: 'Update data is required' };
             }
 
-            const { Profile } = getModels();
+
 
             const profile = await Profile.findOne({ where: { userId } });
 
@@ -57,7 +56,7 @@ export class ProfileService {
             }
 
             // Update profile
-            await profile.update(updateData);
+            const updated = await prisma.profile.update({ where: { userId }, data: updateData });
 
             return {
                 success: true,
@@ -81,7 +80,7 @@ export class ProfileService {
                 return { success: false, error: 'User ID is required' };
             }
 
-            const { Profile } = getModels();
+
 
             // Check if profile already exists
             const existingProfile = await Profile.findOne({ where: { userId } });
@@ -90,9 +89,11 @@ export class ProfileService {
                 return { success: false, error: 'Profile already exists for this user' };
             }
 
-            const profile = await Profile.create({
-                userId,
-                ...profileData
+            const profile = await prisma.profile.create({
+                data: {
+                    userId,
+                    ...profileData
+                }
             });
 
             return {
@@ -117,7 +118,7 @@ export class ProfileService {
                 return { success: false, error: 'User ID is required' };
             }
 
-            const { Profile } = getModels();
+
 
             const deleted = await Profile.destroy({ where: { userId } });
 

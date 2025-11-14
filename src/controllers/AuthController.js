@@ -3,11 +3,12 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { getModels } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { environment } from '../config/environment.js';
 import { ResponseFormatter } from '../utils/helpers/responseFormatter.js';
 import { logger } from '../utils/logger.js';
 import { cacheService } from '../config/redis.js';
+import JWTService from '../services/JWTService.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // AUTH CONTROLLER - ULTRA-COMPREHENSIVE
@@ -59,10 +60,9 @@ class AuthController {
             const trimmedEmail = email.trim().toLowerCase();
 
             // Check if user already exists
-            const { User } = getModels();
             let existingUser = null;
             try {
-                existingUser = await User.findOne({ where: { email: trimmedEmail } });
+                existingUser = await prisma.users.findFirst({ where: { email: trimmedEmail } });
             } catch (dbError) {
                 logger.error(`[${requestId}] ${functionName}: Database error checking existing user - ${dbError.message}`);
                 return res.status(500).json(ResponseFormatter.error('Database error', 500, 'DB_ERROR'));
@@ -85,15 +85,21 @@ class AuthController {
             // Create user
             let newUser = null;
             try {
-                newUser = await User.create({
-                    email: trimmedEmail,
-                    password: hashedPassword,
-                    firstName: firstName.trim(),
-                    lastName: lastName.trim(),
-                    phone: phone ? phone.trim() : null,
-                    role: 'patient',
-                    isActive: true,
-                    emailVerified: false
+                const { v4: uuidv4 } = await
+                import ('uuid');
+                newUser = await prisma.users.create({
+                    data: {
+                        userId: uuidv4(),
+                        email: trimmedEmail,
+                        password: hashedPassword,
+                        firstName: firstName.trim(),
+                        lastName: lastName.trim(),
+                        phone: phone ? phone.trim() : null,
+                        role: 'patient',
+                        isActive: true,
+                        isEmailVerified: false,
+                        updatedAt: new Date()
+                    }
                 });
             } catch (createError) {
                 logger.error(`[${requestId}] ${functionName}: User creation error - ${createError.message}`);
@@ -148,12 +154,11 @@ class AuthController {
 
             const trimmedEmail = email.trim().toLowerCase();
 
-            const { User } = getModels();
 
             // Find user
             let user = null;
             try {
-                user = await User.findOne({ where: { email: trimmedEmail } });
+                user = await prisma.users.findFirst({ where: { email: trimmedEmail } });
             } catch (dbError) {
                 logger.error(`[${requestId}] ${functionName}: Database error finding user - ${dbError.message}`);
                 return res.status(500).json(ResponseFormatter.error('Login failed', 500, 'DB_ERROR'));
@@ -295,12 +300,11 @@ class AuthController {
                 return res.status(401).json(ResponseFormatter.error('Invalid token payload', 401, 'INVALID_PAYLOAD'));
             }
 
-            const { User } = getModels();
 
             // Verify user still exists and is active
             let user = null;
             try {
-                user = await User.findByPk(decoded.userId);
+                user = await prisma.users.findUnique({ where: { id: decoded.userId } });
             } catch (dbError) {
                 logger.error(`[${requestId}] ${functionName}: Database error - ${dbError.message}`);
                 return res.status(500).json(ResponseFormatter.error('Token refresh failed', 500, 'DB_ERROR'));
@@ -419,12 +423,21 @@ class AuthController {
                 logger.warn(`[${requestId}] ${functionName}: Cache read error - ${cacheError.message}`);
             }
 
-            const { User } = getModels();
 
             // Fetch from database
             let user = null;
             try {
-                user = await User.findByPk(userId, { attributes: { exclude: ['password'] } });
+                user = await prisma.users.findUnique({
+                    where: { id: userId },
+                    select: {
+                        id: true,
+                        email: true,
+                        role: true,
+                        isEmailVerified: true,
+                        createdAt: true,
+                        updatedAt: true
+                    }
+                });
             } catch (dbError) {
                 logger.error(`[${requestId}] ${functionName}: Database error - ${dbError.message}`);
                 return res.status(500).json(ResponseFormatter.error('Failed to fetch user', 500, 'DB_ERROR'));
@@ -475,12 +488,11 @@ class AuthController {
                 return res.status(400).json(ResponseFormatter.error('Request body is empty', 400, 'EMPTY_BODY'));
             }
 
-            const { User } = getModels();
 
             // Fetch user
             let user = null;
             try {
-                user = await User.findByPk(userId);
+                user = await prisma.users.findUnique({ where: { id: userId } });
             } catch (dbError) {
                 logger.error(`[${requestId}] ${functionName}: Database error fetching user - ${dbError.message}`);
                 return res.status(500).json(ResponseFormatter.error('Update failed', 500, 'DB_ERROR'));
@@ -564,12 +576,11 @@ class AuthController {
                 return res.status(400).json(ResponseFormatter.error('New password is required', 400, 'NO_NEW_PASSWORD'));
             }
 
-            const { User } = getModels();
 
             // Fetch user
             let user = null;
             try {
-                user = await User.findByPk(userId);
+                user = await prisma.users.findUnique({ where: { id: userId } });
             } catch (dbError) {
                 logger.error(`[${requestId}] ${functionName}: Database error - ${dbError.message}`);
                 return res.status(500).json(ResponseFormatter.error('Password change failed', 500, 'DB_ERROR'));
@@ -646,12 +657,11 @@ class AuthController {
 
             const trimmedEmail = email.trim().toLowerCase();
 
-            const { User } = getModels();
 
             // Don't reveal if user exists for security
             let user = null;
             try {
-                user = await User.findOne({ where: { email: trimmedEmail } });
+                user = await prisma.users.findFirst({ where: { email: trimmedEmail } });
             } catch (dbError) {
                 logger.error(`[${requestId}] ${functionName}: Database error - ${dbError.message}`);
                 // Still return success to not reveal user existence
@@ -735,12 +745,11 @@ class AuthController {
 
             const userId = resetTokenData.userId;
 
-            const { User } = getModels();
 
             // Fetch user
             let user = null;
             try {
-                user = await User.findByPk(userId);
+                user = await prisma.users.findUnique({ where: { id: userId } });
             } catch (dbError) {
                 logger.error(`[${requestId}] ${functionName}: Database error - ${dbError.message}`);
                 return res.status(500).json(ResponseFormatter.error('Password reset failed', 500, 'DB_ERROR'));
@@ -836,12 +845,12 @@ class AuthController {
                 return res.status(400).json(ResponseFormatter.error('Email is required', 400, 'NO_EMAIL'));
             }
 
-            const { User, EmailConfirmation } = getModels();
+
 
             // Find user (don't reveal existence)
             let user = null;
             try {
-                user = await User.findOne({ where: { email: email.trim().toLowerCase() } });
+                user = await prisma.users.findFirst({ where: { email: email.trim().toLowerCase() } });
             } catch (err) {
                 logger.warn(`[${requestId}] ${functionName}: DB lookup failed - ${err.message}`);
             }
@@ -852,12 +861,14 @@ class AuthController {
                     const token = crypto.randomBytes(24).toString('hex');
                     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-                    await EmailConfirmation.create({
-                        userId: user.userId,
-                        email: user.email,
-                        token: token,
-                        purpose: 'verification',
-                        expiresAt: expiresAt
+                    await prisma.emailConfirmation.create({
+                        data: {
+                            userId: user.userId,
+                            email: user.email,
+                            token: token,
+                            purpose: 'verification',
+                            expiresAt: expiresAt
+                        }
                     });
 
                     logger.info(`[${requestId}] ${functionName}: Verification token created for ${user.email}`);
@@ -870,6 +881,158 @@ class AuthController {
             return res.status(200).json(ResponseFormatter.success({}, 'If account exists, verification email has been sent'));
         } catch (error) {
             logger.error(`[${requestId}] ${functionName}: Unexpected error - ${error.message}`);
+            next(error);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // SEND OTP - Send OTP to email or phone
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    static async sendOTP(req, res, next) {
+        const functionName = 'AuthController.sendOTP';
+        const requestId = req.id || 'unknown';
+
+        try {
+            logger.info(`[${requestId}] ${functionName}: Send OTP request`);
+
+            const { email, phone, countryCode } = req.body || {};
+
+            if (!email && !phone) {
+                return res.status(400).json(ResponseFormatter.error('Email or phone is required', 400, 'NO_CONTACT'));
+            }
+
+            // Generate OTP
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+            if (email) {
+                const user = await prisma.users.findUnique({ where: { email: email.trim().toLowerCase() } });
+
+                if (user) {
+                    await prisma.users.update({
+                        where: { userId: user.userId },
+                        data: { emailOtp: otp, emailOtpExpiry: otpExpiry }
+                    });
+                }
+
+                logger.info(`[${requestId}] ${functionName}: OTP sent to email ${email}`);
+            } else if (phone) {
+                const fullPhone = countryCode ? `${countryCode}${phone}` : phone;
+                const user = await prisma.users.findFirst({ where: { phone: fullPhone } });
+
+                if (user) {
+                    await prisma.users.update({
+                        where: { userId: user.userId },
+                        data: { phoneOtp: otp, phoneOtpExpiry: otpExpiry }
+                    });
+                }
+
+                logger.info(`[${requestId}] ${functionName}: OTP sent to phone ${fullPhone}`);
+            }
+
+            return res.status(200).json(ResponseFormatter.success({}, 'OTP sent successfully'));
+        } catch (error) {
+            logger.error(`[${requestId}] ${functionName}: Error - ${error.message}`);
+            next(error);
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // VERIFY OTP - Verify OTP for email or phone
+    // ─────────────────────────────────────────────────────────────────────────────
+
+    static async verifyOTP(req, res, next) {
+        const functionName = 'AuthController.verifyOTP';
+        const requestId = req.id || 'unknown';
+
+        try {
+            logger.info(`[${requestId}] ${functionName}: Verify OTP request`);
+
+            const { email, phone, countryCode, otp } = req.body || {};
+
+            if (!otp) {
+                return res.status(400).json(ResponseFormatter.error('OTP is required', 400, 'NO_OTP'));
+            }
+
+            if (!email && !phone) {
+                return res.status(400).json(ResponseFormatter.error('Email or phone is required', 400, 'NO_CONTACT'));
+            }
+
+            let user = null;
+
+            if (email) {
+                user = await prisma.users.findUnique({
+                    where: { email: email.trim().toLowerCase() }
+                });
+
+                if (!user || user.emailOtp !== otp || new Date() > user.emailOtpExpiry) {
+                    return res.status(400).json(ResponseFormatter.error('Invalid or expired OTP', 400, 'INVALID_OTP'));
+                }
+
+                await prisma.users.update({
+                    where: { userId: user.userId },
+                    data: {
+                        emailOtp: null,
+                        emailOtpExpiry: null,
+                        isEmailVerified: true,
+                        emailVerifiedAt: new Date()
+                    }
+                });
+            } else if (phone) {
+                const fullPhone = countryCode ? `${countryCode}${phone}` : phone;
+                user = await prisma.users.findFirst({
+                    where: { phone: fullPhone }
+                });
+
+                if (!user || user.phoneOtp !== otp || new Date() > user.phoneOtpExpiry) {
+                    return res.status(400).json(ResponseFormatter.error('Invalid or expired OTP', 400, 'INVALID_OTP'));
+                }
+
+                await prisma.users.update({
+                    where: { userId: user.userId },
+                    data: {
+                        phoneOtp: null,
+                        phoneOtpExpiry: null,
+                        isPhoneVerified: true,
+                        phoneVerifiedAt: new Date()
+                    }
+                });
+            }
+
+            // Generate tokens
+            const accessToken = JWTService.generateAccessToken({
+                userId: user.userId,
+                email: user.email,
+                role: user.role
+            });
+
+            const refreshToken = JWTService.generateRefreshToken({
+                userId: user.userId,
+                email: user.email
+            });
+
+            await prisma.refreshToken.create({
+                data: {
+                    userId: user.userId,
+                    token: refreshToken,
+                    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                }
+            });
+
+            logger.info(`[${requestId}] ${functionName}: OTP verified successfully for user ${user.userId}`);
+
+            return res.status(200).json(ResponseFormatter.success({
+                user: {
+                    userId: user.userId,
+                    email: user.email,
+                    role: user.role
+                },
+                accessToken,
+                refreshToken
+            }, 'OTP verified successfully'));
+        } catch (error) {
+            logger.error(`[${requestId}] ${functionName}: Error - ${error.message}`);
             next(error);
         }
     }
@@ -921,21 +1084,23 @@ class AuthController {
                 return res.status(400).json(ResponseFormatter.error('OAuth user not provided', 400, 'NO_OAUTH_USER'));
             }
 
-            const { User, Session } = getModels();
+
 
             // Find or create user
             let user = null;
             try {
-                user = await User.findOne({ where: { email: profileUser.email } });
+                user = await prisma.users.findFirst({ where: { email: profileUser.email } });
                 if (!user) {
-                    user = await User.create({
-                        email: profileUser.email,
-                        password: crypto.randomBytes(16).toString('hex'),
-                        firstName: profileUser.firstName || profileUser.given_name || 'OAuth',
-                        lastName: profileUser.lastName || profileUser.family_name || 'User',
-                        role: 'patient',
-                        isActive: true,
-                        emailVerified: true
+                    user = await prisma.users.create({
+                        data: {
+                            email: profileUser.email,
+                            password: crypto.randomBytes(16).toString('hex'),
+                            firstName: profileUser.firstName || profileUser.given_name || 'OAuth',
+                            lastName: profileUser.lastName || profileUser.family_name || 'User',
+                            role: 'patient',
+                            isActive: true,
+                            emailVerified: true
+                        }
                     });
                 }
             } catch (err) {
@@ -957,7 +1122,7 @@ class AuthController {
             // Create session record (best-effort)
             try {
                 const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-                await Session.create({ userId: user.userId, token: accessToken, refreshToken: refreshToken, expiresAt });
+                await prisma.session.create({ data: { userId: user.userId, token: accessToken, refreshToken: refreshToken, expiresAt } });
             } catch (sessErr) {
                 logger.warn(`[${requestId}] ${functionName}: Could not create session record - ${sessErr.message}`);
             }
@@ -978,10 +1143,11 @@ class AuthController {
         try {
             const userId = req.userId;
             if (!userId) return res.status(401).json(ResponseFormatter.error('User not authenticated', 401, 'UNAUTHORIZED'));
-            const { Session } = getModels();
-            const sessions = await Session.findAll({ where: { userId }, order: [
-                    ['createdAt', 'DESC']
-                ], limit: 100 });
+            const sessions = await prisma.session.findMany({
+                where: { userId },
+                orderBy: { createdAt: 'desc' },
+                take: 100
+            });
             return res.status(200).json(ResponseFormatter.success(sessions, 'User sessions'));
         } catch (err) {
             logger.error(`[${requestId}] ${functionName}: ${err.message}`);
@@ -996,8 +1162,7 @@ class AuthController {
             const userId = req.userId;
             const sessionId = req.params.sessionId;
             if (!userId) return res.status(401).json(ResponseFormatter.error('User not authenticated', 401, 'UNAUTHORIZED'));
-            const { Session } = getModels();
-            const session = await Session.findOne({ where: { sessionId, userId } });
+            const session = await prisma.session.findFirst({ where: { sessionId, userId } });
             if (!session) return res.status(404).json(ResponseFormatter.error('Session not found', 404, 'NOT_FOUND'));
             session.isActive = false;
             session.loggedOutAt = new Date();
@@ -1016,9 +1181,14 @@ class AuthController {
             const userId = req.userId;
             const currentToken = req.token || null;
             if (!userId) return res.status(401).json(ResponseFormatter.error('User not authenticated', 401, 'UNAUTHORIZED'));
-            const { Session } = getModels();
-            await Session.update({ isActive: false, loggedOutAt: new Date() }, { where: { userId, token: {
-                        [getModels().Sequelize.Op.ne]: currentToken } } });
+            await prisma.session.update({ isActive: false, loggedOutAt: new Date() }, {
+                where: {
+                    userId,
+                    token: {
+                        not: currentToken
+                    }
+                }
+            });
             return res.status(200).json(ResponseFormatter.success({}, 'Other sessions ended'));
         } catch (err) {
             logger.error(`[${requestId}] ${functionName}: ${err.message}`);
@@ -1032,7 +1202,6 @@ class AuthController {
         try {
             const userId = req.userId;
             if (!userId) return res.status(401).json(ResponseFormatter.error('User not authenticated', 401, 'UNAUTHORIZED'));
-            const { Device } = getModels();
             const devices = await Device.findAll({ where: { userId } });
             return res.status(200).json(ResponseFormatter.success(devices, 'User devices'));
         } catch (err) {
@@ -1048,7 +1217,6 @@ class AuthController {
             const userId = req.userId;
             const deviceId = req.params.deviceId;
             if (!userId) return res.status(401).json(ResponseFormatter.error('User not authenticated', 401, 'UNAUTHORIZED'));
-            const { Device } = getModels();
             const device = await Device.findOne({ where: { deviceId, userId } });
             if (!device) return res.status(404).json(ResponseFormatter.error('Device not found', 404, 'NOT_FOUND'));
             await device.destroy();
@@ -1065,7 +1233,6 @@ class AuthController {
         try {
             const userId = req.userId;
             if (!userId) return res.status(401).json(ResponseFormatter.error('User not authenticated', 401, 'UNAUTHORIZED'));
-            const { Device } = getModels();
             await Device.destroy({ where: { userId } });
             return res.status(200).json(ResponseFormatter.success({}, 'All devices removed'));
         } catch (err) {
@@ -1081,8 +1248,7 @@ class AuthController {
         try {
             const userId = req.userId;
             if (!userId) return res.status(401).json(ResponseFormatter.error('User not authenticated', 401, 'UNAUTHORIZED'));
-            const { User } = getModels();
-            const user = await User.findByPk(userId);
+            const user = await prisma.users.findUnique({ where: { id: userId } });
             if (!user) return res.status(404).json(ResponseFormatter.error('User not found', 404, 'NOT_FOUND'));
             user.twoFactorEnabled = true;
             await user.save();
@@ -1111,8 +1277,7 @@ class AuthController {
         try {
             const userId = req.userId;
             if (!userId) return res.status(401).json(ResponseFormatter.error('User not authenticated', 401, 'UNAUTHORIZED'));
-            const { User } = getModels();
-            const user = await User.findByPk(userId);
+            const user = await prisma.users.findUnique({ where: { id: userId } });
             if (!user) return res.status(404).json(ResponseFormatter.error('User not found', 404, 'NOT_FOUND'));
             user.twoFactorEnabled = false;
             user.twoFactorSecret = null;
@@ -1131,10 +1296,13 @@ class AuthController {
         try {
             const userId = req.userId;
             if (!userId) return res.status(401).json(ResponseFormatter.error('User not authenticated', 401, 'UNAUTHORIZED'));
-            const { AuditLog } = getModels();
-            const logs = await AuditLog.findAll({ where: { userId }, order: [
+            const logs = await AuditLog.findAll({
+                where: { userId },
+                order: [
                     ['createdAt', 'DESC']
-                ], limit: 200 });
+                ],
+                limit: 200
+            });
             return res.status(200).json(ResponseFormatter.success(logs, 'User audit logs'));
         } catch (err) {
             logger.error(`[${requestId}] ${functionName}: ${err.message}`);

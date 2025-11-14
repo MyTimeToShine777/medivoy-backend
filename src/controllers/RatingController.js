@@ -1,10 +1,10 @@
 'use strict';
 
-import RatingService from '../services/RatingService.js';
+import ratingService from '../services/RatingService.js';
 
 export class RatingController {
     constructor() {
-        this.ratingService = new RatingService();
+        this.ratingService = ratingService;
     }
 
     /**

@@ -179,6 +179,12 @@ class ErrorHandlingService {
 
         return this.serverError(defaultMessage, error);
     }
+
+    // Alias for handleTryCatch for backward compatibility
+    handleError(error, defaultMessage = 'An error occurred') {
+        return this.handleTryCatch(error, defaultMessage);
+    }
 }
 
+export { ErrorHandlingService };
 export default new ErrorHandlingService();

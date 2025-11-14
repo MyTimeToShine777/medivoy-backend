@@ -1,15 +1,16 @@
 // Insurance Service - Insurance and coverage management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Insurance, User, Booking, Payment } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class InsuranceService {
     // ========== CREATE INSURANCE PLAN ==========
     async createInsurancePlan(insuranceData) {
         try {
-            const insurance = await Insurance.create({
-                ...insuranceData,
-                status: 'active',
+            const insurance = await prisma.insurance.create({
+                data: {
+                    ...insuranceData,
+                    status: 'active'
+                }
             });
 
             return {
@@ -28,10 +29,11 @@ class InsuranceService {
     // ========== GET INSURANCE ==========
     async getInsuranceById(insuranceId) {
         try {
-            const insurance = await Insurance.findByPk(insuranceId, {
-                include: [
-                    { model: User, as: 'user' },
-                ],
+            const insurance = await prisma.insurance.findUnique({
+                where: { insuranceId },
+                include: {
+                    users: true
+                }
             });
 
             if (!insurance) {
@@ -56,7 +58,7 @@ class InsuranceService {
     // ========== GET USER INSURANCE ==========
     async getUserInsurance(userId) {
         try {
-            const insurance = await Insurance.findOne({
+            const insurance = await prisma.insurance.findFirst({
                 where: { userId, status: 'active' },
             });
 
@@ -82,7 +84,7 @@ class InsuranceService {
     // ========== VALIDATE COVERAGE ==========
     async validateCoverage(userId, treatmentCost) {
         try {
-            const insurance = await Insurance.findOne({
+            const insurance = await prisma.insurance.findFirst({
                 where: { userId, status: 'active' },
             });
 
@@ -258,7 +260,7 @@ class InsuranceService {
     // ========== INSURANCE STATISTICS ==========
     async getInsuranceStats(userId) {
         try {
-            const insurance = await Insurance.findOne({
+            const insurance = await prisma.insurance.findFirst({
                 where: { userId, status: 'active' },
             });
 
@@ -308,4 +310,5 @@ class InsuranceService {
     }
 }
 
+export { InsuranceService };
 export default new InsuranceService();

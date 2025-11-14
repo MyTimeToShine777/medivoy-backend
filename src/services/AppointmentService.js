@@ -1,28 +1,19 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import {
-    Appointment,
-    AppointmentSlot,
-    Doctor,
-    User,
-    Hospital,
-    ExpertCall,
-    AuditLog
-} from '../models/index.js';
-import { ValidationService } from './ValidationService.js';
-import { NotificationService } from './NotificationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import prisma from '../config/prisma.js';
+import validationService from './ValidationService.js';
+import notificationService from './NotificationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 // CONSOLIDATED: ConsultationService + AppointmentService
 export class AppointmentService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.notificationService = new NotificationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.notificationService = notificationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -30,82 +21,80 @@ export class AppointmentService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async bookAppointment(userId, appointmentData) {
-        const transaction = await sequelize.transaction();
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!userId || !appointmentData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const user = await User.findByPk(userId);
+            const user = await tx.user.findUnique({ where: { userId } });
             if (!user) {
-                await transaction.rollback();
                 throw new AppError('User not found', 404);
             }
 
-            const doctor = await Doctor.findByPk(appointmentData.doctorId, { transaction: transaction });
+            const doctor = await tx.doctor.findUnique({ where: { doctorId: appointmentData.doctorId } });
             if (!doctor) {
-                await transaction.rollback();
                 throw new AppError('Doctor not found', 404);
             }
 
             const errors = this.validationService.validateAppointmentData(appointmentData);
             if (errors.length) {
-                await transaction.rollback();
                 throw new AppError(errors.join(', '), 400);
             }
 
             // Check slot availability
-            const slot = await AppointmentSlot.findOne({
+            const slot = await tx.appointmentSlot.findFirst({
                 where: {
                     doctorId: appointmentData.doctorId,
                     appointmentDate: appointmentData.appointmentDate,
                     startTime: appointmentData.startTime,
                     isAvailable: true
-                },
-                transaction: transaction
+                }
             });
 
             if (!slot) {
-                await transaction.rollback();
                 throw new AppError('Slot not available', 409);
             }
 
             // Check for duplicate appointments
-            const existing = await Appointment.findOne({
+            const existing = await tx.appointment.findFirst({
                 where: {
                     userId: userId,
                     doctorId: appointmentData.doctorId,
                     appointmentDate: appointmentData.appointmentDate,
-                    status: {
-                        [Op.in]: ['scheduled', 'confirmed'] }
-                },
-                transaction: transaction
+                    status: { in: ['scheduled', 'confirmed']
+                    }
+                }
             });
 
             if (existing) {
-                await transaction.rollback();
                 throw new AppError('Already have appointment with this doctor on this date', 409);
             }
 
-            const appointment = await Appointment.create({
-                appointmentId: this._generateAppointmentId(),
-                userId: userId,
-                doctorId: appointmentData.doctorId,
-                appointmentDate: appointmentData.appointmentDate,
-                startTime: appointmentData.startTime,
-                endTime: appointmentData.endTime,
-                appointmentType: appointmentData.appointmentType || 'consultation',
-                consultationMode: appointmentData.consultationMode || 'video',
-                status: 'scheduled',
-                notes: appointmentData.notes || null,
-                reason: appointmentData.reason || null,
-                bookedAt: new Date()
-            }, { transaction: transaction });
+            const appointment = await tx.appointment.create({
+                data: {
+                    appointmentId: this._generateAppointmentId(),
+                    userId: userId,
+                    doctorId: appointmentData.doctorId,
+                    appointmentDate: appointmentData.appointmentDate,
+                    startTime: appointmentData.startTime,
+                    endTime: appointmentData.endTime,
+                    appointmentType: appointmentData.appointmentType || 'consultation',
+                    consultationMode: appointmentData.consultationMode || 'video',
+                    status: 'scheduled',
+                    notes: appointmentData.notes || null,
+                    reason: appointmentData.reason || null,
+                    bookedAt: new Date()
+                }
+            });
 
             // Mark slot as unavailable
-            slot.isAvailable = false;
-            slot.bookedBy = userId;
-            await slot.save({ transaction: transaction });
+            await tx.appointmentSlot.update({
+                where: { slotId: slot.slotId },
+                data: {
+                    isAvailable: false,
+                    bookedBy: userId
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'APPOINTMENT_BOOKED',
@@ -113,7 +102,7 @@ export class AppointmentService {
                 entityId: appointment.appointmentId,
                 userId: userId,
                 details: { doctorId: appointmentData.doctorId }
-            }, transaction);
+            });
 
             await this.notificationService.sendNotification(userId, 'APPOINTMENT_BOOKED', {
                 appointmentId: appointment.appointmentId,
@@ -121,27 +110,30 @@ export class AppointmentService {
                 date: appointmentData.appointmentDate
             });
 
-            await transaction.commit();
-
             return { success: true, message: 'Appointment booked', appointment: appointment };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     async getAppointmentById(appointmentId, userId) {
         try {
             if (!appointmentId || !userId) throw new AppError('Required params missing', 400);
 
-            const appointment = await Appointment.findOne({
+            const appointment = await prisma.appointments.findUnique({
                 where: { appointmentId: appointmentId },
-                include: [
-                    { model: User, attributes: ['firstName', 'lastName', 'email', 'phone'] },
-                    { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] },
-                    { model: Hospital, attributes: ['hospitalName'] },
-                    { model: ExpertCall, attributes: ['callId', 'meetingLink', 'status'] }
-                ]
+                include: {
+                    users: {
+                        select: { firstName: true, lastName: true, email: true, phone: true }
+                    },
+                    doctor: {
+                        select: { firstName: true, lastName: true, specialization: true }
+                    },
+                    hospital: {
+                        select: { hospitalName: true }
+                    },
+                    expertCalls: {
+                        select: { callId: true, meetingLink: true, status: true }
+                    }
+                }
             });
 
             if (!appointment) {
@@ -172,23 +164,28 @@ export class AppointmentService {
 
             if (filters && filters.appointmentDate) {
                 where.appointmentDate = {
-                    [Op.gte]: filters.appointmentDate };
+                    gte: filters.appointmentDate
+                };
             }
 
-            const appointments = await Appointment.findAll({
+            const appointments = await prisma.appointments.findMany({
                 where: where,
-                include: [
-                    { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] },
-                    { model: Hospital, attributes: ['hospitalName'] }
-                ],
-                order: [
-                    ['appointmentDate', 'DESC']
-                ],
-                limit: limit,
-                offset: offset
+                include: {
+                    doctors: {
+                        select: { firstName: true, lastName: true, specialization: true }
+                    },
+                    hospitals: {
+                        select: { hospitalName: true }
+                    }
+                },
+                orderBy: {
+                    appointmentDate: 'desc'
+                },
+                take: limit,
+                skip: offset
             });
 
-            const total = await Appointment.count({ where: where });
+            const total = await prisma.appointments.count({ where: where });
 
             return {
                 success: true,
@@ -201,69 +198,74 @@ export class AppointmentService {
     }
 
     async rescheduleAppointment(appointmentId, userId, newData) {
-        const transaction = await sequelize.transaction();
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!appointmentId || !userId || !newData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const appointment = await Appointment.findByPk(appointmentId, { transaction: transaction });
+            const appointment = await tx.appointment.findUnique({ where: { appointmentId } });
             if (!appointment) {
-                await transaction.rollback();
                 throw new AppError('Appointment not found', 404);
             }
 
             if (appointment.userId !== userId) {
-                await transaction.rollback();
                 throw new AppError('Unauthorized', 403);
             }
 
             if (appointment.status === 'completed' || appointment.status === 'cancelled') {
-                await transaction.rollback();
                 throw new AppError('Cannot reschedule this appointment', 400);
             }
 
-            const oldSlot = await AppointmentSlot.findOne({
+            const oldSlot = await tx.appointmentSlot.findFirst({
                 where: {
                     doctorId: appointment.doctorId,
                     appointmentDate: appointment.appointmentDate,
                     startTime: appointment.startTime
-                },
-                transaction: transaction
+                }
             });
 
             if (oldSlot) {
-                oldSlot.isAvailable = true;
-                oldSlot.bookedBy = null;
-                await oldSlot.save({ transaction: transaction });
+                await tx.appointmentSlot.update({
+                    where: { slotId: oldSlot.slotId },
+                    data: {
+                        isAvailable: true,
+                        bookedBy: null
+                    }
+                });
             }
 
             // Find new slot
-            const newSlot = await AppointmentSlot.findOne({
+            const newSlot = await tx.appointmentSlot.findFirst({
                 where: {
                     doctorId: appointment.doctorId,
                     appointmentDate: newData.appointmentDate,
                     startTime: newData.startTime,
                     isAvailable: true
-                },
-                transaction: transaction
+                }
             });
 
             if (!newSlot) {
-                await transaction.rollback();
                 throw new AppError('New slot not available', 409);
             }
 
-            appointment.appointmentDate = newData.appointmentDate;
-            appointment.startTime = newData.startTime;
-            appointment.endTime = newData.endTime;
-            appointment.rescheduledAt = new Date();
-            appointment.rescheduledCount = (appointment.rescheduledCount || 0) + 1;
-            await appointment.save({ transaction: transaction });
+            await tx.appointment.update({
+                where: { appointmentId },
+                data: {
+                    appointmentDate: newData.appointmentDate,
+                    startTime: newData.startTime,
+                    endTime: newData.endTime,
+                    rescheduledAt: new Date(),
+                    rescheduledCount: (appointment.rescheduledCount || 0) + 1
+                }
+            });
 
-            newSlot.isAvailable = false;
-            newSlot.bookedBy = userId;
-            await newSlot.save({ transaction: transaction });
+            await tx.appointmentSlot.update({
+                where: { slotId: newSlot.slotId },
+                data: {
+                    isAvailable: false,
+                    bookedBy: userId
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'APPOINTMENT_RESCHEDULED',
@@ -271,57 +273,56 @@ export class AppointmentService {
                 entityId: appointmentId,
                 userId: userId,
                 details: { newDate: newData.appointmentDate }
-            }, transaction);
+            });
 
-            await transaction.commit();
-
-            return { success: true, message: 'Rescheduled', appointment: appointment };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+            const updatedAppointment = await tx.appointment.findUnique({ where: { appointmentId } });
+            return { success: true, message: 'Rescheduled', appointment: updatedAppointment };
+        });
     }
 
     async cancelAppointment(appointmentId, userId, reason) {
-        const transaction = await sequelize.transaction();
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!appointmentId || !userId) throw new AppError('Required params missing', 400);
 
-            const appointment = await Appointment.findByPk(appointmentId, { transaction: transaction });
+            const appointment = await tx.appointment.findUnique({ where: { appointmentId } });
             if (!appointment) {
-                await transaction.rollback();
                 throw new AppError('Appointment not found', 404);
             }
 
             if (appointment.userId !== userId && userId !== 'ADMIN') {
-                await transaction.rollback();
                 throw new AppError('Unauthorized', 403);
             }
 
             if (appointment.status === 'cancelled') {
-                await transaction.rollback();
                 throw new AppError('Already cancelled', 400);
             }
 
-            appointment.status = 'cancelled';
-            appointment.cancellationReason = reason || null;
-            appointment.cancelledAt = new Date();
-            await appointment.save({ transaction: transaction });
+            await tx.appointment.update({
+                where: { appointmentId },
+                data: {
+                    status: 'cancelled',
+                    cancellationReason: reason || null,
+                    cancelledAt: new Date()
+                }
+            });
 
             // Free up the slot
-            const slot = await AppointmentSlot.findOne({
+            const slot = await tx.appointmentSlot.findFirst({
                 where: {
                     doctorId: appointment.doctorId,
                     appointmentDate: appointment.appointmentDate,
                     startTime: appointment.startTime
-                },
-                transaction: transaction
+                }
             });
 
             if (slot) {
-                slot.isAvailable = true;
-                slot.bookedBy = null;
-                await slot.save({ transaction: transaction });
+                await tx.appointmentSlot.update({
+                    where: { slotId: slot.slotId },
+                    data: {
+                        isAvailable: true,
+                        bookedBy: null
+                    }
+                });
             }
 
             await this.auditLogService.logAction({
@@ -330,20 +331,15 @@ export class AppointmentService {
                 entityId: appointmentId,
                 userId: userId,
                 details: { reason: reason }
-            }, transaction);
+            });
 
             await this.notificationService.sendNotification(userId, 'APPOINTMENT_CANCELLED', {
                 appointmentId: appointmentId,
                 reason: reason
             });
 
-            await transaction.commit();
-
             return { success: true, message: 'Cancelled' };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -351,29 +347,29 @@ export class AppointmentService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createConsultation(appointmentId, consultationData) {
-        const transaction = await sequelize.transaction();
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!appointmentId || !consultationData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const appointment = await Appointment.findByPk(appointmentId, { transaction: transaction });
+            const appointment = await tx.appointment.findUnique({ where: { appointmentId } });
             if (!appointment) {
-                await transaction.rollback();
                 throw new AppError('Appointment not found', 404);
             }
 
-            const expertCall = await ExpertCall.create({
-                callId: this._generateCallId(),
-                appointmentId: appointmentId,
-                doctorId: appointment.doctorId,
-                userId: appointment.userId,
-                consultationType: consultationData.consultationType || 'video',
-                scheduledAt: appointment.appointmentDate,
-                meetingLink: consultationData.meetingLink || null,
-                status: 'pending',
-                createdAt: new Date()
-            }, { transaction: transaction });
+            const expertCall = await tx.expertCall.create({
+                data: {
+                    callId: this._generateCallId(),
+                    appointmentId: appointmentId,
+                    doctorId: appointment.doctorId,
+                    userId: appointment.userId,
+                    consultationType: consultationData.consultationType || 'video',
+                    scheduledAt: appointment.appointmentDate,
+                    meetingLink: consultationData.meetingLink || null,
+                    status: 'pending',
+                    createdAt: new Date()
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'CONSULTATION_CREATED',
@@ -381,36 +377,32 @@ export class AppointmentService {
                 entityId: expertCall.callId,
                 userId: appointment.userId,
                 details: {}
-            }, transaction);
-
-            await transaction.commit();
+            });
 
             return { success: true, message: 'Consultation created', consultation: expertCall };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     async startConsultation(callId, userId) {
-        const transaction = await sequelize.transaction();
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!callId || !userId) throw new AppError('Required params missing', 400);
 
-            const call = await ExpertCall.findByPk(callId, { transaction: transaction });
+            const call = await tx.expertCall.findUnique({ where: { callId } });
             if (!call) {
-                await transaction.rollback();
                 throw new AppError('Call not found', 404);
             }
 
             if (call.userId !== userId && userId !== 'DOCTOR') {
-                await transaction.rollback();
                 throw new AppError('Unauthorized', 403);
             }
 
-            call.status = 'in_progress';
-            call.startedAt = new Date();
-            await call.save({ transaction: transaction });
+            await tx.expertCall.update({
+                where: { callId },
+                data: {
+                    status: 'in_progress',
+                    startedAt: new Date()
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'CONSULTATION_STARTED',
@@ -418,40 +410,41 @@ export class AppointmentService {
                 entityId: callId,
                 userId: userId,
                 details: {}
-            }, transaction);
-
-            await transaction.commit();
+            });
 
             return { success: true, message: 'Consultation started' };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     async endConsultation(callId, userId, consultationNotes) {
-        const transaction = await sequelize.transaction();
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!callId || !userId) throw new AppError('Required params missing', 400);
 
-            const call = await ExpertCall.findByPk(callId, { transaction: transaction });
+            const call = await tx.expertCall.findUnique({ where: { callId } });
             if (!call) {
-                await transaction.rollback();
                 throw new AppError('Call not found', 404);
             }
 
-            call.status = 'completed';
-            call.endedAt = new Date();
-            call.consultationNotes = consultationNotes || null;
-            const duration = call.endedAt - call.startedAt;
-            call.durationInMinutes = Math.round(duration / 60000);
-            await call.save({ transaction: transaction });
+            const endedAt = new Date();
+            const duration = endedAt - call.startedAt;
+            const durationInMinutes = Math.round(duration / 60000);
+
+            await tx.expertCall.update({
+                where: { callId },
+                data: {
+                    status: 'completed',
+                    endedAt: endedAt,
+                    consultationNotes: consultationNotes || null,
+                    durationInMinutes: durationInMinutes
+                }
+            });
 
             // Update appointment status
-            const appointment = await Appointment.findByPk(call.appointmentId, { transaction: transaction });
-            if (appointment) {
-                appointment.status = 'completed';
-                await appointment.save({ transaction: transaction });
+            if (call.appointmentId) {
+                await tx.appointment.update({
+                    where: { appointmentId: call.appointmentId },
+                    data: { status: 'completed' }
+                });
             }
 
             await this.auditLogService.logAction({
@@ -459,16 +452,11 @@ export class AppointmentService {
                 entityType: 'ExpertCall',
                 entityId: callId,
                 userId: userId,
-                details: { duration: call.durationInMinutes }
-            }, transaction);
-
-            await transaction.commit();
+                details: { duration: durationInMinutes }
+            });
 
             return { success: true, message: 'Consultation ended' };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -476,21 +464,22 @@ export class AppointmentService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createSlots(doctorId, slotsData) {
-        const transaction = await sequelize.transaction();
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!doctorId || !slotsData) throw new AppError('Required params missing', 400);
 
             const slots = [];
 
             for (const slot of slotsData) {
-                const slotRecord = await AppointmentSlot.create({
-                    slotId: this._generateSlotId(),
-                    doctorId: doctorId,
-                    appointmentDate: slot.appointmentDate,
-                    startTime: slot.startTime,
-                    endTime: slot.endTime,
-                    isAvailable: true
-                }, { transaction: transaction });
+                const slotRecord = await tx.appointmentSlot.create({
+                    data: {
+                        slotId: this._generateSlotId(),
+                        doctorId: doctorId,
+                        appointmentDate: slot.appointmentDate,
+                        startTime: slot.startTime,
+                        endTime: slot.endTime,
+                        isAvailable: true
+                    }
+                });
 
                 slots.push(slotRecord);
             }
@@ -501,30 +490,25 @@ export class AppointmentService {
                 entityId: 'BULK-' + Date.now(),
                 userId: 'ADMIN',
                 details: { doctorId: doctorId, slotCount: slots.length }
-            }, transaction);
-
-            await transaction.commit();
+            });
 
             return { success: true, message: 'Slots created', slots: slots };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     async getAvailableSlots(doctorId, date) {
         try {
             if (!doctorId || !date) throw new AppError('Required params missing', 400);
 
-            const slots = await AppointmentSlot.findAll({
+            const slots = await prisma.appointmentSlot.findMany({
                 where: {
                     doctorId: doctorId,
                     appointmentDate: date,
                     isAvailable: true
                 },
-                order: [
-                    ['startTime', 'ASC']
-                ]
+                orderBy: {
+                    startTime: 'asc'
+                }
             });
 
             return { success: true, slots: slots, total: slots.length };
@@ -556,4 +540,4 @@ export class AppointmentService {
     }
 }
 
-export default AppointmentService;
+export default new AppointmentService();

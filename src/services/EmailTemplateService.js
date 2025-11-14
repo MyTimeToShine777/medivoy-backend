@@ -1,17 +1,16 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { EmailTemplate, AuditLog } from '../models/index.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import prisma from '../config/prisma.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class EmailTemplateService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -19,52 +18,52 @@ export class EmailTemplateService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createEmailTemplate(templateData) {
-        const transaction = await sequelize.transaction();
         try {
             if (!templateData || !templateData.templateName || !templateData.subject) {
                 throw new AppError('Template name and subject required', 400);
             }
 
-            const existing = await EmailTemplate.findOne({
-                where: { templateCode: templateData.templateCode },
-                transaction: transaction
+            const result = await prisma.$transaction(async(tx) => {
+                const existing = await tx.emailTemplate.findFirst({
+                    where: { templateCode: templateData.templateCode }
+                });
+
+                if (existing) {
+                    throw new AppError('Template already exists', 409);
+                }
+
+                const template = await tx.emailTemplate.create({
+                    data: {
+                        templateId: this._generateTemplateId(),
+                        templateName: templateData.templateName,
+                        templateCode: templateData.templateCode,
+                        subject: templateData.subject,
+                        bodyHtml: templateData.bodyHtml,
+                        bodyText: templateData.bodyText || null,
+                        variables: templateData.variables || [],
+                        description: templateData.description || null,
+                        isActive: true,
+                        createdAt: new Date()
+                    }
+                });
+
+                await this.auditLogService.logAction({
+                    action: 'EMAIL_TEMPLATE_CREATED',
+                    entityType: 'EmailTemplate',
+                    entityId: template.templateId,
+                    userId: 'ADMIN',
+                    details: { templateName: templateData.templateName }
+                });
+
+                return template;
             });
-
-            if (existing) {
-                await transaction.rollback();
-                throw new AppError('Template already exists', 409);
-            }
-
-            const template = await EmailTemplate.create({
-                templateId: this._generateTemplateId(),
-                templateName: templateData.templateName,
-                templateCode: templateData.templateCode,
-                subject: templateData.subject,
-                bodyHtml: templateData.bodyHtml,
-                bodyText: templateData.bodyText || null,
-                variables: templateData.variables || [],
-                description: templateData.description || null,
-                isActive: true,
-                createdAt: new Date()
-            }, { transaction: transaction });
-
-            await this.auditLogService.logAction({
-                action: 'EMAIL_TEMPLATE_CREATED',
-                entityType: 'EmailTemplate',
-                entityId: template.templateId,
-                userId: 'ADMIN',
-                details: { templateName: templateData.templateName }
-            }, transaction);
-
-            await transaction.commit();
 
             return {
                 success: true,
                 message: 'Email template created',
-                template: template
+                template: result
             };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }
@@ -75,7 +74,7 @@ export class EmailTemplateService {
                 return { success: false, error: 'Template ID required' };
             }
 
-            const template = await EmailTemplate.findByPk(templateId);
+            const template = await prisma.emailTemplate.findUnique({ where: { templateId } });
             if (!template) {
                 return { success: false, error: 'Template not found' };
             }
@@ -113,15 +112,20 @@ export class EmailTemplateService {
             const where = { isActive: true };
 
             if (filters && filters.search) {
-                where[Op.or] = [
-                    { templateName: {
-                            [Op.like]: '%' + filters.search + '%' } },
-                    { templateCode: {
-                            [Op.like]: '%' + filters.search + '%' } }
+                where.OR = [{
+                        templateName: {
+                            contains: "' + filters.search + '"
+                        }
+                    },
+                    {
+                        templateCode: {
+                            contains: "' + filters.search + '"
+                        }
+                    }
                 ];
             }
 
-            const templates = await EmailTemplate.findAll({
+            const templates = await prisma.emailTemplate.findMany({
                 where: where,
                 order: [
                     ['templateName', 'ASC']
@@ -143,72 +147,80 @@ export class EmailTemplateService {
     }
 
     async updateEmailTemplate(templateId, updateData) {
-        const transaction = await sequelize.transaction();
         try {
             if (!templateId || !updateData) {
                 return { success: false, error: 'Required parameters missing' };
             }
 
-            const template = await EmailTemplate.findByPk(templateId, { transaction: transaction });
-            if (!template) {
-                await transaction.rollback();
-                return { success: false, error: 'Template not found' };
-            }
+            const result = await prisma.$transaction(async(tx) => {
+                const template = await tx.emailTemplate.findUnique({
+                    where: { id: templateId }
+                });
 
-            const allowedFields = ['subject', 'bodyHtml', 'bodyText', 'variables', 'description'];
-            for (const field of allowedFields) {
-                if (updateData[field] !== undefined) {
-                    template[field] = updateData[field];
+                if (!template) {
+                    throw new AppError('Template not found', 404);
                 }
-            }
 
-            await template.save({ transaction: transaction });
+                const allowedFields = ['subject', 'bodyHtml', 'bodyText', 'variables', 'description'];
+                const updateFields = {};
+                for (const field of allowedFields) {
+                    if (updateData[field] !== undefined) {
+                        updateFields[field] = updateData[field];
+                    }
+                }
 
-            await this.auditLogService.logAction({
-                action: 'EMAIL_TEMPLATE_UPDATED',
-                entityType: 'EmailTemplate',
-                entityId: templateId,
-                userId: 'ADMIN',
-                details: {}
-            }, transaction);
+                const updatedTemplate = await tx.emailTemplate.update({
+                    where: { id: templateId },
+                    data: updateFields
+                });
 
-            await transaction.commit();
+                await this.auditLogService.logAction({
+                    action: 'EMAIL_TEMPLATE_UPDATED',
+                    entityType: 'EmailTemplate',
+                    entityId: templateId,
+                    userId: 'ADMIN',
+                    details: {}
+                });
 
-            return { success: true, message: 'Template updated', template: template };
+                return updatedTemplate;
+            });
+
+            return { success: true, message: 'Template updated', template: result };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }
 
     async deleteEmailTemplate(templateId) {
-        const transaction = await sequelize.transaction();
         try {
             if (!templateId) {
                 return { success: false, error: 'Template ID required' };
             }
 
-            const template = await EmailTemplate.findByPk(templateId, { transaction: transaction });
-            if (!template) {
-                await transaction.rollback();
-                return { success: false, error: 'Template not found' };
-            }
+            await prisma.$transaction(async(tx) => {
+                const template = await tx.emailTemplate.findUnique({
+                    where: { id: templateId }
+                });
 
-            await template.destroy({ transaction: transaction });
+                if (!template) {
+                    throw new AppError('Template not found', 404);
+                }
 
-            await this.auditLogService.logAction({
-                action: 'EMAIL_TEMPLATE_DELETED',
-                entityType: 'EmailTemplate',
-                entityId: templateId,
-                userId: 'ADMIN',
-                details: {}
-            }, transaction);
+                await tx.emailTemplate.delete({
+                    where: { id: templateId }
+                });
 
-            await transaction.commit();
+                await this.auditLogService.logAction({
+                    action: 'EMAIL_TEMPLATE_DELETED',
+                    entityType: 'EmailTemplate',
+                    entityId: templateId,
+                    userId: 'ADMIN',
+                    details: {}
+                });
+            });
 
             return { success: true, message: 'Template deleted' };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }

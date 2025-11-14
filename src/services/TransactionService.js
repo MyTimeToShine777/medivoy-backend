@@ -1,7 +1,6 @@
 'use strict';
 
-import { getModels } from '../models/index.js';
-import { Op } from 'sequelize';
+import prisma from '../config/prisma.js';
 
 export class TransactionService {
     /**
@@ -17,10 +16,10 @@ export class TransactionService {
                 return { success: false, error: 'Valid amount is required' };
             }
 
-            const { Transaction, Payment } = getModels();
-
             // Validate payment exists
-            const payment = await Payment.findByPk(paymentId);
+            const payment = await prisma.payments.findUnique({
+                where: { paymentId }
+            });
             if (!payment) {
                 return { success: false, error: 'Payment not found' };
             }
@@ -28,11 +27,13 @@ export class TransactionService {
             // Generate transaction number
             const transactionNumber = `TXN-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
-            const transaction = await Transaction.create({
-                paymentId,
-                transactionNumber,
-                status: 'pending',
-                ...transactionData
+            const transaction = await prisma.transaction.create({
+                data: {
+                    paymentId,
+                    transactionNumber,
+                    status: 'pending',
+                    ...transactionData
+                }
             });
 
             return {
@@ -57,13 +58,11 @@ export class TransactionService {
                 return { success: false, error: 'Payment ID is required' };
             }
 
-            const { Transaction } = getModels();
-
-            const transactions = await Transaction.findAll({
+            const transactions = await prisma.transaction.findMany({
                 where: { paymentId },
-                order: [
-                    ['createdAt', 'DESC']
-                ]
+                orderBy: {
+                    createdAt: 'desc'
+                }
             });
 
             return {
@@ -88,16 +87,17 @@ export class TransactionService {
                 return { success: false, error: 'Transaction ID is required' };
             }
 
-            const { Transaction, Payment, Booking } = getModels();
-
-            const transaction = await Transaction.findByPk(transactionId, {
-                include: [{
-                    model: Payment,
-                    as: 'payment',
-                    include: [
-                        { model: Booking, as: 'booking', attributes: ['bookingId', 'bookingNumber'] }
-                    ]
-                }]
+            const transaction = await prisma.transaction.findUnique({
+                where: { transactionId },
+                include: {
+                    payment: {
+                        include: {
+                            booking: {
+                                select: { bookingId: true, bookingNumber: true }
+                            }
+                        }
+                    }
+                }
             });
 
             if (!transaction) {
@@ -134,9 +134,9 @@ export class TransactionService {
                 return { success: false, error: 'Invalid status' };
             }
 
-            const { Transaction } = getModels();
-
-            const transaction = await Transaction.findByPk(transactionId);
+            const transaction = await prisma.transaction.findUnique({
+                where: { transactionId }
+            });
 
             if (!transaction) {
                 return { success: false, error: 'Transaction not found' };
@@ -154,11 +154,14 @@ export class TransactionService {
                 updateData.completedAt = new Date();
             }
 
-            await transaction.update(updateData);
+            const updated = await prisma.transaction.update({
+                where: { transactionId },
+                data: updateData
+            });
 
             return {
                 success: true,
-                data: transaction,
+                data: updated,
                 message: `Transaction status updated to ${status}`
             };
         } catch (error) {
@@ -178,9 +181,7 @@ export class TransactionService {
                 return { success: false, error: 'Gateway transaction ID is required' };
             }
 
-            const { Transaction } = getModels();
-
-            const transaction = await Transaction.findOne({
+            const transaction = await prisma.transaction.findFirst({
                 where: { gatewayTransactionId }
             });
 
@@ -209,29 +210,32 @@ export class TransactionService {
                 return { success: false, error: 'User ID is required' };
             }
 
-            const { Transaction, Payment, Booking } = getModels();
-
             const { page = 1, limit = 10, status } = options;
-            const offset = (page - 1) * limit;
+            const skip = (page - 1) * limit;
 
             const where = { userId };
             if (status) where.status = status;
 
-            const { rows: transactions, count: total } = await Transaction.findAndCountAll({
-                where,
-                include: [{
-                    model: Payment,
-                    as: 'payment',
-                    include: [
-                        { model: Booking, as: 'booking', attributes: ['bookingId', 'bookingNumber'] }
-                    ]
-                }],
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: parseInt(limit),
-                offset: parseInt(offset)
-            });
+            const [transactions, total] = await Promise.all([
+                prisma.transaction.findMany({
+                    where,
+                    include: {
+                        payment: {
+                            include: {
+                                booking: {
+                                    select: { bookingId: true, bookingNumber: true }
+                                }
+                            }
+                        }
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
+                    take: parseInt(limit),
+                    skip: parseInt(skip)
+                }),
+                prisma.transaction.count({ where })
+            ]);
 
             return {
                 success: true,

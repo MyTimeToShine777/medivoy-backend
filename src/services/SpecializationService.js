@@ -1,17 +1,16 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { Specialization, Doctor, AuditLog } from '../models/index.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import prisma from '../config/prisma.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class SpecializationService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -19,30 +18,29 @@ export class SpecializationService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createSpecialization(specializationData) {
-        const transaction = await sequelize.transaction();
-        try {
+        const result = await prisma.$transaction(async(tx) => {
             if (!specializationData || !specializationData.specializationName) {
                 throw new AppError('Specialization name required', 400);
             }
 
-            const existing = await Specialization.findOne({
-                where: { specializationName: specializationData.specializationName },
-                transaction: transaction
+            const existing = await tx.specialization.findFirst({
+                where: { specializationName: specializationData.specializationName }
             });
 
             if (existing) {
-                await transaction.rollback();
                 throw new AppError('Specialization already exists', 409);
             }
 
-            const specialization = await Specialization.create({
-                specializationId: this._generateSpecId(),
-                specializationName: specializationData.specializationName,
-                specializationDescription: specializationData.specializationDescription || null,
-                averageFee: specializationData.averageFee || 0,
-                isActive: true,
-                createdAt: new Date()
-            }, { transaction: transaction });
+            const specialization = await tx.specialization.create({
+                data: {
+                    specializationId: this._generateSpecId(),
+                    specializationName: specializationData.specializationName,
+                    specializationDescription: specializationData.specializationDescription || null,
+                    averageFee: specializationData.averageFee || 0,
+                    isActive: true,
+                    createdAt: new Date()
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'SPECIALIZATION_CREATED',
@@ -50,25 +48,30 @@ export class SpecializationService {
                 entityId: specialization.specializationId,
                 userId: 'ADMIN',
                 details: { name: specializationData.specializationName }
-            }, transaction);
-
-            await transaction.commit();
+            });
 
             return { success: true, message: 'Specialization created', specialization: specialization };
-        } catch (error) {
-            await transaction.rollback();
+        }).catch(error => {
             throw this.errorHandlingService.handleError(error);
-        }
+        });
+        return result;
     }
 
     async getSpecializationById(specializationId) {
         try {
             if (!specializationId) throw new AppError('Specialization ID required', 400);
 
-            const specialization = await Specialization.findByPk(specializationId, {
-                include: [
-                    { model: Doctor, attributes: ['doctorId', 'firstName', 'lastName'] }
-                ]
+            const specialization = await prisma.specialization.findUnique({
+                where: { specializationId },
+                include: {
+                    doctors: {
+                        select: {
+                            doctorId: true,
+                            firstName: true,
+                            lastName: true
+                        }
+                    }
+                }
             });
 
             if (!specialization) throw new AppError('Specialization not found', 404);
@@ -87,10 +90,11 @@ export class SpecializationService {
 
             if (filters && filters.search) {
                 where.specializationName = {
-                    [Op.like]: '%' + filters.search + '%' };
+                    contains: "' + filters.search + '"
+                };
             }
 
-            const specializations = await Specialization.findAll({
+            const specializations = await prisma.specialization.findMany({
                 where: where,
                 order: [
                     ['specializationName', 'ASC']
@@ -112,20 +116,24 @@ export class SpecializationService {
     }
 
     async updateSpecialization(specializationId, updateData) {
-        const transaction = await sequelize.transaction();
-        try {
+        const result = await prisma.$transaction(async(tx) => {
             if (!specializationId || !updateData) throw new AppError('Required params missing', 400);
 
-            const specialization = await Specialization.findByPk(specializationId, { transaction: transaction });
+            const specialization = await tx.specialization.findUnique({
+                where: { specializationId }
+            });
             if (!specialization) {
-                await transaction.rollback();
                 throw new AppError('Specialization not found', 404);
             }
 
-            if (updateData.specializationDescription) specialization.specializationDescription = updateData.specializationDescription;
-            if (updateData.averageFee) specialization.averageFee = updateData.averageFee;
+            const updateFields = {};
+            if (updateData.specializationDescription) updateFields.specializationDescription = updateData.specializationDescription;
+            if (updateData.averageFee) updateFields.averageFee = updateData.averageFee;
 
-            await specialization.save({ transaction: transaction });
+            const updatedSpecialization = await tx.specialization.update({
+                where: { specializationId },
+                data: updateFields
+            });
 
             await this.auditLogService.logAction({
                 action: 'SPECIALIZATION_UPDATED',
@@ -133,15 +141,13 @@ export class SpecializationService {
                 entityId: specializationId,
                 userId: 'ADMIN',
                 details: {}
-            }, transaction);
+            });
 
-            await transaction.commit();
-
-            return { success: true, message: 'Updated', specialization: specialization };
-        } catch (error) {
-            await transaction.rollback();
+            return { success: true, message: 'Updated', specialization: updatedSpecialization };
+        }).catch(error => {
             throw this.errorHandlingService.handleError(error);
-        }
+        });
+        return result;
     }
 
     async getSpecializationDoctors(specializationId, filters) {
@@ -205,4 +211,4 @@ export class SpecializationService {
     }
 }
 
-export default SpecializationService;
+export default new SpecializationService();

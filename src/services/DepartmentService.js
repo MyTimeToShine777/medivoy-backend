@@ -1,15 +1,16 @@
 // Department Service - Hospital department management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Department, Hospital, Doctor } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class DepartmentService {
     // ========== CREATE DEPARTMENT ==========
     async createDepartment(departmentData) {
         try {
-            const department = await Department.create({
-                ...departmentData,
-                isActive: true,
+            const department = await prisma.department.create({
+                data: {
+                    ...departmentData,
+                    isActive: true,
+                }
             });
 
             return { success: true, data: department };
@@ -21,11 +22,12 @@ class DepartmentService {
     // ========== GET DEPARTMENT ==========
     async getDepartmentById(departmentId) {
         try {
-            const department = await Department.findByPk(departmentId, {
-                include: [
-                    { model: Hospital, as: 'hospital' },
-                    { model: Doctor, as: 'doctors' },
-                ],
+            const department = await prisma.department.findUnique({
+                where: { departmentId },
+                include: {
+                    hospital: true,
+                    doctors: true
+                }
             });
 
             if (!department) return { success: false, error: 'Not found' };
@@ -38,12 +40,10 @@ class DepartmentService {
     // ========== GET HOSPITAL DEPARTMENTS ==========
     async getHospitalDepartments(hospitalId) {
         try {
-            const departments = await Department.findAll({
+            const departments = await prisma.department.findMany({
                 where: { hospitalId, isActive: true },
-                include: [{ model: Doctor, as: 'doctors' }],
-                order: [
-                    ['name', 'ASC']
-                ],
+                include: { doctors: true },
+                orderBy: { name: 'asc' }
             });
 
             return { success: true, data: departments };
@@ -55,15 +55,21 @@ class DepartmentService {
     // ========== UPDATE DEPARTMENT ==========
     async updateDepartment(departmentId, updateData) {
         try {
-            const department = await Department.findByPk(departmentId);
+            const department = await prisma.department.findUnique({
+                where: { departmentId }
+            });
             if (!department) return { success: false, error: 'Not found' };
 
-            const updated = await department.update(updateData);
+            const updated = await prisma.department.update({
+                where: { departmentId },
+                data: updateData
+            });
             return { success: true, data: updated };
         } catch (error) {
             return { success: false, error: error.message };
-        }
+        };
     }
 }
 
+export { DepartmentService };
 export default new DepartmentService();

@@ -1,7 +1,6 @@
 'use strict';
 
-import { getModels } from '../models/index.js';
-import { Op } from 'sequelize';
+import prisma from '../config/prisma.js';
 
 export class LabReportService {
     /**
@@ -21,10 +20,10 @@ export class LabReportService {
                 return { success: false, error: 'Test date is required' };
             }
 
-            const { LabReport, Patient } = getModels();
-
             // Validate patient exists
-            const patient = await Patient.findByPk(patientId);
+            const patient = await prisma.patients.findUnique({
+                where: { patientId }
+            });
             if (!patient) {
                 return { success: false, error: 'Patient not found' };
             }
@@ -32,11 +31,13 @@ export class LabReportService {
             // Generate report number
             const reportNumber = `LAB-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-            const report = await LabReport.create({
-                patientId,
-                reportNumber,
-                ...reportData,
-                status: reportData.status || 'pending'
+            const report = await prisma.labReport.create({
+                data: {
+                    patientId,
+                    reportNumber,
+                    ...reportData,
+                    status: reportData.status || 'pending'
+                }
             });
 
             return {
@@ -61,26 +62,31 @@ export class LabReportService {
                 return { success: false, error: 'Patient ID is required' };
             }
 
-            const { LabReport, LabTest, Laboratory } = getModels();
-
             const { page = 1, limit = 10, status } = options;
-            const offset = (page - 1) * limit;
+            const skip = (page - 1) * limit;
 
             const where = { patientId };
             if (status) where.status = status;
 
-            const { rows: reports, count: total } = await LabReport.findAndCountAll({
-                where,
-                include: [
-                    { model: LabTest, as: 'labTest', attributes: ['testId', 'name', 'category'] },
-                    { model: Laboratory, as: 'laboratory', attributes: ['labId', 'name', 'location'] }
-                ],
-                order: [
-                    ['testDate', 'DESC']
-                ],
-                limit: parseInt(limit),
-                offset: parseInt(offset)
-            });
+            const [reports, total] = await Promise.all([
+                prisma.labReport.findMany({
+                    where,
+                    include: {
+                        labTest: {
+                            select: { testId: true, name: true, category: true }
+                        },
+                        laboratory: {
+                            select: { labId: true, name: true, location: true }
+                        }
+                    },
+                    orderBy: {
+                        testDate: 'desc'
+                    },
+                    take: parseInt(limit),
+                    skip: parseInt(skip)
+                }),
+                prisma.labReport.count({ where })
+            ]);
 
             return {
                 success: true,
@@ -109,15 +115,22 @@ export class LabReportService {
                 return { success: false, error: 'Report ID is required' };
             }
 
-            const { LabReport, Patient, LabTest, Laboratory, Doctor } = getModels();
-
-            const report = await LabReport.findByPk(reportId, {
-                include: [
-                    { model: Patient, as: 'patient', attributes: ['patientId', 'firstName', 'lastName', 'dateOfBirth'] },
-                    { model: LabTest, as: 'labTest', attributes: ['testId', 'name', 'category'] },
-                    { model: Laboratory, as: 'laboratory', attributes: ['labId', 'name', 'location'] },
-                    { model: Doctor, as: 'doctor', attributes: ['doctorId', 'firstName', 'lastName'] }
-                ]
+            const report = await prisma.labReport.findUnique({
+                where: { reportId },
+                include: {
+                    patient: {
+                        select: { patientId: true, firstName: true, lastName: true, dateOfBirth: true }
+                    },
+                    labTest: {
+                        select: { testId: true, name: true, category: true }
+                    },
+                    laboratory: {
+                        select: { labId: true, name: true, location: true }
+                    },
+                    doctor: {
+                        select: { doctorId: true, firstName: true, lastName: true }
+                    }
+                }
             });
 
             if (!report) {
@@ -154,23 +167,26 @@ export class LabReportService {
                 return { success: false, error: 'Invalid status' };
             }
 
-            const { LabReport } = getModels();
-
-            const report = await LabReport.findByPk(reportId);
+            const report = await prisma.labReport.findUnique({
+                where: { reportId }
+            });
 
             if (!report) {
                 return { success: false, error: 'Lab report not found' };
             }
 
-            await report.update({
-                status,
-                ...updateData,
-                ...(status === 'completed' && { reportDate: new Date() })
+            const updated = await prisma.labReport.update({
+                where: { reportId },
+                data: {
+                    status,
+                    ...updateData,
+                    ...(status === 'completed' && { reportDate: new Date() })
+                }
             });
 
             return {
                 success: true,
-                data: report,
+                data: updated,
                 message: `Report status updated to ${status}`
             };
         } catch (error) {
@@ -194,19 +210,22 @@ export class LabReportService {
                 return { success: false, error: 'Results data is required' };
             }
 
-            const { LabReport } = getModels();
-
-            const report = await LabReport.findByPk(reportId);
+            const report = await prisma.labReport.findUnique({
+                where: { reportId }
+            });
 
             if (!report) {
                 return { success: false, error: 'Lab report not found' };
             }
 
-            await report.update({
-                results,
-                interpretation,
-                status: 'completed',
-                reportDate: new Date()
+            const updated = await prisma.labReport.update({
+                where: { reportId },
+                data: {
+                    results,
+                    interpretation,
+                    status: 'completed',
+                    reportDate: new Date()
+                }
             });
 
             return {
@@ -231,11 +250,11 @@ export class LabReportService {
                 return { success: false, error: 'Report ID is required' };
             }
 
-            const { LabReport } = getModels();
+            const deleted = await prisma.labReport.delete({
+                where: { reportId }
+            }).catch(() => null);
 
-            const deleted = await LabReport.destroy({ where: { reportId } });
-
-            if (deleted === 0) {
+            if (!deleted) {
                 return { success: false, error: 'Lab report not found' };
             }
 

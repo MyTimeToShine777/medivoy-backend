@@ -1,15 +1,16 @@
 // Patient Service - Patient profile and health management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Patient, User, Consultation, MedicalRecord } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class PatientService {
     // ========== CREATE PATIENT PROFILE ==========
     async createPatientProfile(userId, patientData) {
         try {
-            const patient = await Patient.create({
-                userId,
-                ...patientData,
+            const patient = await prisma.patients.create({
+                data: {
+                    userId,
+                    ...patientData
+                }
             });
 
             return { success: true, data: patient };
@@ -21,11 +22,11 @@ class PatientService {
     // ========== GET PATIENT PROFILE ==========
     async getPatientProfile(userId) {
         try {
-            const patient = await Patient.findOne({
+            const patient = await prisma.patients.findFirst({
                 where: { userId },
-                include: [
-                    { model: User, as: 'user' },
-                ],
+                include: {
+                    users: true,
+                },
             });
 
             if (!patient) {
@@ -41,23 +42,35 @@ class PatientService {
     // ========== UPDATE PATIENT HEALTH INFO ==========
     async updateHealthInfo(userId, healthData) {
         try {
-            const patient = await Patient.findOne({ where: { userId } });
+            const patient = await prisma.patients.findFirst({ where: { userId } });
             if (!patient) return { success: false, error: 'Not found' };
 
-            if (healthData.allergies) patient.allergies = healthData.allergies;
-            if (healthData.chronicConditions) patient.chronicConditions = healthData.chronicConditions;
-            if (healthData.medications) patient.currentMedications = healthData.medications;
+            const updateData = {};
+            if (healthData.allergies) updateData.allergies = healthData.allergies;
+            if (healthData.chronicConditions) updateData.chronicConditions = healthData.chronicConditions;
+            if (healthData.medications) updateData.currentMedications = healthData.medications;
+
+            let height = patient.height;
+            let weight = patient.weight;
+
             if (healthData.height) {
-                patient.height = healthData.height;
-                patient.bmi = this.calculateBMI(healthData.height, patient.weight);
+                height = healthData.height;
+                updateData.height = height;
             }
             if (healthData.weight) {
-                patient.weight = healthData.weight;
-                patient.bmi = this.calculateBMI(patient.height, healthData.weight);
+                weight = healthData.weight;
+                updateData.weight = weight;
             }
 
-            await patient.save();
-            return { success: true, data: patient };
+            if (healthData.height || healthData.weight) {
+                updateData.bmi = this.calculateBMI(height, weight);
+            }
+
+            const updatedPatient = await prisma.patients.update({
+                where: { userId },
+                data: updateData
+            });
+            return { success: true, data: updatedPatient };
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -66,11 +79,11 @@ class PatientService {
     // ========== GET PATIENT MEDICAL HISTORY ==========
     async getPatientMedicalHistory(userId) {
         try {
-            const records = await MedicalRecord.findAll({
+            const records = await prisma.medicalRecord.findMany({
                 where: { userId },
-                order: [
-                    ['recordDate', 'DESC']
-                ],
+                orderBy: {
+                    recordDate: 'desc',
+                },
             });
 
             return { success: true, data: records };
@@ -82,14 +95,14 @@ class PatientService {
     // ========== GET PATIENT CONSULTATIONS ==========
     async getPatientConsultations(userId) {
         try {
-            const consultations = await Consultation.findAll({
+            const consultations = await prisma.consultations.findMany({
                 where: { userId },
-                include: [
-                    { model: Doctor, as: 'doctor' },
-                ],
-                order: [
-                    ['consultationDate', 'DESC']
-                ],
+                include: {
+                    doctor: true,
+                },
+                orderBy: {
+                    consultationDate: 'desc',
+                },
             });
 
             return { success: true, data: consultations };
@@ -105,4 +118,5 @@ class PatientService {
     }
 }
 
+export { PatientService };
 export default new PatientService();

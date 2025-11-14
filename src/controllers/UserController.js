@@ -1,10 +1,10 @@
 'use strict';
 
-import { UserService } from '../services/UserService.js';
+import userService from '../services/UserService.js';
 
 export class UserController {
     constructor() {
-        this.userService = new UserService();
+        this.userService = userService;
     }
 
     async getUserProfile(req, res) {

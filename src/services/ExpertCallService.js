@@ -1,6 +1,6 @@
 'use strict';
 
-import { ExpertCall, User, Doctor } from '../models/index.js';
+import prisma from '../config/prisma.js';
 import { cacheService } from '../config/redis.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -18,7 +18,8 @@ export class ExpertCallService {
                 return { success: false, error: 'User ID, doctor ID and scheduled time required' };
             }
 
-            const call = await ExpertCall.create({
+            const call = await prisma.expertCall.create({
+                data: {
                 userId: userId,
                 doctorId: doctorId,
                 scheduledTime: new Date(scheduledTime),
@@ -52,7 +53,7 @@ export class ExpertCallService {
             let cached = await cacheService.get(cacheKey);
             if (cached) return { success: true, data: cached };
 
-            const calls = await ExpertCall.findAll({
+            const calls = await prisma.expertCall.findMany({
                 where: { userId: userId },
                 include: [
                     { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] }
@@ -82,13 +83,13 @@ export class ExpertCallService {
                 return { success: false, error: 'Call ID required' };
             }
 
-            const call = await ExpertCall.findByPk(callId);
+            const call = await prisma.expertCall.findUnique({ where: { callId } });
 
             if (!call) {
                 return { success: false, error: 'Call not found', code: 'NOT_FOUND' };
             }
 
-            await call.update({
+            await prisma.expertCall.update({ where: { callId }, data: {
                 status: 'in_progress',
                 startedAt: new Date()
             });
@@ -113,13 +114,13 @@ export class ExpertCallService {
                 return { success: false, error: 'Call ID required' };
             }
 
-            const call = await ExpertCall.findByPk(callId);
+            const call = await prisma.expertCall.findUnique({ where: { callId } });
 
             if (!call) {
                 return { success: false, error: 'Call not found', code: 'NOT_FOUND' };
             }
 
-            await call.update({
+            await prisma.expertCall.update({ where: { callId }, data: {
                 status: 'completed',
                 endedAt: new Date(),
                 notes: notes || ''
@@ -145,13 +146,13 @@ export class ExpertCallService {
                 return { success: false, error: 'Call ID required' };
             }
 
-            const call = await ExpertCall.findByPk(callId);
+            const call = await prisma.expertCall.findUnique({ where: { callId } });
 
             if (!call) {
                 return { success: false, error: 'Call not found', code: 'NOT_FOUND' };
             }
 
-            await call.update({
+            await prisma.expertCall.update({ where: { callId }, data: {
                 status: 'cancelled',
                 cancelledAt: new Date()
             });
@@ -176,7 +177,7 @@ export class ExpertCallService {
                 return { success: false, error: 'Doctor ID and date required' };
             }
 
-            const calls = await ExpertCall.findAll({
+            const calls = await prisma.expertCall.findMany({
                 where: { doctorId: doctorId, scheduledTime: {
                         [require('sequelize').Op.gte]: new Date(date) } },
                 attributes: ['scheduledTime', 'duration']
@@ -201,13 +202,13 @@ export class ExpertCallService {
                 return { success: false, error: 'Call ID and new time required' };
             }
 
-            const call = await ExpertCall.findByPk(callId);
+            const call = await prisma.expertCall.findUnique({ where: { callId } });
 
             if (!call) {
                 return { success: false, error: 'Call not found', code: 'NOT_FOUND' };
             }
 
-            await call.update({
+            await prisma.expertCall.update({ where: { callId }, data: {
                 scheduledTime: new Date(newScheduledTime),
                 rescheduledAt: new Date()
             });
@@ -224,4 +225,4 @@ export class ExpertCallService {
 }
 
 export const expertCallService = new ExpertCallService();
-export default expertCallService;
+export default new ExpertCallService();

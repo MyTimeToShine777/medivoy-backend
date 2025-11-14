@@ -1,6 +1,6 @@
 'use strict';
 
-import { BookingService } from '../services/BookingService.js';
+import bookingService from '../services/BookingService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -10,7 +10,7 @@ import { AppError } from '../utils/errors/AppError.js';
 
 export class BookingController {
     constructor() {
-        this.bookingService = new BookingService();
+        this.bookingService = bookingService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -956,6 +956,96 @@ export class BookingController {
                     message: errorMessage,
                     details: null
                 }
+            });
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // GET USER BOOKINGS
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    async getUserBookings(req, res) {
+        try {
+            const userId = req.user && req.user.userId ? req.user.userId : null;
+
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'User authentication required'
+                });
+            }
+
+            const bookings = await this.bookingService.getUserBookings(userId);
+
+            return res.status(200).json({
+                success: true,
+                data: bookings
+            });
+        } catch (error) {
+            console.error('Error in getUserBookings:', error.message);
+            return res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // GET UPCOMING BOOKINGS
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    async getUpcomingBookings(req, res) {
+        try {
+            const userId = req.user && req.user.userId ? req.user.userId : null;
+
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'User authentication required'
+                });
+            }
+
+            const bookings = await this.bookingService.getUpcomingBookings(userId);
+
+            return res.status(200).json({
+                success: true,
+                data: bookings
+            });
+        } catch (error) {
+            console.error('Error in getUpcomingBookings:', error.message);
+            return res.status(500).json({
+                success: false,
+                error: error.message
+            });
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════════
+    // GET PAST BOOKINGS
+    // ═══════════════════════════════════════════════════════════════════════════════
+
+    async getPastBookings(req, res) {
+        try {
+            const userId = req.user && req.user.userId ? req.user.userId : null;
+
+            if (!userId) {
+                return res.status(401).json({
+                    success: false,
+                    error: 'User authentication required'
+                });
+            }
+
+            const bookings = await this.bookingService.getPastBookings(userId);
+
+            return res.status(200).json({
+                success: true,
+                data: bookings
+            });
+        } catch (error) {
+            console.error('Error in getPastBookings:', error.message);
+            return res.status(500).json({
+                success: false,
+                error: error.message
             });
         }
     }

@@ -122,4 +122,5 @@ class NotificationQueueService {
     }
 }
 
+export { NotificationQueueService };
 export default new NotificationQueueService();

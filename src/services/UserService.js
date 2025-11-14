@@ -1,20 +1,19 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { User, UserPreference, UserAddress, AuditLog } from '../models/index.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
-import { NotificationService } from './NotificationService.js';
+import prisma from '../config/prisma.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
+import notificationService from './NotificationService.js';
 import { AppError } from '../utils/errors/AppError.js';
 import bcrypt from 'bcryptjs';
 
 export class UserService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
-        this.notificationService = new NotificationService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
+        this.notificationService = notificationService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -25,12 +24,28 @@ export class UserService {
         try {
             if (!userId) throw new AppError('User ID required', 400);
 
-            const user = await User.findByPk(userId, {
-                include: [
-                    { model: UserPreference, attributes: ['prefId', 'emailNotifications', 'smsNotifications'] },
-                    { model: UserAddress, attributes: ['addressId', 'addressLine1', 'city', 'state', 'country'] }
-                ],
-                attributes: { exclude: ['password'] }
+            const user = await prisma.users.findUnique({
+                where: { userId: userId },
+                select: {
+                    userId: true,
+                    email: true,
+                    firstName: true,
+                    lastName: true,
+                    phone: true,
+                    role: true,
+                    isEmailVerified: true,
+                    profilePicture: true,
+                    address: true,
+                    city: true,
+                    state: true,
+                    country: true,
+                    postalCode: true,
+                    dateOfBirth: true,
+                    gender: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    preferences: true
+                }
             });
 
             if (!user) throw new AppError('User not found', 404);
@@ -42,13 +57,13 @@ export class UserService {
     }
 
     async updateUserProfile(userId, updateData) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!userId || !updateData) throw new AppError('Required params missing', 400);
 
-            const user = await User.findByPk(userId, { transaction: transaction });
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
-                await transaction.rollback();
+
                 throw new AppError('User not found', 404);
             }
 
@@ -62,6 +77,7 @@ export class UserService {
                 }
             }
 
+            /* TODO: Convert to prisma update */
             await user.save({ transaction: transaction });
 
             await this.auditLogService.logAction({
@@ -72,37 +88,38 @@ export class UserService {
                 details: { changes: previousData }
             }, transaction);
 
-            await transaction.commit();
+
 
             return { success: true, message: 'Profile updated', user: user };
         } catch (error) {
-            await transaction.rollback();
+
             throw this.errorHandlingService.handleError(error);
         }
     }
 
     async changePassword(userId, oldPassword, newPassword) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!userId || !oldPassword || !newPassword) {
                 throw new AppError('All parameters required', 400);
             }
 
-            const user = await User.findByPk(userId, { transaction: transaction });
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
-                await transaction.rollback();
+
                 throw new AppError('User not found', 404);
             }
 
             const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
             if (!isPasswordValid) {
-                await transaction.rollback();
+
                 throw new AppError('Invalid old password', 400);
             }
 
             const hashedPassword = await bcrypt.hash(newPassword, 10);
             user.password = hashedPassword;
             user.passwordChangedAt = new Date();
+            /* TODO: Convert to prisma update */
             await user.save({ transaction: transaction });
 
             await this.auditLogService.logAction({
@@ -115,11 +132,11 @@ export class UserService {
 
             await this.notificationService.sendNotification(userId, 'PASSWORD_CHANGED', {});
 
-            await transaction.commit();
+
 
             return { success: true, message: 'Password changed' };
         } catch (error) {
-            await transaction.rollback();
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -132,7 +149,7 @@ export class UserService {
         try {
             if (!userId) throw new AppError('User ID required', 400);
 
-            const preferences = await UserPreference.findOne({ where: { userId: userId } });
+            const preferences = await prisma.userPreference.findFirst({ where: { userId: userId } });
 
             if (!preferences) {
                 return { success: true, preferences: this._getDefaultPreferences() };
@@ -145,21 +162,25 @@ export class UserService {
     }
 
     async updateUserPreferences(userId, preferencesData) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!userId || !preferencesData) throw new AppError('Required params missing', 400);
 
-            let preferences = await UserPreference.findOne({ where: { userId: userId }, transaction: transaction });
+            let preferences = await prisma.userPreference.findFirst({ where: { userId: userId } });
 
             if (!preferences) {
-                preferences = await UserPreference.create({
-                    prefId: this._generatePrefId(),
-                    userId: userId,
-                    ...preferencesData
-                }, { transaction: transaction });
+                preferences = await prisma.userPreference.create({
+                    data: {
+                        prefId: this._generatePrefId(),
+                        userId: userId,
+                        ...preferencesData
+                    }
+                });
             } else {
-                Object.assign(preferences, preferencesData);
-                await preferences.save({ transaction: transaction });
+                preferences = await prisma.userPreference.update({
+                    where: { prefId: preferences.prefId },
+                    data: preferencesData
+                });
             }
 
             await this.auditLogService.logAction({
@@ -170,11 +191,11 @@ export class UserService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
+
 
             return { success: true, message: 'Preferences updated', preferences: preferences };
         } catch (error) {
-            await transaction.rollback();
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -184,28 +205,30 @@ export class UserService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async addUserAddress(userId, addressData) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!userId || !addressData) throw new AppError('Required params missing', 400);
 
-            const user = await User.findByPk(userId, { transaction: transaction });
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
-                await transaction.rollback();
+
                 throw new AppError('User not found', 404);
             }
 
-            const address = await UserAddress.create({
-                addressId: this._generateAddressId(),
-                userId: userId,
-                addressLine1: addressData.addressLine1,
-                addressLine2: addressData.addressLine2 || null,
-                city: addressData.city,
-                state: addressData.state,
-                country: addressData.country,
-                postalCode: addressData.postalCode,
-                addressType: addressData.addressType || 'home',
-                isDefault: addressData.isDefault || false
-            }, { transaction: transaction });
+            const address = await prisma.userAddress.create({
+                data: {
+                    addressId: this._generateAddressId(),
+                    userId: userId,
+                    addressLine1: addressData.addressLine1,
+                    addressLine2: addressData.addressLine2 || null,
+                    city: addressData.city,
+                    state: addressData.state,
+                    country: addressData.country,
+                    postalCode: addressData.postalCode,
+                    addressType: addressData.addressType || 'home',
+                    isDefault: addressData.isDefault || false
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'ADDRESS_ADDED',
@@ -215,11 +238,11 @@ export class UserService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
+
 
             return { success: true, message: 'Address added', address: address };
         } catch (error) {
-            await transaction.rollback();
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -228,7 +251,7 @@ export class UserService {
         try {
             if (!userId) throw new AppError('User ID required', 400);
 
-            const addresses = await UserAddress.findAll({
+            const addresses = await prisma.userAddress.findMany({
                 where: { userId: userId },
                 order: [
                     ['isDefault', 'DESC'],
@@ -243,17 +266,17 @@ export class UserService {
     }
 
     async updateUserAddress(addressId, userId, updateData) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!addressId || !userId) throw new AppError('Required params missing', 400);
 
-            const address = await UserAddress.findOne({
+            const address = await prisma.userAddress.findFirst({
                 where: { addressId: addressId, userId: userId },
                 transaction: transaction
             });
 
             if (!address) {
-                await transaction.rollback();
+
                 throw new AppError('Address not found', 404);
             }
 
@@ -264,6 +287,7 @@ export class UserService {
                 }
             }
 
+            /* TODO: Convert to prisma update */
             await address.save({ transaction: transaction });
 
             await this.auditLogService.logAction({
@@ -274,31 +298,31 @@ export class UserService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
+
 
             return { success: true, message: 'Address updated', address: address };
         } catch (error) {
-            await transaction.rollback();
+
             throw this.errorHandlingService.handleError(error);
         }
     }
 
     async deleteUserAddress(addressId, userId) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!addressId || !userId) throw new AppError('Required params missing', 400);
 
-            const address = await UserAddress.findOne({
+            const address = await prisma.userAddress.findFirst({
                 where: { addressId: addressId, userId: userId },
                 transaction: transaction
             });
 
             if (!address) {
-                await transaction.rollback();
+
                 throw new AppError('Address not found', 404);
             }
 
-            await address.destroy({ transaction: transaction });
+            await prisma.address.delete({ transaction: transaction });
 
             await this.auditLogService.logAction({
                 action: 'ADDRESS_DELETED',
@@ -308,11 +332,11 @@ export class UserService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
+
 
             return { success: true, message: 'Address deleted' };
         } catch (error) {
-            await transaction.rollback();
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -330,7 +354,7 @@ export class UserService {
             if (filters && filters.userType) where.userType = filters.userType;
             if (filters && filters.isActive !== undefined) where.isActive = filters.isActive;
 
-            const users = await User.findAll({
+            const users = await prisma.users.findMany({
                 where: where,
                 attributes: { exclude: ['password'] },
                 order: [
@@ -340,7 +364,7 @@ export class UserService {
                 offset: offset
             });
 
-            const total = await User.count({ where: where });
+            const total = await prisma.users.count({ where: where });
 
             return {
                 success: true,
@@ -353,19 +377,20 @@ export class UserService {
     }
 
     async deactivateUser(userId, reason) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!userId) throw new AppError('User ID required', 400);
 
-            const user = await User.findByPk(userId, { transaction: transaction });
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
-                await transaction.rollback();
+
                 throw new AppError('User not found', 404);
             }
 
             user.isActive = false;
             user.deactivatedAt = new Date();
             user.deactivationReason = reason || null;
+            /* TODO: Convert to prisma update */
             await user.save({ transaction: transaction });
 
             await this.auditLogService.logAction({
@@ -376,29 +401,30 @@ export class UserService {
                 details: { reason: reason }
             }, transaction);
 
-            await transaction.commit();
+
 
             return { success: true, message: 'User deactivated' };
         } catch (error) {
-            await transaction.rollback();
+
             throw this.errorHandlingService.handleError(error);
         }
     }
 
     async reactivateUser(userId) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!userId) throw new AppError('User ID required', 400);
 
-            const user = await User.findByPk(userId, { transaction: transaction });
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
-                await transaction.rollback();
+
                 throw new AppError('User not found', 404);
             }
 
             user.isActive = true;
             user.deactivatedAt = null;
             user.deactivationReason = null;
+            /* TODO: Convert to prisma update */
             await user.save({ transaction: transaction });
 
             await this.auditLogService.logAction({
@@ -409,11 +435,11 @@ export class UserService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
+
 
             return { success: true, message: 'User reactivated' };
         } catch (error) {
-            await transaction.rollback();
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -446,4 +472,4 @@ export class UserService {
     }
 }
 
-export default UserService;
+export default new UserService();

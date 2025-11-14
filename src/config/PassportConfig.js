@@ -29,7 +29,7 @@ export const configurePassport = () => {
                     }
 
                     // Check if user exists
-                    let user = await prisma.user.findUnique({
+                    let user = await prisma.users.findUnique({
                         where: { email },
                         include: {
                             sessions: true,
@@ -39,7 +39,7 @@ export const configurePassport = () => {
 
                     if (!user) {
                         // Create new user with Google OAuth
-                        user = await prisma.user.create({
+                        user = await prisma.users.create({
                             data: {
                                 firstName: profile.name.givenName || 'Google',
                                 lastName: profile.name.familyName || 'User',
@@ -71,7 +71,7 @@ export const configurePassport = () => {
                     } else {
                         // Update existing user with Google OAuth info
                         if (!user.authProviderId || user.authProvider !== 'google') {
-                            user = await prisma.user.update({
+                            user = await prisma.users.update({
                                 where: { userId: user.userId },
                                 data: {
                                     authProvider: 'google',
@@ -82,7 +82,7 @@ export const configurePassport = () => {
                         }
 
                         // Update login count and last login
-                        await prisma.user.update({
+                        await prisma.users.update({
                             where: { userId: user.userId },
                             data: {
                                 lastLoginAt: new Date(),
@@ -136,7 +136,7 @@ export const configurePassport = () => {
                     }
 
                     // Check if user exists
-                    let user = await prisma.user.findUnique({
+                    let user = await prisma.users.findUnique({
                         where: { email },
                         include: {
                             sessions: true,
@@ -149,7 +149,7 @@ export const configurePassport = () => {
                         const firstName = profile.name && profile.name.firstName ? profile.name.firstName : 'Apple';
                         const lastName = profile.name && profile.name.lastName ? profile.name.lastName : 'User';
 
-                        user = await prisma.user.create({
+                        user = await prisma.users.create({
                             data: {
                                 firstName,
                                 lastName,
@@ -181,7 +181,7 @@ export const configurePassport = () => {
                     } else {
                         // Update existing user with Apple OAuth info
                         if (!user.authProviderId || user.authProvider !== 'apple') {
-                            user = await prisma.user.update({
+                            user = await prisma.users.update({
                                 where: { userId: user.userId },
                                 data: {
                                     authProvider: 'apple',
@@ -192,7 +192,7 @@ export const configurePassport = () => {
                         }
 
                         // Update login count and last login
-                        await prisma.user.update({
+                        await prisma.users.update({
                             where: { userId: user.userId },
                             data: {
                                 lastLoginAt: new Date(),
@@ -236,7 +236,7 @@ export const configurePassport = () => {
     // ═══════════════════════════════════════════════════════════════════════════════
     passport.deserializeUser(async(userId, done) => {
         try {
-            const user = await prisma.user.findUnique({
+            const user = await prisma.users.findUnique({
                 where: { userId },
                 include: {
                     sessions: {

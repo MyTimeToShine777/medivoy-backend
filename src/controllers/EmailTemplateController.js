@@ -1,10 +1,10 @@
 'use strict';
 
-import { EmailTemplateService } from '../services/EmailTemplateService.js';
+import emailTemplateService from '../services/EmailTemplateService.js';
 
 export class EmailTemplateController {
     constructor() {
-        this.emailTemplateService = new EmailTemplateService();
+        this.emailTemplateService = emailTemplateService;
     }
 
     async createEmailTemplate(req, res) {

@@ -1,15 +1,16 @@
 // Medical Record Service - Patient medical records
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { MedicalRecord, User, Doctor, Hospital, Appointment } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class MedicalRecordService {
     // ========== CREATE MEDICAL RECORD ==========
     async createMedicalRecord(recordData) {
         try {
-            const record = await MedicalRecord.create({
-                ...recordData,
-                status: 'active',
+            const record = await prisma.medicalRecord.create({
+                data: {
+                    ...recordData,
+                    status: 'active'
+                }
             });
 
             return { success: true, data: record };
@@ -21,12 +22,13 @@ class MedicalRecordService {
     // ========== GET RECORD ==========
     async getMedicalRecordById(recordId) {
         try {
-            const record = await MedicalRecord.findByPk(recordId, {
-                include: [
-                    { model: User, as: 'patient' },
-                    { model: Doctor, as: 'doctor' },
-                    { model: Hospital, as: 'hospital' },
-                ],
+            const record = await prisma.medicalRecord.findUnique({
+                where: { recordId },
+                include: {
+                    patient: true,
+                    doctor: true,
+                    hospital: true
+                }
             });
 
             if (!record) return { success: false, error: 'Not found' };
@@ -43,13 +45,13 @@ class MedicalRecordService {
 
             if (filters.recordType) where.recordType = filters.recordType;
 
-            const records = await MedicalRecord.findAll({
+            const records = await prisma.medicalRecord.findMany({
                 where,
-                order: [
-                    ['recordDate', 'DESC']
-                ],
-                limit: filters.limit || 50,
-                offset: filters.offset || 0,
+                orderBy: {
+                    recordDate: 'desc'
+                },
+                take: filters.limit || 50,
+                skip: filters.offset || 0
             });
 
             return { success: true, data: records };
@@ -61,11 +63,11 @@ class MedicalRecordService {
     // ========== ARCHIVE RECORD ==========
     async archiveRecord(recordId) {
         try {
-            const record = await MedicalRecord.findByPk(recordId);
+            const record = await prisma.medicalRecord.findUnique({ where: { recordId } });
             if (!record) return { success: false, error: 'Not found' };
 
             record.status = 'archived';
-            await record.save();
+            await prisma.medicalRecord.update({ where: { recordId }, data: { status: record.status } });
 
             return { success: true, data: record };
         } catch (error) {
@@ -74,4 +76,5 @@ class MedicalRecordService {
     }
 }
 
+export { MedicalRecordService };
 export default new MedicalRecordService();

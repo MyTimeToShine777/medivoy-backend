@@ -112,11 +112,12 @@ export async function validateRegister(req, res, next) {
         const useJoi = !!(await _tryLoadJoi());
         if (useJoi) {
             const schema = Joi.object({
-                name: Joi.string().min(2).max(100).required(),
+                firstName: Joi.string().min(2).max(100).required(),
+                lastName: Joi.string().min(2).max(100).required(),
                 email: Joi.string().email().required(),
                 password: Joi.string().min(6).required(),
                 phone: Joi.string().optional()
-            }).options({ abortEarly: false, allowUnknown: false });
+            }).options({ abortEarly: false, allowUnknown: true });
 
             const { error, value } = schema.validate(req.body || {});
             if (error) return res.status(422).json({ success: false, message: 'Validation failed', details: error.details });
@@ -126,8 +127,11 @@ export async function validateRegister(req, res, next) {
 
         // fallback manual
         var body = req.body || {};
-        if (!body.name || typeof body.name !== 'string' || body.name.trim().length < 2) {
-            return res.status(422).json({ success: false, message: 'Validation failed', details: { field: 'name', reason: 'Name required (min 2 chars)' } });
+        if (!body.firstName || typeof body.firstName !== 'string' || body.firstName.trim().length < 2) {
+            return res.status(422).json({ success: false, message: 'Validation failed', details: { field: 'firstName', reason: 'First name required (min 2 chars)' } });
+        }
+        if (!body.lastName || typeof body.lastName !== 'string' || body.lastName.trim().length < 2) {
+            return res.status(422).json({ success: false, message: 'Validation failed', details: { field: 'lastName', reason: 'Last name required (min 2 chars)' } });
         }
         if (!body.email || typeof body.email !== 'string' || body.email.indexOf('@') === -1) {
             return res.status(422).json({ success: false, message: 'Validation failed', details: { field: 'email', reason: 'Invalid or missing email' } });
@@ -135,7 +139,7 @@ export async function validateRegister(req, res, next) {
         if (!body.password || typeof body.password !== 'string' || body.password.length < 6) {
             return res.status(422).json({ success: false, message: 'Validation failed', details: { field: 'password', reason: 'Password required (min 6 chars)' } });
         }
-        req.validated = { name: body.name, email: body.email, password: body.password, phone: body.phone || null };
+        req.validated = { firstName: body.firstName, lastName: body.lastName, email: body.email, password: body.password, phone: body.phone || null };
         return next();
     } catch (err) {
         console.error('validateRegister error:', err && err.stack ? err.stack : err);

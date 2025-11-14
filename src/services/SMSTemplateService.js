@@ -1,17 +1,16 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { SMSTemplate, AuditLog } from '../models/index.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import prisma from '../config/prisma.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class SMSTemplateService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -19,7 +18,6 @@ export class SMSTemplateService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createSMSTemplate(templateData) {
-        const transaction = await sequelize.transaction();
         try {
             if (!templateData || !templateData.templateName || !templateData.messageContent) {
                 throw new AppError('Template name and content required', 400);
@@ -29,45 +27,46 @@ export class SMSTemplateService {
                 throw new AppError('SMS content must be 160 characters or less', 400);
             }
 
-            const existing = await SMSTemplate.findOne({
-                where: { templateCode: templateData.templateCode },
-                transaction: transaction
+            const result = await prisma.$transaction(async(tx) => {
+                const existing = await tx.sMSTemplate.findFirst({
+                    where: { templateCode: templateData.templateCode }
+                });
+
+                if (existing) {
+                    throw new AppError('Template already exists', 409);
+                }
+
+                const template = await tx.sMSTemplate.create({
+                    data: {
+                        templateId: this._generateTemplateId(),
+                        templateName: templateData.templateName,
+                        templateCode: templateData.templateCode,
+                        messageContent: templateData.messageContent,
+                        characterCount: templateData.messageContent.length,
+                        variables: templateData.variables || [],
+                        description: templateData.description || null,
+                        isActive: true,
+                        createdAt: new Date()
+                    }
+                });
+
+                await this.auditLogService.logAction({
+                    action: 'SMS_TEMPLATE_CREATED',
+                    entityType: 'SMSTemplate',
+                    entityId: template.templateId,
+                    userId: 'ADMIN',
+                    details: { templateName: templateData.templateName }
+                });
+
+                return template;
             });
-
-            if (existing) {
-                await transaction.rollback();
-                throw new AppError('Template already exists', 409);
-            }
-
-            const template = await SMSTemplate.create({
-                templateId: this._generateTemplateId(),
-                templateName: templateData.templateName,
-                templateCode: templateData.templateCode,
-                messageContent: templateData.messageContent,
-                characterCount: templateData.messageContent.length,
-                variables: templateData.variables || [],
-                description: templateData.description || null,
-                isActive: true,
-                createdAt: new Date()
-            }, { transaction: transaction });
-
-            await this.auditLogService.logAction({
-                action: 'SMS_TEMPLATE_CREATED',
-                entityType: 'SMSTemplate',
-                entityId: template.templateId,
-                userId: 'ADMIN',
-                details: { templateName: templateData.templateName }
-            }, transaction);
-
-            await transaction.commit();
 
             return {
                 success: true,
                 message: 'SMS template created',
-                template: template
+                template: result
             };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }
@@ -78,7 +77,7 @@ export class SMSTemplateService {
                 return { success: false, error: 'Template ID required' };
             }
 
-            const template = await SMSTemplate.findByPk(templateId);
+            const template = await prisma.sMSTemplate.findUnique({ where: { templateId } });
             if (!template) {
                 return { success: false, error: 'Template not found' };
             }
@@ -95,7 +94,7 @@ export class SMSTemplateService {
                 return { success: false, error: 'Template code required' };
             }
 
-            const template = await SMSTemplate.findOne({
+            const template = await prisma.sMSTemplate.findFirst({
                 where: { templateCode: templateCode, isActive: true }
             });
 
@@ -116,24 +115,31 @@ export class SMSTemplateService {
             const where = { isActive: true };
 
             if (filters && filters.search) {
-                where[Op.or] = [
-                    { templateName: {
-                            [Op.like]: '%' + filters.search + '%' } },
-                    { templateCode: {
-                            [Op.like]: '%' + filters.search + '%' } }
+                where.OR = [{
+                        templateName: {
+                            contains: filters.search,
+                            mode: 'insensitive'
+                        }
+                    },
+                    {
+                        templateCode: {
+                            contains: filters.search,
+                            mode: 'insensitive'
+                        }
+                    }
                 ];
             }
 
-            const templates = await SMSTemplate.findAll({
+            const templates = await prisma.sMSTemplate.findMany({
                 where: where,
-                order: [
-                    ['templateName', 'ASC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: {
+                    templateName: 'asc'
+                },
+                take: limit,
+                skip: offset
             });
 
-            const total = await SMSTemplate.count({ where: where });
+            const total = await prisma.sMSTemplate.count({ where: where });
 
             return {
                 success: true,
@@ -146,45 +152,51 @@ export class SMSTemplateService {
     }
 
     async updateSMSTemplate(templateId, updateData) {
-        const transaction = await sequelize.transaction();
         try {
             if (!templateId || !updateData) {
                 return { success: false, error: 'Required parameters missing' };
             }
 
-            const template = await SMSTemplate.findByPk(templateId, { transaction: transaction });
-            if (!template) {
-                await transaction.rollback();
-                return { success: false, error: 'Template not found' };
-            }
+            const result = await prisma.$transaction(async(tx) => {
+                const template = await tx.sMSTemplate.findUnique({
+                    where: { id: templateId }
+                });
 
-            if (updateData.messageContent) {
-                if (updateData.messageContent.length > 160) {
-                    await transaction.rollback();
-                    return { success: false, error: 'SMS content must be 160 characters or less' };
+                if (!template) {
+                    throw new AppError('Template not found', 404);
                 }
-                template.messageContent = updateData.messageContent;
-                template.characterCount = updateData.messageContent.length;
-            }
 
-            if (updateData.description !== undefined) template.description = updateData.description;
-            if (updateData.variables !== undefined) template.variables = updateData.variables;
+                const updateFields = {};
 
-            await template.save({ transaction: transaction });
+                if (updateData.messageContent) {
+                    if (updateData.messageContent.length > 160) {
+                        throw new AppError('SMS content must be 160 characters or less', 400);
+                    }
+                    updateFields.messageContent = updateData.messageContent;
+                    updateFields.characterCount = updateData.messageContent.length;
+                }
 
-            await this.auditLogService.logAction({
-                action: 'SMS_TEMPLATE_UPDATED',
-                entityType: 'SMSTemplate',
-                entityId: templateId,
-                userId: 'ADMIN',
-                details: {}
-            }, transaction);
+                if (updateData.description !== undefined) updateFields.description = updateData.description;
+                if (updateData.variables !== undefined) updateFields.variables = updateData.variables;
 
-            await transaction.commit();
+                const updatedTemplate = await tx.sMSTemplate.update({
+                    where: { id: templateId },
+                    data: updateFields
+                });
 
-            return { success: true, message: 'Template updated', template: template };
+                await this.auditLogService.logAction({
+                    action: 'SMS_TEMPLATE_UPDATED',
+                    entityType: 'SMSTemplate',
+                    entityId: templateId,
+                    userId: 'ADMIN',
+                    details: {}
+                });
+
+                return updatedTemplate;
+            });
+
+            return { success: true, message: 'Template updated', template: result };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }
@@ -195,7 +207,7 @@ export class SMSTemplateService {
                 return { success: false, error: 'Template code required' };
             }
 
-            const template = await SMSTemplate.findOne({
+            const template = await prisma.sMSTemplate.findFirst({
                 where: { templateCode: templateCode, isActive: true }
             });
 

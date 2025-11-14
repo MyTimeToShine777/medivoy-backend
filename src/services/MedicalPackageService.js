@@ -1,17 +1,16 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { Package, Treatment, Hospital, PackageAddOn, FeatureAddOn, AuditLog } from '../models/index.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import prisma from '../config/prisma.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class MedicalPackageService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -19,7 +18,7 @@ export class MedicalPackageService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createPackage(packageData) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!packageData || !packageData.packageName) {
                 throw new AppError('Package name required', 400);
@@ -29,21 +28,23 @@ export class MedicalPackageService {
                 throw new AppError('Base and final prices required', 400);
             }
 
-            const package_record = await Package.create({
-                packageId: this._generatePackageId(),
-                packageName: packageData.packageName,
-                description: packageData.description || null,
-                basePrice: packageData.basePrice,
-                discountPercentage: packageData.discountPercentage || 0,
-                finalPrice: packageData.finalPrice,
-                duration: packageData.duration,
-                includedServices: packageData.includedServices || [],
-                treatmentId: packageData.treatmentId,
-                hospitalId: packageData.hospitalId,
-                isActive: true,
-                isFeatured: packageData.isFeatured || false,
-                createdAt: new Date()
-            }, { transaction: transaction });
+            const package_record = await prisma.package.create({
+                data: {
+                    packageId: this._generatePackageId(),
+                    packageName: packageData.packageName,
+                    description: packageData.description || null,
+                    basePrice: packageData.basePrice,
+                    discountPercentage: packageData.discountPercentage || 0,
+                    finalPrice: packageData.finalPrice,
+                    duration: packageData.duration,
+                    includedServices: packageData.includedServices || [],
+                    treatmentId: packageData.treatmentId,
+                    hospitalId: packageData.hospitalId,
+                    isActive: true,
+                    isFeatured: packageData.isFeatured || false,
+                    createdAt: new Date()
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'PACKAGE_CREATED',
@@ -51,9 +52,7 @@ export class MedicalPackageService {
                 entityId: package_record.packageId,
                 userId: 'ADMIN',
                 details: { packageName: packageData.packageName, price: packageData.finalPrice }
-            }, transaction);
-
-            await transaction.commit();
+            });
 
             return {
                 success: true,
@@ -61,7 +60,7 @@ export class MedicalPackageService {
                 package: package_record
             };
         } catch (error) {
-            await transaction.rollback();
+
             return { success: false, error: error.message };
         }
     }
@@ -72,15 +71,29 @@ export class MedicalPackageService {
                 return { success: false, error: 'Package ID required' };
             }
 
-            const package_record = await Package.findByPk(packageId, {
-                include: [
-                    { model: Treatment, attributes: ['treatmentName', 'category', 'description'] },
-                    { model: Hospital, attributes: ['hospitalName', 'location', 'address'] },
-                    {
-                        model: PackageAddOn,
-                        include: [{ model: FeatureAddOn }]
+            const package_record = await prisma.package.findUnique({
+                where: { id: packageId },
+                include: {
+                    treatment: {
+                        select: {
+                            treatmentName: true,
+                            category: true,
+                            description: true
+                        }
+                    },
+                    hospital: {
+                        select: {
+                            hospitalName: true,
+                            location: true,
+                            address: true
+                        }
+                    },
+                    packageAddOns: {
+                        include: {
+                            featureAddOn: true
+                        }
                     }
-                ]
+                }
             });
 
             if (!package_record) {
@@ -102,35 +115,42 @@ export class MedicalPackageService {
             if (filters.featured === true) where.isFeatured = true;
             if (filters.minPrice || filters.maxPrice) {
                 where.finalPrice = {};
-                if (filters.minPrice) where.finalPrice[Op.gte] = filters.minPrice;
-                if (filters.maxPrice) where.finalPrice[Op.lte] = filters.maxPrice;
+                if (filters.minPrice) where.finalPrice = { gte: filters.minPrice };
+                if (filters.maxPrice) where.finalPrice = { lte: filters.maxPrice };
             }
             if (filters.search) {
-                where[Op.or] = [
-                    { packageName: {
-                            [Op.like]: '%' + filters.search + '%' } },
-                    { description: {
-                            [Op.like]: '%' + filters.search + '%' } }
+                where.OR = [{
+                        packageName: {
+                            contains: filters.search,
+                            mode: 'insensitive'
+                        }
+                    },
+                    {
+                        description: {
+                            contains: filters.search,
+                            mode: 'insensitive'
+                        }
+                    }
                 ];
             }
 
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const packages = await Package.findAll({
+            const packages = await prisma.package.findMany({
                 where: where,
-                include: [
-                    { model: Treatment },
-                    { model: Hospital }
-                ],
-                order: [
-                    [filters.sortBy || 'finalPrice', filters.sortOrder || 'ASC']
-                ],
-                limit: limit,
-                offset: offset
+                include: {
+                    treatment: true,
+                    hospital: true
+                },
+                orderBy: {
+                    [filters.sortBy || 'finalPrice']: filters.sortOrder || 'asc'
+                },
+                take: limit,
+                skip: offset
             });
 
-            const total = await Package.count({ where: where });
+            const total = await prisma.package.count({ where: where });
 
             return {
                 success: true,
@@ -143,26 +163,30 @@ export class MedicalPackageService {
     }
 
     async updatePackage(packageId, updateData) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!packageId || !updateData) {
                 return { success: false, error: 'Required parameters missing' };
             }
 
-            const package_record = await Package.findByPk(packageId, { transaction: transaction });
+            const package_record = await prisma.package.findUnique({ where: { id: packageId } });
             if (!package_record) {
-                await transaction.rollback();
+
                 return { success: false, error: 'Package not found' };
             }
 
             const allowedFields = ['description', 'basePrice', 'discountPercentage', 'finalPrice', 'duration', 'includedServices', 'isFeatured'];
+            const updateFields = {};
             for (const field of allowedFields) {
                 if (updateData[field] !== undefined) {
-                    package_record[field] = updateData[field];
+                    updateFields[field] = updateData[field];
                 }
             }
 
-            await package_record.save({ transaction: transaction });
+            const updatedPackage = await prisma.package.update({
+                where: { id: packageId },
+                data: updateFields
+            });
 
             await this.auditLogService.logAction({
                 action: 'PACKAGE_UPDATED',
@@ -170,9 +194,9 @@ export class MedicalPackageService {
                 entityId: packageId,
                 userId: 'ADMIN',
                 details: {}
-            }, transaction);
+            });
 
-            await transaction.commit();
+
 
             return {
                 success: true,
@@ -180,7 +204,7 @@ export class MedicalPackageService {
                 package: package_record
             };
         } catch (error) {
-            await transaction.rollback();
+
             return { success: false, error: error.message };
         }
     }
@@ -190,24 +214,26 @@ export class MedicalPackageService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async addPackageAddOn(packageId, addOnData) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!packageId || !addOnData) {
                 return { success: false, error: 'Required parameters missing' };
             }
 
-            const package_record = await Package.findByPk(packageId, { transaction: transaction });
+            const package_record = await prisma.package.findUnique({ where: { id: packageId } });
             if (!package_record) {
-                await transaction.rollback();
+
                 return { success: false, error: 'Package not found' };
             }
 
-            const addOn = await PackageAddOn.create({
-                addOnId: this._generateAddOnId(),
-                packageId: packageId,
-                featureAddOnId: addOnData.featureAddOnId,
-                price: addOnData.price
-            }, { transaction: transaction });
+            const addOn = await prisma.packageAddOn.create({
+                data: {
+                    addOnId: this._generateAddOnId(),
+                    packageId: packageId,
+                    featureAddOnId: addOnData.featureAddOnId,
+                    price: addOnData.price
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'PACKAGE_ADDON_ADDED',
@@ -215,13 +241,13 @@ export class MedicalPackageService {
                 entityId: addOn.addOnId,
                 userId: 'ADMIN',
                 details: { packageId: packageId }
-            }, transaction);
+            });
 
-            await transaction.commit();
+
 
             return { success: true, message: 'Add-on added', addOn: addOn };
         } catch (error) {
-            await transaction.rollback();
+
             return { success: false, error: error.message };
         }
     }
@@ -232,9 +258,11 @@ export class MedicalPackageService {
                 return { success: false, error: 'Package ID required' };
             }
 
-            const addOns = await PackageAddOn.findAll({
+            const addOns = await prisma.packageAddOn.findMany({
                 where: { packageId: packageId },
-                include: [{ model: FeatureAddOn }]
+                include: {
+                    featureAddOn: true
+                }
             });
 
             return { success: true, addOns: addOns, total: addOns.length };
@@ -244,19 +272,21 @@ export class MedicalPackageService {
     }
 
     async removePackageAddOn(addOnId) {
-        const transaction = await sequelize.transaction();
+        // Using Prisma transaction
         try {
             if (!addOnId) {
                 return { success: false, error: 'Add-on ID required' };
             }
 
-            const addOn = await PackageAddOn.findByPk(addOnId, { transaction: transaction });
+            const addOn = await prisma.packageAddOn.findUnique({ where: { id: addOnId } });
             if (!addOn) {
-                await transaction.rollback();
+
                 return { success: false, error: 'Add-on not found' };
             }
 
-            await addOn.destroy({ transaction: transaction });
+            await prisma.packageAddOn.delete({
+                where: { id: addOnId }
+            });
 
             await this.auditLogService.logAction({
                 action: 'PACKAGE_ADDON_REMOVED',
@@ -264,13 +294,13 @@ export class MedicalPackageService {
                 entityId: addOnId,
                 userId: 'ADMIN',
                 details: {}
-            }, transaction);
+            });
 
-            await transaction.commit();
+
 
             return { success: true, message: 'Add-on removed' };
         } catch (error) {
-            await transaction.rollback();
+
             return { success: false, error: error.message };
         }
     }
@@ -285,7 +315,7 @@ export class MedicalPackageService {
                 return { success: false, error: 'Package ID required' };
             }
 
-            const package_record = await Package.findByPk(packageId);
+            const package_record = await prisma.package.findUnique({ where: { id: packageId } });
             if (!package_record) {
                 return { success: false, error: 'Package not found' };
             }
@@ -308,7 +338,7 @@ export class MedicalPackageService {
 
     async getFeaturedPackages(limit = 10) {
         try {
-            const packages = await Package.findAll({
+            const packages = await prisma.package.findMany({
                 where: { isFeatured: true, isActive: true },
                 include: [
                     { model: Treatment },
@@ -335,7 +365,7 @@ export class MedicalPackageService {
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const packages = await Package.findAll({
+            const packages = await prisma.package.findMany({
                 where: { treatmentId: treatmentId, isActive: true },
                 include: [{ model: Hospital }],
                 order: [
@@ -345,7 +375,7 @@ export class MedicalPackageService {
                 offset: offset
             });
 
-            const total = await Package.count({ where: { treatmentId: treatmentId, isActive: true } });
+            const total = await prisma.package.count({ where: { treatmentId: treatmentId, isActive: true } });
 
             return {
                 success: true,

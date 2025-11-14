@@ -1,10 +1,10 @@
 'use strict';
 
-import { PermissionService } from '../services/PermissionService.js';
+import permissionService from '../services/PermissionService.js';
 
 export class PermissionController {
     constructor() {
-        this.permissionService = new PermissionService();
+        this.permissionService = permissionService;
     }
 
     async createPermission(req, res) {

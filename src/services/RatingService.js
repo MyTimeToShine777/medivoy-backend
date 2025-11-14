@@ -1,7 +1,6 @@
 'use strict';
 
-import { getModels } from '../models/index.js';
-import { Op } from 'sequelize';
+import prisma from '../config/prisma.js';
 
 export class RatingService {
     /**
@@ -21,17 +20,19 @@ export class RatingService {
                 return { success: false, error: 'Rating category is required' };
             }
 
-            const { Rating, Patient, Doctor, Hospital } = getModels();
-
             // Validate patient exists
-            const patient = await Patient.findByPk(patientId);
+            const patient = await prisma.patients.findUnique({
+                where: { patientId }
+            });
             if (!patient) {
                 return { success: false, error: 'Patient not found' };
             }
 
             // Validate doctor if provided
             if (ratingData.doctorId) {
-                const doctor = await Doctor.findByPk(ratingData.doctorId);
+                const doctor = await prisma.doctors.findUnique({
+                    where: { doctorId: ratingData.doctorId }
+                });
                 if (!doctor) {
                     return { success: false, error: 'Doctor not found' };
                 }
@@ -39,16 +40,20 @@ export class RatingService {
 
             // Validate hospital if provided
             if (ratingData.hospitalId) {
-                const hospital = await Hospital.findByPk(ratingData.hospitalId);
+                const hospital = await prisma.hospitals.findUnique({
+                    where: { hospitalId: ratingData.hospitalId }
+                });
                 if (!hospital) {
                     return { success: false, error: 'Hospital not found' };
                 }
             }
 
             // Create rating
-            const rating = await Rating.create({
-                patientId,
-                ...ratingData
+            const rating = await prisma.rating.create({
+                data: {
+                    patientId,
+                    ...ratingData
+                }
             });
 
             return {
@@ -73,24 +78,25 @@ export class RatingService {
                 return { success: false, error: 'Doctor ID is required' };
             }
 
-            const { Rating, Patient } = getModels();
-
             const { page = 1, limit = 10 } = options;
-            const offset = (page - 1) * limit;
+            const skip = (page - 1) * limit;
 
-            const { rows: ratings, count: total } = await Rating.findAndCountAll({
-                where: { doctorId },
-                include: [{
-                    model: Patient,
-                    as: 'patient',
-                    attributes: ['patientId', 'firstName', 'lastName']
-                }],
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: parseInt(limit),
-                offset: parseInt(offset)
-            });
+            const [ratings, total] = await Promise.all([
+                prisma.rating.findMany({
+                    where: { doctorId },
+                    include: {
+                        patient: {
+                            select: { patientId: true, firstName: true, lastName: true }
+                        }
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
+                    take: parseInt(limit),
+                    skip: parseInt(skip)
+                }),
+                prisma.rating.count({ where: { doctorId } })
+            ]);
 
             return {
                 success: true,
@@ -119,24 +125,25 @@ export class RatingService {
                 return { success: false, error: 'Hospital ID is required' };
             }
 
-            const { Rating, Patient } = getModels();
-
             const { page = 1, limit = 10 } = options;
-            const offset = (page - 1) * limit;
+            const skip = (page - 1) * limit;
 
-            const { rows: ratings, count: total } = await Rating.findAndCountAll({
-                where: { hospitalId },
-                include: [{
-                    model: Patient,
-                    as: 'patient',
-                    attributes: ['patientId', 'firstName', 'lastName']
-                }],
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: parseInt(limit),
-                offset: parseInt(offset)
-            });
+            const [ratings, total] = await Promise.all([
+                prisma.rating.findMany({
+                    where: { hospitalId },
+                    include: {
+                        patient: {
+                            select: { patientId: true, firstName: true, lastName: true }
+                        }
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
+                    },
+                    take: parseInt(limit),
+                    skip: parseInt(skip)
+                }),
+                prisma.rating.count({ where: { hospitalId } })
+            ]);
 
             return {
                 success: true,
@@ -161,8 +168,6 @@ export class RatingService {
      */
     async getAverageRating(doctorId, hospitalId) {
         try {
-            const { Rating } = getModels();
-
             const where = {};
             if (doctorId) where.doctorId = doctorId;
             if (hospitalId) where.hospitalId = hospitalId;
@@ -171,7 +176,7 @@ export class RatingService {
                 return { success: false, error: 'Doctor ID or Hospital ID is required' };
             }
 
-            const ratings = await Rating.findAll({ where });
+            const ratings = await prisma.rating.findMany({ where });
 
             if (ratings.length === 0) {
                 return {
@@ -218,14 +223,19 @@ export class RatingService {
                 return { success: false, error: 'Rating ID is required' };
             }
 
-            const { Rating, Patient, Doctor, Hospital } = getModels();
-
-            const rating = await Rating.findByPk(ratingId, {
-                include: [
-                    { model: Patient, as: 'patient', attributes: ['patientId', 'firstName', 'lastName'] },
-                    { model: Doctor, as: 'doctor', attributes: ['doctorId', 'firstName', 'lastName'] },
-                    { model: Hospital, as: 'hospital', attributes: ['hospitalId', 'name'] }
-                ]
+            const rating = await prisma.rating.findUnique({
+                where: { ratingId },
+                include: {
+                    patient: {
+                        select: { patientId: true, firstName: true, lastName: true }
+                    },
+                    doctor: {
+                        select: { doctorId: true, firstName: true, lastName: true }
+                    },
+                    hospital: {
+                        select: { hospitalId: true, name: true }
+                    }
+                }
             });
 
             if (!rating) {
@@ -253,9 +263,9 @@ export class RatingService {
                 return { success: false, error: 'Rating ID is required' };
             }
 
-            const { Rating } = getModels();
-
-            const rating = await Rating.findByPk(ratingId);
+            const rating = await prisma.rating.findUnique({
+                where: { ratingId }
+            });
 
             if (!rating) {
                 return { success: false, error: 'Rating not found' };
@@ -266,11 +276,14 @@ export class RatingService {
                 return { success: false, error: 'Unauthorized to update this rating' };
             }
 
-            await rating.update(updateData);
+            const updated = await prisma.rating.update({
+                where: { ratingId },
+                data: updateData
+            });
 
             return {
                 success: true,
-                data: rating,
+                data: updated,
                 message: 'Rating updated successfully'
             };
         } catch (error) {
@@ -290,9 +303,9 @@ export class RatingService {
                 return { success: false, error: 'Rating ID is required' };
             }
 
-            const { Rating } = getModels();
-
-            const rating = await Rating.findByPk(ratingId);
+            const rating = await prisma.rating.findUnique({
+                where: { ratingId }
+            });
 
             if (!rating) {
                 return { success: false, error: 'Rating not found' };
@@ -303,7 +316,9 @@ export class RatingService {
                 return { success: false, error: 'Unauthorized to delete this rating' };
             }
 
-            await rating.destroy();
+            await prisma.rating.delete({
+                where: { ratingId }
+            });
 
             return {
                 success: true,

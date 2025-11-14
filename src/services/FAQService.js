@@ -1,23 +1,24 @@
 // FAQ Service - Frequently Asked Questions management
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { FAQ, User } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class FAQService {
     // ========== CREATE FAQ ==========
     async createFAQ(faqData) {
         try {
-            const faq = await FAQ.create({
-                question: faqData.question,
-                answer: faqData.answer,
-                category: faqData.category,
-                tags: faqData.tags || [],
-                priority: faqData.priority || 'normal',
-                viewCount: 0,
-                helpfulCount: 0,
-                unhelpfulCount: 0,
-                isActive: true,
-                isPublished: false,
+            const faq = await prisma.fAQ.create({
+                data: {
+                    question: faqData.question,
+                    answer: faqData.answer,
+                    category: faqData.category,
+                    tags: faqData.tags || [],
+                    priority: faqData.priority || 'normal',
+                    viewCount: 0,
+                    helpfulCount: 0,
+                    unhelpfulCount: 0,
+                    isActive: true,
+                    isPublished: false,
+                }
             });
 
             return {
@@ -36,15 +37,19 @@ class FAQService {
     // ========== GET FAQ ==========
     async getFAQById(faqId) {
         try {
-            const faq = await FAQ.findByPk(faqId);
+            const faq = await prisma.fAQ.findUnique({
+                where: { faqId }
+            });
 
             if (!faq) {
                 return { success: false, error: 'FAQ not found' };
             }
 
             // Increment view count
-            faq.viewCount = (faq.viewCount || 0) + 1;
-            await faq.save();
+            await prisma.fAQ.update({
+                where: { faqId },
+                data: { viewCount: (faq.viewCount || 0) + 1 }
+            });
 
             return { success: true, data: faq };
         } catch (error) {
@@ -61,17 +66,17 @@ class FAQService {
                 where.category = filters.category;
             }
 
-            const faqs = await FAQ.findAll({
+            const faqs = await prisma.fAQ.findMany({
                 where,
-                order: [
-                    ['priority', 'DESC'],
-                    ['viewCount', 'DESC']
+                orderBy: [
+                    { priority: 'desc' },
+                    { viewCount: 'desc' }
                 ],
-                limit: filters.limit || 50,
-                offset: filters.offset || 0,
+                take: filters.limit || 50,
+                skip: filters.offset || 0,
             });
 
-            const total = await FAQ.count({ where });
+            const total = await prisma.fAQ.count({ where });
 
             return { success: true, data: faqs, total };
         } catch (error) {
@@ -85,19 +90,21 @@ class FAQService {
             const where = {
                 isPublished: true,
                 isActive: true,
-                [Op.or]: [{
+                OR: [{
                         question: {
-                            [Op.iLike]: `%${searchTerm}%`
+                            contains: searchTerm,
+                            mode: "insensitive"
                         }
                     },
                     {
                         answer: {
-                            [Op.iLike]: `%${searchTerm}%`
+                            contains: searchTerm,
+                            mode: "insensitive"
                         }
                     },
                     {
                         tags: {
-                            [Op.contains]: [searchTerm]
+                            hasSome: [searchTerm]
                         }
                     },
                 ],
@@ -308,4 +315,5 @@ class FAQService {
     }
 }
 
+export { FAQService };
 export default new FAQService();

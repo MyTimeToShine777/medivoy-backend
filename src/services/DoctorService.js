@@ -1,15 +1,16 @@
 // Doctor Service - Doctor management and operations
 // NO optional chaining - Production Ready
-import { Op } from 'sequelize';
-import { Doctor, Hospital, DoctorSchedule, Appointment, Review } from '../models/index.js';
+import prisma from '../config/prisma.js';
 
 class DoctorService {
     // ========== CREATE DOCTOR ==========
     async createDoctor(doctorData) {
         try {
-            const doctor = await Doctor.create({
-                doctorNumber: await this.generateDoctorNumber(),
-                ...doctorData,
+            const doctor = await prisma.doctors.create({
+                data: {
+                    doctorNumber: await this.generateDoctorNumber(),
+                    ...doctorData
+                }
             });
 
             return {
@@ -28,11 +29,12 @@ class DoctorService {
     // ========== GET DOCTOR ==========
     async getDoctorById(doctorId) {
         try {
-            const doctor = await Doctor.findByPk(doctorId, {
-                include: [
-                    { model: DoctorSchedule, as: 'schedules' },
-                    { model: Review, as: 'reviews' },
-                ],
+            const doctor = await prisma.doctors.findUnique({
+                where: { doctorId },
+                include: {
+                    schedules: true,
+                    reviews: true
+                }
             });
 
             if (!doctor) {
@@ -56,7 +58,7 @@ class DoctorService {
 
     async getDoctorByEmail(email) {
         try {
-            const doctor = await Doctor.findOne({
+            const doctor = await prisma.doctors.findFirst({
                 where: { email },
                 include: [
                     { model: Hospital, as: 'hospitals' },
@@ -85,51 +87,67 @@ class DoctorService {
     // ========== SEARCH DOCTORS ==========
     async searchDoctors(filters = {}) {
         try {
-            const where = { isActive: true };
+            const where = { status: 'active' };
 
-            if (filters.specialization) {
-                where.specialization = filters.specialization;
+            if (filters.specializationId) {
+                where.specializationId = filters.specializationId;
             }
             if (filters.hospitalId) {
                 where.hospitalId = filters.hospitalId;
             }
             if (filters.minRating) {
-                where.averageRating = {
-                    [Op.gte]: filters.minRating
+                where.rating = {
+                    gte: filters.minRating
                 };
             }
             if (filters.search) {
-                where[Op.or] = [{
-                        firstName: {
-                            [Op.iLike]: `%${filters.search}%`
+                where.OR = [{
+                        users: {
+                            firstName: {
+                                contains: filters.search,
+                                mode: "insensitive"
+                            }
                         }
                     },
                     {
-                        lastName: {
-                            [Op.iLike]: `%${filters.search}%`
+                        users: {
+                            lastName: {
+                                contains: filters.search,
+                                mode: "insensitive"
+                            }
                         }
                     },
                     {
-                        specialization: {
-                            [Op.iLike]: `%${filters.search}%`
+                        primarySpecialization: {
+                            contains: filters.search,
+                            mode: "insensitive"
                         }
                     },
                 ];
             }
 
-            const doctors = await Doctor.findAll({
+            const doctors = await prisma.doctors.findMany({
                 where,
-                include: [
-                    { model: Hospital, as: 'hospital' },
-                ],
-                order: [
-                    ['averageRating', 'DESC']
-                ],
-                limit: filters.limit || 20,
-                offset: filters.offset || 0,
+                include: {
+                    users: {
+                        select: {
+                            firstName: true,
+                            lastName: true,
+                            email: true,
+                            phone: true,
+                            profilePicture: true,
+                        }
+                    },
+                    specializations: true,
+                },
+                orderBy: {
+                    rating: 'desc'
+                },
+                take: filters.limit || 20,
+                skip: filters.offset || 0,
             });
 
-            const total = await Doctor.count({ where });
+            const total = await prisma.doctors.count({ where });
 
             return {
                 success: true,
@@ -151,7 +169,7 @@ class DoctorService {
                 where.hospitalId = hospitalId;
             }
 
-            const doctors = await Doctor.findAll({
+            const doctors = await prisma.doctors.findMany({
                 where,
                 order: [
                     ['averageRating', 'DESC']
@@ -300,7 +318,7 @@ class DoctorService {
                     appointmentDate: date,
                     timeSlot,
                     status: {
-                        [Op.ne]: 'cancelled'
+                        not: 'cancelled'
                     },
                 },
             });
@@ -441,4 +459,5 @@ class DoctorService {
     }
 }
 
+export { DoctorService };
 export default new DoctorService();

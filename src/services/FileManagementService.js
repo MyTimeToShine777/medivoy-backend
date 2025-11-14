@@ -1,18 +1,17 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { File, AuditLog } from '../models/index.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import prisma from '../config/prisma.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { StorageService } from './StorageService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class FileManagementService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
         this.storageService = new StorageService();
     }
 
@@ -21,7 +20,6 @@ export class FileManagementService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async uploadFile(userId, fileData, fileBuffer) {
-        const transaction = await sequelize.transaction();
         try {
             if (!userId || !fileData || !fileBuffer) {
                 throw new AppError('Required parameters missing', 400);
@@ -38,32 +36,35 @@ export class FileManagementService {
                 mimeType: fileData.mimeType
             });
 
-            const file = await File.create({
-                fileId: this._generateFileId(),
-                userId: userId,
-                fileName: fileData.fileName,
-                fileUrl: uploadedFile.url,
-                fileMimeType: uploadedFile.mimeType,
-                fileSize: uploadedFile.size,
-                category: fileData.category || 'general',
-                description: fileData.description || null,
-                tags: fileData.tags || [],
-                uploadedAt: new Date()
-            }, { transaction: transaction });
+            const file = await prisma.$transaction(async(tx) => {
+                const newFile = await tx.file.create({
+                    data: {
+                        fileId: this._generateFileId(),
+                        userId: userId,
+                        fileName: fileData.fileName,
+                        fileUrl: uploadedFile.url,
+                        fileMimeType: uploadedFile.mimeType,
+                        fileSize: uploadedFile.size,
+                        category: fileData.category || 'general',
+                        description: fileData.description || null,
+                        tags: fileData.tags || [],
+                        uploadedAt: new Date()
+                    }
+                });
 
-            await this.auditLogService.logAction({
-                action: 'FILE_UPLOADED',
-                entityType: 'File',
-                entityId: file.fileId,
-                userId: userId,
-                details: { fileName: fileData.fileName, size: uploadedFile.size }
-            }, transaction);
+                await this.auditLogService.logAction({
+                    action: 'FILE_UPLOADED',
+                    entityType: 'File',
+                    entityId: newFile.fileId,
+                    userId: userId,
+                    details: { fileName: fileData.fileName, size: uploadedFile.size }
+                }, tx);
 
-            await transaction.commit();
+                return newFile;
+            });
 
             return { success: true, message: 'File uploaded', file: file };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }
@@ -74,8 +75,8 @@ export class FileManagementService {
                 return { success: false, error: 'Required parameters missing' };
             }
 
-            const file = await File.findOne({
-                where: { fileId: fileId, userId: userId }
+            const file = await prisma.file.findFirst({
+                where: { fileId, userId }
             });
 
             if (!file) {
@@ -102,16 +103,15 @@ export class FileManagementService {
                 where.category = filters.category;
             }
 
-            const files = await File.findAll({
-                where: where,
-                order: [
-                    ['uploadedAt', 'DESC']
-                ],
-                limit: limit,
-                offset: offset
-            });
-
-            const total = await File.count({ where: where });
+            const [files, total] = await Promise.all([
+                prisma.file.findMany({
+                    where,
+                    orderBy: { uploadedAt: 'desc' },
+                    take: limit,
+                    skip: offset
+                }),
+                prisma.file.count({ where })
+            ]);
 
             return {
                 success: true,
@@ -129,8 +129,8 @@ export class FileManagementService {
                 return { success: false, error: 'Required parameters missing' };
             }
 
-            const file = await File.findOne({
-                where: { fileId: fileId, userId: userId }
+            const file = await prisma.file.findFirst({
+                where: { fileId, userId }
             });
 
             if (!file) {
@@ -150,77 +150,74 @@ export class FileManagementService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async deleteFile(fileId, userId) {
-        const transaction = await sequelize.transaction();
         try {
             if (!fileId || !userId) {
                 return { success: false, error: 'Required parameters missing' };
             }
 
-            const file = await File.findOne({
-                where: { fileId: fileId, userId: userId },
-                transaction: transaction
+            await prisma.$transaction(async(tx) => {
+                const file = await tx.file.findFirst({
+                    where: { fileId, userId }
+                });
+
+                if (!file) {
+                    throw new AppError('File not found', 404);
+                }
+
+                await this.storageService.deleteFile(file.fileUrl);
+                await tx.file.delete({ where: { fileId } });
+
+                await this.auditLogService.logAction({
+                    action: 'FILE_DELETED',
+                    entityType: 'File',
+                    entityId: fileId,
+                    userId: userId,
+                    details: {}
+                }, tx);
             });
-
-            if (!file) {
-                await transaction.rollback();
-                return { success: false, error: 'File not found' };
-            }
-
-            await this.storageService.deleteFile(file.fileUrl);
-            await file.destroy({ transaction: transaction });
-
-            await this.auditLogService.logAction({
-                action: 'FILE_DELETED',
-                entityType: 'File',
-                entityId: fileId,
-                userId: userId,
-                details: {}
-            }, transaction);
-
-            await transaction.commit();
 
             return { success: true, message: 'File deleted' };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }
 
     async updateFileMetadata(fileId, userId, updateData) {
-        const transaction = await sequelize.transaction();
         try {
             if (!fileId || !userId || !updateData) {
                 return { success: false, error: 'Required parameters missing' };
             }
 
-            const file = await File.findOne({
-                where: { fileId: fileId, userId: userId },
-                transaction: transaction
+            const file = await prisma.$transaction(async(tx) => {
+                const existingFile = await tx.file.findFirst({
+                    where: { fileId, userId }
+                });
+
+                if (!existingFile) {
+                    throw new AppError('File not found', 404);
+                }
+
+                const updatedFile = await tx.file.update({
+                    where: { fileId },
+                    data: {
+                        description: updateData.description || existingFile.description,
+                        tags: updateData.tags || existingFile.tags
+                    }
+                });
+
+                await this.auditLogService.logAction({
+                    action: 'FILE_METADATA_UPDATED',
+                    entityType: 'File',
+                    entityId: fileId,
+                    userId: userId,
+                    details: {}
+                }, tx);
+
+                return updatedFile;
             });
-
-            if (!file) {
-                await transaction.rollback();
-                return { success: false, error: 'File not found' };
-            }
-
-            if (updateData.description) file.description = updateData.description;
-            if (updateData.tags) file.tags = updateData.tags;
-
-            await file.save({ transaction: transaction });
-
-            await this.auditLogService.logAction({
-                action: 'FILE_METADATA_UPDATED',
-                entityType: 'File',
-                entityId: fileId,
-                userId: userId,
-                details: {}
-            }, transaction);
-
-            await transaction.commit();
 
             return { success: true, message: 'File metadata updated', file: file };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }
@@ -235,22 +232,27 @@ export class FileManagementService {
                 return { success: false, error: 'User ID required' };
             }
 
-            const totalFiles = await File.count({ where: { userId: userId } });
-            const totalSize = await File.sum('fileSize', { where: { userId: userId } });
+            const totalFiles = await prisma.file.count({ where: { userId } });
+            const totalSizeResult = await prisma.file.aggregate({
+                where: { userId },
+                _sum: { fileSize: true }
+            });
 
-            const filesByCategory = await File.findAll({
-                where: { userId: userId },
-                attributes: ['category', [sequelize.fn('COUNT', sequelize.col('fileId')), 'count']],
-                group: ['category'],
-                raw: true
+            const filesByCategory = await prisma.file.groupBy({
+                by: ['category'],
+                where: { userId },
+                _count: { fileId: true }
             });
 
             return {
                 success: true,
                 stats: {
                     totalFiles: totalFiles,
-                    totalSizeMB: ((totalSize || 0) / (1024 * 1024)).toFixed(2),
-                    filesByCategory: filesByCategory
+                    totalSizeMB: ((totalSizeResult._sum.fileSize || 0) / (1024 * 1024)).toFixed(2),
+                    filesByCategory: filesByCategory.map(item => ({
+                        category: item.category,
+                        count: item._count.fileId
+                    }))
                 }
             };
         } catch (error) {

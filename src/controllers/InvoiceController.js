@@ -1,10 +1,10 @@
 'use strict';
 
-import { InvoiceService } from '../services/InvoiceService.js';
+import invoiceService from '../services/InvoiceService.js';
 
 export class InvoiceController {
     constructor() {
-        this.invoiceService = new InvoiceService();
+        this.invoiceService = invoiceService;
     }
 
     async createInvoice(req, res) {

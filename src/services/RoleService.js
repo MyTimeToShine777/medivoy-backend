@@ -1,17 +1,16 @@
 'use strict';
 
-import { Op, sequelize } from 'sequelize';
-import { Role, User, Permission, RolePermission, AuditLog } from '../models/index.js';
-import { ValidationService } from './ValidationService.js';
-import { ErrorHandlingService } from './ErrorHandlingService.js';
-import { AuditLogService } from './AuditLogService.js';
+import prisma from '../config/prisma.js';
+import validationService from './ValidationService.js';
+import errorHandlingService from './ErrorHandlingService.js';
+import auditLogService from './AuditLogService.js';
 import { AppError } from '../utils/errors/AppError.js';
 
 export class RoleService {
     constructor() {
-        this.validationService = new ValidationService();
-        this.errorHandlingService = new ErrorHandlingService();
-        this.auditLogService = new AuditLogService();
+        this.validationService = validationService;
+        this.errorHandlingService = errorHandlingService;
+        this.auditLogService = auditLogService;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -19,35 +18,36 @@ export class RoleService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createRole(roleData) {
-        const transaction = await sequelize.transaction();
-        try {
+        const result = await prisma.$transaction(async(tx) => {
             if (!roleData || !roleData.roleName) throw new AppError('Role name required', 400);
 
-            const existingRole = await Role.findOne({
-                where: { roleName: roleData.roleName },
-                transaction: transaction
+            const existingRole = await tx.role.findFirst({
+                where: { roleName: roleData.roleName }
             });
 
             if (existingRole) {
-                await transaction.rollback();
                 throw new AppError('Role already exists', 409);
             }
 
-            const role = await Role.create({
-                roleId: this._generateRoleId(),
-                roleName: roleData.roleName,
-                roleDescription: roleData.roleDescription || null,
-                isActive: true,
-                createdAt: new Date()
-            }, { transaction: transaction });
+            const role = await tx.role.create({
+                data: {
+                    roleId: this._generateRoleId(),
+                    roleName: roleData.roleName,
+                    roleDescription: roleData.roleDescription || null,
+                    isActive: true,
+                    createdAt: new Date()
+                }
+            });
 
             // Assign permissions if provided
             if (roleData.permissionIds && Array.isArray(roleData.permissionIds)) {
                 for (const permId of roleData.permissionIds) {
-                    await RolePermission.create({
-                        roleId: role.roleId,
-                        permissionId: permId
-                    }, { transaction: transaction });
+                    await tx.rolePermission.create({
+                        data: {
+                            roleId: role.roleId,
+                            permissionId: permId
+                        }
+                    });
                 }
             }
 
@@ -57,27 +57,28 @@ export class RoleService {
                 entityId: role.roleId,
                 userId: 'ADMIN',
                 details: { roleName: roleData.roleName }
-            }, transaction);
-
-            await transaction.commit();
+            });
 
             return { success: true, message: 'Role created', role: role };
-        } catch (error) {
-            await transaction.rollback();
+        }).catch(error => {
             throw this.errorHandlingService.handleError(error);
-        }
+        });
+        return result;
     }
 
     async getRoleById(roleId) {
         try {
             if (!roleId) throw new AppError('Role ID required', 400);
 
-            const role = await Role.findByPk(roleId, {
-                include: [{
-                    model: Permission,
-                    through: { attributes: [] },
-                    attributes: ['permissionId', 'permissionName']
-                }]
+            const role = await prisma.role.findUnique({
+                where: { roleId },
+                include: {
+                    permissions: {
+                        include: {
+                            permission: true
+                        }
+                    }
+                }
             });
 
             if (!role) throw new AppError('Role not found', 404);
@@ -96,7 +97,7 @@ export class RoleService {
 
             if (filters && filters.isActive !== undefined) where.isActive = filters.isActive;
 
-            const roles = await Role.findAll({
+            const roles = await prisma.role.findMany({
                 where: where,
                 include: [{
                     model: Permission,
@@ -110,7 +111,7 @@ export class RoleService {
                 offset: offset
             });
 
-            const total = await Role.count({ where: where });
+            const total = await prisma.role.count({ where });
 
             return {
                 success: true,
@@ -123,20 +124,23 @@ export class RoleService {
     }
 
     async updateRole(roleId, updateData) {
-        const transaction = await sequelize.transaction();
-        try {
+        const result = await prisma.$transaction(async(tx) => {
             if (!roleId || !updateData) throw new AppError('Required params missing', 400);
 
-            const role = await Role.findByPk(roleId, { transaction: transaction });
+            const role = await tx.role.findUnique({
+                where: { roleId }
+            });
             if (!role) {
-                await transaction.rollback();
                 throw new AppError('Role not found', 404);
             }
 
-            if (updateData.roleName) role.roleName = updateData.roleName;
-            if (updateData.roleDescription) role.roleDescription = updateData.roleDescription;
-
-            await role.save({ transaction: transaction });
+            const updatedRole = await tx.role.update({
+                where: { roleId },
+                data: {
+                    roleName: updateData.roleName || role.roleName,
+                    roleDescription: updateData.roleDescription || role.roleDescription
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'ROLE_UPDATED',
@@ -144,36 +148,33 @@ export class RoleService {
                 entityId: roleId,
                 userId: 'ADMIN',
                 details: {}
-            }, transaction);
+            });
 
-            await transaction.commit();
-
-            return { success: true, message: 'Role updated', role: role };
-        } catch (error) {
-            await transaction.rollback();
+            return { success: true, message: 'Role updated', role: updatedRole };
+        }).catch(error => {
             throw this.errorHandlingService.handleError(error);
-        }
+        });
+        return result;
     }
 
     async deleteRole(roleId) {
-        const transaction = await sequelize.transaction();
-        try {
+        const result = await prisma.$transaction(async(tx) => {
             if (!roleId) throw new AppError('Role ID required', 400);
 
-            const role = await Role.findByPk(roleId, { transaction: transaction });
+            const role = await tx.role.findUnique({
+                where: { roleId }
+            });
             if (!role) {
-                await transaction.rollback();
                 throw new AppError('Role not found', 404);
             }
 
-            const usersWithRole = await User.count({ where: { roleId: roleId } });
+            const usersWithRole = await tx.user.count({ where: { roleId: roleId } });
             if (usersWithRole > 0) {
-                await transaction.rollback();
                 throw new AppError('Cannot delete role with assigned users', 400);
             }
 
-            await RolePermission.destroy({ where: { roleId: roleId }, transaction: transaction });
-            await role.destroy({ transaction: transaction });
+            await tx.rolePermission.deleteMany({ where: { roleId: roleId } });
+            await tx.role.delete({ where: { roleId } });
 
             await this.auditLogService.logAction({
                 action: 'ROLE_DELETED',
@@ -181,15 +182,13 @@ export class RoleService {
                 entityId: roleId,
                 userId: 'ADMIN',
                 details: {}
-            }, transaction);
-
-            await transaction.commit();
+            });
 
             return { success: true, message: 'Role deleted' };
-        } catch (error) {
-            await transaction.rollback();
+        }).catch(error => {
             throw this.errorHandlingService.handleError(error);
-        }
+        });
+        return result;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -197,36 +196,37 @@ export class RoleService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async assignPermissionToRole(roleId, permissionId) {
-        const transaction = await sequelize.transaction();
-        try {
+        const result = await prisma.$transaction(async(tx) => {
             if (!roleId || !permissionId) throw new AppError('Role and permission IDs required', 400);
 
-            const role = await Role.findByPk(roleId, { transaction: transaction });
+            const role = await tx.role.findUnique({
+                where: { roleId }
+            });
             if (!role) {
-                await transaction.rollback();
                 throw new AppError('Role not found', 404);
             }
 
-            const permission = await Permission.findByPk(permissionId, { transaction: transaction });
+            const permission = await tx.permission.findUnique({
+                where: { permissionId }
+            });
             if (!permission) {
-                await transaction.rollback();
                 throw new AppError('Permission not found', 404);
             }
 
-            const existing = await RolePermission.findOne({
-                where: { roleId: roleId, permissionId: permissionId },
-                transaction: transaction
+            const existing = await tx.rolePermission.findFirst({
+                where: { roleId: roleId, permissionId: permissionId }
             });
 
             if (existing) {
-                await transaction.rollback();
                 throw new AppError('Permission already assigned', 409);
             }
 
-            await RolePermission.create({
-                roleId: roleId,
-                permissionId: permissionId
-            }, { transaction: transaction });
+            await tx.rolePermission.create({
+                data: {
+                    roleId: roleId,
+                    permissionId: permissionId
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'PERMISSION_ASSIGNED_TO_ROLE',
@@ -234,33 +234,35 @@ export class RoleService {
                 entityId: roleId + '-' + permissionId,
                 userId: 'ADMIN',
                 details: { permissionId: permissionId }
-            }, transaction);
-
-            await transaction.commit();
+            });
 
             return { success: true, message: 'Permission assigned' };
-        } catch (error) {
-            await transaction.rollback();
+        }).catch(error => {
             throw this.errorHandlingService.handleError(error);
-        }
+        });
+        return result;
     }
 
     async removePermissionFromRole(roleId, permissionId) {
-        const transaction = await sequelize.transaction();
-        try {
+        const result = await prisma.$transaction(async(tx) => {
             if (!roleId || !permissionId) throw new AppError('Required params missing', 400);
 
-            const rolePermission = await RolePermission.findOne({
-                where: { roleId: roleId, permissionId: permissionId },
-                transaction: transaction
+            const rolePermission = await tx.rolePermission.findFirst({
+                where: { roleId: roleId, permissionId: permissionId }
             });
 
             if (!rolePermission) {
-                await transaction.rollback();
                 throw new AppError('Permission not assigned to this role', 404);
             }
 
-            await rolePermission.destroy({ transaction: transaction });
+            await tx.rolePermission.delete({
+                where: {
+                    roleId_permissionId: {
+                        roleId: roleId,
+                        permissionId: permissionId
+                    }
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'PERMISSION_REMOVED_FROM_ROLE',
@@ -268,26 +270,30 @@ export class RoleService {
                 entityId: roleId + '-' + permissionId,
                 userId: 'ADMIN',
                 details: {}
-            }, transaction);
-
-            await transaction.commit();
+            });
 
             return { success: true, message: 'Permission removed' };
-        } catch (error) {
-            await transaction.rollback();
+        }).catch(error => {
             throw this.errorHandlingService.handleError(error);
-        }
+        });
+        return result;
     }
 
     async getRolePermissions(roleId) {
         try {
             if (!roleId) throw new AppError('Role ID required', 400);
 
-            const permissions = await RolePermission.findAll({
+            const permissions = await prisma.rolePermission.findMany({
                 where: { roleId: roleId },
-                include: [
-                    { model: Permission, attributes: ['permissionId', 'permissionName', 'permissionDescription'] }
-                ]
+                include: {
+                    permission: {
+                        select: {
+                            permissionId: true,
+                            permissionName: true,
+                            permissionDescription: true
+                        }
+                    }
+                }
             });
 
             return { success: true, permissions: permissions, total: permissions.length };
@@ -307,4 +313,4 @@ export class RoleService {
     }
 }
 
-export default RoleService;
+export default new RoleService();
