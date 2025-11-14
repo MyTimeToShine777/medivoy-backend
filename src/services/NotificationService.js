@@ -124,7 +124,7 @@ class NotificationService {
     // ========== SEND PUSH NOTIFICATION ==========
     async sendPushNotification(userId, title, message, data = {}) {
         try {
-            const user = await User.findByPk(userId);
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user || !user.deviceTokens || user.deviceTokens.length === 0) {
                 return {
                     success: false,
@@ -159,7 +159,7 @@ class NotificationService {
     // ========== BOOKING NOTIFICATIONS ==========
     async sendBookingConfirmationEmail(userId, bookingDetails) {
         try {
-            const user = await User.findByPk(userId);
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
                 return {
                     success: false,
@@ -189,7 +189,7 @@ class NotificationService {
 
     async sendBookingReminderEmail(userId, bookingDetails) {
         try {
-            const user = await User.findByPk(userId);
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
                 return {
                     success: false,
@@ -213,7 +213,7 @@ class NotificationService {
     // ========== APPOINTMENT NOTIFICATIONS ==========
     async sendAppointmentConfirmationEmail(userId, appointmentDetails) {
         try {
-            const user = await User.findByPk(userId);
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
                 return {
                     success: false,
@@ -242,7 +242,7 @@ class NotificationService {
     // ========== PAYMENT NOTIFICATIONS ==========
     async sendPaymentSuccessEmail(userId, paymentDetails) {
         try {
-            const user = await User.findByPk(userId);
+            const user = await prisma.users.findUnique({ where: { userId: userId } });
             if (!user) {
                 return {
                     success: false,
@@ -275,7 +275,7 @@ class NotificationService {
                 where.isRead = filters.isRead;
             }
 
-            const notifications = await Notification.findAll({
+            const notifications = await prisma.notifications.findMany({
                 where,
                 order: [
                     ['createdAt', 'DESC']

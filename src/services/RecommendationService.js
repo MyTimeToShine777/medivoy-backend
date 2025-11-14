@@ -107,7 +107,7 @@ class RecommendationService {
             });
 
             if (userBookings.length === 0) {
-                const popularTreatments = await Treatment.findAll({
+                const popularTreatments = await prisma.treatments.findMany({
                     where: { isActive: true },
                     order: [
                         ['totalBookings', 'DESC']
@@ -124,7 +124,7 @@ class RecommendationService {
                 return treatment ? treatment.treatmentId : null;
             }).filter(Boolean);
 
-            const recommendedTreatments = await Treatment.findAll({
+            const recommendedTreatments = await prisma.treatments.findMany({
                 where: {
                     treatmentId: {
                         notIn: treatmentIds

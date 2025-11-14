@@ -193,7 +193,7 @@ class TreatmentService {
     // ========== UPDATE TREATMENT ==========
     async updateTreatment(treatmentId, updateData) {
         try {
-            const treatment = await Treatment.findByPk(treatmentId);
+            const treatment = await prisma.treatments.findUnique({ where: { treatmentId: treatmentId } });
             if (!treatment) {
                 return {
                     success: false,
@@ -299,7 +299,7 @@ class TreatmentService {
     // ========== TREATMENT STATISTICS ==========
     async getTreatmentStats(treatmentId) {
         try {
-            const treatment = await Treatment.findByPk(treatmentId);
+            const treatment = await prisma.treatments.findUnique({ where: { treatmentId: treatmentId } });
             if (!treatment) {
                 return {
                     success: false,
@@ -328,7 +328,7 @@ class TreatmentService {
 
     async getTreatmentAvailability(treatmentId, hospitalId) {
         try {
-            const treatment = await Treatment.findByPk(treatmentId);
+            const treatment = await prisma.treatments.findUnique({ where: { treatmentId: treatmentId } });
             if (!treatment) {
                 return {
                     success: false,
@@ -337,7 +337,7 @@ class TreatmentService {
             }
 
             // Check if hospital offers this treatment
-            const hospital = await Hospital.findByPk(hospitalId);
+            const hospital = await prisma.hospitals.findUnique({ where: { hospitalId: hospitalId } });
             if (!hospital) {
                 return {
                     success: false,
