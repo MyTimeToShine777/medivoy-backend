@@ -400,10 +400,12 @@ export class ReviewService {
 
             const reviews = await prisma.review.findMany({
                 where: where,
-                include: [
-                    { model: User, attributes: ['firstName', 'lastName'] },
-                    { model: Doctor }
-                ],
+                include: {
+                    user: {
+                        select: { firstName: true, lastName: true }
+                    },
+                    doctor: true
+                },
                 orderBy: { reviewedAt: 'desc' },
                 take: limit,
                 skip: offset,

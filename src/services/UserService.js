@@ -25,10 +25,14 @@ export class UserService {
             if (!userId) throw new AppError('User ID required', 400);
 
             const user = await prisma.user.findUnique({ where: { id: userId, {
-                include: [
-                    { model: UserPreference, attributes: ['prefId', 'emailNotifications', 'smsNotifications'] },
-                    { model: UserAddress, attributes: ['addressId', 'addressLine1', 'city', 'state', 'country'] }
-                ],
+                include: {
+                    userPreference: {
+                        select: { prefId: true, emailNotifications: true, smsNotifications: true }
+                    },
+                    userAddress: {
+                        select: { addressId: true, addressLine1: true, city: true, state: true, country: true }
+                    }
+                },
                 attributes: { exclude: ['password'] }
             } } });
 

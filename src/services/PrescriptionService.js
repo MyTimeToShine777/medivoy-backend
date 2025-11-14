@@ -33,11 +33,11 @@ class PrescriptionService {
         try {
             const prescription = await prisma.prescription.findUnique({
                 where: { prescriptionId }, {
-                include: [
-                    { model: User, as: 'patient' },
-                    { model: Doctor, as: 'doctor' },
-                    { model: Appointment, as: 'appointment' },
-                ],
+                include: {
+                    user: true,
+                    doctor: true,
+                    appointment: true
+                },
             });
 
             if (!prescription) {
@@ -63,9 +63,9 @@ class PrescriptionService {
         try {
             const prescription = await prisma.prescription.findFirst({
                 where: { prescriptionNumber },
-                include: [
-                    { model: Doctor, as: 'doctor' },
-                ],
+                include: {
+                    doctor: true
+                },
             });
 
             if (!prescription) {
@@ -101,10 +101,10 @@ class PrescriptionService {
 
             const prescriptions = await Prescription.findAll({
                 where,
-                include: [
-                    { model: Doctor, as: 'doctor' },
-                    { model: Appointment, as: 'appointment' },
-                ],
+                include: {
+                    doctor: true,
+                    appointment: true
+                },
                 orderBy: { createdAt: 'desc' },
                 take: filters.limit || 20,
                 skip: filters.offset || 0,

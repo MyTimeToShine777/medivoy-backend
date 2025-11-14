@@ -55,9 +55,11 @@ export class ExpertCallService {
 
             const calls = await prisma.expertCall.findMany({
                 where: { userId: userId },
-                include: [
-                    { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] }
-                ],
+                include: {
+                    doctor: {
+                        select: { firstName: true, lastName: true, specialization: true }
+                    }
+                },
                 orderBy: { scheduledTime: 'desc' }
             });
 
@@ -178,7 +180,7 @@ export class ExpertCallService {
             const calls = await prisma.expertCall.findMany({
                 where: { doctorId: doctorId, scheduledTime: {
                         [require('sequelize').Op.gte]: new Date(date) } },
-                attributes: ['scheduledTime', 'duration']
+                select: { scheduledTime: true, duration: true }
             });
 
             console.log(`✅ Doctor availability retrieved: ${doctorId}`);

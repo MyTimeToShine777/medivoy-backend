@@ -23,9 +23,9 @@ class PatientService {
         try {
             const patient = await prisma.patient.findFirst({
                 where: { userId },
-                include: [
-                    { model: User, as: 'user' },
-                ],
+                include: {
+                    user: true
+                },
             });
 
             if (!patient) {
@@ -82,9 +82,9 @@ class PatientService {
         try {
             const consultations = await Consultation.findAll({
                 where: { userId },
-                include: [
-                    { model: Doctor, as: 'doctor' },
-                ],
+                include: {
+                    doctor: true
+                },
                 orderBy: { consultationDate: 'desc' },
             });
 

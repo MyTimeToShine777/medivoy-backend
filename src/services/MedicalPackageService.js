@@ -72,12 +72,15 @@ export class MedicalPackageService {
             }
 
             const package_record = await prisma.package.findUnique({ where: { id: packageId, {
-                include: [
-                    { model: Treatment, attributes: ['treatmentName', 'category', 'description'] },
-                    { model: Hospital, attributes: ['hospitalName', 'location', 'address'] },
-                    {
-                        model: PackageAddOn,
-                        include: [{ model: FeatureAddOn }]
+                include: {
+                    treatment: {
+                        select: { treatmentName: true, category: true, description: true }
+                    },
+                    hospital: {
+                        select: { hospitalName: true, location: true, address: true }
+                    },
+                    packageAddOn: true
+                }
                     }
                 ]
             } } });
@@ -118,10 +121,10 @@ export class MedicalPackageService {
 
             const packages = await prisma.package.findMany({
                 where: where,
-                include: [
-                    { model: Treatment },
-                    { model: Hospital }
-                ],
+                include: {
+                    treatment: true,
+                    hospital: true
+                },
                 order: [
                     [filters.sortBy || 'finalPrice', filters.sortOrder || 'ASC']
                 ],
@@ -233,7 +236,9 @@ export class MedicalPackageService {
 
             const addOns = await prisma.packageAddOn.findMany({
                 where: { packageId: packageId },
-                include: [{ model: FeatureAddOn }]
+                include: {
+                    featureAddOn: true
+                }
             });
 
             return { success: true, addOns: addOns, total: addOns.length };
@@ -309,10 +314,10 @@ export class MedicalPackageService {
         try {
             const packages = await prisma.package.findMany({
                 where: { isFeatured: true, isActive: true },
-                include: [
-                    { model: Treatment },
-                    { model: Hospital }
-                ],
+                include: {
+                    treatment: true,
+                    hospital: true
+                },
                 orderBy: { createdAt: 'desc' },
                 take: limit
             });
@@ -334,7 +339,9 @@ export class MedicalPackageService {
 
             const packages = await prisma.package.findMany({
                 where: { treatmentId: treatmentId, isActive: true },
-                include: [{ model: Hospital }],
+                include: {
+                    hospital: true
+                },
                 orderBy: { finalPrice: 'asc' },
                 take: limit,
                 skip: offset

@@ -68,10 +68,14 @@ export class ChatService {
 
             const chat = await prisma.chat.findUnique({
                 where: { chatId }, {
-                include: [
-                    { model: User, as: 'User1', attributes: ['userId', 'firstName', 'lastName'] },
-                    { model: User, as: 'User2', attributes: ['userId', 'firstName', 'lastName'] }
-                ]
+                include: {
+                    user: {
+                        select: { userId: true, firstName: true, lastName: true }
+                    },
+                    user: {
+                        select: { userId: true, firstName: true, lastName: true }
+                    }
+                }
             });
 
             if (!chat) {
@@ -104,10 +108,14 @@ export class ChatService {
                         { userId2: userId }
                     ]
                 },
-                include: [
-                    { model: User, as: 'User1', attributes: ['userId', 'firstName', 'lastName'] },
-                    { model: User, as: 'User2', attributes: ['userId', 'firstName', 'lastName'] }
-                ],
+                include: {
+                    user: {
+                        select: { userId: true, firstName: true, lastName: true }
+                    },
+                    user: {
+                        select: { userId: true, firstName: true, lastName: true }
+                    }
+                },
                 orderBy: { updatedAt: 'desc' },
                 take: limit,
                 skip: offset
@@ -190,7 +198,11 @@ export class ChatService {
 
             const messages = await ChatMessage.findAll({
                 where: { chatId: chatId },
-                include: [{ model: User, as: 'Sender', attributes: ['userId', 'firstName', 'lastName'] }],
+                include: {
+                    Sender: {
+                        select: { userId: true, firstName: true, lastName: true }
+                    }
+                },
                 orderBy: { createdAt: 'desc' },
                 take: limit,
                 skip: offset

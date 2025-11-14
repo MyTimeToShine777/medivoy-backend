@@ -121,12 +121,20 @@ export class AppointmentService {
 
             const appointment = await Appointment.findOne({
                 where: { appointmentId: appointmentId },
-                include: [
-                    { model: User, attributes: ['firstName', 'lastName', 'email', 'phone'] },
-                    { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] },
-                    { model: Hospital, attributes: ['hospitalName'] },
-                    { model: ExpertCall, attributes: ['callId', 'meetingLink', 'status'] }
-                ]
+                include: {
+                    user: {
+                        select: { firstName: true, lastName: true, email: true, phone: true }
+                    },
+                    doctor: {
+                        select: { firstName: true, lastName: true, specialization: true }
+                    },
+                    hospital: {
+                        select: { hospitalName: true }
+                    },
+                    expertCall: {
+                        select: { callId: true, meetingLink: true, status: true }
+                    }
+                }
             });
 
             if (!appointment) {
@@ -162,10 +170,14 @@ export class AppointmentService {
 
             const appointments = await Appointment.findAll({
                 where: where,
-                include: [
-                    { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] },
-                    { model: Hospital, attributes: ['hospitalName'] }
-                ],
+                include: {
+                    doctor: {
+                        select: { firstName: true, lastName: true, specialization: true }
+                    },
+                    hospital: {
+                        select: { hospitalName: true }
+                    }
+                },
                 orderBy: { appointmentDate: 'desc' },
                 take: limit,
                 skip: offset

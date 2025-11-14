@@ -295,7 +295,7 @@ class FAQService {
     async getCategories() {
         try {
             const faqs = await FAQ.findAll({
-                attributes: ['category'],
+                select: { category: true },
                 group: ['category'],
                 raw: true,
             });

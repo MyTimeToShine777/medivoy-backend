@@ -64,9 +64,11 @@ export class SpecializationService {
 
             const specialization = await prisma.specialization.findUnique({
                 where: { specializationId }, {
-                include: [
-                    { model: Doctor, attributes: ['doctorId', 'firstName', 'lastName'] }
-                ]
+                include: {
+                    doctor: {
+                        select: { doctorId: true, firstName: true, lastName: true }
+                    }
+                }
             });
 
             if (!specialization) throw new AppError('Specialization not found', 404);

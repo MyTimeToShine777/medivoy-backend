@@ -181,9 +181,11 @@ export class LaboratoryService {
 
             const orders = await LabOrder.findAll({
                 where: where,
-                include: [
-                    { model: LabTest, attributes: ['testName', 'testCode'] }
-                ],
+                include: {
+                    labTest: {
+                        select: { testName: true, testCode: true }
+                    }
+                },
                 orderBy: { orderedAt: 'desc' },
                 take: limit,
                 skip: offset
@@ -261,11 +263,11 @@ export class LaboratoryService {
 
             const result = await LabResult.findOne({
                 where: { resultId: resultId },
-                include: [{
-                    model: LabOrder,
-                    where: { userId: userId },
-                    attributes: ['orderId', 'totalPrice']
-                }]
+                include: {
+                    labOrder: {
+                        select: { orderId: true, totalPrice: true }
+                    }
+                }
             });
 
             if (!result) {
@@ -284,11 +286,11 @@ export class LaboratoryService {
 
             const result = await LabResult.findOne({
                 where: { resultId: resultId },
-                include: [{
-                    model: LabOrder,
-                    where: { userId: userId },
-                    attributes: ['orderId']
-                }]
+                include: {
+                    labOrder: {
+                        select: { orderId: true }
+                    }
+                }
             });
 
             if (!result) {

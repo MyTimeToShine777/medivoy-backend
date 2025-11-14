@@ -115,7 +115,7 @@ class PackageService {
     async calculatePackageCost(packageId) {
         try {
             const pkg = await prisma.package.findUnique({ where: { packageId: packageId }, 
-                include: [{ model: FeatureAddOn, as: 'addOns' }],
+                include: { addOns: true },
             });
 
             if (!pkg) return { success: false, error: 'Package not found' };

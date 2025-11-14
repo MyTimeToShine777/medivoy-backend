@@ -25,10 +25,10 @@ class InvoiceService {
         try {
             const invoice = await prisma.invoice.findUnique({
                 where: { invoiceId }, {
-                include: [
-                    { model: Booking, as: 'booking' },
-                    { model: User, as: 'user' },
-                ],
+                include: {
+                    booking: true,
+                    user: true
+                },
             });
 
             if (!invoice) return { success: false, error: 'Not found' };
@@ -92,10 +92,10 @@ class InvoiceService {
         try {
             const invoice = await prisma.invoice.findUnique({
                 where: { invoiceId }, {
-                include: [
-                    { model: Booking, as: 'booking' },
-                    { model: User, as: 'user' },
-                ],
+                include: {
+                    booking: true,
+                    user: true
+                },
             });
 
             if (!invoice) return { success: false, error: 'Not found' };

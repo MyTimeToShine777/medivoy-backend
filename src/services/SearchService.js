@@ -45,7 +45,10 @@ export class SearchService {
                                  searchTerm } }
                     ]
                 },
-                include: [{ model: City }, { model: Country }],
+                include: {
+                    city: true,
+                    country: true
+                },
                 take: limit
             });
 
@@ -61,7 +64,10 @@ export class SearchService {
                                  searchTerm } }
                     ]
                 },
-                include: [{ model: Hospital }, { model: Specialization }],
+                include: {
+                    hospital: true,
+                    specialization: true
+                },
                 take: limit
             });
 
@@ -139,10 +145,14 @@ export class SearchService {
 
             const hospitals = await Hospital.findAll({
                 where: where,
-                include: [
-                    { model: City, attributes: ['cityName'] },
-                    { model: Country, attributes: ['countryName'] }
-                ],
+                include: {
+                    city: {
+                        select: { cityName: true }
+                    },
+                    country: {
+                        select: { countryName: true }
+                    }
+                },
                 orderBy: { averageRating: 'desc' },
                 take: limit,
                 skip: offset
@@ -195,10 +205,14 @@ export class SearchService {
 
             const doctors = await Doctor.findAll({
                 where: where,
-                include: [
-                    { model: Hospital, attributes: ['hospitalName'] },
-                    { model: Specialization, attributes: ['specializationName'] }
-                ],
+                include: {
+                    hospital: {
+                        select: { hospitalName: true }
+                    },
+                    specialization: {
+                        select: { specializationName: true }
+                    }
+                },
                 order: [
                     ['averageRating', 'DESC'],
                     ['experience', 'DESC']
@@ -305,10 +319,10 @@ export class SearchService {
 
             const packages = await Package.findAll({
                 where: where,
-                include: [
-                    { model: Treatment },
-                    { model: Hospital }
-                ],
+                include: {
+                    treatment: true,
+                    hospital: true
+                },
                 orderBy: { finalPrice: 'asc' },
                 take: limit,
                 skip: offset
@@ -380,7 +394,7 @@ export class SearchService {
                         hospitalName: {
                              searchTerm }
                     },
-                    attributes: ['hospitalId', 'hospitalName'],
+                    select: { hospitalId: true, hospitalName: true },
                     take: 5
                 });
                 suggestions.hospitals = hospitals.map(h => ({ id: h.hospitalId, name: h.hospitalName }));
@@ -397,7 +411,7 @@ export class SearchService {
                                      searchTerm } }
                         ]
                     },
-                    attributes: ['doctorId', 'firstName', 'lastName'],
+                    select: { doctorId: true, firstName: true, lastName: true },
                     take: 5
                 });
                 suggestions.doctors = doctors.map(d => ({ id: d.doctorId, name: d.firstName + ' ' + d.lastName }));
@@ -410,7 +424,7 @@ export class SearchService {
                         treatmentName: {
                              searchTerm }
                     },
-                    attributes: ['treatmentId', 'treatmentName'],
+                    select: { treatmentId: true, treatmentName: true },
                     take: 5
                 });
                 suggestions.treatments = treatments.map(t => ({ id: t.treatmentId, name: t.treatmentName }));

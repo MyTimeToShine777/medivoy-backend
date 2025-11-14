@@ -29,12 +29,12 @@ class TreatmentService {
         try {
             const treatment = await prisma.treatment.findUnique({
                 where: { treatmentId }, {
-                include: [
-                    { model: TreatmentCategory, as: 'category' },
-                    { model: TreatmentSubcategory, as: 'subcategory' },
-                    { model: Hospital, as: 'hospitals' },
-                    { model: Doctor, as: 'doctors' },
-                ],
+                include: {
+                    treatmentCategory: true,
+                    treatmentSubcategory: true,
+                    hospital: true,
+                    doctor: true
+                },
             });
 
             if (!treatment) {
@@ -60,9 +60,9 @@ class TreatmentService {
         try {
             const treatment = await prisma.treatment.findFirst({
                 where: { slug },
-                include: [
-                    { model: TreatmentCategory, as: 'category' },
-                ],
+                include: {
+                    treatmentCategory: true
+                },
             });
 
             if (!treatment) {
@@ -121,9 +121,9 @@ class TreatmentService {
 
             const treatments = await prisma.treatment.findMany({
                 where,
-                include: [
-                    { model: TreatmentCategory, as: 'category' },
-                ],
+                include: {
+                    treatmentCategory: true
+                },
                 orderBy: { averageRating: 'desc' },
                 take: filters.limit || 20,
                 skip: filters.offset || 0,

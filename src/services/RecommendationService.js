@@ -9,10 +9,10 @@ class RecommendationService {
             // Get user's booking history
             const userBookings = await prisma.booking.findMany({
                 where: { userId },
-                include: [
-                    { model: Doctor, as: 'doctor' },
-                    { model: Treatment, as: 'treatment' },
-                ],
+                include: {
+                    doctor: true,
+                    treatment: true
+                },
             });
 
             if (userBookings.length === 0) {
@@ -55,7 +55,7 @@ class RecommendationService {
         try {
             const userBookings = await prisma.booking.findMany({
                 where: { userId },
-                include: [{ model: Hospital, as: 'hospital' }],
+                include: { hospital: true },
             });
 
             if (userBookings.length === 0) {
@@ -97,7 +97,7 @@ class RecommendationService {
         try {
             const userBookings = await prisma.booking.findMany({
                 where: { userId },
-                include: [{ model: Treatment, as: 'treatment' }],
+                include: { treatment: true },
             });
 
             if (userBookings.length === 0) {

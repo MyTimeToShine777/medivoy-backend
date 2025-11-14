@@ -72,10 +72,10 @@ export class RoleService {
 
             const role = await prisma.role.findUnique({
                 where: { roleId }, {
-                include: [{
-                    model: Permission,
-                    through: { attributes: [] },
-                    attributes: ['permissionId', 'permissionName']
+                include: {
+                    permission: true
+                } },
+                    select: { permissionId: true, permissionName: true }
                 }]
             });
 
@@ -97,10 +97,10 @@ export class RoleService {
 
             const roles = await prisma.role.findMany({
                 where: where,
-                include: [{
-                    model: Permission,
-                    through: { attributes: [] },
-                    attributes: ['permissionName']
+                include: {
+                    permission: true
+                } },
+                    select: { permissionName: true }
                 }],
                 orderBy: { createdAt: 'desc' },
                 take: limit,
@@ -271,9 +271,11 @@ export class RoleService {
 
             const permissions = await RolePermission.findAll({
                 where: { roleId: roleId },
-                include: [
-                    { model: Permission, attributes: ['permissionId', 'permissionName', 'permissionDescription'] }
-                ]
+                include: {
+                    permission: {
+                        select: { permissionId: true, permissionName: true, permissionDescription: true }
+                    }
+                }
             });
 
             return { success: true, permissions: permissions, total: permissions.length };

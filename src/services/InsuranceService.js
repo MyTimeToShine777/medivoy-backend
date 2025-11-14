@@ -30,9 +30,9 @@ class InsuranceService {
         try {
             const insurance = await prisma.insurance.findUnique({
                 where: { insuranceId }, {
-                include: [
-                    { model: User, as: 'user' },
-                ],
+                include: {
+                    user: true
+                },
             });
 
             if (!insurance) {

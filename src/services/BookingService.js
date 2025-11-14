@@ -134,18 +134,20 @@ export class BookingService {
 
             const booking = await prisma.booking.findFirst({
                 where: { bookingId: bookingId },
-                include: [
-                    { model: User, as: 'user', attributes: ['userId', 'firstName', 'lastName', 'email', 'phone'] },
-                    { model: Treatment, as: 'treatment' },
-                    { model: Hospital, as: 'hospital' },
-                    { model: Country, as: 'country' },
-                    { model: City, as: 'city' },
-                    { model: Package, as: 'package' },
-                    { model: BookingAddOn, as: 'bookingAddOns', include: [{ model: FeatureAddOn, as: 'addOn' }] },
-                    { model: Payment, as: 'payments' },
-                    { model: ExpertCall, as: 'expertCalls' },
-                    { model: Companion, as: 'companions' }
-                ]
+                include: {
+                    user: {
+                        select: { userId: true, firstName: true, lastName: true, email: true, phone: true }
+                    },
+                    treatment: true,
+                    hospital: true,
+                    country: true,
+                    city: true,
+                    package: true,
+                    bookingAddOn: true,
+                    payment: true,
+                    expertCall: true,
+                    companion: true
+                }
             });
 
             if (!booking) {
@@ -298,12 +300,20 @@ export class BookingService {
 
             const bookings = await prisma.booking.findMany({
                 where: where,
-                include: [
-                    { model: Treatment, as: 'treatment', attributes: ['treatmentName'] },
-                    { model: Hospital, as: 'hospital', attributes: ['hospitalName'] },
-                    { model: Country, as: 'country', attributes: ['countryName'] },
-                    { model: Package, as: 'package', attributes: ['packageName', 'basePrice'] }
-                ],
+                include: {
+                    treatment: {
+                        select: { treatmentName: true }
+                    },
+                    hospital: {
+                        select: { hospitalName: true }
+                    },
+                    country: {
+                        select: { countryName: true }
+                    },
+                    package: {
+                        select: { packageName: true, basePrice: true }
+                    }
+                },
                 orderBy: { createdAt: 'desc' },
                 take: limit,
                 skip: offset,
@@ -709,7 +719,11 @@ export class BookingService {
 
             const history = await prisma.bookingHistory.findMany({
                 where: { bookingId: bookingId },
-                include: [{ model: User, as: 'creator', attributes: ['firstName', 'lastName'] }],
+                include: {
+                    creator: {
+                        select: { firstName: true, lastName: true }
+                    }
+                },
                 orderBy: { createdAt: 'asc' }
             });
 

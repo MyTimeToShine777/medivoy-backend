@@ -23,11 +23,11 @@ class MedicalRecordService {
         try {
             const record = await prisma.medicalRecord.findUnique({
                 where: { recordId }, {
-                include: [
-                    { model: User, as: 'patient' },
-                    { model: Doctor, as: 'doctor' },
-                    { model: Hospital, as: 'hospital' },
-                ],
+                include: {
+                    user: true,
+                    doctor: true,
+                    hospital: true
+                },
             });
 
             if (!record) return { success: false, error: 'Not found' };

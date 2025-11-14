@@ -24,10 +24,10 @@ class SubscriptionService {
         try {
             const subscription = await prisma.subscription.findUnique({
                 where: { subscriptionId }, {
-                include: [
-                    { model: User, as: 'user' },
-                    { model: SubscriptionPlan, as: 'plan' },
-                ],
+                include: {
+                    user: true,
+                    subscriptionPlan: true
+                },
             });
 
             if (!subscription) return { success: false, error: 'Not found' };
@@ -47,9 +47,9 @@ class SubscriptionService {
                         not: 'cancelled'
                     }
                 },
-                include: [
-                    { model: SubscriptionPlan, as: 'plan' },
-                ],
+                include: {
+                    subscriptionPlan: true
+                },
             });
 
             if (!subscription) {

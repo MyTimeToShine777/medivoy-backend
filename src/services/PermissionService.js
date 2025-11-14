@@ -180,12 +180,10 @@ export class PermissionService {
             if (!userId) throw new AppError('User ID required', 400);
 
             const user = await prisma.user.findUnique({ where: { userId: userId }, 
-                include: [{
-                    model: Role,
-                    include: [{
-                        model: Permission,
-                        through: { attributes: [] },
-                        attributes: ['permissionId', 'permissionName', 'module', 'action', 'resource']
+                include: {
+                    role: true
+                } },
+                        select: { permissionId: true, permissionName: true, module: true, action: true, resource: true }
                     }]
                 }]
             });

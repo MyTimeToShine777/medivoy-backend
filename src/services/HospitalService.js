@@ -74,12 +74,20 @@ export class HospitalService {
 
             const hospital = await prisma.hospital.findUnique({
                 where: { hospitalId }, {
-                include: [
-                    { model: City, attributes: ['cityName'] },
-                    { model: Country, attributes: ['countryName'] },
-                    { model: Doctor, attributes: ['doctorId', 'firstName', 'lastName'] },
-                    { model: HospService, attributes: ['serviceId', 'serviceName'] }
-                ]
+                include: {
+                    city: {
+                        select: { cityName: true }
+                    },
+                    country: {
+                        select: { countryName: true }
+                    },
+                    doctor: {
+                        select: { doctorId: true, firstName: true, lastName: true }
+                    },
+                    hospService: {
+                        select: { serviceId: true, serviceName: true }
+                    }
+                }
             });
 
             if (!hospital) throw new AppError('Hospital not found', 404);
@@ -105,10 +113,14 @@ export class HospitalService {
 
             const hospitals = await prisma.hospital.findMany({
                 where: where,
-                include: [
-                    { model: City, attributes: ['cityName'] },
-                    { model: Country, attributes: ['countryName'] }
-                ],
+                include: {
+                    city: {
+                        select: { cityName: true }
+                    },
+                    country: {
+                        select: { countryName: true }
+                    }
+                },
                 orderBy: { hospitalName: 'asc' },
                 take: limit,
                 skip: offset
@@ -259,9 +271,11 @@ export class HospitalService {
 
             const doctors = await Doctor.findAll({
                 where: { hospitalId: hospitalId, isActive: true },
-                include: [
-                    { model: Specialization, attributes: ['specializationName'] }
-                ],
+                include: {
+                    specialization: {
+                        select: { specializationName: true }
+                    }
+                },
                 orderBy: { firstName: 'asc' },
                 take: limit,
                 skip: offset
