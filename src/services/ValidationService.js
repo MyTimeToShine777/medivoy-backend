@@ -1,232 +1,181 @@
 'use strict';
 
-/**
- * ValidationService - Comprehensive input validation
- * Production-ready validation for all data types
- */
+// ═══════════════════════════════════════════════════════════════════════════════
+// VALIDATION SERVICE - Created from scratch with Prisma
+// Comprehensive input validation for the medical tourism platform
+// ═══════════════════════════════════════════════════════════════════════════════
+
 class ValidationService {
-    /**
-     * Validate email address
-     * @param {string} email - Email to validate
-     * @returns {Object} {valid: boolean, error: string|null}
-     */
-    validateEmail(email) {
+    // Email validation
+    static validateEmail(email) {
         if (!email || typeof email !== 'string') {
-            return { valid: false, error: 'Email must be a string' };
+            return { valid: false, error: 'Email is required and must be a string' };
         }
-        
+
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const isValid = emailRegex.test(email.trim());
-        
-        return {
-            valid: isValid,
-            error: isValid ? null : 'Invalid email format'
-        };
+        if (!emailRegex.test(email)) {
+            return { valid: false, error: 'Invalid email format' };
+        }
+
+        return { valid: true };
     }
 
-    /**
-     * Validate phone number
-     * @param {string} phone - Phone number to validate
-     * @returns {Object} {valid: boolean, error: string|null}
-     */
-    validatePhone(phone) {
+    // Phone validation
+    static validatePhone(phone) {
         if (!phone || typeof phone !== 'string') {
-            return { valid: false, error: 'Phone must be a string' };
+            return { valid: false, error: 'Phone number is required and must be a string' };
         }
+
+        // Remove all non-digit characters
+        const cleaned = phone.replace(/\D/g, '');
         
-        const phoneRegex = /^[\d\s\-\+\(\)]+$/;
-        const cleanPhone = phone.replace(/\D/g, '');
-        const isValid = phoneRegex.test(phone) && cleanPhone.length >= 10;
-        
-        return {
-            valid: isValid,
-            error: isValid ? null : 'Phone must be at least 10 digits'
-        };
+        if (cleaned.length < 10 || cleaned.length > 15) {
+            return { valid: false, error: 'Phone number must be between 10 and 15 digits' };
+        }
+
+        return { valid: true };
     }
 
-    /**
-     * Validate password strength
-     * @param {string} password - Password to validate
-     * @returns {Object} {valid: boolean, error: string|null}
-     */
-    validatePassword(password) {
+    // Password validation
+    static validatePassword(password) {
         if (!password || typeof password !== 'string') {
-            return { valid: false, error: 'Password must be a string' };
+            return { valid: false, error: 'Password is required and must be a string' };
         }
-        
-        const errors = [];
-        
+
         if (password.length < 8) {
-            errors.push('Password must be at least 8 characters');
+            return { valid: false, error: 'Password must be at least 8 characters long' };
         }
+
         if (!/[A-Z]/.test(password)) {
-            errors.push('Password must contain uppercase letters');
+            return { valid: false, error: 'Password must contain at least one uppercase letter' };
         }
+
         if (!/[a-z]/.test(password)) {
-            errors.push('Password must contain lowercase letters');
+            return { valid: false, error: 'Password must contain at least one lowercase letter' };
         }
+
         if (!/[0-9]/.test(password)) {
-            errors.push('Password must contain numbers');
+            return { valid: false, error: 'Password must contain at least one number' };
         }
-        
-        return {
-            valid: errors.length === 0,
-            error: errors.length > 0 ? errors.join(', ') : null
-        };
+
+        return { valid: true };
     }
 
-    /**
-     * Validate name
-     * @param {string} name - Name to validate
-     * @returns {Object} {valid: boolean, error: string|null}
-     */
-    validateName(name) {
+    // Name validation
+    static validateName(name, fieldName = 'Name') {
         if (!name || typeof name !== 'string') {
-            return { valid: false, error: 'Name must be a string' };
+            return { valid: false, error: `${fieldName} is required and must be a string` };
         }
-        
-        const nameRegex = /^[a-zA-Z\s\-']+$/;
-        const isValid = nameRegex.test(name) && name.trim().length >= 2;
-        
-        return {
-            valid: isValid,
-            error: isValid ? null : 'Name must be at least 2 characters and contain only letters'
-        };
+
+        if (name.trim().length < 2) {
+            return { valid: false, error: `${fieldName} must be at least 2 characters long` };
+        }
+
+        if (name.length > 100) {
+            return { valid: false, error: `${fieldName} must not exceed 100 characters` };
+        }
+
+        return { valid: true };
     }
 
-    /**
-     * Validate date
-     * @param {string|Date} date - Date to validate
-     * @returns {Object} {valid: boolean, error: string|null}
-     */
-    validateDate(date) {
-        if (!date) {
-            return { valid: false, error: 'Date is required' };
-        }
-        
-        const dateObj = new Date(date);
-        const isValid = !isNaN(dateObj.getTime());
-        
-        return {
-            valid: isValid,
-            error: isValid ? null : 'Invalid date format'
-        };
-    }
-
-    /**
-     * Validate age from birthdate
-     * @param {Date} birthDate - Date of birth
-     * @param {number} minAge - Minimum age (default 18)
-     * @param {number} maxAge - Maximum age (default 120)
-     * @returns {Object} {valid: boolean, error: string|null, age: number}
-     */
-    validateAge(birthDate, minAge = 18, maxAge = 120) {
-        if (!birthDate) {
-            return { valid: false, error: 'Birth date is required', age: null };
-        }
-        
-        const birth = new Date(birthDate);
-        const today = new Date();
-        let age = today.getFullYear() - birth.getFullYear();
-        const monthDiff = today.getMonth() - birth.getMonth();
-        
-        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-            age--;
-        }
-        
-        const isValid = age >= minAge && age <= maxAge;
-        
-        return {
-            valid: isValid,
-            error: isValid ? null : `Age must be between ${minAge} and ${maxAge}`,
-            age: age
-        };
-    }
-
-    /**
-     * Validate numeric value with optional range
-     * @param {number} value - Value to validate
-     * @param {number|null} min - Minimum value
-     * @param {number|null} max - Maximum value
-     * @returns {Object} {valid: boolean, error: string|null}
-     */
-    validateNumber(value, min = null, max = null) {
-        if (typeof value !== 'number' && isNaN(value)) {
-            return { valid: false, error: 'Value must be a number' };
-        }
-        
-        const num = Number(value);
-        
-        if (min !== null && num < min) {
-            return { valid: false, error: `Value must be at least ${min}` };
-        }
-        
-        if (max !== null && num > max) {
-            return { valid: false, error: `Value must be at most ${max}` };
-        }
-        
-        return { valid: true, error: null };
-    }
-
-    /**
-     * Validate UUID format
-     * @param {string} uuid - UUID to validate
-     * @returns {Object} {valid: boolean, error: string|null}
-     */
-    validateUUID(uuid) {
+    // UUID validation
+    static validateUUID(uuid, fieldName = 'ID') {
         if (!uuid || typeof uuid !== 'string') {
-            return { valid: false, error: 'UUID must be a string' };
+            return { valid: false, error: `${fieldName} is required and must be a string` };
         }
-        
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        const isValid = uuidRegex.test(uuid);
-        
-        return {
-            valid: isValid,
-            error: isValid ? null : 'Invalid UUID format'
-        };
+
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(uuid)) {
+            return { valid: false, error: `${fieldName} must be a valid UUID` };
+        }
+
+        return { valid: true };
     }
 
-    /**
-     * Validate URL format
-     * @param {string} url - URL to validate
-     * @returns {Object} {valid: boolean, error: string|null}
-     */
-    validateURL(url) {
-        if (!url || typeof url !== 'string') {
-            return { valid: false, error: 'URL must be a string' };
+    // Date validation
+    static validateDate(date, fieldName = 'Date') {
+        if (!date) {
+            return { valid: false, error: `${fieldName} is required` };
         }
-        
+
+        const parsedDate = new Date(date);
+        if (isNaN(parsedDate.getTime())) {
+            return { valid: false, error: `${fieldName} must be a valid date` };
+        }
+
+        return { valid: true, date: parsedDate };
+    }
+
+    // Age validation
+    static validateAge(age, minAge = 0, maxAge = 120) {
+        if (age === undefined || age === null) {
+            return { valid: false, error: 'Age is required' };
+        }
+
+        const ageNum = parseInt(age, 10);
+        if (isNaN(ageNum)) {
+            return { valid: false, error: 'Age must be a number' };
+        }
+
+        if (ageNum < minAge || ageNum > maxAge) {
+            return { valid: false, error: `Age must be between ${minAge} and ${maxAge}` };
+        }
+
+        return { valid: true, age: ageNum };
+    }
+
+    // Number validation
+    static validateNumber(value, fieldName = 'Number', min = null, max = null) {
+        if (value === undefined || value === null) {
+            return { valid: false, error: `${fieldName} is required` };
+        }
+
+        const num = parseFloat(value);
+        if (isNaN(num)) {
+            return { valid: false, error: `${fieldName} must be a number` };
+        }
+
+        if (min !== null && num < min) {
+            return { valid: false, error: `${fieldName} must be at least ${min}` };
+        }
+
+        if (max !== null && num > max) {
+            return { valid: false, error: `${fieldName} must not exceed ${max}` };
+        }
+
+        return { valid: true, number: num };
+    }
+
+    // URL validation
+    static validateURL(url, fieldName = 'URL') {
+        if (!url || typeof url !== 'string') {
+            return { valid: false, error: `${fieldName} is required and must be a string` };
+        }
+
         try {
             new URL(url);
-            return { valid: true, error: null };
-        } catch (e) {
-            return { valid: false, error: 'Invalid URL format' };
+            return { valid: true };
+        } catch (error) {
+            return { valid: false, error: `${fieldName} must be a valid URL` };
         }
     }
 
-    /**
-     * Validate array
-     * @param {Array} arr - Array to validate
-     * @param {number|null} minLength - Minimum length
-     * @param {number|null} maxLength - Maximum length
-     * @returns {Object} {valid: boolean, error: string|null}
-     */
-    validateArray(arr, minLength = null, maxLength = null) {
-        if (!Array.isArray(arr)) {
-            return { valid: false, error: 'Value must be an array' };
+    // Array validation
+    static validateArray(array, fieldName = 'Array', minLength = null, maxLength = null) {
+        if (!Array.isArray(array)) {
+            return { valid: false, error: `${fieldName} must be an array` };
         }
-        
-        if (minLength !== null && arr.length < minLength) {
-            return { valid: false, error: `Array must have at least ${minLength} items` };
+
+        if (minLength !== null && array.length < minLength) {
+            return { valid: false, error: `${fieldName} must have at least ${minLength} items` };
         }
-        
-        if (maxLength !== null && arr.length > maxLength) {
-            return { valid: false, error: `Array must have at most ${maxLength} items` };
+
+        if (maxLength !== null && array.length > maxLength) {
+            return { valid: false, error: `${fieldName} must have at most ${maxLength} items` };
         }
-        
-        return { valid: true, error: null };
+
+        return { valid: true };
     }
 }
 
-export default new ValidationService();
+export default ValidationService;
