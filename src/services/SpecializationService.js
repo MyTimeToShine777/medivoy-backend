@@ -182,7 +182,7 @@ export class SpecializationService {
         try {
             if (!specializationId) throw new AppError('Specialization ID required', 400);
 
-            const specialization = await Specialization.findByPk(specializationId);
+            const specialization = await prisma.specializations.findUnique({ where: { specializationId: specializationId } });
             if (!specialization) throw new AppError('Specialization not found', 404);
 
             const doctorCount = await Doctor.count({ where: { specializationId: specializationId, isActive: true } });
