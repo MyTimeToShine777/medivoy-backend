@@ -199,7 +199,7 @@ export class AppointmentService {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const appointment = await Appointment.findByPk(appointmentId, { transaction: transaction });
+            const appointment = await tx.appointment.findUnique({ where: { appointmentId: appointmentId } });
             if (!appointment) {
                 await transaction.rollback();
                 throw new AppError('Appointment not found', 404);
@@ -279,7 +279,7 @@ export class AppointmentService {
         try {
             if (!appointmentId || !userId) throw new AppError('Required params missing', 400);
 
-            const appointment = await Appointment.findByPk(appointmentId, { transaction: transaction });
+            const appointment = await tx.appointment.findUnique({ where: { appointmentId: appointmentId } });
             if (!appointment) {
                 await transaction.rollback();
                 throw new AppError('Appointment not found', 404);
@@ -349,7 +349,7 @@ export class AppointmentService {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const appointment = await Appointment.findByPk(appointmentId, { transaction: transaction });
+            const appointment = await tx.appointment.findUnique({ where: { appointmentId: appointmentId } });
             if (!appointment) {
                 await transaction.rollback();
                 throw new AppError('Appointment not found', 404);
@@ -389,7 +389,7 @@ export class AppointmentService {
         try {
             if (!callId || !userId) throw new AppError('Required params missing', 400);
 
-            const call = await ExpertCall.findByPk(callId, { transaction: transaction });
+            const call = await tx.expertCall.findUnique({ where: { callId: callId } });
             if (!call) {
                 await transaction.rollback();
                 throw new AppError('Call not found', 404);
@@ -426,7 +426,7 @@ export class AppointmentService {
         try {
             if (!callId || !userId) throw new AppError('Required params missing', 400);
 
-            const call = await ExpertCall.findByPk(callId, { transaction: transaction });
+            const call = await tx.expertCall.findUnique({ where: { callId: callId } });
             if (!call) {
                 await transaction.rollback();
                 throw new AppError('Call not found', 404);
@@ -440,7 +440,7 @@ export class AppointmentService {
             await call.save({ transaction: transaction });
 
             // Update appointment status
-            const appointment = await Appointment.findByPk(call.appointmentId, { transaction: transaction });
+            const appointment = await tx.appointment.findUnique({ where: { appointmentId: call.appointmentId } });
             if (appointment) {
                 appointment.status = 'completed';
                 await appointment.save({ transaction: transaction });

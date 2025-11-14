@@ -257,7 +257,7 @@ export class SettingsService {
                 offset: offset
             });
 
-            const total = await Backup.count({ where: where });
+            const total = await prisma.backup.count({ where: where });
 
             console.log(`✅ Backups listed: ${backups.length}`);
             return { success: true, data: backups, pagination: { total, limit, offset } };
@@ -277,7 +277,7 @@ export class SettingsService {
                 throw new AppError('Backup ID required', 400);
             }
 
-            const backup = await Backup.findByPk(backupId);
+            const backup = await prisma.backup.findUnique({ where: { backupId: backupId } });
 
             if (!backup) {
                 throw new AppError('Backup not found', 404);
@@ -301,7 +301,7 @@ export class SettingsService {
                 throw new AppError('Backup ID required', 400);
             }
 
-            const backup = await Backup.findByPk(backupId);
+            const backup = await prisma.backup.findUnique({ where: { backupId: backupId } });
 
             if (!backup) {
                 throw new AppError('Backup not found', 404);
@@ -333,7 +333,7 @@ export class SettingsService {
                 throw new AppError('Backup ID required', 400);
             }
 
-            const backup = await Backup.findByPk(backupId);
+            const backup = await prisma.backup.findUnique({ where: { backupId: backupId } });
 
             if (!backup) {
                 throw new AppError('Backup not found', 404);
@@ -370,7 +370,7 @@ export class SettingsService {
                 throw new AppError('Backup ID required', 400);
             }
 
-            const backup = await Backup.findByPk(backupId);
+            const backup = await prisma.backup.findUnique({ where: { backupId: backupId } });
 
             if (!backup) {
                 throw new AppError('Backup not found', 404);
@@ -416,15 +416,20 @@ export class SettingsService {
 
     async getBackupStatistics() {
         try {
-            const total = await Backup.count();
+            const total = await prisma.backup.count();
             const completed = await Backup.count({ where: { status: 'completed' } });
             const failed = await Backup.count({ where: { status: 'failed' } });
             const verified = await Backup.count({ where: { isVerified: true } });
 
-            // Use snake_case column name to match underscored model definitions / DB schema
-            const totalSize = await sequelize.query(
-                'SELECT SUM(backup_size) as total FROM backups WHERE status = ?', { replacements: ['completed'], type: sequelize.QueryTypes.SELECT }
-            );
+            // Calculate total backup size using Prisma aggregate
+            const totalSizeResult = await prisma.backup.aggregate({
+                where: { status: 'completed' },
+                _sum: {
+                    backupSize: true
+                }
+            });
+            
+            const totalSize = [{ total: totalSizeResult._sum.backupSize || 0 }];
 
             console.log(`✅ Backup statistics retrieved`);
 
