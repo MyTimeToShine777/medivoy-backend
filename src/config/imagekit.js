@@ -7,11 +7,14 @@ import { environment } from './environment.js';
 // IMAGEKIT CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export const imagekit = new ImageKit({
-    publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
-    privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
-});
+// Initialize ImageKit only if credentials are provided
+export const imagekit = (process.env.IMAGEKIT_PUBLIC_KEY && process.env.IMAGEKIT_PRIVATE_KEY && process.env.IMAGEKIT_URL_ENDPOINT) 
+    ? new ImageKit({
+        publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+        privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+        urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
+    })
+    : null;
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // IMAGEKIT SERVICE
@@ -25,6 +28,10 @@ export class ImageKitService {
     // Upload file
     async uploadFile(file, fileName, tags = []) {
         try {
+            if (!this.imagekit) {
+                return { success: false, error: 'ImageKit is not configured' };
+            }
+
             const result = await this.imagekit.upload({
                 file: file.buffer,
                 fileName: fileName,
@@ -69,6 +76,10 @@ export class ImageKitService {
     // Delete file
     async deleteFile(fileId) {
         try {
+            if (!this.imagekit) {
+                return { success: false, error: 'ImageKit is not configured' };
+            }
+
             await this.imagekit.deleteFile(fileId);
             console.log('✅ File deleted from ImageKit:', fileId);
             return { success: true };
@@ -81,6 +92,10 @@ export class ImageKitService {
     // Get file metadata
     async getFileMetadata(fileId) {
         try {
+            if (!this.imagekit) {
+                return { success: false, error: 'ImageKit is not configured' };
+            }
+
             const result = await this.imagekit.getFileDetails(fileId);
             return { success: true, data: result };
         } catch (error) {
@@ -92,6 +107,10 @@ export class ImageKitService {
     // Get transformation URL
     getTransformationUrl(url, transformations) {
         try {
+            if (!this.imagekit) {
+                return null;
+            }
+
             return this.imagekit.url({
                 path: url,
                 transformation: transformations
