@@ -33,7 +33,6 @@ export class ChatService {
             });
 
             if (existingChat) {
-                await transaction.rollback();
                 return { success: true, message: 'Chat room already exists', chat: existingChat };
             }
 
@@ -44,7 +43,7 @@ export class ChatService {
                 userId2: userId2,
                 subject: chatData.subject || null,
                 createdAt: new Date()
-            }, { transaction: transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'CHAT_ROOM_CREATED',
@@ -54,11 +53,9 @@ export class ChatService {
                 details: { otherUserId: userId2 }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Chat room created', chat: chat };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }
@@ -145,14 +142,12 @@ export class ChatService {
             }
 
             const chat = await prisma.chat.findUnique({
-                where: { chatId }, { transaction: transaction });
+                where: { chatId });
             if (!chat) {
-                await transaction.rollback();
                 return { success: false, error: 'Chat room not found' };
             }
 
             if (chat.userId1 !== userId && chat.userId2 !== userId) {
-                await transaction.rollback();
                 return { success: false, error: 'Unauthorized' };
             }
 
@@ -163,10 +158,10 @@ export class ChatService {
                 content: messageContent,
                 isRead: false,
                 createdAt: new Date()
-            }, { transaction: transaction });
+            });
 
             chat.updatedAt = new Date();
-            await chat.save({ transaction: transaction });
+            await chat.save();
 
             const recipientId = chat.userId1 === userId ? chat.userId2 : chat.userId1;
             await this.notificationService.sendNotification(recipientId, 'NEW_MESSAGE', {
@@ -174,11 +169,9 @@ export class ChatService {
                 senderName: 'A user'
             });
 
-            await transaction.commit();
 
             return { success: true, message: 'Message sent', data: message };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }
@@ -189,7 +182,7 @@ export class ChatService {
                 return { success: false, error: 'Chat ID and User ID required' };
             }
 
-            const chat = await Chat.findByPk(chatId);
+            const chat = await prisma.chat.findUnique({ where: { chatId: chatId } });
             if (!chat || (chat.userId1 !== userId && chat.userId2 !== userId)) {
                 return { success: false, error: 'Unauthorized' };
             }

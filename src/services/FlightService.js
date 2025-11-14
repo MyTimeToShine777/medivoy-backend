@@ -94,7 +94,7 @@ export class FlightService {
         try {
             const booking = await Booking.findByPk(bookingId);
             if (!booking) return { success: false, error: 'Booking not found' };
-            const flight = await Flight.findByPk(booking.flightId);
+            const flight = await prisma.flight.findUnique({ where: { flightId: booking.flightId } });
             await booking.destroy();
             if (flight) await flight.update({ availableSeats: flight.availableSeats + booking.seatCount });
             return { success: true, message: 'Cancelled' };

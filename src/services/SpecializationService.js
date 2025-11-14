@@ -30,7 +30,6 @@ export class SpecializationService {
             });
 
             if (existing) {
-                await transaction.rollback();
                 throw new AppError('Specialization already exists', 409);
             }
 
@@ -42,7 +41,7 @@ export class SpecializationService {
                 averageFee: specializationData.averageFee || 0,
                 isActive: true,
                 createdAt: new Date()
-            }, { transaction: transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'SPECIALIZATION_CREATED',
@@ -52,11 +51,9 @@ export class SpecializationService {
                 details: { name: specializationData.specializationName }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Specialization created', specialization: specialization };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -118,16 +115,15 @@ export class SpecializationService {
             if (!specializationId || !updateData) throw new AppError('Required params missing', 400);
 
             const specialization = await prisma.specialization.findUnique({
-                where: { specializationId }, { transaction: transaction });
+                where: { specializationId });
             if (!specialization) {
-                await transaction.rollback();
                 throw new AppError('Specialization not found', 404);
             }
 
             if (updateData.specializationDescription) specialization.specializationDescription = updateData.specializationDescription;
             if (updateData.averageFee) specialization.averageFee = updateData.averageFee;
 
-            await specialization.save({ transaction: transaction });
+            await specialization.save();
 
             await this.auditLogService.logAction({
                 action: 'SPECIALIZATION_UPDATED',
@@ -137,11 +133,9 @@ export class SpecializationService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Updated', specialization: specialization };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -178,7 +172,7 @@ export class SpecializationService {
         try {
             if (!specializationId) throw new AppError('Specialization ID required', 400);
 
-            const specialization = await Specialization.findByPk(specializationId);
+            const specialization = await prisma.specialization.findUnique({ where: { specializationId: specializationId } });
             if (!specialization) throw new AppError('Specialization not found', 404);
 
             const doctorCount = await Doctor.count({ where: { specializationId: specializationId, isActive: true } });

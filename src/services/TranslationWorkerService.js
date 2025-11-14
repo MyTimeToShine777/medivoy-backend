@@ -103,7 +103,7 @@ export class TranslationWorkerService {
             for (let i = 0; i < pendingTranslations.length; i++) {
                 pendingTranslations[i].value = translatedItems[i];
                 pendingTranslations[i].status = 'completed';
-                await pendingTranslations[i].save({ transaction: transaction });
+                await pendingTranslations[i].save();
             }
 
             // Log completion

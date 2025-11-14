@@ -30,7 +30,6 @@ export class HospitalService {
             });
 
             if (existing) {
-                await transaction.rollback();
                 throw new AppError('Hospital already registered', 409);
             }
 
@@ -52,7 +51,7 @@ export class HospitalService {
                 established: hospitalData.established || null,
                 isActive: true,
                 createdAt: new Date()
-            }, { transaction: transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'HOSPITAL_CREATED',
@@ -62,11 +61,9 @@ export class HospitalService {
                 details: { hospitalName: hospitalData.hospitalName }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Hospital created', hospital: hospital };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -137,9 +134,8 @@ export class HospitalService {
             if (!hospitalId || !updateData) throw new AppError('Required params missing', 400);
 
             const hospital = await prisma.hospital.findUnique({
-                where: { hospitalId }, { transaction: transaction });
+                where: { hospitalId });
             if (!hospital) {
-                await transaction.rollback();
                 throw new AppError('Hospital not found', 404);
             }
 
@@ -150,7 +146,7 @@ export class HospitalService {
                 }
             }
 
-            await hospital.save({ transaction: transaction });
+            await hospital.save();
 
             await this.auditLogService.logAction({
                 action: 'HOSPITAL_UPDATED',
@@ -160,11 +156,9 @@ export class HospitalService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Hospital updated', hospital: hospital };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -179,9 +173,8 @@ export class HospitalService {
             if (!hospitalId || !serviceData) throw new AppError('Required params missing', 400);
 
             const hospital = await prisma.hospital.findUnique({
-                where: { hospitalId }, { transaction: transaction });
+                where: { hospitalId });
             if (!hospital) {
-                await transaction.rollback();
                 throw new AppError('Hospital not found', 404);
             }
 
@@ -192,7 +185,7 @@ export class HospitalService {
                 serviceDescription: serviceData.serviceDescription || null,
                 isAvailable: true,
                 createdAt: new Date()
-            }, { transaction: transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'HOSPITAL_SERVICE_ADDED',
@@ -202,11 +195,9 @@ export class HospitalService {
                 details: { hospitalId: hospitalId }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Service added', service: service };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -239,11 +230,10 @@ export class HospitalService {
             });
 
             if (!service) {
-                await transaction.rollback();
                 throw new AppError('Service not found', 404);
             }
 
-            await service.destroy({ transaction: transaction });
+            await service.destroy();
 
             await this.auditLogService.logAction({
                 action: 'HOSPITAL_SERVICE_REMOVED',
@@ -253,11 +243,9 @@ export class HospitalService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Service removed' };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -301,7 +289,7 @@ export class HospitalService {
         try {
             if (!hospitalId) throw new AppError('Hospital ID required', 400);
 
-            const hospital = await Hospital.findByPk(hospitalId);
+            const hospital = await prisma.hospital.findUnique({ where: { hospitalId: hospitalId } });
             if (!hospital) throw new AppError('Hospital not found', 404);
 
             const totalDoctors = await Doctor.count({ where: { hospitalId: hospitalId, isActive: true } });

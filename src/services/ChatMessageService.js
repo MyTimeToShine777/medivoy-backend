@@ -126,7 +126,7 @@ export class ChatMessageService {
 
             
 
-            const message = await ChatMessage.findByPk(messageId);
+            const message = await prisma.chatMessage.findUnique({ where: { messageId: messageId } });
 
             if (!message) {
                 return { success: false, error: 'Message not found' };
@@ -202,7 +202,7 @@ export class ChatMessageService {
 
             
 
-            const message = await ChatMessage.findByPk(messageId);
+            const message = await prisma.chatMessage.findUnique({ where: { messageId: messageId } });
 
             if (!message) {
                 return { success: false, error: 'Message not found' };

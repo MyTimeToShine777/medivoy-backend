@@ -161,7 +161,7 @@ export class MedicalPackageService {
                 }
             }
 
-            /* TODO: Convert to prisma update */ await package_record.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */ await package_record.save();
 
             await this.auditLogService.logAction({
                 action: 'PACKAGE_UPDATED',
@@ -255,7 +255,7 @@ export class MedicalPackageService {
                 return { success: false, error: 'Add-on not found' };
             }
 
-            await prisma.addOn.delete({ transaction: transaction });
+            await prisma.addOn.delete();
 
             await this.auditLogService.logAction({
                 action: 'PACKAGE_ADDON_REMOVED',

@@ -30,7 +30,6 @@ export class PermissionService {
             });
 
             if (existing) {
-                await transaction.rollback();
                 throw new AppError('Permission already exists', 409);
             }
 
@@ -44,7 +43,7 @@ export class PermissionService {
                 resource: permissionData.resource,
                 isActive: true,
                 createdAt: new Date()
-            }, { transaction: transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'PERMISSION_CREATED',
@@ -54,11 +53,9 @@ export class PermissionService {
                 details: { permissionName: permissionData.permissionName }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Permission created', permission: permission };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -113,9 +110,8 @@ export class PermissionService {
         try {
             if (!permissionId || !updateData) throw new AppError('Required params missing', 400);
 
-            const permission = await Permission.findByPk(permissionId, { transaction: transaction });
+            const permission = await prisma.permission.findUnique({ where: { permissionId: permissionId } });
             if (!permission) {
-                await transaction.rollback();
                 throw new AppError('Permission not found', 404);
             }
 
@@ -123,7 +119,7 @@ export class PermissionService {
             if (updateData.permissionDescription) permission.permissionDescription = updateData.permissionDescription;
             if (updateData.isActive !== undefined) permission.isActive = updateData.isActive;
 
-            await permission.save({ transaction: transaction });
+            await permission.save();
 
             await this.auditLogService.logAction({
                 action: 'PERMISSION_UPDATED',
@@ -133,11 +129,9 @@ export class PermissionService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Permission updated', permission: permission };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -147,9 +141,8 @@ export class PermissionService {
         try {
             if (!permissionId) throw new AppError('Permission ID required', 400);
 
-            const permission = await Permission.findByPk(permissionId, { transaction: transaction });
+            const permission = await prisma.permission.findUnique({ where: { permissionId: permissionId } });
             if (!permission) {
-                await transaction.rollback();
                 throw new AppError('Permission not found', 404);
             }
 
@@ -158,11 +151,10 @@ export class PermissionService {
             });
 
             if (rolesWithPermission > 0) {
-                await transaction.rollback();
                 throw new AppError('Cannot delete permission assigned to roles', 400);
             }
 
-            await permission.destroy({ transaction: transaction });
+            await permission.destroy();
 
             await this.auditLogService.logAction({
                 action: 'PERMISSION_DELETED',
@@ -172,11 +164,9 @@ export class PermissionService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Permission deleted' };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }

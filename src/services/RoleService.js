@@ -28,7 +28,6 @@ export class RoleService {
             });
 
             if (existingRole) {
-                await transaction.rollback();
                 throw new AppError('Role already exists', 409);
             }
 
@@ -39,7 +38,7 @@ export class RoleService {
                 roleDescription: roleData.roleDescription || null,
                 isActive: true,
                 createdAt: new Date()
-            }, { transaction: transaction });
+            });
 
             // Assign permissions if provided
             if (roleData.permissionIds && Array.isArray(roleData.permissionIds)) {
@@ -48,7 +47,7 @@ export class RoleService {
                     data: {
                         roleId: role.roleId,
                         permissionId: permId
-                    }, { transaction: transaction });
+                    });
                 }
             }
 
@@ -60,11 +59,9 @@ export class RoleService {
                 details: { roleName: roleData.roleName }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Role created', role: role };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -130,16 +127,15 @@ export class RoleService {
             if (!roleId || !updateData) throw new AppError('Required params missing', 400);
 
             const role = await prisma.role.findUnique({
-                where: { roleId }, { transaction: transaction });
+                where: { roleId });
             if (!role) {
-                await transaction.rollback();
                 throw new AppError('Role not found', 404);
             }
 
             if (updateData.roleName) role.roleName = updateData.roleName;
             if (updateData.roleDescription) role.roleDescription = updateData.roleDescription;
 
-            await role.save({ transaction: transaction });
+            await role.save();
 
             await this.auditLogService.logAction({
                 action: 'ROLE_UPDATED',
@@ -149,11 +145,9 @@ export class RoleService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Role updated', role: role };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -164,20 +158,18 @@ export class RoleService {
             if (!roleId) throw new AppError('Role ID required', 400);
 
             const role = await prisma.role.findUnique({
-                where: { roleId }, { transaction: transaction });
+                where: { roleId });
             if (!role) {
-                await transaction.rollback();
                 throw new AppError('Role not found', 404);
             }
 
             const usersWithRole = await User.count({ where: { roleId: roleId } });
             if (usersWithRole > 0) {
-                await transaction.rollback();
                 throw new AppError('Cannot delete role with assigned users', 400);
             }
 
             await RolePermission.destroy({ where: { roleId: roleId }, transaction: transaction });
-            await role.destroy({ transaction: transaction });
+            await role.destroy();
 
             await this.auditLogService.logAction({
                 action: 'ROLE_DELETED',
@@ -187,11 +179,9 @@ export class RoleService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Role deleted' };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -206,15 +196,13 @@ export class RoleService {
             if (!roleId || !permissionId) throw new AppError('Role and permission IDs required', 400);
 
             const role = await prisma.role.findUnique({
-                where: { roleId }, { transaction: transaction });
+                where: { roleId });
             if (!role) {
-                await transaction.rollback();
                 throw new AppError('Role not found', 404);
             }
 
-            const permission = await Permission.findByPk(permissionId, { transaction: transaction });
+            const permission = await Permission.findByPk(permissionId);
             if (!permission) {
-                await transaction.rollback();
                 throw new AppError('Permission not found', 404);
             }
 
@@ -224,7 +212,6 @@ export class RoleService {
             });
 
             if (existing) {
-                await transaction.rollback();
                 throw new AppError('Permission already assigned', 409);
             }
 
@@ -232,7 +219,7 @@ export class RoleService {
                     data: {
                 roleId: roleId,
                 permissionId: permissionId
-            }, { transaction: transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'PERMISSION_ASSIGNED_TO_ROLE',
@@ -242,11 +229,9 @@ export class RoleService {
                 details: { permissionId: permissionId }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Permission assigned' };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -262,11 +247,10 @@ export class RoleService {
             });
 
             if (!rolePermission) {
-                await transaction.rollback();
                 throw new AppError('Permission not assigned to this role', 404);
             }
 
-            await rolePermission.destroy({ transaction: transaction });
+            await rolePermission.destroy();
 
             await this.auditLogService.logAction({
                 action: 'PERMISSION_REMOVED_FROM_ROLE',
@@ -276,11 +260,9 @@ export class RoleService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Permission removed' };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }

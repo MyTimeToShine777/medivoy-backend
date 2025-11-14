@@ -31,13 +31,11 @@ export class LaboratoryService {
 
             const hospital = await tx.hospital.findUnique({ where: { hospitalId } });
             if (!hospital) {
-                await transaction.rollback();
                 throw new AppError('Hospital not found', 404);
             }
 
             const errors = this.validationService.validateLabTestData(testData);
             if (errors.length) {
-                await transaction.rollback();
                 throw new AppError(errors.join(', '), 400);
             }
 
@@ -55,7 +53,7 @@ export class LaboratoryService {
                 testParameters: testData.testParameters || [],
                 status: 'active',
                 createdAt: new Date()
-            }, { transaction: transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'LAB_TEST_CREATED',
@@ -65,11 +63,9 @@ export class LaboratoryService {
                 details: { testName: testData.testName, hospitalId: hospitalId }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Lab test created', labTest: labTest };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -120,17 +116,15 @@ export class LaboratoryService {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const user = await User.findByPk(userId, { transaction: transaction });
+            const user = await User.findByPk(userId);
             if (!user) {
-                await transaction.rollback();
                 throw new AppError('User not found', 404);
             }
 
             const tests = [];
             for (const testId of orderData.testIds) {
-                const test = await LabTest.findByPk(testId, { transaction: transaction });
+                const test = await LabTest.findByPk(testId);
                 if (!test) {
-                    await transaction.rollback();
                     throw new AppError('Lab test not found: ' + testId, 404);
                 }
                 tests.push(test);
@@ -148,11 +142,11 @@ export class LaboratoryService {
                 collectionDate: orderData.collectionDate || null,
                 notes: orderData.notes || null,
                 orderedAt: new Date()
-            }, { transaction: transaction });
+            });
 
             // Add tests to order
             for (const test of tests) {
-                await labOrder.addLabTest(test, { transaction: transaction });
+                await labOrder.addLabTest(test);
             }
 
             await this.auditLogService.logAction({
@@ -168,11 +162,9 @@ export class LaboratoryService {
                 testCount: tests.length
             });
 
-            await transaction.commit();
 
             return { success: true, message: 'Lab order created', labOrder: labOrder };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -220,9 +212,8 @@ export class LaboratoryService {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const order = await LabOrder.findByPk(orderId, { transaction: transaction });
+            const order = await LabOrder.findByPk(orderId);
             if (!order) {
-                await transaction.rollback();
                 throw new AppError('Lab order not found', 404);
             }
 
@@ -243,11 +234,11 @@ export class LaboratoryService {
                 interpretation: resultData.interpretation || null,
                 uploadedBy: userId,
                 uploadedAt: new Date()
-            }, { transaction: transaction });
+            });
 
             order.status = 'results_ready';
             order.resultReadyAt = new Date();
-            await order.save({ transaction: transaction });
+            await order.save();
 
             await this.auditLogService.logAction({
                 action: 'LAB_RESULT_UPLOADED',
@@ -261,11 +252,9 @@ export class LaboratoryService {
                 orderId: orderId
             });
 
-            await transaction.commit();
 
             return { success: true, message: 'Result uploaded', labResult: labResult };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -327,7 +316,6 @@ export class LaboratoryService {
 
             const hospital = await tx.hospital.findUnique({ where: { hospitalId } });
             if (!hospital) {
-                await transaction.rollback();
                 throw new AppError('Hospital not found', 404);
             }
 
@@ -341,7 +329,7 @@ export class LaboratoryService {
                 discount: packageData.discount || 0,
                 turnaroundTime: packageData.turnaroundTime,
                 status: 'active'
-            }, { transaction: transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'LAB_PACKAGE_CREATED',
@@ -351,11 +339,9 @@ export class LaboratoryService {
                 details: { packageName: packageData.packageName }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Package created', labPackage: labPackage };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }

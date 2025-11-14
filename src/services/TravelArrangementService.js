@@ -28,13 +28,11 @@ export class TravelArrangementService {
 
             const booking = await tx.booking.findUnique({ where: { bookingId } });
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
             const errors = this.validationService.validateFlightData(flightData);
             if (errors.length) {
-                await transaction.rollback();
                 throw new AppError(errors.join(', '), 400);
             }
 
@@ -56,7 +54,7 @@ export class TravelArrangementService {
                 seatNumbers: flightData.seatNumbers || [],
                 status: 'booked',
                 bookedAt: new Date()
-            }, { transaction: transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'FLIGHT_BOOKED',
@@ -71,11 +69,9 @@ export class TravelArrangementService {
                 departureDate: flightData.departureDate
             });
 
-            await transaction.commit();
 
             return { success: true, message: 'Flight booked', flight: flight };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -102,16 +98,15 @@ export class TravelArrangementService {
         try {
             if (!flightId || !userId) throw new AppError('Required params missing', 400);
 
-            const flight = await Flight.findByPk(flightId, { transaction: transaction });
+            const flight = await Flight.findByPk(flightId);
             if (!flight) {
-                await transaction.rollback();
                 throw new AppError('Flight not found', 404);
             }
 
             flight.status = 'cancelled';
             flight.cancellationReason = reason || null;
             flight.cancelledAt = new Date();
-            await flight.save({ transaction: transaction });
+            await flight.save();
 
             await this.auditLogService.logAction({
                 action: 'FLIGHT_CANCELLED',
@@ -121,11 +116,9 @@ export class TravelArrangementService {
                 details: { reason: reason }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Flight cancelled' };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -143,13 +136,11 @@ export class TravelArrangementService {
 
             const booking = await tx.booking.findUnique({ where: { bookingId } });
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
             const errors = this.validationService.validateHotelData(hotelData);
             if (errors.length) {
-                await transaction.rollback();
                 throw new AppError(errors.join(', '), 400);
             }
 
@@ -169,7 +160,7 @@ export class TravelArrangementService {
                 amenities: hotelData.amenities || [],
                 status: 'booked',
                 bookedAt: new Date()
-            }, { transaction: transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'HOTEL_BOOKED',
@@ -184,11 +175,9 @@ export class TravelArrangementService {
                 checkInDate: hotelData.checkInDate
             });
 
-            await transaction.commit();
 
             return { success: true, message: 'Hotel booked', hotel: hotel };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -212,9 +201,8 @@ export class TravelArrangementService {
         try {
             if (!hotelId || !userId) throw new AppError('Required params missing', 400);
 
-            const hotel = await Hotel.findByPk(hotelId, { transaction: transaction });
+            const hotel = await Hotel.findByPk(hotelId);
             if (!hotel) {
-                await transaction.rollback();
                 throw new AppError('Hotel not found', 404);
             }
 
@@ -223,7 +211,7 @@ export class TravelArrangementService {
             if (updateData.roomType) hotel.roomType = updateData.roomType;
             if (updateData.price) hotel.price = updateData.price;
 
-            await hotel.save({ transaction: transaction });
+            await hotel.save();
 
             await this.auditLogService.logAction({
                 action: 'HOTEL_BOOKING_UPDATED',
@@ -233,11 +221,9 @@ export class TravelArrangementService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Updated', hotel: hotel };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -247,16 +233,15 @@ export class TravelArrangementService {
         try {
             if (!hotelId || !userId) throw new AppError('Required params missing', 400);
 
-            const hotel = await Hotel.findByPk(hotelId, { transaction: transaction });
+            const hotel = await Hotel.findByPk(hotelId);
             if (!hotel) {
-                await transaction.rollback();
                 throw new AppError('Hotel not found', 404);
             }
 
             hotel.status = 'cancelled';
             hotel.cancellationReason = reason || null;
             hotel.cancelledAt = new Date();
-            await hotel.save({ transaction: transaction });
+            await hotel.save();
 
             await this.auditLogService.logAction({
                 action: 'HOTEL_CANCELLED',
@@ -266,11 +251,9 @@ export class TravelArrangementService {
                 details: { reason: reason }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Cancelled' };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -288,7 +271,6 @@ export class TravelArrangementService {
 
             const booking = await tx.booking.findUnique({ where: { bookingId } });
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
@@ -305,7 +287,7 @@ export class TravelArrangementService {
                 confirmationCode: transportData.confirmationCode || null,
                 status: 'booked',
                 bookedAt: new Date()
-            }, { transaction: transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'TRANSPORTATION_BOOKED',
@@ -320,11 +302,9 @@ export class TravelArrangementService {
                 pickupDate: transportData.pickupDate
             });
 
-            await transaction.commit();
 
             return { success: true, message: 'Transportation booked', transport: transport };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }

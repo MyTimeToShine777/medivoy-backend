@@ -29,19 +29,16 @@ export class AppointmentService {
 
             const user = await prisma.user.findUnique({ where: { userId } });
             if (!user) {
-                await transaction.rollback();
                 throw new AppError('User not found', 404);
             }
 
             const doctor = await tx.doctor.findUnique({ where: { doctorId: appointmentData.doctorId } });
             if (!doctor) {
-                await transaction.rollback();
                 throw new AppError('Doctor not found', 404);
             }
 
             const errors = this.validationService.validateAppointmentData(appointmentData);
             if (errors.length) {
-                await transaction.rollback();
                 throw new AppError(errors.join(', '), 400);
             }
 
@@ -57,7 +54,6 @@ export class AppointmentService {
             });
 
             if (!slot) {
-                await transaction.rollback();
                 throw new AppError('Slot not available', 409);
             }
 
@@ -74,7 +70,6 @@ export class AppointmentService {
             });
 
             if (existing) {
-                await transaction.rollback();
                 throw new AppError('Already have appointment with this doctor on this date', 409);
             }
 
@@ -92,12 +87,12 @@ export class AppointmentService {
                 notes: appointmentData.notes || null,
                 reason: appointmentData.reason || null,
                 bookedAt: new Date()
-            }, { transaction: transaction });
+            });
 
             // Mark slot as unavailable
             slot.isAvailable = false;
             slot.bookedBy = userId;
-            await slot.save({ transaction: transaction });
+            await slot.save();
 
             await this.auditLogService.logAction({
                 action: 'APPOINTMENT_BOOKED',
@@ -113,11 +108,9 @@ export class AppointmentService {
                 date: appointmentData.appointmentDate
             });
 
-            await transaction.commit();
 
             return { success: true, message: 'Appointment booked', appointment: appointment };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -201,17 +194,14 @@ export class AppointmentService {
 
             const appointment = await tx.appointment.findUnique({ where: { appointmentId: appointmentId } });
             if (!appointment) {
-                await transaction.rollback();
                 throw new AppError('Appointment not found', 404);
             }
 
             if (appointment.userId !== userId) {
-                await transaction.rollback();
                 throw new AppError('Unauthorized', 403);
             }
 
             if (appointment.status === 'completed' || appointment.status === 'cancelled') {
-                await transaction.rollback();
                 throw new AppError('Cannot reschedule this appointment', 400);
             }
 
@@ -227,7 +217,7 @@ export class AppointmentService {
             if (oldSlot) {
                 oldSlot.isAvailable = true;
                 oldSlot.bookedBy = null;
-                await oldSlot.save({ transaction: transaction });
+                await oldSlot.save();
             }
 
             // Find new slot
@@ -242,7 +232,6 @@ export class AppointmentService {
             });
 
             if (!newSlot) {
-                await transaction.rollback();
                 throw new AppError('New slot not available', 409);
             }
 
@@ -251,11 +240,11 @@ export class AppointmentService {
             appointment.endTime = newData.endTime;
             appointment.rescheduledAt = new Date();
             appointment.rescheduledCount = (appointment.rescheduledCount || 0) + 1;
-            await appointment.save({ transaction: transaction });
+            await appointment.save();
 
             newSlot.isAvailable = false;
             newSlot.bookedBy = userId;
-            await newSlot.save({ transaction: transaction });
+            await newSlot.save();
 
             await this.auditLogService.logAction({
                 action: 'APPOINTMENT_RESCHEDULED',
@@ -265,11 +254,9 @@ export class AppointmentService {
                 details: { newDate: newData.appointmentDate }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Rescheduled', appointment: appointment };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -281,24 +268,21 @@ export class AppointmentService {
 
             const appointment = await tx.appointment.findUnique({ where: { appointmentId: appointmentId } });
             if (!appointment) {
-                await transaction.rollback();
                 throw new AppError('Appointment not found', 404);
             }
 
             if (appointment.userId !== userId && userId !== 'ADMIN') {
-                await transaction.rollback();
                 throw new AppError('Unauthorized', 403);
             }
 
             if (appointment.status === 'cancelled') {
-                await transaction.rollback();
                 throw new AppError('Already cancelled', 400);
             }
 
             appointment.status = 'cancelled';
             appointment.cancellationReason = reason || null;
             appointment.cancelledAt = new Date();
-            await appointment.save({ transaction: transaction });
+            await appointment.save();
 
             // Free up the slot
             const slot = await tx.appointmentSlot.findFirst({
@@ -313,7 +297,7 @@ export class AppointmentService {
             if (slot) {
                 slot.isAvailable = true;
                 slot.bookedBy = null;
-                await slot.save({ transaction: transaction });
+                await slot.save();
             }
 
             await this.auditLogService.logAction({
@@ -329,11 +313,9 @@ export class AppointmentService {
                 reason: reason
             });
 
-            await transaction.commit();
 
             return { success: true, message: 'Cancelled' };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -351,7 +333,6 @@ export class AppointmentService {
 
             const appointment = await tx.appointment.findUnique({ where: { appointmentId: appointmentId } });
             if (!appointment) {
-                await transaction.rollback();
                 throw new AppError('Appointment not found', 404);
             }
 
@@ -365,7 +346,7 @@ export class AppointmentService {
                 meetingLink: consultationData.meetingLink || null,
                 status: 'pending',
                 createdAt: new Date()
-            }, { transaction: transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'CONSULTATION_CREATED',
@@ -375,11 +356,9 @@ export class AppointmentService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Consultation created', consultation: expertCall };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -391,18 +370,16 @@ export class AppointmentService {
 
             const call = await tx.expertCall.findUnique({ where: { callId: callId } });
             if (!call) {
-                await transaction.rollback();
                 throw new AppError('Call not found', 404);
             }
 
             if (call.userId !== userId && userId !== 'DOCTOR') {
-                await transaction.rollback();
                 throw new AppError('Unauthorized', 403);
             }
 
             call.status = 'in_progress';
             call.startedAt = new Date();
-            await call.save({ transaction: transaction });
+            await call.save();
 
             await this.auditLogService.logAction({
                 action: 'CONSULTATION_STARTED',
@@ -412,11 +389,9 @@ export class AppointmentService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Consultation started' };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -428,7 +403,6 @@ export class AppointmentService {
 
             const call = await tx.expertCall.findUnique({ where: { callId: callId } });
             if (!call) {
-                await transaction.rollback();
                 throw new AppError('Call not found', 404);
             }
 
@@ -437,13 +411,13 @@ export class AppointmentService {
             call.consultationNotes = consultationNotes || null;
             const duration = call.endedAt - call.startedAt;
             call.durationInMinutes = Math.round(duration / 60000);
-            await call.save({ transaction: transaction });
+            await call.save();
 
             // Update appointment status
             const appointment = await tx.appointment.findUnique({ where: { appointmentId: call.appointmentId } });
             if (appointment) {
                 appointment.status = 'completed';
-                await appointment.save({ transaction: transaction });
+                await appointment.save();
             }
 
             await this.auditLogService.logAction({
@@ -454,11 +428,9 @@ export class AppointmentService {
                 details: { duration: call.durationInMinutes }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Consultation ended' };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -482,7 +454,7 @@ export class AppointmentService {
                     startTime: slot.startTime,
                     endTime: slot.endTime,
                     isAvailable: true
-                }, { transaction: transaction });
+                });
 
                 slots.push(slotRecord);
             }
@@ -495,11 +467,9 @@ export class AppointmentService {
                 details: { doctorId: doctorId, slotCount: slots.length }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Slots created', slots: slots };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }

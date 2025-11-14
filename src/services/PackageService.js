@@ -142,7 +142,7 @@ class PackageService {
     // ========== PACKAGE STATISTICS ==========
     async getPackageStats(packageId) {
         try {
-            const pkg = await Package.findByPk(packageId);
+            const pkg = await prisma.package.findUnique({ where: { packageId: packageId } });
             if (!pkg) return { success: false, error: 'Package not found' };
 
             const bookings = await Booking.count({ where: { packageId } });

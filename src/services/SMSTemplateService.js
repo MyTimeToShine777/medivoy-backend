@@ -34,7 +34,6 @@ export class SMSTemplateService {
             });
 
             if (existing) {
-                await transaction.rollback();
                 throw new AppError('Template already exists', 409);
             }
 
@@ -49,7 +48,7 @@ export class SMSTemplateService {
                 description: templateData.description || null,
                 isActive: true,
                 createdAt: new Date()
-            }, { transaction: transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'SMS_TEMPLATE_CREATED',
@@ -59,7 +58,6 @@ export class SMSTemplateService {
                 details: { templateName: templateData.templateName }
             }, transaction);
 
-            await transaction.commit();
 
             return {
                 success: true,
@@ -67,7 +65,6 @@ export class SMSTemplateService {
                 template: template
             };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }
@@ -152,15 +149,13 @@ export class SMSTemplateService {
                 return { success: false, error: 'Required parameters missing' };
             }
 
-            const template = await SMSTemplate.findByPk(templateId, { transaction: transaction });
+            const template = await prisma.smsTemplate.findUnique({ where: { templateId: templateId } });
             if (!template) {
-                await transaction.rollback();
                 return { success: false, error: 'Template not found' };
             }
 
             if (updateData.messageContent) {
                 if (updateData.messageContent.length > 160) {
-                    await transaction.rollback();
                     return { success: false, error: 'SMS content must be 160 characters or less' };
                 }
                 template.messageContent = updateData.messageContent;
@@ -170,7 +165,7 @@ export class SMSTemplateService {
             if (updateData.description !== undefined) template.description = updateData.description;
             if (updateData.variables !== undefined) template.variables = updateData.variables;
 
-            await template.save({ transaction: transaction });
+            await template.save();
 
             await this.auditLogService.logAction({
                 action: 'SMS_TEMPLATE_UPDATED',
@@ -180,11 +175,9 @@ export class SMSTemplateService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Template updated', template: template };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }

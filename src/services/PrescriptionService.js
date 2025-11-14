@@ -130,7 +130,7 @@ class PrescriptionService {
     // ========== UPDATE PRESCRIPTION ==========
     async updatePrescription(prescriptionId, updateData) {
         try {
-            const prescription = await Prescription.findByPk(prescriptionId);
+            const prescription = await prisma.prescription.findUnique({ where: { prescriptionId: prescriptionId } });
             if (!prescription) {
                 return {
                     success: false,
@@ -154,7 +154,7 @@ class PrescriptionService {
     // ========== ISSUE PRESCRIPTION ==========
     async issuePrescription(prescriptionId) {
         try {
-            const prescription = await Prescription.findByPk(prescriptionId);
+            const prescription = await prisma.prescription.findUnique({ where: { prescriptionId: prescriptionId } });
             if (!prescription) {
                 return {
                     success: false,
@@ -182,7 +182,7 @@ class PrescriptionService {
     // ========== DISPENSE PRESCRIPTION ==========
     async dispensePrescription(prescriptionId, dispensedAt, pharmacy, dispensedBy) {
         try {
-            const prescription = await Prescription.findByPk(prescriptionId);
+            const prescription = await prisma.prescription.findUnique({ where: { prescriptionId: prescriptionId } });
             if (!prescription) {
                 return {
                     success: false,
@@ -214,7 +214,7 @@ class PrescriptionService {
     // ========== REFILL PRESCRIPTION ==========
     async refillPrescription(prescriptionId) {
         try {
-            const prescription = await Prescription.findByPk(prescriptionId);
+            const prescription = await prisma.prescription.findUnique({ where: { prescriptionId: prescriptionId } });
             if (!prescription) {
                 return {
                     success: false,
@@ -248,7 +248,7 @@ class PrescriptionService {
     // ========== VALIDATE PRESCRIPTION ==========
     async validatePrescription(prescriptionId) {
         try {
-            const prescription = await Prescription.findByPk(prescriptionId);
+            const prescription = await prisma.prescription.findUnique({ where: { prescriptionId: prescriptionId } });
             if (!prescription) {
                 return {
                     success: false,

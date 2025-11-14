@@ -39,17 +39,17 @@ export class BookingService {
                 throw new AppError('userId, treatmentId, countryId are required', 400);
             }
 
-            const user = await prisma.user.findUnique({ where: { id: userId, { transaction } } });
+            const user = await prisma.user.findUnique({ where: { id: userId } });
             if (!user) {
                 throw new AppError('User not found', 404);
             }
 
-            const treatment = await prisma.treatment.findUnique({ where: { id: treatmentId, { transaction } } });
+            const treatment = await prisma.treatment.findUnique({ where: { id: treatmentId } });
             if (!treatment) {
                 throw new AppError('Treatment not found', 404);
             }
 
-            const country = await prisma.country.findUnique({ where: { id: countryId, { transaction } } });
+            const country = await prisma.country.findUnique({ where: { id: countryId } });
             if (!country) {
                 throw new AppError('Country not found', 404);
             }
@@ -84,7 +84,7 @@ export class BookingService {
                 totalPrice: 0,
                 notes: bookingData && bookingData.notes ? bookingData.notes : null,
                 createdFrom: bookingData && bookingData.createdFrom ? bookingData.createdFrom : 'web'
-            }, { transaction });
+            });
 
             if (bookingData && bookingData.companions && Array.isArray(bookingData.companions) && bookingData.companions.length > 0) {
                 const companionsData = bookingData.companions.map(companion => ({
@@ -102,7 +102,7 @@ export class BookingService {
                 status: BOOKING_STATUSES.PENDING,
                 changes: { initial: true },
                 createdBy: userId
-            }, { transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'BOOKING_CREATED',
@@ -175,13 +175,13 @@ export class BookingService {
                 throw new AppError('Booking ID is required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            await booking.update(updateData, { transaction });
+            await booking.update(updateData);
 
             await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
@@ -190,7 +190,7 @@ export class BookingService {
                 status: booking.status,
                 changes: updateData,
                 createdBy: booking.userId
-            }, { transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'BOOKING_UPDATED',
@@ -221,7 +221,7 @@ export class BookingService {
                 throw new AppError('Booking ID and step number are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -243,7 +243,7 @@ export class BookingService {
             booking.currentStep = stepNumber;
             booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save();
 
             await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
@@ -252,7 +252,7 @@ export class BookingService {
                 status: booking.status,
                 changes: { previousStep: previousStep, newStep: stepNumber },
                 createdBy: booking.userId
-            }, { transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'BOOKING_STEP_UPDATED',
@@ -337,7 +337,7 @@ export class BookingService {
                 throw new AppError('Booking ID and cancellation reason are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -358,7 +358,7 @@ export class BookingService {
             booking.cancelledAt = new Date();
             booking.cancelledBy = userId;
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save();
 
             await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
@@ -367,7 +367,7 @@ export class BookingService {
                 status: BOOKING_STATUSES.CANCELLED,
                 changes: { previousStatus: previousStatus, reason: cancellationReason },
                 createdBy: userId
-            }, { transaction });
+            });
 
             const payment = await prisma.payment.findFirst({
                 where: { bookingId: bookingId, status: 'completed' },
@@ -377,7 +377,7 @@ export class BookingService {
             if (payment) {
                 payment.status = 'refunded';
                 payment.refundedAt = new Date();
-                /* TODO: Convert to prisma update */ await payment.save({ transaction });
+                /* TODO: Convert to prisma update */ await payment.save();
             }
 
             await this.auditLogService.logAction({
@@ -418,7 +418,7 @@ export class BookingService {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -435,7 +435,7 @@ export class BookingService {
             booking.workflowStartedAt = new Date();
             booking.currentStep = BOOKING_WORKFLOW_STEPS.TREATMENT_SELECTION;
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save();
 
             await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
@@ -444,7 +444,7 @@ export class BookingService {
                 status: booking.status,
                 changes: { step: BOOKING_WORKFLOW_STEPS.TREATMENT_SELECTION },
                 createdBy: userId
-            }, { transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'WORKFLOW_STARTED',
@@ -476,7 +476,7 @@ export class BookingService {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -503,7 +503,7 @@ export class BookingService {
             const nextStep = steps[currentIndex + 1];
 
             booking.currentStep = nextStep;
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save();
 
             await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
@@ -512,7 +512,7 @@ export class BookingService {
                 status: booking.status,
                 changes: { fromStep: previousStep, toStep: nextStep },
                 createdBy: userId
-            }, { transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'WORKFLOW_STEP_ADVANCED',
@@ -544,7 +544,7 @@ export class BookingService {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -565,7 +565,7 @@ export class BookingService {
             const newStep = steps[currentIndex - 1];
 
             booking.currentStep = newStep;
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save();
 
             await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
@@ -574,7 +574,7 @@ export class BookingService {
                 status: booking.status,
                 changes: { fromStep: previousStep, toStep: newStep },
                 createdBy: userId
-            }, { transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'WORKFLOW_STEP_REVERSED',
@@ -606,7 +606,7 @@ export class BookingService {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -625,7 +625,7 @@ export class BookingService {
             booking.status = BOOKING_STATUSES.EXPERT_REVIEW;
             booking.workflowCompletedAt = new Date();
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save();
 
             await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
@@ -634,7 +634,7 @@ export class BookingService {
                 status: BOOKING_STATUSES.EXPERT_REVIEW,
                 changes: { completedAt: new Date() },
                 createdBy: userId
-            }, { transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'WORKFLOW_COMPLETED',
@@ -735,7 +735,7 @@ export class BookingService {
                 throw new AppError('Booking ID, User ID, and notes are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -748,7 +748,7 @@ export class BookingService {
             const previousNotes = booking.notes;
             booking.notes = notes;
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save();
 
             await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
@@ -757,7 +757,7 @@ export class BookingService {
                 status: booking.status,
                 changes: { previousNotes: previousNotes, newNotes: notes },
                 createdBy: userId
-            }, { transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'BOOKING_NOTES_UPDATED',
@@ -792,13 +792,13 @@ export class BookingService {
                 throw new AppError('Booking ID and Treatment ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            const treatment = await prisma.treatment.findUnique({ where: { id: treatmentId, { transaction } } });
+            const treatment = await prisma.treatment.findUnique({ where: { id: treatmentId } });
 
             if (!treatment) {
                 throw new AppError('Treatment not found', 404);
@@ -814,7 +814,7 @@ export class BookingService {
             };
             booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save();
 
             await this.auditLogService.logAction({
                 action: 'STEP_1_COMPLETED',
@@ -841,13 +841,13 @@ export class BookingService {
                 throw new AppError('Booking ID and Country ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            const country = await prisma.country.findUnique({ where: { id: countryId, { transaction } } });
+            const country = await prisma.country.findUnique({ where: { id: countryId } });
 
             if (!country) {
                 throw new AppError('Country not found', 404);
@@ -864,7 +864,7 @@ export class BookingService {
             };
             booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save();
 
             await this.auditLogService.logAction({
                 action: 'STEP_2_COMPLETED',
@@ -891,13 +891,13 @@ export class BookingService {
                 throw new AppError('Booking ID and City ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            const city = await prisma.city.findUnique({ where: { id: cityId, { transaction } } });
+            const city = await prisma.city.findUnique({ where: { id: cityId } });
 
             if (!city) {
                 throw new AppError('City not found', 404);
@@ -914,7 +914,7 @@ export class BookingService {
             };
             booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save();
 
             await this.auditLogService.logAction({
                 action: 'STEP_3_COMPLETED',
@@ -941,13 +941,13 @@ export class BookingService {
                 throw new AppError('Booking ID and Hospital ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            const hospital = await prisma.hospital.findUnique({ where: { id: hospitalId, { transaction } } });
+            const hospital = await prisma.hospital.findUnique({ where: { id: hospitalId } });
 
             if (!hospital) {
                 throw new AppError('Hospital not found', 404);
@@ -964,7 +964,7 @@ export class BookingService {
             };
             booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save();
 
             await this.auditLogService.logAction({
                 action: 'STEP_4_COMPLETED',
@@ -991,13 +991,13 @@ export class BookingService {
                 throw new AppError('Booking ID and Package ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            const packageRecord = await prisma.package.findUnique({ where: { id: packageId, { transaction } } });
+            const packageRecord = await prisma.package.findUnique({ where: { id: packageId } });
 
             if (!packageRecord) {
                 throw new AppError('Package not found', 404);
@@ -1016,7 +1016,7 @@ export class BookingService {
             };
             booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            /* TODO: Convert to prisma update */ await booking.save();
 
             await this.auditLogService.logAction({
                 action: 'STEP_5_COMPLETED',

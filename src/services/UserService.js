@@ -61,7 +61,7 @@ export class UserService {
                 }
             }
 
-            /* TODO: Convert to prisma update */ await user.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */ await user.save();
 
             await this.auditLogService.logAction({
                 action: 'USER_PROFILE_UPDATED',
@@ -102,7 +102,7 @@ export class UserService {
             const hashedPassword = await bcrypt.hash(newPassword, 10);
             user.password = hashedPassword;
             user.passwordChangedAt = new Date();
-            /* TODO: Convert to prisma update */ await user.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */ await user.save();
 
             await this.auditLogService.logAction({
                 action: 'PASSWORD_CHANGED',
@@ -158,7 +158,7 @@ export class UserService {
                 });
             } else {
                 Object.assign(preferences, preferencesData);
-                /* TODO: Convert to prisma update */ await preferences.save({ transaction: transaction });
+                /* TODO: Convert to prisma update */ await preferences.save();
             }
 
             await this.auditLogService.logAction({
@@ -263,7 +263,7 @@ export class UserService {
                 }
             }
 
-            /* TODO: Convert to prisma update */ await address.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */ await address.save();
 
             await this.auditLogService.logAction({
                 action: 'ADDRESS_UPDATED',
@@ -297,7 +297,7 @@ export class UserService {
                 throw new AppError('Address not found', 404);
             }
 
-            await prisma.address.delete({ transaction: transaction });
+            await prisma.address.delete();
 
             await this.auditLogService.logAction({
                 action: 'ADDRESS_DELETED',
@@ -365,7 +365,7 @@ export class UserService {
             user.isActive = false;
             user.deactivatedAt = new Date();
             user.deactivationReason = reason || null;
-            /* TODO: Convert to prisma update */ await user.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */ await user.save();
 
             await this.auditLogService.logAction({
                 action: 'USER_DEACTIVATED',
@@ -398,7 +398,7 @@ export class UserService {
             user.isActive = true;
             user.deactivatedAt = null;
             user.deactivationReason = null;
-            /* TODO: Convert to prisma update */ await user.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */ await user.save();
 
             await this.auditLogService.logAction({
                 action: 'USER_REACTIVATED',

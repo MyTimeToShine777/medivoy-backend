@@ -144,13 +144,13 @@ export class PaymentGatewayService {
 
             payment.status = 'completed';
             payment.verifiedAt = new Date();
-            /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */ await payment.save();
 
             // Update booking status
             const booking = await prisma.booking.findUnique({ where: { id: payment.bookingId } });
             if (booking) {
                 booking.paymentStatus = 'completed';
-                /* TODO: Convert to prisma update */ await booking.save({ transaction: transaction });
+                /* TODO: Convert to prisma update */ await booking.save();
             }
 
             await this.auditLogService.logAction({
@@ -220,7 +220,7 @@ export class PaymentGatewayService {
             payment.refundReason = refundData.reason || null;
             payment.refundedAt = new Date();
             payment.refundGatewayId = refundResponse.id;
-            /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */ await payment.save();
 
             await this.auditLogService.logAction({
                 action: 'PAYMENT_REFUNDED',
@@ -316,7 +316,7 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'completed';
                     payment.verifiedAt = new Date();
-                    /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
+                    /* TODO: Convert to prisma update */ await payment.save();
                 }
             } else if (eventType === 'payment.failed') {
                 const payment = await prisma.payment.findFirst({
@@ -327,7 +327,7 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'failed';
                     payment.failureReason = eventData.error_description;
-                    /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
+                    /* TODO: Convert to prisma update */ await payment.save();
                 }
             }
 
@@ -360,7 +360,7 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'completed';
                     payment.verifiedAt = new Date();
-                    /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
+                    /* TODO: Convert to prisma update */ await payment.save();
                 }
             } else if (eventType === 'payment_intent.payment_failed') {
                 const payment = await prisma.payment.findFirst({
@@ -371,7 +371,7 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'failed';
                     payment.failureReason = eventData.last_payment_error.message;
-                    /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
+                    /* TODO: Convert to prisma update */ await payment.save();
                 }
             }
 

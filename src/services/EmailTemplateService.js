@@ -30,7 +30,6 @@ export class EmailTemplateService {
             });
 
             if (existing) {
-                await transaction.rollback();
                 throw new AppError('Template already exists', 409);
             }
 
@@ -46,7 +45,7 @@ export class EmailTemplateService {
                 description: templateData.description || null,
                 isActive: true,
                 createdAt: new Date()
-            }, { transaction: transaction });
+            });
 
             await this.auditLogService.logAction({
                 action: 'EMAIL_TEMPLATE_CREATED',
@@ -56,7 +55,6 @@ export class EmailTemplateService {
                 details: { templateName: templateData.templateName }
             }, transaction);
 
-            await transaction.commit();
 
             return {
                 success: true,
@@ -64,7 +62,6 @@ export class EmailTemplateService {
                 template: template
             };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }
@@ -149,9 +146,8 @@ export class EmailTemplateService {
                 return { success: false, error: 'Required parameters missing' };
             }
 
-            const template = await EmailTemplate.findByPk(templateId, { transaction: transaction });
+            const template = await prisma.emailTemplate.findUnique({ where: { templateId: templateId } });
             if (!template) {
-                await transaction.rollback();
                 return { success: false, error: 'Template not found' };
             }
 
@@ -162,7 +158,7 @@ export class EmailTemplateService {
                 }
             }
 
-            await template.save({ transaction: transaction });
+            await template.save();
 
             await this.auditLogService.logAction({
                 action: 'EMAIL_TEMPLATE_UPDATED',
@@ -172,11 +168,9 @@ export class EmailTemplateService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Template updated', template: template };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }
@@ -188,13 +182,12 @@ export class EmailTemplateService {
                 return { success: false, error: 'Template ID required' };
             }
 
-            const template = await EmailTemplate.findByPk(templateId, { transaction: transaction });
+            const template = await prisma.emailTemplate.findUnique({ where: { templateId: templateId } });
             if (!template) {
-                await transaction.rollback();
                 return { success: false, error: 'Template not found' };
             }
 
-            await template.destroy({ transaction: transaction });
+            await template.destroy();
 
             await this.auditLogService.logAction({
                 action: 'EMAIL_TEMPLATE_DELETED',
@@ -204,11 +197,9 @@ export class EmailTemplateService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Template deleted' };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }
