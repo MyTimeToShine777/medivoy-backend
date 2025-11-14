@@ -185,7 +185,10 @@ class FAQService {
 
             faq.isPublished = true;
             faq.publishedAt = new Date();
-            await faq.save();
+            await prisma.faq.update({
+                where: { faqId: faq.faqId },
+                data: { isPublished: true, publishedAt: new Date() }
+            });
 
             return { success: true, data: faq, message: 'FAQ published' };
         } catch (error) {
@@ -203,7 +206,10 @@ class FAQService {
             }
 
             faq.isPublished = false;
-            await faq.save();
+            await prisma.faq.update({
+                where: { faqId: faq.faqId },
+                data: { isPublished: false }
+            });
 
             return { success: true, data: faq, message: 'FAQ unpublished' };
         } catch (error) {
@@ -221,7 +227,10 @@ class FAQService {
             }
 
             faq.helpfulCount = (faq.helpfulCount || 0) + 1;
-            await faq.save();
+            await prisma.faq.update({
+                where: { faqId: faq.faqId },
+                data: { helpfulCount: (faq.helpfulCount || 0) + 1 }
+            });
 
             return { success: true, data: faq };
         } catch (error) {
@@ -239,7 +248,10 @@ class FAQService {
             }
 
             faq.unhelpfulCount = (faq.unhelpfulCount || 0) + 1;
-            await faq.save();
+            await prisma.faq.update({
+                where: { faqId: faq.faqId },
+                data: { unhelpfulCount: (faq.unhelpfulCount || 0) + 1 }
+            });
 
             return { success: true, data: faq };
         } catch (error) {
@@ -256,7 +268,9 @@ class FAQService {
                 return { success: false, error: 'FAQ not found' };
             }
 
-            await faq.destroy();
+            await prisma.faq.delete({
+                where: { faqId: faq.faqId }
+            });
 
             return { success: true, message: 'FAQ deleted successfully' };
         } catch (error) {

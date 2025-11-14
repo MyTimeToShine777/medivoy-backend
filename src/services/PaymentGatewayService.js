@@ -91,8 +91,6 @@ export class PaymentGatewayService {
                 details: { gateway: gateway, amount: paymentData.amount }
             }, transaction);
 
-            
-
             return {
                 success: true,
                 message: 'Payment initiated',
@@ -144,13 +142,19 @@ export class PaymentGatewayService {
 
             payment.status = 'completed';
             payment.verifiedAt = new Date();
-            /* TODO: Convert to prisma update */ await payment.save();
+            await prisma.payment.update({
+                where: { paymentId: payment.paymentId },
+                data: { status: 'completed', verifiedAt: new Date() }
+            });
 
             // Update booking status
             const booking = await prisma.booking.findUnique({ where: { id: payment.bookingId } });
             if (booking) {
                 booking.paymentStatus = 'completed';
-                /* TODO: Convert to prisma update */ await booking.save();
+                await prisma.booking.update({
+                    where: { bookingId: booking.bookingId },
+                    data: { paymentStatus: 'completed' }
+                });
             }
 
             await this.auditLogService.logAction({
@@ -166,8 +170,6 @@ export class PaymentGatewayService {
                 amount: payment.amount,
                 currency: payment.currency
             });
-
-            
 
             return { success: true, message: 'Payment verified', payment: payment };
         } catch (error) {
@@ -220,7 +222,10 @@ export class PaymentGatewayService {
             payment.refundReason = refundData.reason || null;
             payment.refundedAt = new Date();
             payment.refundGatewayId = refundResponse.id;
-            /* TODO: Convert to prisma update */ await payment.save();
+            await prisma.payment.update({
+                where: { paymentId: payment.paymentId },
+                data: { status: 'refunded', refundAmount: refundData.amount || payment.amount, refundReason: refundData.reason || null, refundedAt: new Date(), refundGatewayId: refundResponse.id }
+            });
 
             await this.auditLogService.logAction({
                 action: 'PAYMENT_REFUNDED',
@@ -234,8 +239,6 @@ export class PaymentGatewayService {
                 paymentId: paymentId,
                 refundAmount: payment.refundAmount
             });
-
-            
 
             return { success: true, message: 'Refund processed', payment: payment };
         } catch (error) {
@@ -278,8 +281,6 @@ export class PaymentGatewayService {
                 details: { gateway: gateway }
             }, transaction);
 
-            
-
             return {
                 success: true,
                 message: 'Subscription created',
@@ -316,7 +317,10 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'completed';
                     payment.verifiedAt = new Date();
-                    /* TODO: Convert to prisma update */ await payment.save();
+                    await prisma.payment.update({
+                        where: { paymentId: payment.paymentId },
+                        data: { status: 'completed', verifiedAt: new Date() }
+                    });
                 }
             } else if (eventType === 'payment.failed') {
                 const payment = await prisma.payment.findFirst({
@@ -327,11 +331,12 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'failed';
                     payment.failureReason = eventData.error_description;
-                    /* TODO: Convert to prisma update */ await payment.save();
+                    await prisma.payment.update({
+                        where: { paymentId: payment.paymentId },
+                        data: { status: 'failed', failureReason: eventData.error_description }
+                    });
                 }
             }
-
-            
 
             return { success: true, message: 'Webhook processed' };
         } catch (error) {
@@ -360,7 +365,10 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'completed';
                     payment.verifiedAt = new Date();
-                    /* TODO: Convert to prisma update */ await payment.save();
+                    await prisma.payment.update({
+                        where: { paymentId: payment.paymentId },
+                        data: { status: 'completed', verifiedAt: new Date() }
+                    });
                 }
             } else if (eventType === 'payment_intent.payment_failed') {
                 const payment = await prisma.payment.findFirst({
@@ -371,11 +379,12 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'failed';
                     payment.failureReason = eventData.last_payment_error.message;
-                    /* TODO: Convert to prisma update */ await payment.save();
+                    await prisma.payment.update({
+                        where: { paymentId: payment.paymentId },
+                        data: { status: 'failed', failureReason: eventData.last_payment_error.message }
+                    });
                 }
             }
-
-            
 
             return { success: true, message: 'Webhook processed' };
         } catch (error) {

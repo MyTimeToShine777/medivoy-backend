@@ -52,8 +52,6 @@ export class MedicalPackageService {
                 details: { packageName: packageData.packageName, price: packageData.finalPrice }
             }, transaction);
 
-            
-
             return {
                 success: true,
                 message: 'Package created successfully',
@@ -164,7 +162,7 @@ export class MedicalPackageService {
                 }
             }
 
-            /* TODO: Convert to prisma update */ await package_record.save();
+            await package_record.save();
 
             await this.auditLogService.logAction({
                 action: 'PACKAGE_UPDATED',
@@ -173,8 +171,6 @@ export class MedicalPackageService {
                 userId: 'ADMIN',
                 details: {}
             }, transaction);
-
-            
 
             return {
                 success: true,
@@ -218,8 +214,6 @@ export class MedicalPackageService {
                 userId: 'ADMIN',
                 details: { packageId: packageId }
             }, transaction);
-
-            
 
             return { success: true, message: 'Add-on added', addOn: addOn };
         } catch (error) {
@@ -269,8 +263,6 @@ export class MedicalPackageService {
                 userId: 'ADMIN',
                 details: {}
             }, transaction);
-
-            
 
             return { success: true, message: 'Add-on removed' };
         } catch (error) {

@@ -305,7 +305,10 @@ class NotificationService {
 
             notification.isRead = true;
             notification.readAt = new Date();
-            await notification.save();
+            await prisma.notification.update({
+                where: { notificationId: notification.notificationId },
+                data: { isRead: true, readAt: new Date() }
+            });
 
             return {
                 success: true,

@@ -69,7 +69,6 @@ export class TravelArrangementService {
                 departureDate: flightData.departureDate
             });
 
-
             return { success: true, message: 'Flight booked', flight: flight };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -104,7 +103,10 @@ export class TravelArrangementService {
             flight.status = 'cancelled';
             flight.cancellationReason = reason || null;
             flight.cancelledAt = new Date();
-            await flight.save();
+            await prisma.flight.update({
+                where: { flightId: flight.flightId },
+                data: { status: 'cancelled', cancellationReason: reason || null, cancelledAt: new Date() }
+            });
 
             await this.auditLogService.logAction({
                 action: 'FLIGHT_CANCELLED',
@@ -113,7 +115,6 @@ export class TravelArrangementService {
                 userId: userId,
                 details: { reason: reason }
             }, transaction);
-
 
             return { success: true, message: 'Flight cancelled' };
         } catch (error) {
@@ -173,7 +174,6 @@ export class TravelArrangementService {
                 checkInDate: hotelData.checkInDate
             });
 
-
             return { success: true, message: 'Hotel booked', hotel: hotel };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -209,7 +209,7 @@ export class TravelArrangementService {
             if (updateData.roomType) hotel.roomType = updateData.roomType;
             if (updateData.price) hotel.price = updateData.price;
 
-            await hotel.save();
+            // FIXME: Convert to: await prisma.hotel.update({ where: { hotelId: hotel.hotelId }, data: { /* fields */ } });
 
             await this.auditLogService.logAction({
                 action: 'HOTEL_BOOKING_UPDATED',
@@ -218,7 +218,6 @@ export class TravelArrangementService {
                 userId: userId,
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Updated', hotel: hotel };
         } catch (error) {
@@ -239,7 +238,10 @@ export class TravelArrangementService {
             hotel.status = 'cancelled';
             hotel.cancellationReason = reason || null;
             hotel.cancelledAt = new Date();
-            await hotel.save();
+            await prisma.hotel.update({
+                where: { hotelId: hotel.hotelId },
+                data: { status: 'cancelled', cancellationReason: reason || null, cancelledAt: new Date() }
+            });
 
             await this.auditLogService.logAction({
                 action: 'HOTEL_CANCELLED',
@@ -248,7 +250,6 @@ export class TravelArrangementService {
                 userId: userId,
                 details: { reason: reason }
             }, transaction);
-
 
             return { success: true, message: 'Cancelled' };
         } catch (error) {
@@ -299,7 +300,6 @@ export class TravelArrangementService {
                 transportType: transportData.transportType,
                 pickupDate: transportData.pickupDate
             });
-
 
             return { success: true, message: 'Transportation booked', transport: transport };
         } catch (error) {

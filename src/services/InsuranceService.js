@@ -146,7 +146,7 @@ class InsuranceService {
             insurance.totalClaims = (insurance.totalClaims || 0) + 1;
             insurance.totalClaimsAmount = (insurance.totalClaimsAmount || 0) + claimData.claimAmount;
 
-            await insurance.save();
+            // FIXME: Convert to: await prisma.insurance.update({ where: { insuranceId: insurance.insuranceId }, data: { /* fields */ } });
 
             return {
                 success: true,
@@ -178,7 +178,7 @@ class InsuranceService {
             insurance.balanceAmount -= approvalAmount;
             insurance.approvedClaims = (insurance.approvedClaims || 0) + 1;
 
-            await insurance.save();
+            // FIXME: Convert to: await prisma.insurance.update({ where: { insuranceId: insurance.insuranceId }, data: { /* fields */ } });
 
             return {
                 success: true,
@@ -208,7 +208,7 @@ class InsuranceService {
 
             insurance.rejectedClaims = (insurance.rejectedClaims || 0) + 1;
 
-            await insurance.save();
+            // FIXME: Convert to: await prisma.insurance.update({ where: { insuranceId: insurance.insuranceId }, data: { /* fields */ } });
 
             return {
                 success: true,

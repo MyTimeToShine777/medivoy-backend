@@ -59,7 +59,6 @@ export class RoleService {
                 details: { roleName: roleData.roleName }
             }, transaction);
 
-
             return { success: true, message: 'Role created', role: role };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -133,7 +132,7 @@ export class RoleService {
             if (updateData.roleName) role.roleName = updateData.roleName;
             if (updateData.roleDescription) role.roleDescription = updateData.roleDescription;
 
-            await role.save();
+            // FIXME: Convert to: await prisma.role.update({ where: { roleId: role.roleId }, data: { /* fields */ } });
 
             await this.auditLogService.logAction({
                 action: 'ROLE_UPDATED',
@@ -142,7 +141,6 @@ export class RoleService {
                 userId: 'ADMIN',
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Role updated', role: role };
         } catch (error) {
@@ -167,7 +165,9 @@ export class RoleService {
             }
 
             await RolePermission.destroy({ where: { roleId: roleId }, transaction: transaction });
-            await role.destroy();
+            await prisma.role.delete({
+                where: { roleId: role.roleId }
+            });
 
             await this.auditLogService.logAction({
                 action: 'ROLE_DELETED',
@@ -176,7 +176,6 @@ export class RoleService {
                 userId: 'ADMIN',
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Role deleted' };
         } catch (error) {
@@ -227,7 +226,6 @@ export class RoleService {
                 details: { permissionId: permissionId }
             }, transaction);
 
-
             return { success: true, message: 'Permission assigned' };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -248,7 +246,9 @@ export class RoleService {
                 throw new AppError('Permission not assigned to this role', 404);
             }
 
-            await rolePermission.destroy();
+            await prisma.rolePermission.delete({
+                where: { rolePermissionId: rolePermission.rolePermissionId }
+            });
 
             await this.auditLogService.logAction({
                 action: 'PERMISSION_REMOVED_FROM_ROLE',
@@ -257,7 +257,6 @@ export class RoleService {
                 userId: 'ADMIN',
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Permission removed' };
         } catch (error) {

@@ -55,7 +55,6 @@ export class EmailTemplateService {
                 details: { templateName: templateData.templateName }
             }, transaction);
 
-
             return {
                 success: true,
                 message: 'Email template created',
@@ -156,7 +155,7 @@ export class EmailTemplateService {
                 }
             }
 
-            await template.save();
+            // FIXME: Convert to: await prisma.template.update({ where: { templateId: template.templateId }, data: { /* fields */ } });
 
             await this.auditLogService.logAction({
                 action: 'EMAIL_TEMPLATE_UPDATED',
@@ -165,7 +164,6 @@ export class EmailTemplateService {
                 userId: 'ADMIN',
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Template updated', template: template };
         } catch (error) {
@@ -185,7 +183,9 @@ export class EmailTemplateService {
                 return { success: false, error: 'Template not found' };
             }
 
-            await template.destroy();
+            await prisma.template.delete({
+                where: { templateId: template.templateId }
+            });
 
             await this.auditLogService.logAction({
                 action: 'EMAIL_TEMPLATE_DELETED',
@@ -194,7 +194,6 @@ export class EmailTemplateService {
                 userId: 'ADMIN',
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Template deleted' };
         } catch (error) {

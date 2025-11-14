@@ -124,8 +124,6 @@ export class ChatMessageService {
                 return { success: false, error: 'Message ID is required' };
             }
 
-            
-
             const message = await prisma.chatMessage.findUnique({ where: { messageId: messageId } });
 
             if (!message) {
@@ -168,8 +166,6 @@ export class ChatMessageService {
                 return { success: false, error: 'Conversation ID is required' };
             }
 
-            
-
             const updated = await ChatMessage.update({ isRead: true, readAt: new Date() }, {
                 where: {
                     conversationId,
@@ -199,8 +195,6 @@ export class ChatMessageService {
             if (!messageId) {
                 return { success: false, error: 'Message ID is required' };
             }
-
-            
 
             const message = await prisma.chatMessage.findUnique({ where: { messageId: messageId } });
 
@@ -239,8 +233,6 @@ export class ChatMessageService {
             if (!conversationId) {
                 return { success: false, error: 'Conversation ID is required' };
             }
-
-            
 
             const count = await prisma.chatMessage.count({
                 where: {

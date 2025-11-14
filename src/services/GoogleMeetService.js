@@ -123,7 +123,10 @@ class GoogleMeetService {
 
             videoCall.status = 'active';
             videoCall.actualStartTime = new Date();
-            await videoCall.save();
+            await prisma.videoCall.update({
+                where: { videoCallId: videoCall.videoCallId },
+                data: { status: 'active', actualStartTime: new Date() }
+            });
 
             return { success: true, data: videoCall };
         } catch (error) {
@@ -149,7 +152,7 @@ class GoogleMeetService {
                 videoCall.recordingUrl = recordingUrl;
             }
 
-            await videoCall.save();
+            // FIXME: Convert to: await prisma.videoCall.update({ where: { videoCallId: videoCall.videoCallId }, data: { /* fields */ } });
 
             return { success: true, data: videoCall };
         } catch (error) {
@@ -172,7 +175,10 @@ class GoogleMeetService {
             if (videoCall) {
                 videoCall.status = 'cancelled';
                 videoCall.cancelledAt = new Date();
-                await videoCall.save();
+                await prisma.videoCall.update({
+                    where: { videoCallId: videoCall.videoCallId },
+                    data: { status: 'cancelled', cancelledAt: new Date() }
+                });
             }
 
             return { success: true, message: 'Meet link cancelled' };

@@ -12,8 +12,6 @@ export class ProfileService {
                 return { success: false, error: 'User ID is required' };
             }
 
-            
-
             const profile = await prisma.profile.findFirst({
                 where: { userId }
             });
@@ -47,8 +45,6 @@ export class ProfileService {
                 return { success: false, error: 'Update data is required' };
             }
 
-            
-
             const profile = await prisma.profile.findFirst({ where: { userId } });
 
             if (!profile) {
@@ -79,8 +75,6 @@ export class ProfileService {
             if (!userId) {
                 return { success: false, error: 'User ID is required' };
             }
-
-            
 
             // Check if profile already exists
             const existingProfile = await prisma.profile.findFirst({ where: { userId } });
@@ -116,8 +110,6 @@ export class ProfileService {
             if (!userId) {
                 return { success: false, error: 'User ID is required' };
             }
-
-            
 
             const deleted = await Profile.destroy({ where: { userId } });
 

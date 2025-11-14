@@ -63,7 +63,6 @@ export class LaboratoryService {
                 details: { testName: testData.testName, hospitalId: hospitalId }
             }, transaction);
 
-
             return { success: true, message: 'Lab test created', labTest: labTest };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -160,7 +159,6 @@ export class LaboratoryService {
                 testCount: tests.length
             });
 
-
             return { success: true, message: 'Lab order created', labOrder: labOrder };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -236,7 +234,10 @@ export class LaboratoryService {
 
             order.status = 'results_ready';
             order.resultReadyAt = new Date();
-            await order.save();
+            await prisma.order.update({
+                where: { orderId: order.orderId },
+                data: { status: 'results_ready', resultReadyAt: new Date() }
+            });
 
             await this.auditLogService.logAction({
                 action: 'LAB_RESULT_UPLOADED',
@@ -249,7 +250,6 @@ export class LaboratoryService {
             await this.notificationService.sendNotification(order.userId, 'LAB_RESULT_READY', {
                 orderId: orderId
             });
-
 
             return { success: true, message: 'Result uploaded', labResult: labResult };
         } catch (error) {
@@ -336,7 +336,6 @@ export class LaboratoryService {
                 userId: 'ADMIN',
                 details: { packageName: packageData.packageName }
             }, transaction);
-
 
             return { success: true, message: 'Package created', labPackage: labPackage };
         } catch (error) {

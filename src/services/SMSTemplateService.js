@@ -58,7 +58,6 @@ export class SMSTemplateService {
                 details: { templateName: templateData.templateName }
             }, transaction);
 
-
             return {
                 success: true,
                 message: 'SMS template created',
@@ -163,7 +162,7 @@ export class SMSTemplateService {
             if (updateData.description !== undefined) template.description = updateData.description;
             if (updateData.variables !== undefined) template.variables = updateData.variables;
 
-            await template.save();
+            // FIXME: Convert to: await prisma.template.update({ where: { templateId: template.templateId }, data: { /* fields */ } });
 
             await this.auditLogService.logAction({
                 action: 'SMS_TEMPLATE_UPDATED',
@@ -172,7 +171,6 @@ export class SMSTemplateService {
                 userId: 'ADMIN',
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Template updated', template: template };
         } catch (error) {

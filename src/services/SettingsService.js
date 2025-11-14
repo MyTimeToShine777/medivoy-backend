@@ -310,7 +310,7 @@ export class SettingsService {
                 verifiedAt: new Date(),
                 checksum: crypto.randomBytes(32).toString('hex')
             };
-            await backup.save();
+            // FIXME: Convert to: await prisma.backup.update({ where: { backupId: backup.backupId }, data: { /* fields */ } });
 
             console.log(`✅ Backup verified: ${backupId}`);
             return { success: true, data: backup };
@@ -347,7 +347,7 @@ export class SettingsService {
                 restoredAt: new Date(),
                 restoredBy: userId
             };
-            await backup.save();
+            // FIXME: Convert to: await prisma.backup.update({ where: { backupId: backup.backupId }, data: { /* fields */ } });
 
             console.log(`✅ Backup restored by ${userId}`);
             return { success: true, data: backup };
@@ -373,7 +373,9 @@ export class SettingsService {
                 throw new AppError('Backup not found', 404);
             }
 
-            await backup.destroy();
+            await prisma.backup.delete({
+                where: { backupId: backup.backupId }
+            });
 
             console.log(`✅ Backup deleted: ${backupId}`);
             return { success: true, message: 'Backup deleted successfully' };

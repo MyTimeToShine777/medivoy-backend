@@ -92,7 +92,10 @@ export class AppointmentService {
             // Mark slot as unavailable
             slot.isAvailable = false;
             slot.bookedBy = userId;
-            await slot.save();
+            await prisma.slot.update({
+                where: { slotId: slot.slotId },
+                data: { isAvailable: false, bookedBy: userId }
+            });
 
             await this.auditLogService.logAction({
                 action: 'APPOINTMENT_BOOKED',
@@ -107,7 +110,6 @@ export class AppointmentService {
                 doctorName: doctor.firstName + ' ' + doctor.lastName,
                 date: appointmentData.appointmentDate
             });
-
 
             return { success: true, message: 'Appointment booked', appointment: appointment };
         } catch (error) {
@@ -227,7 +229,10 @@ export class AppointmentService {
             if (oldSlot) {
                 oldSlot.isAvailable = true;
                 oldSlot.bookedBy = null;
-                await oldSlot.save();
+                await prisma.oldSlot.update({
+                    where: { oldSlotId: oldSlot.oldSlotId },
+                    data: { isAvailable: true, bookedBy: null }
+                });
             }
 
             // Find new slot
@@ -250,11 +255,17 @@ export class AppointmentService {
             appointment.endTime = newData.endTime;
             appointment.rescheduledAt = new Date();
             appointment.rescheduledCount = (appointment.rescheduledCount || 0) + 1;
-            await appointment.save();
+            await prisma.appointment.update({
+                where: { appointmentId: appointment.appointmentId },
+                data: { appointmentDate: newData.appointmentDate, startTime: newData.startTime, endTime: newData.endTime, rescheduledAt: new Date(), rescheduledCount: (appointment.rescheduledCount || 0) + 1 }
+            });
 
             newSlot.isAvailable = false;
             newSlot.bookedBy = userId;
-            await newSlot.save();
+            await prisma.newSlot.update({
+                where: { newSlotId: newSlot.newSlotId },
+                data: { isAvailable: false, bookedBy: userId }
+            });
 
             await this.auditLogService.logAction({
                 action: 'APPOINTMENT_RESCHEDULED',
@@ -263,7 +274,6 @@ export class AppointmentService {
                 userId: userId,
                 details: { newDate: newData.appointmentDate }
             }, transaction);
-
 
             return { success: true, message: 'Rescheduled', appointment: appointment };
         } catch (error) {
@@ -292,7 +302,10 @@ export class AppointmentService {
             appointment.status = 'cancelled';
             appointment.cancellationReason = reason || null;
             appointment.cancelledAt = new Date();
-            await appointment.save();
+            await prisma.appointment.update({
+                where: { appointmentId: appointment.appointmentId },
+                data: { status: 'cancelled', cancellationReason: reason || null, cancelledAt: new Date() }
+            });
 
             // Free up the slot
             const slot = await tx.appointmentSlot.findFirst({
@@ -307,7 +320,10 @@ export class AppointmentService {
             if (slot) {
                 slot.isAvailable = true;
                 slot.bookedBy = null;
-                await slot.save();
+                await prisma.slot.update({
+                    where: { slotId: slot.slotId },
+                    data: { isAvailable: true, bookedBy: null }
+                });
             }
 
             await this.auditLogService.logAction({
@@ -322,7 +338,6 @@ export class AppointmentService {
                 appointmentId: appointmentId,
                 reason: reason
             });
-
 
             return { success: true, message: 'Cancelled' };
         } catch (error) {
@@ -366,7 +381,6 @@ export class AppointmentService {
                 details: {}
             }, transaction);
 
-
             return { success: true, message: 'Consultation created', consultation: expertCall };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -389,7 +403,10 @@ export class AppointmentService {
 
             call.status = 'in_progress';
             call.startedAt = new Date();
-            await call.save();
+            await prisma.call.update({
+                where: { callId: call.callId },
+                data: { status: 'in_progress', startedAt: new Date() }
+            });
 
             await this.auditLogService.logAction({
                 action: 'CONSULTATION_STARTED',
@@ -398,7 +415,6 @@ export class AppointmentService {
                 userId: userId,
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Consultation started' };
         } catch (error) {
@@ -421,13 +437,19 @@ export class AppointmentService {
             call.consultationNotes = consultationNotes || null;
             const duration = call.endedAt - call.startedAt;
             call.durationInMinutes = Math.round(duration / 60000);
-            await call.save();
+            await prisma.call.update({
+                where: { callId: call.callId },
+                data: { status: 'completed', endedAt: new Date(), consultationNotes: consultationNotes || null, durationInMinutes: Math.round(duration / 60000) }
+            });
 
             // Update appointment status
             const appointment = await tx.appointment.findUnique({ where: { appointmentId: call.appointmentId } });
             if (appointment) {
                 appointment.status = 'completed';
-                await appointment.save();
+                await prisma.appointment.update({
+                    where: { appointmentId: appointment.appointmentId },
+                    data: { status: 'completed' }
+                });
             }
 
             await this.auditLogService.logAction({
@@ -437,7 +459,6 @@ export class AppointmentService {
                 userId: userId,
                 details: { duration: call.durationInMinutes }
             }, transaction);
-
 
             return { success: true, message: 'Consultation ended' };
         } catch (error) {
@@ -476,7 +497,6 @@ export class AppointmentService {
                 userId: 'ADMIN',
                 details: { doctorId: doctorId, slotCount: slots.length }
             }, transaction);
-
 
             return { success: true, message: 'Slots created', slots: slots };
         } catch (error) {

@@ -55,8 +55,6 @@ export class TranslationWorkerService {
                 createdAt: new Date()
             });
 
-            
-
             // Emit worker event or trigger async job
             console.log(`✅ Translation worker triggered for language: ${newLocale}`);
 
@@ -115,8 +113,6 @@ export class TranslationWorkerService {
                 status: 'completed',
                 createdAt: new Date()
             });
-
-            
 
             console.log(`✅ Processed ${pendingTranslations.length} translations for ${language}`);
 
@@ -197,7 +193,10 @@ export class TranslationWorkerService {
                 } else {
                     invalidCount++;
                     t.status = 'review_needed';
-                    await t.save();
+                    await prisma.t.update({
+                        where: { tId: t.tId },
+                        data: { status: 'review_needed' }
+                    });
                 }
             }
 

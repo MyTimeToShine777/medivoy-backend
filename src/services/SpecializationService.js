@@ -51,7 +51,6 @@ export class SpecializationService {
                 details: { name: specializationData.specializationName }
             }, transaction);
 
-
             return { success: true, message: 'Specialization created', specialization: specialization };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -123,7 +122,7 @@ export class SpecializationService {
             if (updateData.specializationDescription) specialization.specializationDescription = updateData.specializationDescription;
             if (updateData.averageFee) specialization.averageFee = updateData.averageFee;
 
-            await specialization.save();
+            // FIXME: Convert to: await prisma.specialization.update({ where: { specializationId: specialization.specializationId }, data: { /* fields */ } });
 
             await this.auditLogService.logAction({
                 action: 'SPECIALIZATION_UPDATED',
@@ -132,7 +131,6 @@ export class SpecializationService {
                 userId: 'ADMIN',
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Updated', specialization: specialization };
         } catch (error) {

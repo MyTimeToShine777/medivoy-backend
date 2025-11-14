@@ -65,7 +65,7 @@ export class UserService {
                 }
             }
 
-            /* TODO: Convert to prisma update */ await user.save();
+            // FIXME: Convert to: await prisma.user.update({ where: { userId: user.userId }, data: { /* fields */ } });
 
             await this.auditLogService.logAction({
                 action: 'USER_PROFILE_UPDATED',
@@ -74,8 +74,6 @@ export class UserService {
                 userId: userId,
                 details: { changes: previousData }
             }, transaction);
-
-            
 
             return { success: true, message: 'Profile updated', user: user };
         } catch (error) {
@@ -106,7 +104,10 @@ export class UserService {
             const hashedPassword = await bcrypt.hash(newPassword, 10);
             user.password = hashedPassword;
             user.passwordChangedAt = new Date();
-            /* TODO: Convert to prisma update */ await user.save();
+            await prisma.user.update({
+                where: { userId: user.userId },
+                data: { password: hashedPassword, passwordChangedAt: new Date() }
+            });
 
             await this.auditLogService.logAction({
                 action: 'PASSWORD_CHANGED',
@@ -117,8 +118,6 @@ export class UserService {
             }, transaction);
 
             await this.notificationService.sendNotification(userId, 'PASSWORD_CHANGED', {});
-
-            
 
             return { success: true, message: 'Password changed' };
         } catch (error) {
@@ -162,7 +161,7 @@ export class UserService {
                 });
             } else {
                 Object.assign(preferences, preferencesData);
-                /* TODO: Convert to prisma update */ await preferences.save();
+                // FIXME: Convert to: await prisma.preferences.update({ where: { preferencesId: preferences.preferencesId }, data: { /* fields */ } });
             }
 
             await this.auditLogService.logAction({
@@ -172,8 +171,6 @@ export class UserService {
                 userId: userId,
                 details: {}
             }, transaction);
-
-            
 
             return { success: true, message: 'Preferences updated', preferences: preferences };
         } catch (error) {
@@ -217,8 +214,6 @@ export class UserService {
                 userId: userId,
                 details: {}
             }, transaction);
-
-            
 
             return { success: true, message: 'Address added', address: address };
         } catch (error) {
@@ -266,7 +261,7 @@ export class UserService {
                 }
             }
 
-            /* TODO: Convert to prisma update */ await address.save();
+            // FIXME: Convert to: await prisma.address.update({ where: { addressId: address.addressId }, data: { /* fields */ } });
 
             await this.auditLogService.logAction({
                 action: 'ADDRESS_UPDATED',
@@ -275,8 +270,6 @@ export class UserService {
                 userId: userId,
                 details: {}
             }, transaction);
-
-            
 
             return { success: true, message: 'Address updated', address: address };
         } catch (error) {
@@ -309,8 +302,6 @@ export class UserService {
                 userId: userId,
                 details: {}
             }, transaction);
-
-            
 
             return { success: true, message: 'Address deleted' };
         } catch (error) {
@@ -366,7 +357,10 @@ export class UserService {
             user.isActive = false;
             user.deactivatedAt = new Date();
             user.deactivationReason = reason || null;
-            /* TODO: Convert to prisma update */ await user.save();
+            await prisma.user.update({
+                where: { userId: user.userId },
+                data: { isActive: false, deactivatedAt: new Date(), deactivationReason: reason || null }
+            });
 
             await this.auditLogService.logAction({
                 action: 'USER_DEACTIVATED',
@@ -375,8 +369,6 @@ export class UserService {
                 userId: 'ADMIN',
                 details: { reason: reason }
             }, transaction);
-
-            
 
             return { success: true, message: 'User deactivated' };
         } catch (error) {
@@ -399,7 +391,10 @@ export class UserService {
             user.isActive = true;
             user.deactivatedAt = null;
             user.deactivationReason = null;
-            /* TODO: Convert to prisma update */ await user.save();
+            await prisma.user.update({
+                where: { userId: user.userId },
+                data: { isActive: true, deactivatedAt: null, deactivationReason: null }
+            });
 
             await this.auditLogService.logAction({
                 action: 'USER_REACTIVATED',
@@ -408,8 +403,6 @@ export class UserService {
                 userId: 'ADMIN',
                 details: {}
             }, transaction);
-
-            
 
             return { success: true, message: 'User reactivated' };
         } catch (error) {

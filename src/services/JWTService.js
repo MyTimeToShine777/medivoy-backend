@@ -148,7 +148,10 @@ class JWTService {
 
             refreshTokenRecord.status = 'revoked';
             refreshTokenRecord.revokedAt = new Date();
-            await refreshTokenRecord.save();
+            await prisma.refreshTokenRecord.update({
+                where: { refreshTokenRecordId: refreshTokenRecord.refreshTokenRecordId },
+                data: { status: 'revoked', revokedAt: new Date() }
+            });
 
             return { success: true, message: 'Refresh token revoked' };
         } catch (error) {

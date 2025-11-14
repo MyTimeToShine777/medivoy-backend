@@ -95,7 +95,9 @@ export class FlightService {
             const booking = await prisma.booking.findUnique({ where: { bookingId: bookingId } });
             if (!booking) return { success: false, error: 'Booking not found' };
             const flight = await prisma.flight.findUnique({ where: { flightId: booking.flightId } });
-            await booking.destroy();
+            await prisma.booking.delete({
+                where: { bookingId: booking.bookingId }
+            });
             if (flight) await flight.update({ availableSeats: flight.availableSeats + booking.seatCount });
             return { success: true, message: 'Cancelled' };
         } catch (error) {

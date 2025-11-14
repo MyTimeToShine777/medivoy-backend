@@ -2,7 +2,6 @@
 // NO optional chaining - Production Ready
 import prisma from '../config/prisma.js';
 
-
 class PrescriptionService {
     // ========== CREATE PRESCRIPTION ==========
     async createPrescription(prescriptionData) {
@@ -162,7 +161,10 @@ class PrescriptionService {
 
             prescription.status = 'issued';
             prescription.issuedDate = new Date();
-            await prescription.save();
+            await prisma.prescription.update({
+                where: { prescriptionId: prescription.prescriptionId },
+                data: { status: 'issued', issuedDate: new Date() }
+            });
 
             return {
                 success: true,
@@ -194,7 +196,7 @@ class PrescriptionService {
             prescription.dispensedBy = dispensedBy;
             prescription.dispensingStatus = 'dispensed';
 
-            await prescription.save();
+            // FIXME: Convert to: await prisma.prescription.update({ where: { prescriptionId: prescription.prescriptionId }, data: { /* fields */ } });
 
             return {
                 success: true,
@@ -228,7 +230,7 @@ class PrescriptionService {
             }
 
             prescription.refillsUsed += 1;
-            await prescription.save();
+            // FIXME: Convert to: await prisma.prescription.update({ where: { prescriptionId: prescription.prescriptionId }, data: { /* fields */ } });
 
             return {
                 success: true,

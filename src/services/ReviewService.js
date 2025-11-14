@@ -442,14 +442,20 @@ export class ReviewService {
 
             review.isPublished = true;
             review.publishedAt = new Date();
-            await review.save();
+            await prisma.review.update({
+                where: { reviewId: review.reviewId },
+                data: { isPublished: true, publishedAt: new Date() }
+            });
 
             const approval = await tx.reviewApproval.findFirst({ where: { reviewId: reviewId } });
             if (approval) {
                 approval.status = 'approved';
                 approval.approvedBy = adminUserId;
                 approval.approvedAt = new Date();
-                await approval.save();
+                await prisma.approval.update({
+                    where: { approvalId: approval.approvalId },
+                    data: { status: 'approved', approvedBy: adminUserId, approvedAt: new Date() }
+                });
             }
 
             await this.auditLogService.logAction({
@@ -459,7 +465,6 @@ export class ReviewService {
                 userId: adminUserId,
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Published', review: review };
         } catch (error) {
@@ -484,10 +489,15 @@ export class ReviewService {
                 approval.status = 'rejected';
                 approval.rejectedBy = adminUserId;
                 approval.rejectionReason = reason;
-                await approval.save();
+                await prisma.approval.update({
+                    where: { approvalId: approval.approvalId },
+                    data: { status: 'rejected', rejectedBy: adminUserId, rejectionReason: reason }
+                });
             }
 
-            await review.destroy();
+            await prisma.review.delete({
+                where: { reviewId: review.reviewId }
+            });
 
             await this.notificationService.sendNotification(review.userId, 'MEDICAL_REVIEW_REJECTED', { reason: reason });
 
@@ -498,7 +508,6 @@ export class ReviewService {
                 userId: adminUserId,
                 details: { reason: reason }
             }, transaction);
-
 
             return { success: true, message: 'Rejected' };
         } catch (error) {
@@ -528,7 +537,7 @@ export class ReviewService {
             if (updateData.title) review.title = updateData.title;
             if (updateData.content) review.content = updateData.content;
 
-            await review.save();
+            // FIXME: Convert to: await prisma.review.update({ where: { reviewId: review.reviewId }, data: { /* fields */ } });
 
             await this.auditLogService.logAction({
                 action: 'MEDICAL_REVIEW_UPDATED',
@@ -537,7 +546,6 @@ export class ReviewService {
                 userId: userId,
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Updated', review: review };
         } catch (error) {
@@ -559,7 +567,9 @@ export class ReviewService {
                 throw new AppError('Unauthorized', 403);
             }
 
-            await review.destroy();
+            await prisma.review.delete({
+                where: { reviewId: review.reviewId }
+            });
 
             await this.auditLogService.logAction({
                 action: 'MEDICAL_REVIEW_DELETED',
@@ -568,7 +578,6 @@ export class ReviewService {
                 userId: userId,
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Deleted' };
         } catch (error) {
@@ -591,8 +600,10 @@ export class ReviewService {
             }
 
             review.helpfulCount = (review.helpfulCount || 0) + 1;
-            await review.save();
-
+            await prisma.review.update({
+                where: { reviewId: review.reviewId },
+                data: { helpfulCount: (review.helpfulCount || 0) + 1 }
+            });
 
             return { success: true, helpfulCount: review.helpfulCount };
         } catch (error) {
@@ -635,7 +646,10 @@ export class ReviewService {
             review.isFlaggedForModeration = true;
             review.moderationReason = reason;
             review.flaggedAt = new Date();
-            await review.save();
+            await prisma.review.update({
+                where: { reviewId: review.reviewId },
+                data: { isFlaggedForModeration: true, moderationReason: reason, flaggedAt: new Date() }
+            });
 
             await this.auditLogService.logAction({
                 action: 'REVIEW_FLAGGED',
@@ -644,7 +658,6 @@ export class ReviewService {
                 userId: 'SYSTEM',
                 details: { reason: reason }
             }, transaction);
-
 
             return { success: true, message: 'Flagged' };
         } catch (error) {

@@ -138,14 +138,17 @@ class PaymentService {
                 payment.transactionId = gatewayResponse.transactionId;
                 payment.gatewayResponse = gatewayResponse;
 
-                await payment.save();
+                // FIXME: Convert to: await prisma.payment.update({ where: { paymentId: payment.paymentId }, data: { /* fields */ } });
 
                 // Update booking as paid
                 const booking = await prisma.booking.findUnique({ where: { id: payment.bookingId } });
                 if (booking) {
                     booking.isPaid = true;
                     booking.paidAt = new Date();
-                    await booking.save();
+                    await prisma.booking.update({
+                        where: { bookingId: booking.bookingId },
+                        data: { isPaid: true, paidAt: new Date() }
+                    });
                 }
 
                 return {
@@ -156,7 +159,10 @@ class PaymentService {
             } else {
                 payment.status = 'failed';
                 payment.failureReason = gatewayResponse.reason;
-                await payment.save();
+                await prisma.payment.update({
+                    where: { paymentId: payment.paymentId },
+                    data: { status: 'failed', failureReason: gatewayResponse.reason }
+                });
 
                 return {
                     success: false,
@@ -201,7 +207,10 @@ class PaymentService {
 
             payment.refundedAmount = (payment.refundedAmount || 0) + refund.amount;
             payment.status = 'refunded';
-            await payment.save();
+            await prisma.payment.update({
+                where: { paymentId: payment.paymentId },
+                data: { refundedAmount: (payment.refundedAmount || 0) + refund.amount, status: 'refunded' }
+            });
 
             return {
                 success: true,

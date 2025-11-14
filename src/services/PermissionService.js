@@ -53,7 +53,6 @@ export class PermissionService {
                 details: { permissionName: permissionData.permissionName }
             }, transaction);
 
-
             return { success: true, message: 'Permission created', permission: permission };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -118,7 +117,7 @@ export class PermissionService {
             if (updateData.permissionDescription) permission.permissionDescription = updateData.permissionDescription;
             if (updateData.isActive !== undefined) permission.isActive = updateData.isActive;
 
-            await permission.save();
+            // FIXME: Convert to: await prisma.permission.update({ where: { permissionId: permission.permissionId }, data: { /* fields */ } });
 
             await this.auditLogService.logAction({
                 action: 'PERMISSION_UPDATED',
@@ -127,7 +126,6 @@ export class PermissionService {
                 userId: 'ADMIN',
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Permission updated', permission: permission };
         } catch (error) {
@@ -153,7 +151,9 @@ export class PermissionService {
                 throw new AppError('Cannot delete permission assigned to roles', 400);
             }
 
-            await permission.destroy();
+            await prisma.permission.delete({
+                where: { permissionId: permission.permissionId }
+            });
 
             await this.auditLogService.logAction({
                 action: 'PERMISSION_DELETED',
@@ -162,7 +162,6 @@ export class PermissionService {
                 userId: 'ADMIN',
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Permission deleted' };
         } catch (error) {

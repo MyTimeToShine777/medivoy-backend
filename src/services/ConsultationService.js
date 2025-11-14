@@ -157,7 +157,9 @@ export class ConsultationService {
                 return { success: false, error: 'Consultation not found', code: 'NOT_FOUND' };
             }
 
-            await consultation.destroy();
+            await prisma.consultation.delete({
+                where: { consultationId: consultation.consultationId }
+            });
             await cacheService.delete(`consultations_${consultation.patientId}`);
             console.log(`✅ Consultation deleted: ${consultationId}`);
 

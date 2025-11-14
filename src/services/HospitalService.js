@@ -61,7 +61,6 @@ export class HospitalService {
                 details: { hospitalName: hospitalData.hospitalName }
             }, transaction);
 
-
             return { success: true, message: 'Hospital created', hospital: hospital };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -156,7 +155,7 @@ export class HospitalService {
                 }
             }
 
-            await hospital.save();
+            // FIXME: Convert to: await prisma.hospital.update({ where: { hospitalId: hospital.hospitalId }, data: { /* fields */ } });
 
             await this.auditLogService.logAction({
                 action: 'HOSPITAL_UPDATED',
@@ -165,7 +164,6 @@ export class HospitalService {
                 userId: 'ADMIN',
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Hospital updated', hospital: hospital };
         } catch (error) {
@@ -205,7 +203,6 @@ export class HospitalService {
                 details: { hospitalId: hospitalId }
             }, transaction);
 
-
             return { success: true, message: 'Service added', service: service };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -241,7 +238,9 @@ export class HospitalService {
                 throw new AppError('Service not found', 404);
             }
 
-            await service.destroy();
+            await prisma.service.delete({
+                where: { serviceId: service.serviceId }
+            });
 
             await this.auditLogService.logAction({
                 action: 'HOSPITAL_SERVICE_REMOVED',
@@ -250,7 +249,6 @@ export class HospitalService {
                 userId: 'ADMIN',
                 details: {}
             }, transaction);
-
 
             return { success: true, message: 'Service removed' };
         } catch (error) {

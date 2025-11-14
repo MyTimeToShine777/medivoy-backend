@@ -27,7 +27,7 @@ export class TransactionService {
             // Generate transaction number
             const transactionNumber = `TXN-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
-            const transaction = await prisma.transaction.create({
+            const transaction = await prisma.tx.create({
                 data: {
                     paymentId,
                     transactionNumber,
@@ -58,7 +58,7 @@ export class TransactionService {
                 return { success: false, error: 'Payment ID is required' };
             }
 
-            const transactions = await prisma.transaction.findMany({
+            const transactions = await prisma.tx.findMany({
                 where: { paymentId },
                 orderBy: {
                     createdAt: 'desc'
@@ -87,7 +87,7 @@ export class TransactionService {
                 return { success: false, error: 'Transaction ID is required' };
             }
 
-            const transaction = await prisma.transaction.findUnique({
+            const transaction = await prisma.tx.findUnique({
                 where: { transactionId },
                 include: {
                     payment: {
@@ -134,7 +134,7 @@ export class TransactionService {
                 return { success: false, error: 'Invalid status' };
             }
 
-            const transaction = await prisma.transaction.findUnique({
+            const transaction = await prisma.tx.findUnique({
                 where: { transactionId }
             });
 
@@ -154,7 +154,7 @@ export class TransactionService {
                 updateData.completedAt = new Date();
             }
 
-            const updated = await prisma.transaction.update({
+            const updated = await prisma.tx.update({
                 where: { transactionId },
                 data: updateData
             });
@@ -181,7 +181,7 @@ export class TransactionService {
                 return { success: false, error: 'Gateway transaction ID is required' };
             }
 
-            const transaction = await prisma.transaction.findFirst({
+            const transaction = await prisma.tx.findFirst({
                 where: { gatewayTransactionId }
             });
 
@@ -217,7 +217,7 @@ export class TransactionService {
             if (status) where.status = status;
 
             const [transactions, total] = await Promise.all([
-                prisma.transaction.findMany({
+                prisma.tx.findMany({
                     where,
                     include: {
                         payment: {
@@ -234,7 +234,7 @@ export class TransactionService {
                     take: parseInt(limit),
                     skip: parseInt(skip)
                 }),
-                prisma.transaction.count({ where })
+                prisma.tx.count({ where })
             ]);
 
             return {

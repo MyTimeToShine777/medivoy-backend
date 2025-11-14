@@ -53,7 +53,6 @@ export class ChatService {
                 details: { otherUserId: userId2 }
             }, transaction);
 
-
             return { success: true, message: 'Chat room created', chat: chat };
         } catch (error) {
             return { success: false, error: error.message };
@@ -167,14 +166,16 @@ export class ChatService {
             });
 
             chat.updatedAt = new Date();
-            await chat.save();
+            await prisma.chat.update({
+                where: { chatId: chat.chatId },
+                data: { updatedAt: new Date() }
+            });
 
             const recipientId = chat.userId1 === userId ? chat.userId2 : chat.userId1;
             await this.notificationService.sendNotification(recipientId, 'NEW_MESSAGE', {
                 chatId: chatId,
                 senderName: 'A user'
             });
-
 
             return { success: true, message: 'Message sent', data: message };
         } catch (error) {

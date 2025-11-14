@@ -53,7 +53,10 @@ class AuthService {
                         } else if (!user.authProviderId) {
                             user.authProvider = 'google';
                             user.authProviderId = profile.id;
-                            await user.save();
+                            await prisma.user.update({
+                                where: { userId: user.userId },
+                                data: { authProvider: 'google', authProviderId: profile.id }
+                            });
                         }
 
                         return done(null, user);
@@ -93,7 +96,10 @@ class AuthService {
                         } else if (!user.authProviderId) {
                             user.authProvider = 'facebook';
                             user.authProviderId = profile.id;
-                            await user.save();
+                            await prisma.user.update({
+                                where: { userId: user.userId },
+                                data: { authProvider: 'facebook', authProviderId: profile.id }
+                            });
                         }
 
                         return done(null, user);
@@ -234,7 +240,10 @@ class AuthService {
             } else if (!user.authProviderId) {
                 user.authProvider = 'google';
                 user.authProviderId = profile.id;
-                await user.save();
+                await prisma.user.update({
+                    where: { userId: user.userId },
+                    data: { authProvider: 'google', authProviderId: profile.id }
+                });
             }
 
             const accessToken = this.generateAccessToken(user);
@@ -282,7 +291,10 @@ class AuthService {
             } else if (!user.authProviderId) {
                 user.authProvider = 'facebook';
                 user.authProviderId = profile.id;
-                await user.save();
+                await prisma.user.update({
+                    where: { userId: user.userId },
+                    data: { authProvider: 'facebook', authProviderId: profile.id }
+                });
             }
 
             const accessToken = this.generateAccessToken(user);
@@ -386,7 +398,10 @@ class AuthService {
 
             user.emailVerified = true;
             user.emailVerifiedAt = new Date();
-            await user.save();
+            await prisma.user.update({
+                where: { userId: user.userId },
+                data: { emailVerified: true, emailVerifiedAt: new Date() }
+            });
 
             return { success: true, message: 'Email verified successfully' };
         } catch (error) {
@@ -477,11 +492,17 @@ class AuthService {
 
             const hashedPassword = await bcrypt.hash(newPassword, 10);
             user.password = hashedPassword;
-            await user.save();
+            await prisma.user.update({
+                where: { userId: user.userId },
+                data: { password: hashedPassword }
+            });
 
             resetRecord.used = true;
             resetRecord.usedAt = new Date();
-            await resetRecord.save();
+            await prisma.resetRecord.update({
+                where: { resetRecordId: resetRecord.resetRecordId },
+                data: { used: true, usedAt: new Date() }
+            });
 
             return { success: true, message: 'Password reset successfully' };
         } catch (error) {
@@ -513,7 +534,10 @@ class AuthService {
 
             const hashedPassword = await bcrypt.hash(newPassword, 10);
             user.password = hashedPassword;
-            await user.save();
+            await prisma.user.update({
+                where: { userId: user.userId },
+                data: { password: hashedPassword }
+            });
 
             return { success: true, message: 'Password changed successfully' };
         } catch (error) {

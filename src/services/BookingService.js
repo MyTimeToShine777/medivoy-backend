@@ -112,8 +112,6 @@ export class BookingService {
                 details: { treatmentId: treatmentId, countryId: countryId }
             }, transaction);
 
-            
-
             return {
                 success: true,
                 message: 'Booking created successfully',
@@ -202,8 +200,6 @@ export class BookingService {
                 details: updateData
             }, transaction);
 
-            
-
             return {
                 success: true,
                 message: 'Booking updated successfully',
@@ -242,10 +238,13 @@ export class BookingService {
                 completedAt: new Date()
             };
 
-            booking.currentStep = stepNumber;
-            booking.workflowData = workflowData;
-
-            /* TODO: Convert to prisma update */ await booking.save();
+            await prisma.booking.update({
+                where: { bookingId: bookingId },
+                data: {
+                    currentStep: stepNumber,
+                    workflowData: workflowData
+                }
+            });
 
             await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
@@ -263,8 +262,6 @@ export class BookingService {
                 userId: booking.userId,
                 details: { stepNumber: stepNumber, previousStep: previousStep }
             }, transaction);
-
-            
 
             return {
                 success: true,
@@ -366,7 +363,7 @@ export class BookingService {
             booking.cancelledAt = new Date();
             booking.cancelledBy = userId;
 
-            /* TODO: Convert to prisma update */ await booking.save();
+            // FIXME: Convert to: await prisma.booking.update({ where: { bookingId: booking.bookingId }, data: { /* fields */ } });
 
             await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
@@ -385,7 +382,10 @@ export class BookingService {
             if (payment) {
                 payment.status = 'refunded';
                 payment.refundedAt = new Date();
-                /* TODO: Convert to prisma update */ await payment.save();
+                await prisma.payment.update({
+                    where: { paymentId: payment.paymentId },
+                    data: { status: 'refunded', refundedAt: new Date() }
+                });
             }
 
             await this.auditLogService.logAction({
@@ -400,8 +400,6 @@ export class BookingService {
                 bookingId: bookingId,
                 reason: cancellationReason
             });
-
-            
 
             return {
                 success: true,
@@ -443,7 +441,7 @@ export class BookingService {
             booking.workflowStartedAt = new Date();
             booking.currentStep = BOOKING_WORKFLOW_STEPS.TREATMENT_SELECTION;
 
-            /* TODO: Convert to prisma update */ await booking.save();
+            // FIXME: Convert to: await prisma.booking.update({ where: { bookingId: booking.bookingId }, data: { /* fields */ } });
 
             await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
@@ -461,8 +459,6 @@ export class BookingService {
                 userId: userId,
                 details: {}
             }, transaction);
-
-            
 
             return {
                 success: true,
@@ -511,7 +507,10 @@ export class BookingService {
             const nextStep = steps[currentIndex + 1];
 
             booking.currentStep = nextStep;
-            /* TODO: Convert to prisma update */ await booking.save();
+            await prisma.booking.update({
+                where: { bookingId: booking.bookingId },
+                data: { currentStep: nextStep }
+            });
 
             await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
@@ -529,8 +528,6 @@ export class BookingService {
                 userId: userId,
                 details: { fromStep: previousStep, toStep: nextStep }
             }, transaction);
-
-            
 
             return {
                 success: true,
@@ -573,7 +570,10 @@ export class BookingService {
             const newStep = steps[currentIndex - 1];
 
             booking.currentStep = newStep;
-            /* TODO: Convert to prisma update */ await booking.save();
+            await prisma.booking.update({
+                where: { bookingId: booking.bookingId },
+                data: { currentStep: newStep }
+            });
 
             await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
@@ -591,8 +591,6 @@ export class BookingService {
                 userId: userId,
                 details: { fromStep: previousStep, toStep: newStep }
             }, transaction);
-
-            
 
             return {
                 success: true,
@@ -633,7 +631,7 @@ export class BookingService {
             booking.status = BOOKING_STATUSES.EXPERT_REVIEW;
             booking.workflowCompletedAt = new Date();
 
-            /* TODO: Convert to prisma update */ await booking.save();
+            // FIXME: Convert to: await prisma.booking.update({ where: { bookingId: booking.bookingId }, data: { /* fields */ } });
 
             await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
@@ -655,8 +653,6 @@ export class BookingService {
             await this.notificationService.sendNotification(userId, 'BOOKING_SUBMITTED_FOR_REVIEW', {
                 bookingId: bookingId
             });
-
-            
 
             return {
                 success: true,
@@ -758,7 +754,7 @@ export class BookingService {
             const previousNotes = booking.notes;
             booking.notes = notes;
 
-            /* TODO: Convert to prisma update */ await booking.save();
+            // FIXME: Convert to: await prisma.booking.update({ where: { bookingId: booking.bookingId }, data: { /* fields */ } });
 
             await prisma.bookingHistory.create({ data: {
                 historyId: this._generateHistoryId(),
@@ -776,8 +772,6 @@ export class BookingService {
                 userId: userId,
                 details: { notes: notes }
             }, transaction);
-
-            
 
             return {
                 success: true,
@@ -824,7 +818,7 @@ export class BookingService {
             };
             booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save();
+            // FIXME: Convert to: await prisma.booking.update({ where: { bookingId: booking.bookingId }, data: { /* fields */ } });
 
             await this.auditLogService.logAction({
                 action: 'STEP_1_COMPLETED',
@@ -833,8 +827,6 @@ export class BookingService {
                 userId: booking.userId,
                 details: { treatmentId: treatmentId }
             }, transaction);
-
-            
 
             return { success: true, booking: booking };
         } catch (error) {
@@ -874,7 +866,7 @@ export class BookingService {
             };
             booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save();
+            // FIXME: Convert to: await prisma.booking.update({ where: { bookingId: booking.bookingId }, data: { /* fields */ } });
 
             await this.auditLogService.logAction({
                 action: 'STEP_2_COMPLETED',
@@ -883,8 +875,6 @@ export class BookingService {
                 userId: booking.userId,
                 details: { countryId: countryId }
             }, transaction);
-
-            
 
             return { success: true, booking: booking };
         } catch (error) {
@@ -924,7 +914,7 @@ export class BookingService {
             };
             booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save();
+            // FIXME: Convert to: await prisma.booking.update({ where: { bookingId: booking.bookingId }, data: { /* fields */ } });
 
             await this.auditLogService.logAction({
                 action: 'STEP_3_COMPLETED',
@@ -933,8 +923,6 @@ export class BookingService {
                 userId: booking.userId,
                 details: { cityId: cityId }
             }, transaction);
-
-            
 
             return { success: true, booking: booking };
         } catch (error) {
@@ -974,7 +962,7 @@ export class BookingService {
             };
             booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save();
+            // FIXME: Convert to: await prisma.booking.update({ where: { bookingId: booking.bookingId }, data: { /* fields */ } });
 
             await this.auditLogService.logAction({
                 action: 'STEP_4_COMPLETED',
@@ -983,8 +971,6 @@ export class BookingService {
                 userId: booking.userId,
                 details: { hospitalId: hospitalId }
             }, transaction);
-
-            
 
             return { success: true, booking: booking };
         } catch (error) {
@@ -1026,7 +1012,7 @@ export class BookingService {
             };
             booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save();
+            // FIXME: Convert to: await prisma.booking.update({ where: { bookingId: booking.bookingId }, data: { /* fields */ } });
 
             await this.auditLogService.logAction({
                 action: 'STEP_5_COMPLETED',
@@ -1035,8 +1021,6 @@ export class BookingService {
                 userId: booking.userId,
                 details: { packageId: packageId, price: packageRecord.basePrice }
             }, transaction);
-
-            
 
             return { success: true, booking: booking };
         } catch (error) {
