@@ -88,12 +88,6 @@ export class LabReportService {
                 prisma.labReport.count({ where })
             ]);
 
-            // Continue with offset equivalent
-            const offset = skip;
-                limit: parseInt(limit),
-                offset: parseInt(offset)
-            });
-
             return {
                 success: true,
                 data: reports,
@@ -230,7 +224,8 @@ export class LabReportService {
                     results,
                     interpretation,
                     status: 'completed',
-                reportDate: new Date()
+                    reportDate: new Date()
+                }
             });
 
             return {

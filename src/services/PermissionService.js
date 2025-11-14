@@ -18,33 +18,31 @@ export class PermissionService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createPermission(permissionData) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        const result = await prisma.$transaction(async(tx) => {
             if (!permissionData || !permissionData.permissionName) {
                 throw new AppError('Permission name required', 400);
             }
 
             const existing = await tx.permission.findFirst({
-                where: { permissionName: permissionData.permissionName },
-                transaction: transaction
+                where: { permissionName: permissionData.permissionName }
             });
 
             if (existing) {
-                await transaction.rollback();
                 throw new AppError('Permission already exists', 409);
             }
 
             const permission = await tx.permission.create({
                 data: {
-                permissionId: this._generatePermissionId(),
-                permissionName: permissionData.permissionName,
-                permissionDescription: permissionData.permissionDescription || null,
-                module: permissionData.module,
-                action: permissionData.action,
-                resource: permissionData.resource,
-                isActive: true,
-                createdAt: new Date()
-            }, { transaction: transaction });
+                    permissionId: this._generatePermissionId(),
+                    permissionName: permissionData.permissionName,
+                    permissionDescription: permissionData.permissionDescription || null,
+                    module: permissionData.module,
+                    action: permissionData.action,
+                    resource: permissionData.resource,
+                    isActive: true,
+                    createdAt: new Date()
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'PERMISSION_CREATED',
@@ -52,15 +50,13 @@ export class PermissionService {
                 entityId: permission.permissionId,
                 userId: 'ADMIN',
                 details: { permissionName: permissionData.permissionName }
-            }, transaction);
-
-            await transaction.commit();
+            });
 
             return { success: true, message: 'Permission created', permission: permission };
-        } catch (error) {
-            await transaction.rollback();
+        }).catch(error => {
             throw this.errorHandlingService.handleError(error);
-        }
+        });
+        return result;
     }
 
     async getPermissionById(permissionId) {
@@ -109,21 +105,24 @@ export class PermissionService {
     }
 
     async updatePermission(permissionId, updateData) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        const result = await prisma.$transaction(async(tx) => {
             if (!permissionId || !updateData) throw new AppError('Required params missing', 400);
 
-            const permission = await Permission.findByPk(permissionId, { transaction: transaction });
+            const permission = await tx.permission.findUnique({
+                where: { permissionId }
+            });
             if (!permission) {
-                await transaction.rollback();
                 throw new AppError('Permission not found', 404);
             }
 
-            if (updateData.permissionName) permission.permissionName = updateData.permissionName;
-            if (updateData.permissionDescription) permission.permissionDescription = updateData.permissionDescription;
-            if (updateData.isActive !== undefined) permission.isActive = updateData.isActive;
-
-            await permission.save({ transaction: transaction });
+            const updatedPermission = await tx.permission.update({
+                where: { permissionId },
+                data: {
+                    permissionName: updateData.permissionName || permission.permissionName,
+                    permissionDescription: updateData.permissionDescription || permission.permissionDescription,
+                    isActive: updateData.isActive !== undefined ? updateData.isActive : permission.isActive
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'PERMISSION_UPDATED',
@@ -131,38 +130,37 @@ export class PermissionService {
                 entityId: permissionId,
                 userId: 'ADMIN',
                 details: {}
-            }, transaction);
+            });
 
-            await transaction.commit();
-
-            return { success: true, message: 'Permission updated', permission: permission };
-        } catch (error) {
-            await transaction.rollback();
+            return { success: true, message: 'Permission updated', permission: updatedPermission };
+        }).catch(error => {
             throw this.errorHandlingService.handleError(error);
-        }
+        });
+        return result;
     }
 
     async deletePermission(permissionId) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        const result = await prisma.$transaction(async(tx) => {
             if (!permissionId) throw new AppError('Permission ID required', 400);
 
-            const permission = await Permission.findByPk(permissionId, { transaction: transaction });
+            const permission = await tx.permission.findUnique({
+                where: { permissionId }
+            });
             if (!permission) {
-                await transaction.rollback();
                 throw new AppError('Permission not found', 404);
             }
 
-            const rolesWithPermission = await RolePermission.count({
+            const rolesWithPermission = await tx.rolePermission.count({
                 where: { permissionId: permissionId }
             });
 
             if (rolesWithPermission > 0) {
-                await transaction.rollback();
                 throw new AppError('Cannot delete permission assigned to roles', 400);
             }
 
-            await permission.destroy({ transaction: transaction });
+            await tx.permission.delete({
+                where: { permissionId }
+            });
 
             await this.auditLogService.logAction({
                 action: 'PERMISSION_DELETED',
@@ -170,15 +168,13 @@ export class PermissionService {
                 entityId: permissionId,
                 userId: 'ADMIN',
                 details: {}
-            }, transaction);
-
-            await transaction.commit();
+            });
 
             return { success: true, message: 'Permission deleted' };
-        } catch (error) {
-            await transaction.rollback();
+        }).catch(error => {
             throw this.errorHandlingService.handleError(error);
-        }
+        });
+        return result;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════

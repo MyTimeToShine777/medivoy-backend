@@ -36,10 +36,13 @@ export class StatisticsService {
                 where: { userId: userId, status: 'cancelled' }
             });
 
-            const totalSpent = await (await prisma.payment.aggregate({ where: {
+            const totalSpent = await (await prisma.payment.aggregate({
+                where: {
                     userId: userId,
                     status: 'completed'
-                }, _sum: { amount: true } }))._sum.amount;
+                },
+                _sum: { amount: true }
+            }))._sum.amount;
 
             const totalReviews = await prisma.review.count({ where: { userId: userId, isPublished: true } });
 
@@ -77,7 +80,9 @@ export class StatisticsService {
 
             const where = {
                 createdAt: {
-                    { gte: [startDate, endDate] }
+                    gte: startDate,
+                    lte: endDate
+                }
             };
 
             const totalBookings = await prisma.booking.count({ where: where });
@@ -129,7 +134,9 @@ export class StatisticsService {
 
             const where = {
                 createdAt: {
-                    { gte: [startDate, endDate] }
+                    gte: startDate,
+                    lte: endDate
+                }
             };
 
             const totalTransactions = await prisma.payment.count({ where: where });
@@ -150,8 +157,8 @@ export class StatisticsService {
             const paymentsByGateway = await prisma.payment.findMany({
                 where: where,
                 attributes: [
-                    'gateway', [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('paymentId')), 'count'],
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('SUM', /* TODO: Check field name */ sequelize.col('amount')), 'total']
+                    'gateway', [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('paymentId')), 'count'],
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('SUM', /* TODO: Check field name */ sequelize.col('amount')), 'total']
                 ],
                 group: ['gateway'],
                 raw: true
@@ -295,7 +302,7 @@ export class StatisticsService {
             const avgRating = await prisma.review.findMany({
                 where: { treatmentId: treatmentId },
                 attributes: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('AVG', /* TODO: Check field name */ sequelize.col('rating')), 'avgRating']
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('AVG', /* TODO: Check field name */ sequelize.col('rating')), 'avgRating']
                 ],
                 raw: true
             });
@@ -328,20 +335,22 @@ export class StatisticsService {
                 return { success: false, error: 'Date range required' };
             }
 
+            // TODO: Implement Prisma groupBy for daily statistics
             const dailyStats = await prisma.booking.findMany({
                 where: {
                     createdAt: {
-                        { gte: [startDate, endDate] }
+                        gte: startDate,
+                        lte: endDate
+                    }
                 },
-                attributes: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'date'],
-                    'status', [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('bookingId')), 'count']
-                ],
-                group: [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'status'],
-                order: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'ASC']
-                ],
-                raw: true
+                select: {
+                    bookingId: true,
+                    status: true,
+                    createdAt: true
+                },
+                orderBy: {
+                    createdAt: 'asc'
+                }
             });
 
             return { success: true, dailyStatistics: dailyStats };
@@ -358,18 +367,19 @@ export class StatisticsService {
 
             const monthlyStats = await prisma.booking.findMany({
                 where: sequelize.where(
-                    /* TODO: Replace with Prisma aggregation */ sequelize.fn('YEAR', /* TODO: Check field name */ sequelize.col('createdAt')),
+                    /* TODO: Replace with Prisma aggregation */
+                    sequelize.fn('YEAR', /* TODO: Check field name */ sequelize.col('createdAt')),
                     Op.eq,
                     year
                 ),
                 attributes: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('MONTH', /* TODO: Check field name */ sequelize.col('createdAt')), 'month'],
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('bookingId')), 'count'],
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('SUM', /* TODO: Check field name */ sequelize.col('totalPrice')), 'total']
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('MONTH', /* TODO: Check field name */ sequelize.col('createdAt')), 'month'],
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('bookingId')), 'count'],
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('SUM', /* TODO: Check field name */ sequelize.col('totalPrice')), 'total']
                 ],
-                group: [/* TODO: Replace with Prisma aggregation */ sequelize.fn('MONTH', /* TODO: Check field name */ sequelize.col('createdAt'))],
+                group: [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('MONTH', /* TODO: Check field name */ sequelize.col('createdAt'))],
                 order: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('MONTH', /* TODO: Check field name */ sequelize.col('createdAt')), 'ASC']
+                    [ /* TODO: Replace with Prisma aggregation */ sequelize.fn('MONTH', /* TODO: Check field name */ sequelize.col('createdAt')), 'ASC']
                 ],
                 raw: true
             });

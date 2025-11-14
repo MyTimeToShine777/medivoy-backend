@@ -9,9 +9,10 @@ class InvoiceService {
         try {
             const invoice = await prisma.invoice.create({
                 data: {
-                invoiceNumber: await this.generateInvoiceNumber(),
-                status: 'draft',
-                ...invoiceData,
+                    invoiceNumber: await this.generateInvoiceNumber(),
+                    status: 'draft',
+                    ...invoiceData
+                }
             });
 
             return { success: true, data: invoice };
@@ -24,11 +25,11 @@ class InvoiceService {
     async getInvoiceById(invoiceId) {
         try {
             const invoice = await prisma.invoice.findUnique({
-                where: { invoiceId }, {
-                include: [
-                    { model: Booking, as: 'booking' },
-                    { model: User, as: 'user' },
-                ],
+                where: { invoiceId },
+                include: {
+                    booking: true,
+                    user: true,
+                },
             });
 
             if (!invoice) return { success: false, error: 'Not found' };
@@ -43,9 +44,9 @@ class InvoiceService {
         try {
             const invoices = await prisma.invoice.findMany({
                 where: { userId },
-                order: [
-                    ['createdAt', 'DESC']
-                ],
+                orderBy: {
+                    createdAt: 'desc'
+                },
             });
 
             return { success: true, data: invoices };
@@ -93,11 +94,11 @@ class InvoiceService {
     async generateInvoicePDF(invoiceId) {
         try {
             const invoice = await prisma.invoice.findUnique({
-                where: { invoiceId }, {
-                include: [
-                    { model: Booking, as: 'booking' },
-                    { model: User, as: 'user' },
-                ],
+                where: { invoiceId },
+                include: {
+                    booking: true,
+                    user: true,
+                },
             });
 
             if (!invoice) return { success: false, error: 'Not found' };

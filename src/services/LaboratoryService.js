@@ -23,39 +23,37 @@ export class LaboratoryService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createLabTest(hospitalId, testData) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!hospitalId || !testData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
             const hospital = await tx.hospital.findUnique({ where: { hospitalId } });
             if (!hospital) {
-                await transaction.rollback();
                 throw new AppError('Hospital not found', 404);
             }
 
             const errors = this.validationService.validateLabTestData(testData);
             if (errors.length) {
-                await transaction.rollback();
                 throw new AppError(errors.join(', '), 400);
             }
 
             const labTest = await tx.labTest.create({
                 data: {
-                testId: this._generateTestId(),
-                hospitalId: hospitalId,
-                testName: testData.testName,
-                testCode: testData.testCode,
-                description: testData.description || null,
-                price: testData.price,
-                turnaroundTime: testData.turnaroundTime,
-                sampleType: testData.sampleType,
-                prerequisites: testData.prerequisites || [],
-                testParameters: testData.testParameters || [],
-                status: 'active',
-                createdAt: new Date()
-            }, { transaction: transaction });
+                    testId: this._generateTestId(),
+                    hospitalId: hospitalId,
+                    testName: testData.testName,
+                    testCode: testData.testCode,
+                    description: testData.description || null,
+                    price: testData.price,
+                    turnaroundTime: testData.turnaroundTime,
+                    sampleType: testData.sampleType,
+                    prerequisites: testData.prerequisites || [],
+                    testParameters: testData.testParameters || [],
+                    status: 'active',
+                    createdAt: new Date()
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'LAB_TEST_CREATED',
@@ -63,15 +61,10 @@ export class LaboratoryService {
                 entityId: labTest.testId,
                 userId: 'ADMIN',
                 details: { testName: testData.testName, hospitalId: hospitalId }
-            }, transaction);
-
-            await transaction.commit();
+            }, tx);
 
             return { success: true, message: 'Lab test created', labTest: labTest };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     async getLabTests(hospitalId, filters) {
@@ -84,20 +77,20 @@ export class LaboratoryService {
 
             if (filters && filters.search) {
                 where.testName = {
-                     '%' + filters.search + '%'
+                    contains: filters.search,
+                    mode: 'insensitive'
                 };
             }
 
-            const tests = await LabTest.findAll({
-                where: where,
-                order: [
-                    ['testName', 'ASC']
-                ],
-                limit: limit,
-                offset: offset
-            });
-
-            const total = await LabTest.count({ where: where });
+            const [tests, total] = await Promise.all([
+                prisma.labTest.findMany({
+                    where: where,
+                    orderBy: { testName: 'asc' },
+                    take: limit,
+                    skip: offset
+                }),
+                prisma.labTest.count({ where: where })
+            ]);
 
             return {
                 success: true,
@@ -114,23 +107,20 @@ export class LaboratoryService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async orderLabTest(userId, orderData) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!userId || !orderData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const user = await User.findByPk(userId, { transaction: transaction });
+            const user = await tx.user.findUnique({ where: { userId } });
             if (!user) {
-                await transaction.rollback();
                 throw new AppError('User not found', 404);
             }
 
             const tests = [];
             for (const testId of orderData.testIds) {
-                const test = await LabTest.findByPk(testId, { transaction: transaction });
+                const test = await tx.labTest.findUnique({ where: { testId } });
                 if (!test) {
-                    await transaction.rollback();
                     throw new AppError('Lab test not found: ' + testId, 404);
                 }
                 tests.push(test);
@@ -140,20 +130,21 @@ export class LaboratoryService {
 
             const labOrder = await tx.labOrder.create({
                 data: {
-                orderId: this._generateOrderId(),
-                userId: userId,
-                totalPrice: totalPrice,
-                status: 'pending',
-                sampleCollectionRequired: true,
-                collectionDate: orderData.collectionDate || null,
-                notes: orderData.notes || null,
-                orderedAt: new Date()
-            }, { transaction: transaction });
-
-            // Add tests to order
-            for (const test of tests) {
-                await labOrder.addLabTest(test, { transaction: transaction });
-            }
+                    orderId: this._generateOrderId(),
+                    userId: userId,
+                    totalPrice: totalPrice,
+                    status: 'pending',
+                    sampleCollectionRequired: true,
+                    collectionDate: orderData.collectionDate || null,
+                    notes: orderData.notes || null,
+                    orderedAt: new Date(),
+                    labTests: {
+                        create: tests.map(test => ({
+                            labTestId: test.testId
+                        }))
+                    }
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'LAB_ORDER_CREATED',
@@ -161,20 +152,15 @@ export class LaboratoryService {
                 entityId: labOrder.orderId,
                 userId: userId,
                 details: { testCount: tests.length, totalPrice: totalPrice }
-            }, transaction);
+            }, tx);
 
             await this.notificationService.sendNotification(userId, 'LAB_ORDER_CREATED', {
                 orderId: labOrder.orderId,
                 testCount: tests.length
             });
 
-            await transaction.commit();
-
             return { success: true, message: 'Lab order created', labOrder: labOrder };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     async getUserLabOrders(userId, filters) {
@@ -189,19 +175,27 @@ export class LaboratoryService {
                 where.status = filters.status;
             }
 
-            const orders = await LabOrder.findAll({
-                where: where,
-                include: [
-                    { model: LabTest, attributes: ['testName', 'testCode'] }
-                ],
-                order: [
-                    ['orderedAt', 'DESC']
-                ],
-                limit: limit,
-                offset: offset
-            });
-
-            const total = await LabOrder.count({ where: where });
+            const [orders, total] = await Promise.all([
+                prisma.labOrder.findMany({
+                    where: where,
+                    include: {
+                        labTests: {
+                            select: {
+                                labTest: {
+                                    select: {
+                                        testName: true,
+                                        testCode: true
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    orderBy: { orderedAt: 'desc' },
+                    take: limit,
+                    skip: offset
+                }),
+                prisma.labOrder.count({ where: where })
+            ]);
 
             return {
                 success: true,
@@ -214,15 +208,13 @@ export class LaboratoryService {
     }
 
     async uploadLabResult(orderId, userId, resultData, fileBuffer) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!orderId || !userId || !resultData || !fileBuffer) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const order = await LabOrder.findByPk(orderId, { transaction: transaction });
+            const order = await tx.labOrder.findUnique({ where: { orderId } });
             if (!order) {
-                await transaction.rollback();
                 throw new AppError('Lab order not found', 404);
             }
 
@@ -232,22 +224,28 @@ export class LaboratoryService {
                 orderId: orderId
             });
 
-            const labResult = await LabResult.create({
-                resultId: this._generateResultId(),
-                orderId: orderId,
-                resultDate: resultData.resultDate,
-                resultFile: uploadedFile.url,
-                fileMimeType: uploadedFile.mimeType,
-                normalValues: resultData.normalValues || null,
-                abnormalValues: resultData.abnormalValues || null,
-                interpretation: resultData.interpretation || null,
-                uploadedBy: userId,
-                uploadedAt: new Date()
-            }, { transaction: transaction });
+            const labResult = await tx.labResult.create({
+                data: {
+                    resultId: this._generateResultId(),
+                    orderId: orderId,
+                    resultDate: resultData.resultDate,
+                    resultFile: uploadedFile.url,
+                    fileMimeType: uploadedFile.mimeType,
+                    normalValues: resultData.normalValues || null,
+                    abnormalValues: resultData.abnormalValues || null,
+                    interpretation: resultData.interpretation || null,
+                    uploadedBy: userId,
+                    uploadedAt: new Date()
+                }
+            });
 
-            order.status = 'results_ready';
-            order.resultReadyAt = new Date();
-            await order.save({ transaction: transaction });
+            await tx.labOrder.update({
+                where: { orderId },
+                data: {
+                    status: 'results_ready',
+                    resultReadyAt: new Date()
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'LAB_RESULT_UPLOADED',
@@ -255,32 +253,35 @@ export class LaboratoryService {
                 entityId: labResult.resultId,
                 userId: userId,
                 details: { orderId: orderId }
-            }, transaction);
+            }, tx);
 
             await this.notificationService.sendNotification(order.userId, 'LAB_RESULT_READY', {
                 orderId: orderId
             });
 
-            await transaction.commit();
-
             return { success: true, message: 'Result uploaded', labResult: labResult };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     async getLabResult(resultId, userId) {
         try {
             if (!resultId || !userId) throw new AppError('Required params missing', 400);
 
-            const result = await LabResult.findOne({
-                where: { resultId: resultId },
-                include: [{
-                    model: LabOrder,
-                    where: { userId: userId },
-                    attributes: ['orderId', 'totalPrice']
-                }]
+            const result = await prisma.labResult.findFirst({
+                where: {
+                    resultId: resultId,
+                    labOrder: {
+                        userId: userId
+                    }
+                },
+                include: {
+                    labOrder: {
+                        select: {
+                            orderId: true,
+                            totalPrice: true
+                        }
+                    }
+                }
             });
 
             if (!result) {
@@ -297,13 +298,20 @@ export class LaboratoryService {
         try {
             if (!resultId || !userId) throw new AppError('Required params missing', 400);
 
-            const result = await LabResult.findOne({
-                where: { resultId: resultId },
-                include: [{
-                    model: LabOrder,
-                    where: { userId: userId },
-                    attributes: ['orderId']
-                }]
+            const result = await prisma.labResult.findFirst({
+                where: {
+                    resultId: resultId,
+                    labOrder: {
+                        userId: userId
+                    }
+                },
+                include: {
+                    labOrder: {
+                        select: {
+                            orderId: true
+                        }
+                    }
+                }
             });
 
             if (!result) {
@@ -319,29 +327,29 @@ export class LaboratoryService {
     }
 
     async createLabPackage(hospitalId, packageData) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!hospitalId || !packageData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
             const hospital = await tx.hospital.findUnique({ where: { hospitalId } });
             if (!hospital) {
-                await transaction.rollback();
                 throw new AppError('Hospital not found', 404);
             }
 
-            const labPackage = await LabPackage.create({
-                packageId: this._generatePackageId(),
-                hospitalId: hospitalId,
-                packageName: packageData.packageName,
-                description: packageData.description || null,
-                price: packageData.price,
-                tests: packageData.testIds || [],
-                discount: packageData.discount || 0,
-                turnaroundTime: packageData.turnaroundTime,
-                status: 'active'
-            }, { transaction: transaction });
+            const labPackage = await tx.labPackage.create({
+                data: {
+                    packageId: this._generatePackageId(),
+                    hospitalId: hospitalId,
+                    packageName: packageData.packageName,
+                    description: packageData.description || null,
+                    price: packageData.price,
+                    tests: packageData.testIds || [],
+                    discount: packageData.discount || 0,
+                    turnaroundTime: packageData.turnaroundTime,
+                    status: 'active'
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'LAB_PACKAGE_CREATED',
@@ -349,15 +357,10 @@ export class LaboratoryService {
                 entityId: labPackage.packageId,
                 userId: 'ADMIN',
                 details: { packageName: packageData.packageName }
-            }, transaction);
-
-            await transaction.commit();
+            }, tx);
 
             return { success: true, message: 'Package created', labPackage: labPackage };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════

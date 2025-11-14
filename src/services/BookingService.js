@@ -39,17 +39,17 @@ export class BookingService {
                 throw new AppError('userId, treatmentId, countryId are required', 400);
             }
 
-            const user = await prisma.user.findUnique({ where: { id: userId, { transaction } } });
+            const user = await prisma.user.findUnique({ where: { id: userId } });
             if (!user) {
                 throw new AppError('User not found', 404);
             }
 
-            const treatment = await prisma.treatment.findUnique({ where: { id: treatmentId, { transaction } } });
+            const treatment = await prisma.treatment.findUnique({ where: { id: treatmentId } });
             if (!treatment) {
                 throw new AppError('Treatment not found', 404);
             }
 
-            const country = await prisma.country.findUnique({ where: { id: countryId, { transaction } } });
+            const country = await prisma.country.findUnique({ where: { id: countryId } });
             if (!country) {
                 throw new AppError('Country not found', 404);
             }
@@ -58,11 +58,9 @@ export class BookingService {
                 where: {
                     userId: userId,
                     treatmentId: treatmentId,
-                    status: {
-                        { in: [BOOKING_STATUSES.PENDING, BOOKING_STATUSES.EXPERT_REVIEW]
+                    status: { in: [BOOKING_STATUSES.PENDING, BOOKING_STATUSES.EXPERT_REVIEW]
                     }
-                },
-                transaction: transaction
+                }
             });
 
             if (existingBooking) {
@@ -71,20 +69,22 @@ export class BookingService {
 
             const bookingId = this._generateBookingId();
 
-            const booking = await prisma.booking.create({ data: {
-                bookingId: bookingId,
-                userId: userId,
-                treatmentId: treatmentId,
-                countryId: countryId,
-                currentStep: BOOKING_WORKFLOW_STEPS.TREATMENT_SELECTION,
-                status: BOOKING_STATUSES.PENDING,
-                workflowData: { step_1: { completedAt: new Date() } },
-                basePrice: 0,
-                addOnsPrice: 0,
-                totalPrice: 0,
-                notes: bookingData && bookingData.notes ? bookingData.notes : null,
-                createdFrom: bookingData && bookingData.createdFrom ? bookingData.createdFrom : 'web'
-            }, { transaction });
+            const booking = await prisma.booking.create({
+                data: {
+                    bookingId: bookingId,
+                    userId: userId,
+                    treatmentId: treatmentId,
+                    countryId: countryId,
+                    currentStep: BOOKING_WORKFLOW_STEPS.TREATMENT_SELECTION,
+                    status: BOOKING_STATUSES.PENDING,
+                    workflowData: { step_1: { completedAt: new Date() } },
+                    basePrice: 0,
+                    addOnsPrice: 0,
+                    totalPrice: 0,
+                    notes: bookingData && bookingData.notes ? bookingData.notes : null,
+                    createdFrom: bookingData && bookingData.createdFrom ? bookingData.createdFrom : 'web'
+                }
+            });
 
             if (bookingData && bookingData.companions && Array.isArray(bookingData.companions) && bookingData.companions.length > 0) {
                 const companionsData = bookingData.companions.map(companion => ({
@@ -95,14 +95,16 @@ export class BookingService {
                 await prisma.companion.createMany({ data: companionsData, skipDuplicates: true });
             }
 
-            await prisma.bookingHistory.create({ data: {
-                historyId: this._generateHistoryId(),
-                bookingId: bookingId,
-                action: 'BOOKING_CREATED',
-                status: BOOKING_STATUSES.PENDING,
-                changes: { initial: true },
-                createdBy: userId
-            }, { transaction });
+            await prisma.bookingHistory.create({
+                data: {
+                    historyId: this._generateHistoryId(),
+                    bookingId: bookingId,
+                    action: 'BOOKING_CREATED',
+                    status: BOOKING_STATUSES.PENDING,
+                    changes: { initial: true },
+                    createdBy: userId
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'BOOKING_CREATED',
@@ -110,9 +112,9 @@ export class BookingService {
                 entityId: bookingId,
                 userId: userId,
                 details: { treatmentId: treatmentId, countryId: countryId }
-            }, transaction);
+            });
 
-            
+
 
             return {
                 success: true,
@@ -121,7 +123,7 @@ export class BookingService {
                 booking: booking
             };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -134,18 +136,18 @@ export class BookingService {
 
             const booking = await prisma.booking.findFirst({
                 where: { bookingId: bookingId },
-                include: [
-                    { model: User, as: 'user', attributes: ['userId', 'firstName', 'lastName', 'email', 'phone'] },
-                    { model: Treatment, as: 'treatment' },
-                    { model: Hospital, as: 'hospital' },
-                    { model: Country, as: 'country' },
-                    { model: City, as: 'city' },
-                    { model: Package, as: 'package' },
-                    { model: BookingAddOn, as: 'bookingAddOns', include: [{ model: FeatureAddOn, as: 'addOn' }] },
-                    { model: Payment, as: 'payments' },
-                    { model: ExpertCall, as: 'expertCalls' },
-                    { model: Companion, as: 'companions' }
-                ]
+                include: {
+                    user: { select: { userId: true, firstName: true, lastName: true, email: true, phone: true } },
+                    treatment: true,
+                    hospital: true,
+                    country: true,
+                    city: true,
+                    package: true,
+                    bookingAddOns: { include: { addOn: true } },
+                    payments: true,
+                    expertCalls: true,
+                    companions: true
+                }
             });
 
             if (!booking) {
@@ -175,22 +177,27 @@ export class BookingService {
                 throw new AppError('Booking ID is required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            await booking.update(updateData, { transaction });
+            const updatedBooking = await prisma.booking.update({
+                where: { id: bookingId },
+                data: updateData
+            });
 
-            await prisma.bookingHistory.create({ data: {
-                historyId: this._generateHistoryId(),
-                bookingId: bookingId,
-                action: 'BOOKING_UPDATED',
-                status: booking.status,
-                changes: updateData,
-                createdBy: booking.userId
-            }, { transaction });
+            await prisma.bookingHistory.create({
+                data: {
+                    historyId: this._generateHistoryId(),
+                    bookingId: bookingId,
+                    action: 'BOOKING_UPDATED',
+                    status: booking.status,
+                    changes: updateData,
+                    createdBy: booking.userId
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'BOOKING_UPDATED',
@@ -198,17 +205,17 @@ export class BookingService {
                 entityId: bookingId,
                 userId: booking.userId,
                 details: updateData
-            }, transaction);
+            });
 
-            
+
 
             return {
                 success: true,
                 message: 'Booking updated successfully',
-                booking: booking
+                booking: updatedBooking
             };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -221,7 +228,7 @@ export class BookingService {
                 throw new AppError('Booking ID and step number are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -240,19 +247,24 @@ export class BookingService {
                 completedAt: new Date()
             };
 
-            booking.currentStep = stepNumber;
-            booking.workflowData = workflowData;
+            const updatedBooking = await prisma.booking.update({
+                where: { id: bookingId },
+                data: {
+                    currentStep: stepNumber,
+                    workflowData: workflowData
+                }
+            });
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
-
-            await prisma.bookingHistory.create({ data: {
-                historyId: this._generateHistoryId(),
-                bookingId: bookingId,
-                action: 'STEP_UPDATED',
-                status: booking.status,
-                changes: { previousStep: previousStep, newStep: stepNumber },
-                createdBy: booking.userId
-            }, { transaction });
+            await prisma.bookingHistory.create({
+                data: {
+                    historyId: this._generateHistoryId(),
+                    bookingId: bookingId,
+                    action: 'STEP_UPDATED',
+                    status: booking.status,
+                    changes: { previousStep: previousStep, newStep: stepNumber },
+                    createdBy: booking.userId
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'BOOKING_STEP_UPDATED',
@@ -260,18 +272,18 @@ export class BookingService {
                 entityId: bookingId,
                 userId: booking.userId,
                 details: { stepNumber: stepNumber, previousStep: previousStep }
-            }, transaction);
+            });
 
-            
+
 
             return {
                 success: true,
                 message: 'Booking step updated successfully',
-                currentStep: booking.currentStep,
-                booking: booking
+                currentStep: updatedBooking.currentStep,
+                booking: updatedBooking
             };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -288,8 +300,7 @@ export class BookingService {
 
             if (filters && filters.status) {
                 const statusArray = Array.isArray(filters.status) ? filters.status : [filters.status];
-                where.status = {
-                    { in: statusArray };
+                where.status = { in: statusArray };
             }
 
             if (filters && filters.treatmentId) {
@@ -298,18 +309,17 @@ export class BookingService {
 
             const bookings = await prisma.booking.findMany({
                 where: where,
-                include: [
-                    { model: Treatment, as: 'treatment', attributes: ['treatmentName'] },
-                    { model: Hospital, as: 'hospital', attributes: ['hospitalName'] },
-                    { model: Country, as: 'country', attributes: ['countryName'] },
-                    { model: Package, as: 'package', attributes: ['packageName', 'basePrice'] }
-                ],
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: limit,
-                offset: offset,
-                distinct: true
+                include: {
+                    treatment: { select: { treatmentName: true } },
+                    hospital: { select: { hospitalName: true } },
+                    country: { select: { countryName: true } },
+                    package: { select: { packageName: true, basePrice: true } }
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                },
+                take: limit,
+                skip: offset
             });
 
             const total = await prisma.booking.count({ where: where });
@@ -337,7 +347,7 @@ export class BookingService {
                 throw new AppError('Booking ID and cancellation reason are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -353,31 +363,39 @@ export class BookingService {
 
             const previousStatus = booking.status;
 
-            booking.status = BOOKING_STATUSES.CANCELLED;
-            booking.cancellationReason = cancellationReason;
-            booking.cancelledAt = new Date();
-            booking.cancelledBy = userId;
+            const updatedBooking = await prisma.booking.update({
+                where: { id: bookingId },
+                data: {
+                    status: BOOKING_STATUSES.CANCELLED,
+                    cancellationReason: cancellationReason,
+                    cancelledAt: new Date(),
+                    cancelledBy: userId
+                }
+            });
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
-
-            await prisma.bookingHistory.create({ data: {
-                historyId: this._generateHistoryId(),
-                bookingId: bookingId,
-                action: 'BOOKING_CANCELLED',
-                status: BOOKING_STATUSES.CANCELLED,
-                changes: { previousStatus: previousStatus, reason: cancellationReason },
-                createdBy: userId
-            }, { transaction });
+            await prisma.bookingHistory.create({
+                data: {
+                    historyId: this._generateHistoryId(),
+                    bookingId: bookingId,
+                    action: 'BOOKING_CANCELLED',
+                    status: BOOKING_STATUSES.CANCELLED,
+                    changes: { previousStatus: previousStatus, reason: cancellationReason },
+                    createdBy: userId
+                }
+            });
 
             const payment = await prisma.payment.findFirst({
-                where: { bookingId: bookingId, status: 'completed' },
-                transaction: transaction
+                where: { bookingId: bookingId, status: 'completed' }
             });
 
             if (payment) {
-                payment.status = 'refunded';
-                payment.refundedAt = new Date();
-                /* TODO: Convert to prisma update */ await payment.save({ transaction });
+                await prisma.payment.update({
+                    where: { id: payment.id },
+                    data: {
+                        status: 'refunded',
+                        refundedAt: new Date()
+                    }
+                });
             }
 
             await this.auditLogService.logAction({
@@ -386,22 +404,22 @@ export class BookingService {
                 entityId: bookingId,
                 userId: userId,
                 details: { cancellationReason: cancellationReason }
-            }, transaction);
+            });
 
             await this.notificationService.sendNotification(userId, 'BOOKING_CANCELLED', {
                 bookingId: bookingId,
                 reason: cancellationReason
             });
 
-            
+
 
             return {
                 success: true,
                 message: 'Booking cancelled successfully',
-                booking: booking
+                booking: updatedBooking
             };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -418,7 +436,7 @@ export class BookingService {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -432,19 +450,24 @@ export class BookingService {
                 throw new AppError('Workflow already started', 400);
             }
 
-            booking.workflowStartedAt = new Date();
-            booking.currentStep = BOOKING_WORKFLOW_STEPS.TREATMENT_SELECTION;
+            const updatedBooking = await prisma.booking.update({
+                where: { id: bookingId },
+                data: {
+                    workflowStartedAt: new Date(),
+                    currentStep: BOOKING_WORKFLOW_STEPS.TREATMENT_SELECTION
+                }
+            });
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
-
-            await prisma.bookingHistory.create({ data: {
-                historyId: this._generateHistoryId(),
-                bookingId: bookingId,
-                action: 'WORKFLOW_STARTED',
-                status: booking.status,
-                changes: { step: BOOKING_WORKFLOW_STEPS.TREATMENT_SELECTION },
-                createdBy: userId
-            }, { transaction });
+            await prisma.bookingHistory.create({
+                data: {
+                    historyId: this._generateHistoryId(),
+                    bookingId: bookingId,
+                    action: 'WORKFLOW_STARTED',
+                    status: booking.status,
+                    changes: { step: BOOKING_WORKFLOW_STEPS.TREATMENT_SELECTION },
+                    createdBy: userId
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'WORKFLOW_STARTED',
@@ -452,18 +475,18 @@ export class BookingService {
                 entityId: bookingId,
                 userId: userId,
                 details: {}
-            }, transaction);
+            });
 
-            
+
 
             return {
                 success: true,
                 message: 'Workflow started successfully',
-                currentStep: booking.currentStep,
-                booking: booking
+                currentStep: updatedBooking.currentStep,
+                booking: updatedBooking
             };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -476,7 +499,7 @@ export class BookingService {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -502,17 +525,21 @@ export class BookingService {
             const previousStep = booking.currentStep;
             const nextStep = steps[currentIndex + 1];
 
-            booking.currentStep = nextStep;
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            const updatedBooking = await prisma.booking.update({
+                where: { id: bookingId },
+                data: { currentStep: nextStep }
+            });
 
-            await prisma.bookingHistory.create({ data: {
-                historyId: this._generateHistoryId(),
-                bookingId: bookingId,
-                action: 'STEP_ADVANCED',
-                status: booking.status,
-                changes: { fromStep: previousStep, toStep: nextStep },
-                createdBy: userId
-            }, { transaction });
+            await prisma.bookingHistory.create({
+                data: {
+                    historyId: this._generateHistoryId(),
+                    bookingId: bookingId,
+                    action: 'STEP_ADVANCED',
+                    status: booking.status,
+                    changes: { fromStep: previousStep, toStep: nextStep },
+                    createdBy: userId
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'WORKFLOW_STEP_ADVANCED',
@@ -520,18 +547,18 @@ export class BookingService {
                 entityId: bookingId,
                 userId: userId,
                 details: { fromStep: previousStep, toStep: nextStep }
-            }, transaction);
+            });
 
-            
+
 
             return {
                 success: true,
                 message: 'Proceeding to next step',
                 currentStep: nextStep,
-                booking: booking
+                booking: updatedBooking
             };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -544,7 +571,7 @@ export class BookingService {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -564,17 +591,21 @@ export class BookingService {
             const previousStep = booking.currentStep;
             const newStep = steps[currentIndex - 1];
 
-            booking.currentStep = newStep;
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            const updatedBooking = await prisma.booking.update({
+                where: { id: bookingId },
+                data: { currentStep: newStep }
+            });
 
-            await prisma.bookingHistory.create({ data: {
-                historyId: this._generateHistoryId(),
-                bookingId: bookingId,
-                action: 'STEP_REVERSED',
-                status: booking.status,
-                changes: { fromStep: previousStep, toStep: newStep },
-                createdBy: userId
-            }, { transaction });
+            await prisma.bookingHistory.create({
+                data: {
+                    historyId: this._generateHistoryId(),
+                    bookingId: bookingId,
+                    action: 'STEP_REVERSED',
+                    status: booking.status,
+                    changes: { fromStep: previousStep, toStep: newStep },
+                    createdBy: userId
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'WORKFLOW_STEP_REVERSED',
@@ -582,18 +613,18 @@ export class BookingService {
                 entityId: bookingId,
                 userId: userId,
                 details: { fromStep: previousStep, toStep: newStep }
-            }, transaction);
+            });
 
-            
+
 
             return {
                 success: true,
                 message: 'Reverted to previous step',
                 currentStep: newStep,
-                booking: booking
+                booking: updatedBooking
             };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -606,7 +637,7 @@ export class BookingService {
                 throw new AppError('Booking ID and User ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -622,19 +653,24 @@ export class BookingService {
                 throw new AppError('All workflow steps must be completed', 400);
             }
 
-            booking.status = BOOKING_STATUSES.EXPERT_REVIEW;
-            booking.workflowCompletedAt = new Date();
+            const updatedBooking = await prisma.booking.update({
+                where: { id: bookingId },
+                data: {
+                    status: BOOKING_STATUSES.EXPERT_REVIEW,
+                    workflowCompletedAt: new Date()
+                }
+            });
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
-
-            await prisma.bookingHistory.create({ data: {
-                historyId: this._generateHistoryId(),
-                bookingId: bookingId,
-                action: 'WORKFLOW_COMPLETED',
-                status: BOOKING_STATUSES.EXPERT_REVIEW,
-                changes: { completedAt: new Date() },
-                createdBy: userId
-            }, { transaction });
+            await prisma.bookingHistory.create({
+                data: {
+                    historyId: this._generateHistoryId(),
+                    bookingId: bookingId,
+                    action: 'WORKFLOW_COMPLETED',
+                    status: BOOKING_STATUSES.EXPERT_REVIEW,
+                    changes: { completedAt: new Date() },
+                    createdBy: userId
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'WORKFLOW_COMPLETED',
@@ -642,21 +678,21 @@ export class BookingService {
                 entityId: bookingId,
                 userId: userId,
                 details: {}
-            }, transaction);
+            });
 
             await this.notificationService.sendNotification(userId, 'BOOKING_SUBMITTED_FOR_REVIEW', {
                 bookingId: bookingId
             });
 
-            
+
 
             return {
                 success: true,
                 message: 'Workflow completed successfully',
-                booking: booking
+                booking: updatedBooking
             };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -711,10 +747,12 @@ export class BookingService {
 
             const history = await prisma.bookingHistory.findMany({
                 where: { bookingId: bookingId },
-                include: [{ model: User, as: 'creator', attributes: ['firstName', 'lastName'] }],
-                order: [
-                    ['createdAt', 'ASC']
-                ]
+                include: {
+                    creator: { select: { firstName: true, lastName: true } }
+                },
+                orderBy: {
+                    createdAt: 'asc'
+                }
             });
 
             return {
@@ -735,7 +773,7 @@ export class BookingService {
                 throw new AppError('Booking ID, User ID, and notes are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
@@ -746,18 +784,22 @@ export class BookingService {
             }
 
             const previousNotes = booking.notes;
-            booking.notes = notes;
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            const updatedBooking = await prisma.booking.update({
+                where: { id: bookingId },
+                data: { notes: notes }
+            });
 
-            await prisma.bookingHistory.create({ data: {
-                historyId: this._generateHistoryId(),
-                bookingId: bookingId,
-                action: 'NOTES_UPDATED',
-                status: booking.status,
-                changes: { previousNotes: previousNotes, newNotes: notes },
-                createdBy: userId
-            }, { transaction });
+            await prisma.bookingHistory.create({
+                data: {
+                    historyId: this._generateHistoryId(),
+                    bookingId: bookingId,
+                    action: 'NOTES_UPDATED',
+                    status: booking.status,
+                    changes: { previousNotes: previousNotes, newNotes: notes },
+                    createdBy: userId
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'BOOKING_NOTES_UPDATED',
@@ -765,17 +807,17 @@ export class BookingService {
                 entityId: bookingId,
                 userId: userId,
                 details: { notes: notes }
-            }, transaction);
+            });
 
-            
+
 
             return {
                 success: true,
                 message: 'Booking notes updated',
-                booking: booking
+                booking: updatedBooking
             };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -792,13 +834,13 @@ export class BookingService {
                 throw new AppError('Booking ID and Treatment ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            const treatment = await prisma.treatment.findUnique({ where: { id: treatmentId, { transaction } } });
+            const treatment = await prisma.treatment.findUnique({ where: { id: treatmentId } });
 
             if (!treatment) {
                 throw new AppError('Treatment not found', 404);
@@ -812,9 +854,14 @@ export class BookingService {
                 treatmentName: treatment.treatmentName,
                 completedAt: new Date()
             };
-            booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            const updatedBooking = await prisma.booking.update({
+                where: { id: bookingId },
+                data: {
+                    treatmentId: treatmentId,
+                    workflowData: workflowData
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'STEP_1_COMPLETED',
@@ -822,13 +869,13 @@ export class BookingService {
                 entityId: bookingId,
                 userId: booking.userId,
                 details: { treatmentId: treatmentId }
-            }, transaction);
+            });
 
-            
 
-            return { success: true, booking: booking };
+
+            return { success: true, booking: updatedBooking };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -841,13 +888,13 @@ export class BookingService {
                 throw new AppError('Booking ID and Country ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            const country = await prisma.country.findUnique({ where: { id: countryId, { transaction } } });
+            const country = await prisma.country.findUnique({ where: { id: countryId } });
 
             if (!country) {
                 throw new AppError('Country not found', 404);
@@ -862,9 +909,14 @@ export class BookingService {
                 currencyCode: country.currencyCode,
                 completedAt: new Date()
             };
-            booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            const updatedBooking = await prisma.booking.update({
+                where: { id: bookingId },
+                data: {
+                    countryId: countryId,
+                    workflowData: workflowData
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'STEP_2_COMPLETED',
@@ -872,13 +924,13 @@ export class BookingService {
                 entityId: bookingId,
                 userId: booking.userId,
                 details: { countryId: countryId }
-            }, transaction);
+            });
 
-            
 
-            return { success: true, booking: booking };
+
+            return { success: true, booking: updatedBooking };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -891,13 +943,13 @@ export class BookingService {
                 throw new AppError('Booking ID and City ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            const city = await prisma.city.findUnique({ where: { id: cityId, { transaction } } });
+            const city = await prisma.city.findUnique({ where: { id: cityId } });
 
             if (!city) {
                 throw new AppError('City not found', 404);
@@ -912,9 +964,14 @@ export class BookingService {
                 state: city.state,
                 completedAt: new Date()
             };
-            booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            const updatedBooking = await prisma.booking.update({
+                where: { id: bookingId },
+                data: {
+                    cityId: cityId,
+                    workflowData: workflowData
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'STEP_3_COMPLETED',
@@ -922,13 +979,13 @@ export class BookingService {
                 entityId: bookingId,
                 userId: booking.userId,
                 details: { cityId: cityId }
-            }, transaction);
+            });
 
-            
 
-            return { success: true, booking: booking };
+
+            return { success: true, booking: updatedBooking };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -941,13 +998,13 @@ export class BookingService {
                 throw new AppError('Booking ID and Hospital ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            const hospital = await prisma.hospital.findUnique({ where: { id: hospitalId, { transaction } } });
+            const hospital = await prisma.hospital.findUnique({ where: { id: hospitalId } });
 
             if (!hospital) {
                 throw new AppError('Hospital not found', 404);
@@ -962,9 +1019,14 @@ export class BookingService {
                 location: hospital.location,
                 completedAt: new Date()
             };
-            booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            const updatedBooking = await prisma.booking.update({
+                where: { id: bookingId },
+                data: {
+                    hospitalId: hospitalId,
+                    workflowData: workflowData
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'STEP_4_COMPLETED',
@@ -972,13 +1034,13 @@ export class BookingService {
                 entityId: bookingId,
                 userId: booking.userId,
                 details: { hospitalId: hospitalId }
-            }, transaction);
+            });
 
-            
 
-            return { success: true, booking: booking };
+
+            return { success: true, booking: updatedBooking };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -991,21 +1053,17 @@ export class BookingService {
                 throw new AppError('Booking ID and Package ID are required', 400);
             }
 
-            const booking = await prisma.booking.findUnique({ where: { id: bookingId, { transaction } } });
+            const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
 
             if (!booking) {
                 throw new AppError('Booking not found', 404);
             }
 
-            const packageRecord = await prisma.package.findUnique({ where: { id: packageId, { transaction } } });
+            const packageRecord = await prisma.package.findUnique({ where: { id: packageId } });
 
             if (!packageRecord) {
                 throw new AppError('Package not found', 404);
             }
-
-            booking.packageId = packageId;
-            booking.basePrice = packageRecord.basePrice;
-            booking.totalPrice = packageRecord.basePrice;
 
             const workflowData = booking.workflowData || {};
             workflowData.step_5 = {
@@ -1014,9 +1072,16 @@ export class BookingService {
                 basePrice: packageRecord.basePrice,
                 completedAt: new Date()
             };
-            booking.workflowData = workflowData;
 
-            /* TODO: Convert to prisma update */ await booking.save({ transaction });
+            const updatedBooking = await prisma.booking.update({
+                where: { id: bookingId },
+                data: {
+                    packageId: packageId,
+                    basePrice: packageRecord.basePrice,
+                    totalPrice: packageRecord.basePrice,
+                    workflowData: workflowData
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'STEP_5_COMPLETED',
@@ -1024,13 +1089,13 @@ export class BookingService {
                 entityId: bookingId,
                 userId: booking.userId,
                 details: { packageId: packageId, price: packageRecord.basePrice }
-            }, transaction);
+            });
 
-            
 
-            return { success: true, booking: booking };
+
+            return { success: true, booking: updatedBooking };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }

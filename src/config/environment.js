@@ -1,9 +1,5 @@
 'use strict';
 
-import dotenv from 'dotenv';
-
-dotenv.config();
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // ENVIRONMENT CONFIGURATION - ULTRA-COMPREHENSIVE
 // Centralized configuration from .env file

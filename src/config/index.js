@@ -1,9 +1,5 @@
 'use strict';
 
-import dotenv from 'dotenv';
-
-dotenv.config();
-
 /**
  * ULTRA-COMPREHENSIVE CONFIGURATION
  * All third-party services: ImageKit, Twilio, Stripe, Razorpay, SendGrid, etc.

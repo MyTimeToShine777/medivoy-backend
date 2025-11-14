@@ -38,19 +38,19 @@ export class PaymentGatewayService {
 
             const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
             if (!booking) {
-                
+
                 throw new AppError('Booking not found', 404);
             }
 
             const user = await prisma.user.findUnique({ where: { id: userId } });
             if (!user) {
-                
+
                 throw new AppError('User not found', 404);
             }
 
             const errors = this.validationService.validatePaymentData(paymentData);
             if (errors.length) {
-                
+
                 throw new AppError(errors.join(', '), 400);
             }
 
@@ -68,19 +68,21 @@ export class PaymentGatewayService {
                 gatewayPaymentId = gatewayResponse.id;
             }
 
-            const payment = await prisma.payment.create({ data: {
-                paymentId: this._generatePaymentId(),
-                bookingId: bookingId,
-                userId: userId,
-                amount: paymentData.amount,
-                currency: paymentData.currency,
-                gateway: gateway,
-                gatewayPaymentId: gatewayPaymentId,
-                status: 'pending',
-                paymentMethod: paymentData.paymentMethod || null,
-                description: paymentData.description || null,
-                metadata: gatewayResponse,
-                createdAt: new Date()
+            const payment = await prisma.payment.create({
+                data: {
+                    paymentId: this._generatePaymentId(),
+                    bookingId: bookingId,
+                    userId: userId,
+                    amount: paymentData.amount,
+                    currency: paymentData.currency,
+                    gateway: gateway,
+                    gatewayPaymentId: gatewayPaymentId,
+                    status: 'pending',
+                    paymentMethod: paymentData.paymentMethod || null,
+                    description: paymentData.description || null,
+                    metadata: gatewayResponse,
+                    createdAt: new Date()
+                }
             });
 
             await this.auditLogService.logAction({
@@ -89,9 +91,9 @@ export class PaymentGatewayService {
                 entityId: payment.paymentId,
                 userId: userId,
                 details: { gateway: gateway, amount: paymentData.amount }
-            }, transaction);
+            });
 
-            
+
 
             return {
                 success: true,
@@ -103,7 +105,7 @@ export class PaymentGatewayService {
                 currency: payment.currency
             };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -125,7 +127,7 @@ export class PaymentGatewayService {
             });
 
             if (!payment) {
-                
+
                 throw new AppError('Payment not found', 404);
             }
 
@@ -138,19 +140,21 @@ export class PaymentGatewayService {
             }
 
             if (!isValid) {
-                
+
                 throw new AppError('Payment verification failed', 400);
             }
 
             payment.status = 'completed';
             payment.verifiedAt = new Date();
-            /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */
+            await payment.save({ transaction: transaction });
 
             // Update booking status
             const booking = await prisma.booking.findUnique({ where: { id: payment.bookingId } });
             if (booking) {
                 booking.paymentStatus = 'completed';
-                /* TODO: Convert to prisma update */ await booking.save({ transaction: transaction });
+                /* TODO: Convert to prisma update */
+                await booking.save({ transaction: transaction });
             }
 
             await this.auditLogService.logAction({
@@ -167,11 +171,11 @@ export class PaymentGatewayService {
                 currency: payment.currency
             });
 
-            
+
 
             return { success: true, message: 'Payment verified', payment: payment };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -193,17 +197,17 @@ export class PaymentGatewayService {
             });
 
             if (!payment) {
-                
+
                 throw new AppError('Payment not found', 404);
             }
 
             if (payment.userId !== userId && userId !== 'ADMIN') {
-                
+
                 throw new AppError('Unauthorized to refund', 403);
             }
 
             if (payment.status === 'refunded') {
-                
+
                 throw new AppError('Already refunded', 400);
             }
 
@@ -220,7 +224,8 @@ export class PaymentGatewayService {
             payment.refundReason = refundData.reason || null;
             payment.refundedAt = new Date();
             payment.refundGatewayId = refundResponse.id;
-            /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */
+            await payment.save({ transaction: transaction });
 
             await this.auditLogService.logAction({
                 action: 'PAYMENT_REFUNDED',
@@ -235,11 +240,11 @@ export class PaymentGatewayService {
                 refundAmount: payment.refundAmount
             });
 
-            
+
 
             return { success: true, message: 'Refund processed', payment: payment };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -257,7 +262,7 @@ export class PaymentGatewayService {
 
             const user = await prisma.user.findUnique({ where: { id: userId } });
             if (!user) {
-                
+
                 throw new AppError('User not found', 404);
             }
 
@@ -278,7 +283,7 @@ export class PaymentGatewayService {
                 details: { gateway: gateway }
             }, transaction);
 
-            
+
 
             return {
                 success: true,
@@ -287,7 +292,7 @@ export class PaymentGatewayService {
                 gateway: gateway
             };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -316,7 +321,8 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'completed';
                     payment.verifiedAt = new Date();
-                    /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
+                    /* TODO: Convert to prisma update */
+                    await payment.save({ transaction: transaction });
                 }
             } else if (eventType === 'payment.failed') {
                 const payment = await prisma.payment.findFirst({
@@ -327,15 +333,16 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'failed';
                     payment.failureReason = eventData.error_description;
-                    /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
+                    /* TODO: Convert to prisma update */
+                    await payment.save({ transaction: transaction });
                 }
             }
 
-            
+
 
             return { success: true, message: 'Webhook processed' };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -360,7 +367,8 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'completed';
                     payment.verifiedAt = new Date();
-                    /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
+                    /* TODO: Convert to prisma update */
+                    await payment.save({ transaction: transaction });
                 }
             } else if (eventType === 'payment_intent.payment_failed') {
                 const payment = await prisma.payment.findFirst({
@@ -371,15 +379,16 @@ export class PaymentGatewayService {
                 if (payment) {
                     payment.status = 'failed';
                     payment.failureReason = eventData.last_payment_error.message;
-                    /* TODO: Convert to prisma update */ await payment.save({ transaction: transaction });
+                    /* TODO: Convert to prisma update */
+                    await payment.save({ transaction: transaction });
                 }
             }
 
-            
+
 
             return { success: true, message: 'Webhook processed' };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -402,7 +411,7 @@ export class PaymentGatewayService {
     }
 
     async _createRazorpayOrder(paymentData, user) {
-        const order = await this.razorpay.prisma.orders.create({ data: {
+        const order = await this.razorpay.orders.create({
             amount: paymentData.amount * 100,
             currency: paymentData.currency,
             receipt: this._generatePaymentId(),
@@ -417,7 +426,7 @@ export class PaymentGatewayService {
     }
 
     async _createStripePaymentIntent(paymentData, user) {
-        const intent = await this.stripe.prisma.paymentIntents.create({ data: {
+        const intent = await this.stripe.paymentIntents.create({
             amount: paymentData.amount * 100,
             currency: paymentData.currency.toLowerCase(),
             customer: user.stripeCustomerId || undefined,
@@ -456,7 +465,7 @@ export class PaymentGatewayService {
     }
 
     async _refundStripePayment(payment, refundData) {
-        const refund = await this.stripe.prisma.refunds.create({ data: {
+        const refund = await this.stripe.refunds.create({
             payment_intent: payment.gatewayPaymentId,
             amount: refundData.amount ? refundData.amount * 100 : undefined,
             reason: refundData.reason || 'requested_by_customer'
@@ -465,7 +474,7 @@ export class PaymentGatewayService {
     }
 
     async _createRazorpaySubscription(subscriptionData, user) {
-        const subscription = await this.razorpay.prisma.subscriptions.create({ data: {
+        const subscription = await this.razorpay.subscriptions.create({
             plan_id: subscriptionData.planId,
             customer_notify: 1,
             quantity: 1,
@@ -476,7 +485,7 @@ export class PaymentGatewayService {
     }
 
     async _createStripeSubscription(subscriptionData, user) {
-        const subscription = await this.stripe.prisma.subscriptions.create({ data: {
+        const subscription = await this.stripe.subscriptions.create({
             customer: user.stripeCustomerId,
             items: [{ price: subscriptionData.priceId }],
             default_payment_method: subscriptionData.paymentMethodId

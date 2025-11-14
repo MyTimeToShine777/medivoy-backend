@@ -8,8 +8,9 @@ class DoctorService {
         try {
             const doctor = await prisma.doctor.create({
                 data: {
-                doctorNumber: await this.generateDoctorNumber(),
-                ...doctorData,
+                    doctorNumber: await this.generateDoctorNumber(),
+                    ...doctorData
+                }
             });
 
             return {
@@ -29,11 +30,11 @@ class DoctorService {
     async getDoctorById(doctorId) {
         try {
             const doctor = await prisma.doctor.findUnique({
-                where: { doctorId }, {
-                include: [
-                    { model: DoctorSchedule, as: 'schedules' },
-                    { model: Review, as: 'reviews' },
-                ],
+                where: { doctorId },
+                include: {
+                    schedules: true,
+                    reviews: true
+                }
             });
 
             if (!doctor) {
@@ -102,17 +103,20 @@ class DoctorService {
             if (filters.search) {
                 where.OR = [{
                         firstName: {
-                            contains: filters.search, mode: "insensitive"
+                            contains: filters.search,
+                            mode: "insensitive"
                         }
                     },
                     {
                         lastName: {
-                            contains: filters.search, mode: "insensitive"
+                            contains: filters.search,
+                            mode: "insensitive"
                         }
                     },
                     {
                         specialization: {
-                            contains: filters.search, mode: "insensitive"
+                            contains: filters.search,
+                            mode: "insensitive"
                         }
                     },
                 ];

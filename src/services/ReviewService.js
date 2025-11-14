@@ -19,70 +19,65 @@ export class ReviewService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createBookingReview(bookingId, userId, reviewData) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!bookingId || !userId || !reviewData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
             const booking = await tx.booking.findUnique({ where: { bookingId } });
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
             if (booking.userId !== userId) {
-                await transaction.rollback();
                 throw new AppError('Cannot review other\'s booking', 403);
             }
 
             if (booking.status !== 'completed') {
-                await transaction.rollback();
                 throw new AppError('Only completed bookings can be reviewed', 400);
             }
 
             const existing = await tx.review.findFirst({
-                where: { bookingId: bookingId, reviewType: 'booking' },
-                transaction: transaction
+                where: { bookingId: bookingId, reviewType: 'booking' }
             });
 
             if (existing) {
-                await transaction.rollback();
                 throw new AppError('Already reviewed', 409);
             }
 
             const errors = this.validationService.validateReviewData(reviewData);
             if (errors.length) {
-                await transaction.rollback();
                 throw new AppError(errors.join(', '), 400);
             }
 
             const review = await tx.review.create({
                 data: {
-                reviewId: this._generateReviewId(),
-                bookingId: bookingId,
-                userId: userId,
-                hospitalId: booking.hospitalId,
-                reviewType: 'booking',
-                rating: reviewData.rating,
-                title: reviewData.title,
-                content: reviewData.content,
-                aspects: {
-                    communication: reviewData.communication,
-                    facilities: reviewData.facilities,
-                    costValue: reviewData.costValue
-                },
-                isPublished: false,
-                helpfulCount: 0,
-                reviewedAt: new Date()
-            }, { transaction: transaction });
+                    reviewId: this._generateReviewId(),
+                    bookingId: bookingId,
+                    userId: userId,
+                    hospitalId: booking.hospitalId,
+                    reviewType: 'booking',
+                    rating: reviewData.rating,
+                    title: reviewData.title,
+                    content: reviewData.content,
+                    aspects: {
+                        communication: reviewData.communication,
+                        facilities: reviewData.facilities,
+                        costValue: reviewData.costValue
+                    },
+                    isPublished: false,
+                    helpfulCount: 0,
+                    reviewedAt: new Date()
+                }
+            });
 
             await tx.reviewApproval.create({
-                    data: {
-                approvalId: this._generateApprovalId(),
-                reviewId: review.reviewId,
-                status: 'pending'
-            }, { transaction: transaction });
+                data: {
+                    approvalId: this._generateApprovalId(),
+                    reviewId: review.reviewId,
+                    status: 'pending'
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'BOOKING_REVIEW_CREATED',
@@ -90,15 +85,10 @@ export class ReviewService {
                 entityId: review.reviewId,
                 userId: userId,
                 details: {}
-            }, transaction);
-
-            await transaction.commit();
+            }, tx);
 
             return { success: true, message: 'Review created', review: review };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     async getBookingReviewsForHospital(hospitalId, filters) {
@@ -111,19 +101,20 @@ export class ReviewService {
 
             const reviews = await prisma.review.findMany({
                 where: where,
-                include: [
-                    { model: User, attributes: ['firstName', 'lastName'] },
-                    { model: Booking }
-                ],
-                order: [
-                    ['reviewedAt', 'DESC']
-                ],
-                limit: limit,
-                offset: offset,
-                distinct: true
+                include: {
+                    user: {
+                        select: { firstName: true, lastName: true }
+                    },
+                    booking: true
+                },
+                orderBy: {
+                    reviewedAt: 'desc'
+                },
+                take: limit,
+                skip: offset
             });
 
-            const total = await Review.count({ where: where });
+            const total = await prisma.review.count({ where: where });
             const avgRating = await this._calculateAverageRating(hospitalId, 'booking');
 
             return {
@@ -138,31 +129,36 @@ export class ReviewService {
     }
 
     async publishBookingReview(reviewId, adminUserId, approvalData) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!reviewId || !adminUserId) throw new AppError('IDs required', 400);
 
-            const review = await Review.findByPk(reviewId, { transaction: transaction });
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
-                await transaction.rollback();
                 throw new AppError('Review not found', 404);
             }
 
             if (review.reviewType !== 'booking') {
-                await transaction.rollback();
                 throw new AppError('Not a booking review', 400);
             }
 
-            review.isPublished = true;
-            review.publishedAt = new Date();
-            await review.save({ transaction: transaction });
+            const updatedReview = await tx.review.update({
+                where: { reviewId },
+                data: {
+                    isPublished: true,
+                    publishedAt: new Date()
+                }
+            });
 
-            const approval = await ReviewApproval.findOne({ where: { reviewId: reviewId }, transaction: transaction });
+            const approval = await tx.reviewApproval.findFirst({ where: { reviewId: reviewId } });
             if (approval) {
-                approval.status = 'approved';
-                approval.approvedBy = adminUserId;
-                approval.approvedAt = new Date();
-                await approval.save({ transaction: transaction });
+                await tx.reviewApproval.update({
+                    where: { approvalId: approval.approvalId },
+                    data: {
+                        status: 'approved',
+                        approvedBy: adminUserId,
+                        approvedAt: new Date()
+                    }
+                });
             }
 
             await this.auditLogService.logAction({
@@ -171,39 +167,36 @@ export class ReviewService {
                 entityId: reviewId,
                 userId: adminUserId,
                 details: {}
-            }, transaction);
+            }, tx);
 
-            await transaction.commit();
-
-            return { success: true, message: 'Published', review: review };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+            return { success: true, message: 'Published', review: updatedReview };
+        });
     }
 
     async rejectBookingReview(reviewId, adminUserId, reason) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!reviewId || !adminUserId || !reason) {
                 throw new AppError('Required params missing', 400);
             }
 
-            const review = await Review.findByPk(reviewId, { transaction: transaction });
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
-                await transaction.rollback();
                 throw new AppError('Review not found', 404);
             }
 
-            const approval = await ReviewApproval.findOne({ where: { reviewId: reviewId }, transaction: transaction });
+            const approval = await tx.reviewApproval.findFirst({ where: { reviewId: reviewId } });
             if (approval) {
-                approval.status = 'rejected';
-                approval.rejectedBy = adminUserId;
-                approval.rejectionReason = reason;
-                await approval.save({ transaction: transaction });
+                await tx.reviewApproval.update({
+                    where: { approvalId: approval.approvalId },
+                    data: {
+                        status: 'rejected',
+                        rejectedBy: adminUserId,
+                        rejectionReason: reason
+                    }
+                });
             }
 
-            await review.destroy({ transaction: transaction });
+            await tx.review.delete({ where: { reviewId } });
 
             await this.notificationService.sendNotification(review.userId, 'REVIEW_REJECTED', { reason: reason });
 
@@ -213,43 +206,38 @@ export class ReviewService {
                 entityId: reviewId,
                 userId: adminUserId,
                 details: { reason: reason }
-            }, transaction);
-
-            await transaction.commit();
+            }, tx);
 
             return { success: true, message: 'Rejected' };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     async updateBookingReview(reviewId, userId, updateData) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!reviewId || !userId) throw new AppError('IDs required', 400);
 
-            const review = await Review.findByPk(reviewId, { transaction: transaction });
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
-                await transaction.rollback();
                 throw new AppError('Review not found', 404);
             }
 
             if (review.userId !== userId) {
-                await transaction.rollback();
                 throw new AppError('Unauthorized', 403);
             }
 
             if (review.isPublished) {
-                await transaction.rollback();
                 throw new AppError('Cannot update published review', 400);
             }
 
-            if (updateData.rating) review.rating = updateData.rating;
-            if (updateData.title) review.title = updateData.title;
-            if (updateData.content) review.content = updateData.content;
+            const updateFields = {};
+            if (updateData.rating) updateFields.rating = updateData.rating;
+            if (updateData.title) updateFields.title = updateData.title;
+            if (updateData.content) updateFields.content = updateData.content;
 
-            await review.save({ transaction: transaction });
+            const updatedReview = await tx.review.update({
+                where: { reviewId },
+                data: updateFields
+            });
 
             await this.auditLogService.logAction({
                 action: 'BOOKING_REVIEW_UPDATED',
@@ -257,34 +245,26 @@ export class ReviewService {
                 entityId: reviewId,
                 userId: userId,
                 details: {}
-            }, transaction);
+            }, tx);
 
-            await transaction.commit();
-
-            return { success: true, message: 'Updated', review: review };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+            return { success: true, message: 'Updated', review: updatedReview };
+        });
     }
 
     async deleteBookingReview(reviewId, userId) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!reviewId || !userId) throw new AppError('IDs required', 400);
 
-            const review = await Review.findByPk(reviewId, { transaction: transaction });
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
-                await transaction.rollback();
                 throw new AppError('Review not found', 404);
             }
 
             if (review.userId !== userId) {
-                await transaction.rollback();
                 throw new AppError('Unauthorized', 403);
             }
 
-            await review.destroy({ transaction: transaction });
+            await tx.review.delete({ where: { reviewId } });
 
             await this.auditLogService.logAction({
                 action: 'BOOKING_REVIEW_DELETED',
@@ -292,15 +272,10 @@ export class ReviewService {
                 entityId: reviewId,
                 userId: userId,
                 details: {}
-            }, transaction);
-
-            await transaction.commit();
+            }, tx);
 
             return { success: true, message: 'Deleted' };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -308,67 +283,63 @@ export class ReviewService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async createMedicalReview(bookingId, userId, reviewData) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!bookingId || !userId || !reviewData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
             const booking = await tx.booking.findUnique({ where: { bookingId } });
             if (!booking) {
-                await transaction.rollback();
                 throw new AppError('Booking not found', 404);
             }
 
             if (booking.userId !== userId) {
-                await transaction.rollback();
                 throw new AppError('Cannot review other\'s booking', 403);
             }
 
             const existing = await tx.review.findFirst({
-                where: { bookingId: bookingId, reviewType: 'medical' },
-                transaction: transaction
+                where: { bookingId: bookingId, reviewType: 'medical' }
             });
 
             if (existing) {
-                await transaction.rollback();
                 throw new AppError('Medical review already exists', 409);
             }
 
             const errors = this.validationService.validateMedicalReviewData(reviewData);
             if (errors.length) {
-                await transaction.rollback();
                 throw new AppError(errors.join(', '), 400);
             }
 
             const review = await tx.review.create({
                 data: {
-                reviewId: this._generateReviewId(),
-                bookingId: bookingId,
-                userId: userId,
-                doctorId: reviewData.doctorId || null,
-                hospitalId: booking.hospitalId,
-                reviewType: 'medical',
-                rating: reviewData.rating,
-                title: reviewData.title,
-                content: reviewData.content,
-                aspects: {
-                    doctorProfessionalism: reviewData.doctorProfessionalism,
-                    treatmentEffectiveness: reviewData.treatmentEffectiveness,
-                    hospitalHygiene: reviewData.hospitalHygiene,
-                    careQuality: reviewData.careQuality
-                },
-                isPublished: false,
-                helpfulCount: 0,
-                reviewedAt: new Date()
-            }, { transaction: transaction });
+                    reviewId: this._generateReviewId(),
+                    bookingId: bookingId,
+                    userId: userId,
+                    doctorId: reviewData.doctorId || null,
+                    hospitalId: booking.hospitalId,
+                    reviewType: 'medical',
+                    rating: reviewData.rating,
+                    title: reviewData.title,
+                    content: reviewData.content,
+                    aspects: {
+                        doctorProfessionalism: reviewData.doctorProfessionalism,
+                        treatmentEffectiveness: reviewData.treatmentEffectiveness,
+                        hospitalHygiene: reviewData.hospitalHygiene,
+                        careQuality: reviewData.careQuality
+                    },
+                    isPublished: false,
+                    helpfulCount: 0,
+                    reviewedAt: new Date()
+                }
+            });
 
             await tx.reviewApproval.create({
-                    data: {
-                approvalId: this._generateApprovalId(),
-                reviewId: review.reviewId,
-                status: 'pending'
-            }, { transaction: transaction });
+                data: {
+                    approvalId: this._generateApprovalId(),
+                    reviewId: review.reviewId,
+                    status: 'pending'
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'MEDICAL_REVIEW_CREATED',
@@ -376,15 +347,10 @@ export class ReviewService {
                 entityId: review.reviewId,
                 userId: userId,
                 details: {}
-            }, transaction);
-
-            await transaction.commit();
+            }, tx);
 
             return { success: true, message: 'Medical review created', review: review };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     async getMedicalReviewsForDoctor(doctorId, filters) {
@@ -397,19 +363,20 @@ export class ReviewService {
 
             const reviews = await prisma.review.findMany({
                 where: where,
-                include: [
-                    { model: User, attributes: ['firstName', 'lastName'] },
-                    { model: Doctor }
-                ],
-                order: [
-                    ['reviewedAt', 'DESC']
-                ],
-                limit: limit,
-                offset: offset,
-                distinct: true
+                include: {
+                    user: {
+                        select: { firstName: true, lastName: true }
+                    },
+                    doctor: true
+                },
+                orderBy: {
+                    reviewedAt: 'desc'
+                },
+                take: limit,
+                skip: offset
             });
 
-            const total = await Review.count({ where: where });
+            const total = await prisma.review.count({ where: where });
             const avgRating = await this._calculateAverageRating(null, 'medical', doctorId);
 
             return {
@@ -424,31 +391,36 @@ export class ReviewService {
     }
 
     async publishMedicalReview(reviewId, adminUserId, approvalData) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!reviewId || !adminUserId) throw new AppError('IDs required', 400);
 
-            const review = await Review.findByPk(reviewId, { transaction: transaction });
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
-                await transaction.rollback();
                 throw new AppError('Review not found', 404);
             }
 
             if (review.reviewType !== 'medical') {
-                await transaction.rollback();
                 throw new AppError('Not a medical review', 400);
             }
 
-            review.isPublished = true;
-            review.publishedAt = new Date();
-            await review.save({ transaction: transaction });
+            const updatedReview = await tx.review.update({
+                where: { reviewId },
+                data: {
+                    isPublished: true,
+                    publishedAt: new Date()
+                }
+            });
 
-            const approval = await ReviewApproval.findOne({ where: { reviewId: reviewId }, transaction: transaction });
+            const approval = await tx.reviewApproval.findFirst({ where: { reviewId: reviewId } });
             if (approval) {
-                approval.status = 'approved';
-                approval.approvedBy = adminUserId;
-                approval.approvedAt = new Date();
-                await approval.save({ transaction: transaction });
+                await tx.reviewApproval.update({
+                    where: { approvalId: approval.approvalId },
+                    data: {
+                        status: 'approved',
+                        approvedBy: adminUserId,
+                        approvedAt: new Date()
+                    }
+                });
             }
 
             await this.auditLogService.logAction({
@@ -457,39 +429,36 @@ export class ReviewService {
                 entityId: reviewId,
                 userId: adminUserId,
                 details: {}
-            }, transaction);
+            }, tx);
 
-            await transaction.commit();
-
-            return { success: true, message: 'Published', review: review };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+            return { success: true, message: 'Published', review: updatedReview };
+        });
     }
 
     async rejectMedicalReview(reviewId, adminUserId, reason) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!reviewId || !adminUserId || !reason) {
                 throw new AppError('Required params missing', 400);
             }
 
-            const review = await Review.findByPk(reviewId, { transaction: transaction });
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
-                await transaction.rollback();
                 throw new AppError('Review not found', 404);
             }
 
-            const approval = await ReviewApproval.findOne({ where: { reviewId: reviewId }, transaction: transaction });
+            const approval = await tx.reviewApproval.findFirst({ where: { reviewId: reviewId } });
             if (approval) {
-                approval.status = 'rejected';
-                approval.rejectedBy = adminUserId;
-                approval.rejectionReason = reason;
-                await approval.save({ transaction: transaction });
+                await tx.reviewApproval.update({
+                    where: { approvalId: approval.approvalId },
+                    data: {
+                        status: 'rejected',
+                        rejectedBy: adminUserId,
+                        rejectionReason: reason
+                    }
+                });
             }
 
-            await review.destroy({ transaction: transaction });
+            await tx.review.delete({ where: { reviewId } });
 
             await this.notificationService.sendNotification(review.userId, 'MEDICAL_REVIEW_REJECTED', { reason: reason });
 
@@ -499,43 +468,38 @@ export class ReviewService {
                 entityId: reviewId,
                 userId: adminUserId,
                 details: { reason: reason }
-            }, transaction);
-
-            await transaction.commit();
+            }, tx);
 
             return { success: true, message: 'Rejected' };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     async updateMedicalReview(reviewId, userId, updateData) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!reviewId || !userId) throw new AppError('IDs required', 400);
 
-            const review = await Review.findByPk(reviewId, { transaction: transaction });
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
-                await transaction.rollback();
                 throw new AppError('Review not found', 404);
             }
 
             if (review.userId !== userId) {
-                await transaction.rollback();
                 throw new AppError('Unauthorized', 403);
             }
 
             if (review.isPublished) {
-                await transaction.rollback();
                 throw new AppError('Cannot update published review', 400);
             }
 
-            if (updateData.rating) review.rating = updateData.rating;
-            if (updateData.title) review.title = updateData.title;
-            if (updateData.content) review.content = updateData.content;
+            const updateFields = {};
+            if (updateData.rating) updateFields.rating = updateData.rating;
+            if (updateData.title) updateFields.title = updateData.title;
+            if (updateData.content) updateFields.content = updateData.content;
 
-            await review.save({ transaction: transaction });
+            const updatedReview = await tx.review.update({
+                where: { reviewId },
+                data: updateFields
+            });
 
             await this.auditLogService.logAction({
                 action: 'MEDICAL_REVIEW_UPDATED',
@@ -543,34 +507,26 @@ export class ReviewService {
                 entityId: reviewId,
                 userId: userId,
                 details: {}
-            }, transaction);
+            }, tx);
 
-            await transaction.commit();
-
-            return { success: true, message: 'Updated', review: review };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+            return { success: true, message: 'Updated', review: updatedReview };
+        });
     }
 
     async deleteMedicalReview(reviewId, userId) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!reviewId || !userId) throw new AppError('IDs required', 400);
 
-            const review = await Review.findByPk(reviewId, { transaction: transaction });
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
-                await transaction.rollback();
                 throw new AppError('Review not found', 404);
             }
 
             if (review.userId !== userId) {
-                await transaction.rollback();
                 throw new AppError('Unauthorized', 403);
             }
 
-            await review.destroy({ transaction: transaction });
+            await tx.review.delete({ where: { reviewId } });
 
             await this.auditLogService.logAction({
                 action: 'MEDICAL_REVIEW_DELETED',
@@ -578,15 +534,10 @@ export class ReviewService {
                 entityId: reviewId,
                 userId: userId,
                 details: {}
-            }, transaction);
-
-            await transaction.commit();
+            }, tx);
 
             return { success: true, message: 'Deleted' };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -594,26 +545,23 @@ export class ReviewService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async markReviewHelpful(reviewId) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!reviewId) throw new AppError('Review ID required', 400);
 
-            const review = await Review.findByPk(reviewId, { transaction: transaction });
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
-                await transaction.rollback();
                 throw new AppError('Review not found', 404);
             }
 
-            review.helpfulCount = (review.helpfulCount || 0) + 1;
-            await review.save({ transaction: transaction });
+            const updatedReview = await tx.review.update({
+                where: { reviewId },
+                data: {
+                    helpfulCount: (review.helpfulCount || 0) + 1
+                }
+            });
 
-            await transaction.commit();
-
-            return { success: true, helpfulCount: review.helpfulCount };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+            return { success: true, helpfulCount: updatedReview.helpfulCount };
+        });
     }
 
     async getReviewStatistics(hospitalId, doctorId) {
@@ -622,7 +570,7 @@ export class ReviewService {
             if (hospitalId) where.hospitalId = hospitalId;
             if (doctorId) where.doctorId = doctorId;
 
-            const total = await Review.count({ where: where });
+            const total = await prisma.review.count({ where: where });
             const avgRating = await this._calculateAverageRating(hospitalId, null, doctorId);
 
             return {
@@ -639,20 +587,22 @@ export class ReviewService {
     }
 
     async flagReviewForModeration(reviewId, reason) {
-        const result = await prisma.$transaction(async (tx) => {
-        try {
+        return await prisma.$transaction(async(tx) => {
             if (!reviewId || !reason) throw new AppError('Required params missing', 400);
 
-            const review = await Review.findByPk(reviewId, { transaction: transaction });
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
-                await transaction.rollback();
                 throw new AppError('Review not found', 404);
             }
 
-            review.isFlaggedForModeration = true;
-            review.moderationReason = reason;
-            review.flaggedAt = new Date();
-            await review.save({ transaction: transaction });
+            await tx.review.update({
+                where: { reviewId },
+                data: {
+                    isFlaggedForModeration: true,
+                    moderationReason: reason,
+                    flaggedAt: new Date()
+                }
+            });
 
             await this.auditLogService.logAction({
                 action: 'REVIEW_FLAGGED',
@@ -660,15 +610,10 @@ export class ReviewService {
                 entityId: reviewId,
                 userId: 'SYSTEM',
                 details: { reason: reason }
-            }, transaction);
-
-            await transaction.commit();
+            }, tx);
 
             return { success: true, message: 'Flagged' };
-        } catch (error) {
-            await transaction.rollback();
-            throw this.errorHandlingService.handleError(error);
-        }
+        });
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -694,15 +639,14 @@ export class ReviewService {
             if (reviewType) where.reviewType = reviewType;
             if (doctorId) where.doctorId = doctorId;
 
-            const result = await Review.findAll({
+            const result = await prisma.review.aggregate({
                 where: where,
-                attributes: [
-                    [sequelize.fn('AVG', sequelize.col('rating')), 'avg']
-                ],
-                raw: true
+                _avg: {
+                    rating: true
+                }
             });
 
-            return result && result.avg ? parseFloat(result.avg).toFixed(2) : 0;
+            return result._avg.rating ? parseFloat(result._avg.rating).toFixed(2) : 0;
         } catch (error) {
             return 0;
         }

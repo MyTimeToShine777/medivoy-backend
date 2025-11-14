@@ -521,4 +521,5 @@ class ValidationService {
     }
 }
 
+export { ValidationService };
 export default new ValidationService();

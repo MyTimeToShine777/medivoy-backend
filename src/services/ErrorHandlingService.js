@@ -181,4 +181,5 @@ class ErrorHandlingService {
     }
 }
 
+export { ErrorHandlingService };
 export default new ErrorHandlingService();

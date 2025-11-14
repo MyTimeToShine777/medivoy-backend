@@ -8,8 +8,9 @@ class PatientService {
         try {
             const patient = await prisma.patient.create({
                 data: {
-                userId,
-                ...patientData,
+                    userId,
+                    ...patientData
+                }
             });
 
             return { success: true, data: patient };
@@ -23,9 +24,9 @@ class PatientService {
         try {
             const patient = await prisma.patient.findFirst({
                 where: { userId },
-                include: [
-                    { model: User, as: 'user' },
-                ],
+                include: {
+                    user: true,
+                },
             });
 
             if (!patient) {
@@ -41,23 +42,35 @@ class PatientService {
     // ========== UPDATE PATIENT HEALTH INFO ==========
     async updateHealthInfo(userId, healthData) {
         try {
-            const patient = await Patient.findOne({ where: { userId } });
+            const patient = await prisma.patient.findFirst({ where: { userId } });
             if (!patient) return { success: false, error: 'Not found' };
 
-            if (healthData.allergies) patient.allergies = healthData.allergies;
-            if (healthData.chronicConditions) patient.chronicConditions = healthData.chronicConditions;
-            if (healthData.medications) patient.currentMedications = healthData.medications;
+            const updateData = {};
+            if (healthData.allergies) updateData.allergies = healthData.allergies;
+            if (healthData.chronicConditions) updateData.chronicConditions = healthData.chronicConditions;
+            if (healthData.medications) updateData.currentMedications = healthData.medications;
+
+            let height = patient.height;
+            let weight = patient.weight;
+
             if (healthData.height) {
-                patient.height = healthData.height;
-                patient.bmi = this.calculateBMI(healthData.height, patient.weight);
+                height = healthData.height;
+                updateData.height = height;
             }
             if (healthData.weight) {
-                patient.weight = healthData.weight;
-                patient.bmi = this.calculateBMI(patient.height, healthData.weight);
+                weight = healthData.weight;
+                updateData.weight = weight;
             }
 
-            await prisma.patient.update({ where: { userId }, data: { allergies: patient.allergies, chronicConditions: patient.chronicConditions, currentMedications: patient.currentMedications, height: patient.height, weight: patient.weight, bmi: patient.bmi } });
-            return { success: true, data: patient };
+            if (healthData.height || healthData.weight) {
+                updateData.bmi = this.calculateBMI(height, weight);
+            }
+
+            const updatedPatient = await prisma.patient.update({
+                where: { userId },
+                data: updateData
+            });
+            return { success: true, data: updatedPatient };
         } catch (error) {
             return { success: false, error: error.message };
         }
@@ -68,9 +81,9 @@ class PatientService {
         try {
             const records = await prisma.medicalRecord.findMany({
                 where: { userId },
-                order: [
-                    ['recordDate', 'DESC']
-                ],
+                orderBy: {
+                    recordDate: 'desc',
+                },
             });
 
             return { success: true, data: records };
@@ -82,14 +95,14 @@ class PatientService {
     // ========== GET PATIENT CONSULTATIONS ==========
     async getPatientConsultations(userId) {
         try {
-            const consultations = await Consultation.findAll({
+            const consultations = await prisma.consultation.findMany({
                 where: { userId },
-                include: [
-                    { model: Doctor, as: 'doctor' },
-                ],
-                order: [
-                    ['consultationDate', 'DESC']
-                ],
+                include: {
+                    doctor: true,
+                },
+                orderBy: {
+                    consultationDate: 'desc',
+                },
             });
 
             return { success: true, data: consultations };

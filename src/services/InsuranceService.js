@@ -8,8 +8,9 @@ class InsuranceService {
         try {
             const insurance = await prisma.insurance.create({
                 data: {
-                ...insuranceData,
-                status: 'active',
+                    ...insuranceData,
+                    status: 'active'
+                }
             });
 
             return {
@@ -29,10 +30,10 @@ class InsuranceService {
     async getInsuranceById(insuranceId) {
         try {
             const insurance = await prisma.insurance.findUnique({
-                where: { insuranceId }, {
-                include: [
-                    { model: User, as: 'user' },
-                ],
+                where: { insuranceId },
+                include: {
+                    user: true
+                }
             });
 
             if (!insurance) {

@@ -24,13 +24,19 @@ export class UserService {
         try {
             if (!userId) throw new AppError('User ID required', 400);
 
-            const user = await prisma.user.findUnique({ where: { id: userId, {
-                include: [
-                    { model: UserPreference, attributes: ['prefId', 'emailNotifications', 'smsNotifications'] },
-                    { model: UserAddress, attributes: ['addressId', 'addressLine1', 'city', 'state', 'country'] }
-                ],
-                attributes: { exclude: ['password'] }
-            } } });
+            const user = await prisma.user.findUnique({
+                where: { id: userId },
+                select: {
+                    id: true,
+                    email: true,
+                    role: true,
+                    isEmailVerified: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    preferences: true,
+                    addresses: true
+                }
+            });
 
             if (!user) throw new AppError('User not found', 404);
 
@@ -47,7 +53,7 @@ export class UserService {
 
             const user = await prisma.user.findUnique({ where: { id: userId } });
             if (!user) {
-                
+
                 throw new AppError('User not found', 404);
             }
 
@@ -61,7 +67,8 @@ export class UserService {
                 }
             }
 
-            /* TODO: Convert to prisma update */ await user.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */
+            await user.save({ transaction: transaction });
 
             await this.auditLogService.logAction({
                 action: 'USER_PROFILE_UPDATED',
@@ -71,11 +78,11 @@ export class UserService {
                 details: { changes: previousData }
             }, transaction);
 
-            
+
 
             return { success: true, message: 'Profile updated', user: user };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -89,20 +96,21 @@ export class UserService {
 
             const user = await prisma.user.findUnique({ where: { id: userId } });
             if (!user) {
-                
+
                 throw new AppError('User not found', 404);
             }
 
             const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
             if (!isPasswordValid) {
-                
+
                 throw new AppError('Invalid old password', 400);
             }
 
             const hashedPassword = await bcrypt.hash(newPassword, 10);
             user.password = hashedPassword;
             user.passwordChangedAt = new Date();
-            /* TODO: Convert to prisma update */ await user.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */
+            await user.save({ transaction: transaction });
 
             await this.auditLogService.logAction({
                 action: 'PASSWORD_CHANGED',
@@ -114,11 +122,11 @@ export class UserService {
 
             await this.notificationService.sendNotification(userId, 'PASSWORD_CHANGED', {});
 
-            
+
 
             return { success: true, message: 'Password changed' };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -151,14 +159,18 @@ export class UserService {
             let preferences = await prisma.userPreference.findFirst({ where: { userId: userId } });
 
             if (!preferences) {
-                preferences = await prisma.userPreference.create({ data: {
-                    prefId: this._generatePrefId(),
-                    userId: userId,
-                    ...preferencesData
+                preferences = await prisma.userPreference.create({
+                    data: {
+                        prefId: this._generatePrefId(),
+                        userId: userId,
+                        ...preferencesData
+                    }
                 });
             } else {
-                Object.assign(preferences, preferencesData);
-                /* TODO: Convert to prisma update */ await preferences.save({ transaction: transaction });
+                preferences = await prisma.userPreference.update({
+                    where: { prefId: preferences.prefId },
+                    data: preferencesData
+                });
             }
 
             await this.auditLogService.logAction({
@@ -169,11 +181,11 @@ export class UserService {
                 details: {}
             }, transaction);
 
-            
+
 
             return { success: true, message: 'Preferences updated', preferences: preferences };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -189,21 +201,23 @@ export class UserService {
 
             const user = await prisma.user.findUnique({ where: { id: userId } });
             if (!user) {
-                
+
                 throw new AppError('User not found', 404);
             }
 
-            const address = await prisma.userAddress.create({ data: {
-                addressId: this._generateAddressId(),
-                userId: userId,
-                addressLine1: addressData.addressLine1,
-                addressLine2: addressData.addressLine2 || null,
-                city: addressData.city,
-                state: addressData.state,
-                country: addressData.country,
-                postalCode: addressData.postalCode,
-                addressType: addressData.addressType || 'home',
-                isDefault: addressData.isDefault || false
+            const address = await prisma.userAddress.create({
+                data: {
+                    addressId: this._generateAddressId(),
+                    userId: userId,
+                    addressLine1: addressData.addressLine1,
+                    addressLine2: addressData.addressLine2 || null,
+                    city: addressData.city,
+                    state: addressData.state,
+                    country: addressData.country,
+                    postalCode: addressData.postalCode,
+                    addressType: addressData.addressType || 'home',
+                    isDefault: addressData.isDefault || false
+                }
             });
 
             await this.auditLogService.logAction({
@@ -214,11 +228,11 @@ export class UserService {
                 details: {}
             }, transaction);
 
-            
+
 
             return { success: true, message: 'Address added', address: address };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -252,7 +266,7 @@ export class UserService {
             });
 
             if (!address) {
-                
+
                 throw new AppError('Address not found', 404);
             }
 
@@ -263,7 +277,8 @@ export class UserService {
                 }
             }
 
-            /* TODO: Convert to prisma update */ await address.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */
+            await address.save({ transaction: transaction });
 
             await this.auditLogService.logAction({
                 action: 'ADDRESS_UPDATED',
@@ -273,11 +288,11 @@ export class UserService {
                 details: {}
             }, transaction);
 
-            
+
 
             return { success: true, message: 'Address updated', address: address };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -293,7 +308,7 @@ export class UserService {
             });
 
             if (!address) {
-                
+
                 throw new AppError('Address not found', 404);
             }
 
@@ -307,11 +322,11 @@ export class UserService {
                 details: {}
             }, transaction);
 
-            
+
 
             return { success: true, message: 'Address deleted' };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -358,14 +373,15 @@ export class UserService {
 
             const user = await prisma.user.findUnique({ where: { id: userId } });
             if (!user) {
-                
+
                 throw new AppError('User not found', 404);
             }
 
             user.isActive = false;
             user.deactivatedAt = new Date();
             user.deactivationReason = reason || null;
-            /* TODO: Convert to prisma update */ await user.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */
+            await user.save({ transaction: transaction });
 
             await this.auditLogService.logAction({
                 action: 'USER_DEACTIVATED',
@@ -375,11 +391,11 @@ export class UserService {
                 details: { reason: reason }
             }, transaction);
 
-            
+
 
             return { success: true, message: 'User deactivated' };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -391,14 +407,15 @@ export class UserService {
 
             const user = await prisma.user.findUnique({ where: { id: userId } });
             if (!user) {
-                
+
                 throw new AppError('User not found', 404);
             }
 
             user.isActive = true;
             user.deactivatedAt = null;
             user.deactivationReason = null;
-            /* TODO: Convert to prisma update */ await user.save({ transaction: transaction });
+            /* TODO: Convert to prisma update */
+            await user.save({ transaction: transaction });
 
             await this.auditLogService.logAction({
                 action: 'USER_REACTIVATED',
@@ -408,11 +425,11 @@ export class UserService {
                 details: {}
             }, transaction);
 
-            
+
 
             return { success: true, message: 'User reactivated' };
         } catch (error) {
-            
+
             throw this.errorHandlingService.handleError(error);
         }
     }

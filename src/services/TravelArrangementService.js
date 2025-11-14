@@ -20,62 +20,61 @@ export class TravelArrangementService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async bookFlight(userId, bookingId, flightData) {
-        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!userId || !bookingId || !flightData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const booking = await tx.booking.findUnique({ where: { bookingId } });
-            if (!booking) {
-                await transaction.rollback();
-                throw new AppError('Booking not found', 404);
-            }
+            const result = await prisma.$transaction(async(tx) => {
+                const booking = await tx.booking.findUnique({ where: { bookingId } });
+                if (!booking) {
+                    throw new AppError('Booking not found', 404);
+                }
 
-            const errors = this.validationService.validateFlightData(flightData);
-            if (errors.length) {
-                await transaction.rollback();
-                throw new AppError(errors.join(', '), 400);
-            }
+                const errors = this.validationService.validateFlightData(flightData);
+                if (errors.length) {
+                    throw new AppError(errors.join(', '), 400);
+                }
 
-            const flight = await tx.flight.create({
-                data: {
-                flightId: this._generateFlightId(),
-                bookingId: bookingId,
-                airline: flightData.airline,
-                flightNumber: flightData.flightNumber,
-                departureDate: flightData.departureDate,
-                departureTime: flightData.departureTime,
-                departureAirport: flightData.departureAirport,
-                arrivalDate: flightData.arrivalDate,
-                arrivalTime: flightData.arrivalTime,
-                arrivalAirport: flightData.arrivalAirport,
-                passengerCount: flightData.passengerCount,
-                price: flightData.price,
-                ticketNumber: flightData.ticketNumber || null,
-                seatNumbers: flightData.seatNumbers || [],
-                status: 'booked',
-                bookedAt: new Date()
-            }, { transaction: transaction });
+                const flight = await tx.flight.create({
+                    data: {
+                        flightId: this._generateFlightId(),
+                        bookingId: bookingId,
+                        airline: flightData.airline,
+                        flightNumber: flightData.flightNumber,
+                        departureDate: flightData.departureDate,
+                        departureTime: flightData.departureTime,
+                        departureAirport: flightData.departureAirport,
+                        arrivalDate: flightData.arrivalDate,
+                        arrivalTime: flightData.arrivalTime,
+                        arrivalAirport: flightData.arrivalAirport,
+                        passengerCount: flightData.passengerCount,
+                        price: flightData.price,
+                        ticketNumber: flightData.ticketNumber || null,
+                        seatNumbers: flightData.seatNumbers || [],
+                        status: 'booked',
+                        bookedAt: new Date()
+                    }
+                });
 
-            await this.auditLogService.logAction({
-                action: 'FLIGHT_BOOKED',
-                entityType: 'Flight',
-                entityId: flight.flightId,
-                userId: userId,
-                details: { flightNumber: flightData.flightNumber, bookingId: bookingId }
-            }, transaction);
+                await this.auditLogService.logAction({
+                    action: 'FLIGHT_BOOKED',
+                    entityType: 'Flight',
+                    entityId: flight.flightId,
+                    userId: userId,
+                    details: { flightNumber: flightData.flightNumber, bookingId: bookingId }
+                });
+
+                return flight;
+            });
 
             await this.notificationService.sendNotification(userId, 'FLIGHT_BOOKED', {
                 flightNumber: flightData.flightNumber,
                 departureDate: flightData.departureDate
             });
 
-            await transaction.commit();
-
-            return { success: true, message: 'Flight booked', flight: flight };
+            return { success: true, message: 'Flight booked', flight: result };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -84,11 +83,11 @@ export class TravelArrangementService {
         try {
             if (!bookingId) throw new AppError('Booking ID required', 400);
 
-            const flights = await Flight.findAll({
+            const flights = await prisma.flight.findMany({
                 where: { bookingId: bookingId },
-                order: [
-                    ['departureDate', 'ASC']
-                ]
+                orderBy: {
+                    departureDate: 'asc'
+                }
             });
 
             return { success: true, flights: flights, total: flights.length };
@@ -98,34 +97,35 @@ export class TravelArrangementService {
     }
 
     async cancelFlight(flightId, userId, reason) {
-        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!flightId || !userId) throw new AppError('Required params missing', 400);
 
-            const flight = await Flight.findByPk(flightId, { transaction: transaction });
-            if (!flight) {
-                await transaction.rollback();
-                throw new AppError('Flight not found', 404);
-            }
+            await prisma.$transaction(async(tx) => {
+                const flight = await tx.flight.findUnique({ where: { flightId } });
+                if (!flight) {
+                    throw new AppError('Flight not found', 404);
+                }
 
-            flight.status = 'cancelled';
-            flight.cancellationReason = reason || null;
-            flight.cancelledAt = new Date();
-            await flight.save({ transaction: transaction });
+                await tx.flight.update({
+                    where: { flightId },
+                    data: {
+                        status: 'cancelled',
+                        cancellationReason: reason || null,
+                        cancelledAt: new Date()
+                    }
+                });
 
-            await this.auditLogService.logAction({
-                action: 'FLIGHT_CANCELLED',
-                entityType: 'Flight',
-                entityId: flightId,
-                userId: userId,
-                details: { reason: reason }
-            }, transaction);
-
-            await transaction.commit();
+                await this.auditLogService.logAction({
+                    action: 'FLIGHT_CANCELLED',
+                    entityType: 'Flight',
+                    entityId: flightId,
+                    userId: userId,
+                    details: { reason: reason }
+                });
+            });
 
             return { success: true, message: 'Flight cancelled' };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -135,60 +135,59 @@ export class TravelArrangementService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async bookHotel(userId, bookingId, hotelData) {
-        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!userId || !bookingId || !hotelData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const booking = await tx.booking.findUnique({ where: { bookingId } });
-            if (!booking) {
-                await transaction.rollback();
-                throw new AppError('Booking not found', 404);
-            }
+            const result = await prisma.$transaction(async(tx) => {
+                const booking = await tx.booking.findUnique({ where: { bookingId } });
+                if (!booking) {
+                    throw new AppError('Booking not found', 404);
+                }
 
-            const errors = this.validationService.validateHotelData(hotelData);
-            if (errors.length) {
-                await transaction.rollback();
-                throw new AppError(errors.join(', '), 400);
-            }
+                const errors = this.validationService.validateHotelData(hotelData);
+                if (errors.length) {
+                    throw new AppError(errors.join(', '), 400);
+                }
 
-            const hotel = await tx.hotel.create({
-                data: {
-                hotelId: this._generateHotelId(),
-                bookingId: bookingId,
-                hotelName: hotelData.hotelName,
-                location: hotelData.location,
-                checkInDate: hotelData.checkInDate,
-                checkOutDate: hotelData.checkOutDate,
-                roomType: hotelData.roomType,
-                roomCount: hotelData.roomCount,
-                price: hotelData.price,
-                pricePerNight: hotelData.pricePerNight,
-                confirmationNumber: hotelData.confirmationNumber || null,
-                amenities: hotelData.amenities || [],
-                status: 'booked',
-                bookedAt: new Date()
-            }, { transaction: transaction });
+                const hotel = await tx.hotel.create({
+                    data: {
+                        hotelId: this._generateHotelId(),
+                        bookingId: bookingId,
+                        hotelName: hotelData.hotelName,
+                        location: hotelData.location,
+                        checkInDate: hotelData.checkInDate,
+                        checkOutDate: hotelData.checkOutDate,
+                        roomType: hotelData.roomType,
+                        roomCount: hotelData.roomCount,
+                        price: hotelData.price,
+                        pricePerNight: hotelData.pricePerNight,
+                        confirmationNumber: hotelData.confirmationNumber || null,
+                        amenities: hotelData.amenities || [],
+                        status: 'booked',
+                        bookedAt: new Date()
+                    }
+                });
 
-            await this.auditLogService.logAction({
-                action: 'HOTEL_BOOKED',
-                entityType: 'Hotel',
-                entityId: hotel.hotelId,
-                userId: userId,
-                details: { hotelName: hotelData.hotelName, bookingId: bookingId }
-            }, transaction);
+                await this.auditLogService.logAction({
+                    action: 'HOTEL_BOOKED',
+                    entityType: 'Hotel',
+                    entityId: hotel.hotelId,
+                    userId: userId,
+                    details: { hotelName: hotelData.hotelName, bookingId: bookingId }
+                });
+
+                return hotel;
+            });
 
             await this.notificationService.sendNotification(userId, 'HOTEL_BOOKED', {
                 hotelName: hotelData.hotelName,
                 checkInDate: hotelData.checkInDate
             });
 
-            await transaction.commit();
-
-            return { success: true, message: 'Hotel booked', hotel: hotel };
+            return { success: true, message: 'Hotel booked', hotel: result };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -197,7 +196,7 @@ export class TravelArrangementService {
         try {
             if (!bookingId) throw new AppError('Booking ID required', 400);
 
-            const hotels = await Hotel.findAll({
+            const hotels = await prisma.hotel.findMany({
                 where: { bookingId: bookingId }
             });
 
@@ -208,69 +207,73 @@ export class TravelArrangementService {
     }
 
     async updateHotelBooking(hotelId, userId, updateData) {
-        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!hotelId || !userId) throw new AppError('Required params missing', 400);
 
-            const hotel = await Hotel.findByPk(hotelId, { transaction: transaction });
-            if (!hotel) {
-                await transaction.rollback();
-                throw new AppError('Hotel not found', 404);
-            }
+            const result = await prisma.$transaction(async(tx) => {
+                const hotel = await tx.hotel.findUnique({ where: { hotelId } });
+                if (!hotel) {
+                    throw new AppError('Hotel not found', 404);
+                }
 
-            if (updateData.checkInDate) hotel.checkInDate = updateData.checkInDate;
-            if (updateData.checkOutDate) hotel.checkOutDate = updateData.checkOutDate;
-            if (updateData.roomType) hotel.roomType = updateData.roomType;
-            if (updateData.price) hotel.price = updateData.price;
+                const dataToUpdate = {};
+                if (updateData.checkInDate) dataToUpdate.checkInDate = updateData.checkInDate;
+                if (updateData.checkOutDate) dataToUpdate.checkOutDate = updateData.checkOutDate;
+                if (updateData.roomType) dataToUpdate.roomType = updateData.roomType;
+                if (updateData.price) dataToUpdate.price = updateData.price;
 
-            await hotel.save({ transaction: transaction });
+                const updatedHotel = await tx.hotel.update({
+                    where: { hotelId },
+                    data: dataToUpdate
+                });
 
-            await this.auditLogService.logAction({
-                action: 'HOTEL_BOOKING_UPDATED',
-                entityType: 'Hotel',
-                entityId: hotelId,
-                userId: userId,
-                details: {}
-            }, transaction);
+                await this.auditLogService.logAction({
+                    action: 'HOTEL_BOOKING_UPDATED',
+                    entityType: 'Hotel',
+                    entityId: hotelId,
+                    userId: userId,
+                    details: {}
+                });
 
-            await transaction.commit();
+                return updatedHotel;
+            });
 
-            return { success: true, message: 'Updated', hotel: hotel };
+            return { success: true, message: 'Updated', hotel: result };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
 
     async cancelHotel(hotelId, userId, reason) {
-        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!hotelId || !userId) throw new AppError('Required params missing', 400);
 
-            const hotel = await Hotel.findByPk(hotelId, { transaction: transaction });
-            if (!hotel) {
-                await transaction.rollback();
-                throw new AppError('Hotel not found', 404);
-            }
+            await prisma.$transaction(async(tx) => {
+                const hotel = await tx.hotel.findUnique({ where: { hotelId } });
+                if (!hotel) {
+                    throw new AppError('Hotel not found', 404);
+                }
 
-            hotel.status = 'cancelled';
-            hotel.cancellationReason = reason || null;
-            hotel.cancelledAt = new Date();
-            await hotel.save({ transaction: transaction });
+                await tx.hotel.update({
+                    where: { hotelId },
+                    data: {
+                        status: 'cancelled',
+                        cancellationReason: reason || null,
+                        cancelledAt: new Date()
+                    }
+                });
 
-            await this.auditLogService.logAction({
-                action: 'HOTEL_CANCELLED',
-                entityType: 'Hotel',
-                entityId: hotelId,
-                userId: userId,
-                details: { reason: reason }
-            }, transaction);
-
-            await transaction.commit();
+                await this.auditLogService.logAction({
+                    action: 'HOTEL_CANCELLED',
+                    entityType: 'Hotel',
+                    entityId: hotelId,
+                    userId: userId,
+                    details: { reason: reason }
+                });
+            });
 
             return { success: true, message: 'Cancelled' };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -280,51 +283,52 @@ export class TravelArrangementService {
     // ═══════════════════════════════════════════════════════════════════════════════
 
     async bookTransportation(userId, bookingId, transportData) {
-        const result = await prisma.$transaction(async (tx) => {
         try {
             if (!userId || !bookingId || !transportData) {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const booking = await tx.booking.findUnique({ where: { bookingId } });
-            if (!booking) {
-                await transaction.rollback();
-                throw new AppError('Booking not found', 404);
-            }
+            const result = await prisma.$transaction(async(tx) => {
+                const booking = await tx.booking.findUnique({ where: { bookingId } });
+                if (!booking) {
+                    throw new AppError('Booking not found', 404);
+                }
 
-            const transport = await Transportation.create({
-                transportId: this._generateTransportId(),
-                bookingId: bookingId,
-                transportType: transportData.transportType,
-                pickupLocation: transportData.pickupLocation,
-                dropoffLocation: transportData.dropoffLocation,
-                pickupDate: transportData.pickupDate,
-                pickupTime: transportData.pickupTime,
-                vehicleType: transportData.vehicleType,
-                price: transportData.price,
-                confirmationCode: transportData.confirmationCode || null,
-                status: 'booked',
-                bookedAt: new Date()
-            }, { transaction: transaction });
+                const transport = await tx.transportation.create({
+                    data: {
+                        transportId: this._generateTransportId(),
+                        bookingId: bookingId,
+                        transportType: transportData.transportType,
+                        pickupLocation: transportData.pickupLocation,
+                        dropoffLocation: transportData.dropoffLocation,
+                        pickupDate: transportData.pickupDate,
+                        pickupTime: transportData.pickupTime,
+                        vehicleType: transportData.vehicleType,
+                        price: transportData.price,
+                        confirmationCode: transportData.confirmationCode || null,
+                        status: 'booked',
+                        bookedAt: new Date()
+                    }
+                });
 
-            await this.auditLogService.logAction({
-                action: 'TRANSPORTATION_BOOKED',
-                entityType: 'Transportation',
-                entityId: transport.transportId,
-                userId: userId,
-                details: { transportType: transportData.transportType }
-            }, transaction);
+                await this.auditLogService.logAction({
+                    action: 'TRANSPORTATION_BOOKED',
+                    entityType: 'Transportation',
+                    entityId: transport.transportId,
+                    userId: userId,
+                    details: { transportType: transportData.transportType }
+                });
+
+                return transport;
+            });
 
             await this.notificationService.sendNotification(userId, 'TRANSPORTATION_BOOKED', {
                 transportType: transportData.transportType,
                 pickupDate: transportData.pickupDate
             });
 
-            await transaction.commit();
-
-            return { success: true, message: 'Transportation booked', transport: transport };
+            return { success: true, message: 'Transportation booked', transport: result };
         } catch (error) {
-            await transaction.rollback();
             throw this.errorHandlingService.handleError(error);
         }
     }
@@ -333,11 +337,11 @@ export class TravelArrangementService {
         try {
             if (!bookingId) throw new AppError('Booking ID required', 400);
 
-            const transports = await Transportation.findAll({
+            const transports = await prisma.transportation.findMany({
                 where: { bookingId: bookingId },
-                order: [
-                    ['pickupDate', 'ASC']
-                ]
+                orderBy: {
+                    pickupDate: 'asc'
+                }
             });
 
             return { success: true, transports: transports, total: transports.length };
@@ -354,16 +358,16 @@ export class TravelArrangementService {
         try {
             if (!bookingId || !userId) throw new AppError('Required params missing', 400);
 
-            const booking = await Booking.findByPk(bookingId);
+            const booking = await prisma.booking.findUnique({ where: { bookingId } });
             if (!booking) throw new AppError('Booking not found', 404);
 
             if (booking.userId !== userId && userId !== 'ADMIN') {
                 throw new AppError('Unauthorized', 403);
             }
 
-            const flights = await Flight.findAll({ where: { bookingId: bookingId } });
-            const hotels = await Hotel.findAll({ where: { bookingId: bookingId } });
-            const transports = await Transportation.findAll({ where: { bookingId: bookingId } });
+            const flights = await prisma.flight.findMany({ where: { bookingId: bookingId } });
+            const hotels = await prisma.hotel.findMany({ where: { bookingId: bookingId } });
+            const transports = await prisma.transportation.findMany({ where: { bookingId: bookingId } });
 
             const itinerary = {
                 bookingId: bookingId,
@@ -389,9 +393,9 @@ export class TravelArrangementService {
         try {
             if (!bookingId) throw new AppError('Booking ID required', 400);
 
-            const flights = await Flight.findAll({ where: { bookingId: bookingId } });
-            const hotels = await Hotel.findAll({ where: { bookingId: bookingId } });
-            const transports = await Transportation.findAll({ where: { bookingId: bookingId } });
+            const flights = await prisma.flight.findMany({ where: { bookingId: bookingId } });
+            const hotels = await prisma.hotel.findMany({ where: { bookingId: bookingId } });
+            const transports = await prisma.transportation.findMany({ where: { bookingId: bookingId } });
 
             let summary = '=== TRAVEL SUMMARY ===\n\n';
 

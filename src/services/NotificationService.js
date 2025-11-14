@@ -353,4 +353,5 @@ class NotificationService {
     }
 }
 
+export { NotificationService };
 export default new NotificationService();

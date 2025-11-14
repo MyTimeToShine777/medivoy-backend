@@ -16,49 +16,46 @@ export class ChatService {
     }
 
     async createChatRoom(userId1, userId2, chatData = {}) {
-        const transaction = await prisma.$transaction(async (tx) => {
         try {
             if (!userId1 || !userId2) {
                 throw new AppError('Both user IDs required', 400);
             }
 
-            const existingChat = await tx.chat.findFirst({
-                where: {
-                    OR: [
-                        { userId1: userId1, userId2: userId2 },
-                        { userId1: userId2, userId2: userId1 }
-                    ]
-                },
-                transaction: transaction
+            return await prisma.$transaction(async(tx) => {
+                const existingChat = await tx.chatConversation.findFirst({
+                    where: {
+                        OR: [
+                            { userId1: userId1, userId2: userId2 },
+                            { userId1: userId2, userId2: userId1 }
+                        ]
+                    }
+                });
+
+                if (existingChat) {
+                    return { success: true, message: 'Chat room already exists', chat: existingChat };
+                }
+
+                const chat = await tx.chatConversation.create({
+                    data: {
+                        chatId: this._generateChatId(),
+                        userId1: userId1,
+                        userId2: userId2,
+                        subject: chatData.subject || null,
+                        createdAt: new Date()
+                    }
+                });
+
+                await this.auditLogService.logAction({
+                    action: 'CHAT_ROOM_CREATED',
+                    entityType: 'Chat',
+                    entityId: chat.chatId,
+                    userId: userId1,
+                    details: { otherUserId: userId2 }
+                }, tx);
+
+                return { success: true, message: 'Chat room created', chat: chat };
             });
-
-            if (existingChat) {
-                await transaction.rollback();
-                return { success: true, message: 'Chat room already exists', chat: existingChat };
-            }
-
-            const chat = await tx.chat.create({
-                data: {
-                chatId: this._generateChatId(),
-                userId1: userId1,
-                userId2: userId2,
-                subject: chatData.subject || null,
-                createdAt: new Date()
-            }, { transaction: transaction });
-
-            await this.auditLogService.logAction({
-                action: 'CHAT_ROOM_CREATED',
-                entityType: 'Chat',
-                entityId: chat.chatId,
-                userId: userId1,
-                details: { otherUserId: userId2 }
-            }, transaction);
-
-            await transaction.commit();
-
-            return { success: true, message: 'Chat room created', chat: chat };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }
@@ -69,12 +66,16 @@ export class ChatService {
                 return { success: false, error: 'Chat ID and User ID required' };
             }
 
-            const chat = await prisma.chat.findUnique({
-                where: { chatId }, {
-                include: [
-                    { model: User, as: 'User1', attributes: ['userId', 'firstName', 'lastName'] },
-                    { model: User, as: 'User2', attributes: ['userId', 'firstName', 'lastName'] }
-                ]
+            const chat = await prisma.chatConversation.findUnique({
+                where: { chatId },
+                include: {
+                    User1: {
+                        select: { userId: true, firstName: true, lastName: true }
+                    },
+                    User2: {
+                        select: { userId: true, firstName: true, lastName: true }
+                    }
+                }
             });
 
             if (!chat) {
@@ -100,25 +101,29 @@ export class ChatService {
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const chats = await Chat.findAll({
+            const chats = await prisma.chatConversation.findMany({
                 where: {
                     OR: [
                         { userId1: userId },
                         { userId2: userId }
                     ]
                 },
-                include: [
-                    { model: User, as: 'User1', attributes: ['userId', 'firstName', 'lastName'] },
-                    { model: User, as: 'User2', attributes: ['userId', 'firstName', 'lastName'] }
-                ],
-                order: [
-                    ['updatedAt', 'DESC']
-                ],
-                limit: limit,
-                offset: offset
+                include: {
+                    User1: {
+                        select: { userId: true, firstName: true, lastName: true }
+                    },
+                    User2: {
+                        select: { userId: true, firstName: true, lastName: true }
+                    }
+                },
+                orderBy: {
+                    updatedAt: 'desc'
+                },
+                take: limit,
+                skip: offset
             });
 
-            const total = await Chat.count({
+            const total = await prisma.chatConversation.count({
                 where: {
                     OR: [
                         { userId1: userId },
@@ -138,47 +143,49 @@ export class ChatService {
     }
 
     async sendMessage(chatId, userId, messageContent) {
-        const transaction = await prisma.$transaction(async (tx) => {
         try {
             if (!chatId || !userId || !messageContent) {
                 throw new AppError('All parameters required', 400);
             }
 
-            const chat = await prisma.chat.findUnique({
-                where: { chatId }, { transaction: transaction });
-            if (!chat) {
-                await transaction.rollback();
-                return { success: false, error: 'Chat room not found' };
-            }
+            return await prisma.$transaction(async(tx) => {
+                const chat = await tx.chatConversation.findUnique({
+                    where: { chatId }
+                });
 
-            if (chat.userId1 !== userId && chat.userId2 !== userId) {
-                await transaction.rollback();
-                return { success: false, error: 'Unauthorized' };
-            }
+                if (!chat) {
+                    return { success: false, error: 'Chat room not found' };
+                }
 
-            const message = await ChatMessage.create({
-                messageId: this._generateMessageId(),
-                chatId: chatId,
-                senderId: userId,
-                content: messageContent,
-                isRead: false,
-                createdAt: new Date()
-            }, { transaction: transaction });
+                if (chat.userId1 !== userId && chat.userId2 !== userId) {
+                    return { success: false, error: 'Unauthorized' };
+                }
 
-            chat.updatedAt = new Date();
-            await chat.save({ transaction: transaction });
+                const message = await tx.chatMessage.create({
+                    data: {
+                        messageId: this._generateMessageId(),
+                        chatId: chatId,
+                        senderId: userId,
+                        content: messageContent,
+                        isRead: false,
+                        createdAt: new Date()
+                    }
+                });
 
-            const recipientId = chat.userId1 === userId ? chat.userId2 : chat.userId1;
-            await this.notificationService.sendNotification(recipientId, 'NEW_MESSAGE', {
-                chatId: chatId,
-                senderName: 'A user'
+                await tx.chatConversation.update({
+                    where: { chatId },
+                    data: { updatedAt: new Date() }
+                });
+
+                const recipientId = chat.userId1 === userId ? chat.userId2 : chat.userId1;
+                await this.notificationService.sendNotification(recipientId, 'NEW_MESSAGE', {
+                    chatId: chatId,
+                    senderName: 'A user'
+                });
+
+                return { success: true, message: 'Message sent', data: message };
             });
-
-            await transaction.commit();
-
-            return { success: true, message: 'Message sent', data: message };
         } catch (error) {
-            await transaction.rollback();
             return { success: false, error: error.message };
         }
     }
@@ -189,7 +196,10 @@ export class ChatService {
                 return { success: false, error: 'Chat ID and User ID required' };
             }
 
-            const chat = await Chat.findByPk(chatId);
+            const chat = await prisma.chatConversation.findUnique({
+                where: { chatId }
+            });
+
             if (!chat || (chat.userId1 !== userId && chat.userId2 !== userId)) {
                 return { success: false, error: 'Unauthorized' };
             }
@@ -197,21 +207,32 @@ export class ChatService {
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const messages = await ChatMessage.findAll({
+            const messages = await prisma.chatMessage.findMany({
                 where: { chatId: chatId },
-                include: [{ model: User, as: 'Sender', attributes: ['userId', 'firstName', 'lastName'] }],
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: limit,
-                offset: offset
+                include: {
+                    Sender: {
+                        select: { userId: true, firstName: true, lastName: true }
+                    }
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                },
+                take: limit,
+                skip: offset
             });
 
-            const total = await ChatMessage.count({ where: { chatId: chatId } });
+            const total = await prisma.chatMessage.count({
+                where: { chatId: chatId }
+            });
 
             // Mark as read
-            await ChatMessage.update({ isRead: true }, { where: { chatId: chatId, senderId: {
-                        not: userId } } });
+            await prisma.chatMessage.updateMany({
+                where: {
+                    chatId: chatId,
+                    senderId: { not: userId }
+                },
+                data: { isRead: true }
+            });
 
             return {
                 success: true,

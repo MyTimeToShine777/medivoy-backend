@@ -116,20 +116,24 @@ export class SettingsService {
 
             if (!settings) {
                 settings = await prisma.settings.create({
-                data: {
-                    settingType: settingType,
-                    settingData: mergedData,
-                    settingValue: encryptedValue,
-                    createdBy: userId,
-                    isEncrypted: updateData.isEncrypted || false
+                    data: {
+                        settingType: settingType,
+                        settingData: mergedData,
+                        settingValue: encryptedValue,
+                        createdBy: userId,
+                        isEncrypted: updateData.isEncrypted || false
+                    }
                 });
             } else {
-                await settings.update({
-                    settingData: mergedData,
-                    settingValue: encryptedValue,
-                    updatedBy: userId,
-                    version: settings.version + 1,
-                    updatedAt: new Date()
+                settings = await prisma.settings.update({
+                    where: { id: settings.id },
+                    data: {
+                        settingData: mergedData,
+                        settingValue: encryptedValue,
+                        updatedBy: userId,
+                        version: settings.version + 1,
+                        updatedAt: new Date()
+                    }
                 });
             }
 
@@ -241,7 +245,8 @@ export class SettingsService {
 
             if (filters.startDate && filters.endDate) {
                 where.createdAt = {
-                     [new Date(filters.startDate), new Date(filters.endDate)]
+                    gte: new Date(filters.startDate),
+                    lte: new Date(filters.endDate)
                 };
             }
 

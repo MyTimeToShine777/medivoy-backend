@@ -1,9 +1,6 @@
 'use strict';
 
-import redis from 'redis';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { createClient } from 'redis';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // REDIS CACHE CONFIGURATION - PRODUCTION READY
@@ -28,7 +25,7 @@ class CacheService {
                 return false;
             }
 
-            this.client = redis.createClient({
+            this.client = createClient({
                 url: process.env.REDIS_URL,
                 socket: {
                     reconnectStrategy: (retries) => {

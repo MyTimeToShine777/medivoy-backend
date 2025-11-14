@@ -8,8 +8,9 @@ class MedicalRecordService {
         try {
             const record = await prisma.medicalRecord.create({
                 data: {
-                ...recordData,
-                status: 'active',
+                    ...recordData,
+                    status: 'active'
+                }
             });
 
             return { success: true, data: record };
@@ -22,12 +23,12 @@ class MedicalRecordService {
     async getMedicalRecordById(recordId) {
         try {
             const record = await prisma.medicalRecord.findUnique({
-                where: { recordId }, {
-                include: [
-                    { model: User, as: 'patient' },
-                    { model: Doctor, as: 'doctor' },
-                    { model: Hospital, as: 'hospital' },
-                ],
+                where: { recordId },
+                include: {
+                    patient: true,
+                    doctor: true,
+                    hospital: true
+                }
             });
 
             if (!record) return { success: false, error: 'Not found' };
@@ -46,11 +47,11 @@ class MedicalRecordService {
 
             const records = await prisma.medicalRecord.findMany({
                 where,
-                order: [
-                    ['recordDate', 'DESC']
-                ],
-                limit: filters.limit || 50,
-                offset: filters.offset || 0,
+                orderBy: {
+                    recordDate: 'desc'
+                },
+                take: filters.limit || 50,
+                skip: filters.offset || 0
             });
 
             return { success: true, data: records };

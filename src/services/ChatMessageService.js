@@ -124,9 +124,9 @@ export class ChatMessageService {
                 return { success: false, error: 'Message ID is required' };
             }
 
-            
-
-            const message = await ChatMessage.findByPk(messageId);
+            const message = await prisma.chatMessage.findUnique({
+                where: { messageId }
+            });
 
             if (!message) {
                 return { success: false, error: 'Message not found' };
@@ -141,14 +141,17 @@ export class ChatMessageService {
                 return { success: true, data: message, message: 'Message already marked as read' };
             }
 
-            await message.update({
-                isRead: true,
-                readAt: new Date()
+            const updatedMessage = await prisma.chatMessage.update({
+                where: { messageId },
+                data: {
+                    isRead: true,
+                    readAt: new Date()
+                }
             });
 
             return {
                 success: true,
-                data: message,
+                data: updatedMessage,
                 message: 'Message marked as read'
             };
         } catch (error) {
@@ -168,19 +171,21 @@ export class ChatMessageService {
                 return { success: false, error: 'Conversation ID is required' };
             }
 
-            
-
-            const updated = await ChatMessage.update({ isRead: true, readAt: new Date() }, {
+            const result = await prisma.chatMessage.updateMany({
                 where: {
                     conversationId,
                     receiverId: userId,
                     isRead: false
+                },
+                data: {
+                    isRead: true,
+                    readAt: new Date()
                 }
             });
 
             return {
                 success: true,
-                data: { updatedCount: updated[0] },
+                data: { updatedCount: result.count },
                 message: 'All messages marked as read'
             };
         } catch (error) {
@@ -200,9 +205,9 @@ export class ChatMessageService {
                 return { success: false, error: 'Message ID is required' };
             }
 
-            
-
-            const message = await ChatMessage.findByPk(messageId);
+            const message = await prisma.chatMessage.findUnique({
+                where: { messageId }
+            });
 
             if (!message) {
                 return { success: false, error: 'Message not found' };
@@ -213,10 +218,13 @@ export class ChatMessageService {
                 return { success: false, error: 'Unauthorized to delete this message' };
             }
 
-            await message.update({
-                isDeleted: true,
-                deletedAt: new Date(),
-                deletedBy: userId
+            await prisma.chatMessage.update({
+                where: { messageId },
+                data: {
+                    isDeleted: true,
+                    deletedAt: new Date(),
+                    deletedBy: userId
+                }
             });
 
             return {
@@ -240,9 +248,7 @@ export class ChatMessageService {
                 return { success: false, error: 'Conversation ID is required' };
             }
 
-            
-
-            const count = await ChatMessage.count({
+            const count = await prisma.chatMessage.count({
                 where: {
                     conversationId,
                     receiverId: userId,

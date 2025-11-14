@@ -1,254 +1,150 @@
 'use strict';
 
-import { Sequelize } from 'sequelize';
-import dotenv from 'dotenv';
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import mongoSanitize from 'express-mongo-sanitize';
+import hpp from 'hpp';
+import cookieParser from 'cookie-parser';
+import session from 'express-session';
+import morgan from 'morgan';
+import passport from 'passport';
 
-dotenv.config();
+// Initialize Express app
+const app = express();
 
-let sequelize;
+// ═══════════════════════════════════════════════════════════════════════════════
+// SECURITY MIDDLEWARE
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// Xata connection - schema managed via Xata dashboard, NOT sequelize.sync()
-if (process.env.DATABASE_URL) {
-    sequelize = new Sequelize(process.env.DATABASE_URL, {
-        dialect: 'postgres',
-        logging: process.env.DB_LOGGING === 'true' ? console.log : false,
+// Helmet - Security headers
+app.use(helmet({
+    contentSecurityPolicy: process.env.NODE_ENV === 'production',
+    crossOriginEmbedderPolicy: false,
+}));
 
-        pool: {
-            max: parseInt(process.env.DB_POOL_MAX, 10) || 10,
-            min: parseInt(process.env.DB_POOL_MIN, 10) || 0,
-            acquire: parseInt(process.env.DB_POOL_ACQUIRE, 10) || 30000,
-            idle: parseInt(process.env.DB_POOL_IDLE, 10) || 10000
-        },
+// CORS Configuration
+const corsOptions = {
+    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : '*',
+    credentials: true,
+    optionsSuccessStatus: 200,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+};
+app.use(cors(corsOptions));
 
-        dialectOptions: {
-            ssl: {
-                require: true,
-                rejectUnauthorized: false
-            },
-            connectTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT, 10) || 10000,
-            keepAlive: true,
-            statement_timeout: parseInt(process.env.DB_STATEMENT_TIMEOUT, 10) || 30000,
-            idle_in_transaction_session_timeout: parseInt(process.env.DB_IDLE_TRANSACTION_TIMEOUT, 10) || 30000
-        },
+// Prevent parameter pollution
+app.use(hpp());
 
-        define: {
-            timestamps: true,
-            underscored: true,
-            freezeTableName: true
-        },
+// Sanitize data against NoSQL injection
+app.use(mongoSanitize());
 
-        retry: {
-            max: 3,
-            timeout: 3000,
-            match: [
-                /SequelizeConnectionError/,
-                /SequelizeConnectionRefusedError/,
-                /SequelizeHostNotFoundError/,
-                /SequelizeHostNotReachableError/,
-                /SequelizeInvalidConnectionError/,
-                /SequelizeConnectionTimedOutError/,
-                /ECONNREFUSED/,
-                /ETIMEDOUT/,
-                /EHOSTUNREACH/
-            ]
-        },
+// ═══════════════════════════════════════════════════════════════════════════════
+// BODY PARSING MIDDLEWARE
+// ═══════════════════════════════════════════════════════════════════════════════
 
-        benchmark: process.env.NODE_ENV === 'development',
-        logQueryParameters: process.env.NODE_ENV === 'development'
-    });
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 
-    console.log('🔗 Using DATABASE_URL for Xata connection');
+// ═══════════════════════════════════════════════════════════════════════════════
+// SESSION & PASSPORT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.use(session({
+    secret: process.env.SESSION_SECRET || 'medivoy-secret-key-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LOGGING
+// ═══════════════════════════════════════════════════════════════════════════════
+
+if (process.env.NODE_ENV === 'development') {
+    app.use(morgan('dev'));
 } else {
-    sequelize = new Sequelize(
-        process.env.DB_NAME || 'medivoy',
-        process.env.DB_USER || 'postgres',
-        process.env.DB_PASSWORD || 'password', {
-            host: process.env.DB_HOST || 'localhost',
-            port: parseInt(process.env.DB_PORT, 10) || 5432,
-            dialect: 'postgres',
-            logging: process.env.DB_LOGGING === 'true' ? console.log : false,
-
-            pool: {
-                max: parseInt(process.env.DB_POOL_MAX, 10) || 10,
-                min: parseInt(process.env.DB_POOL_MIN, 10) || 0,
-                acquire: parseInt(process.env.DB_POOL_ACQUIRE, 10) || 30000,
-                idle: parseInt(process.env.DB_POOL_IDLE, 10) || 10000
-            },
-
-            dialectOptions: {
-                ssl: process.env.DB_SSL === 'true' ? {
-                    require: true,
-                    rejectUnauthorized: false
-                } : false,
-                connectTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT, 10) || 10000,
-                keepAlive: true,
-                statement_timeout: parseInt(process.env.DB_STATEMENT_TIMEOUT, 10) || 30000,
-                idle_in_transaction_session_timeout: parseInt(process.env.DB_IDLE_TRANSACTION_TIMEOUT, 10) || 30000
-            },
-
-            define: {
-                timestamps: true,
-                underscored: true,
-                freezeTableName: true
-            },
-
-            retry: {
-                max: 3,
-                timeout: 3000,
-                match: [
-                    /SequelizeConnectionError/,
-                    /SequelizeConnectionRefusedError/,
-                    /SequelizeHostNotFoundError/,
-                    /SequelizeHostNotReachableError/,
-                    /SequelizeInvalidConnectionError/,
-                    /SequelizeConnectionTimedOutError/,
-                    /ECONNREFUSED/,
-                    /ETIMEDOUT/,
-                    /EHOSTUNREACH/
-                ]
-            },
-
-            benchmark: process.env.NODE_ENV === 'development',
-            logQueryParameters: process.env.NODE_ENV === 'development'
-        }
-    );
-
-    console.log('🔗 Using individual credentials for connection');
+    app.use(morgan('combined'));
 }
 
-const parseDatabaseUrl = (url) => {
-    try {
-        if (!url) return null;
-        const urlPattern = /^postgresql:\/\/([^:]+):([^@]+)@([^:\/]+)(?::(\d+))?\/(.+?)(?:\?(.*))?$/;
-        const match = url.match(urlPattern);
-        if (match) {
-            return {
-                user: match[1],
-                password: match[2],
-                host: match[3],
-                port: match[4] || '5432',
-                database: match[5].split(':')[0]
-            };
+// ═══════════════════════════════════════════════════════════════════════════════
+// COMPRESSION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.use(compression());
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HEALTH CHECK ENDPOINT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// ROOT ENDPOINT
+// ═══════════════════════════════════════════════════════════════════════════════
+
+app.get('/', (req, res) => {
+    res.status(200).json({
+        message: 'Medivoy Backend API',
+        version: '1.0.0',
+        status: 'running',
+        endpoints: {
+            health: '/health',
+            api: '/api'
         }
-        return null;
-    } catch (error) {
-        return null;
-    }
-};
+    });
+});
 
-export const testConnection = async() => {
-    try {
-        await sequelize.authenticate();
-        console.log(`✅ PostgreSQL connection established successfully`);
+// ═══════════════════════════════════════════════════════════════════════════════
+// API ROUTES
+// ═══════════════════════════════════════════════════════════════════════════════
 
-        let dbInfo;
-        if (process.env.DATABASE_URL) {
-            const parsed = parseDatabaseUrl(process.env.DATABASE_URL);
-            if (parsed) {
-                dbInfo = {
-                    host: parsed.host,
-                    port: parsed.port,
-                    database: parsed.database,
-                    user: parsed.user
-                };
-            } else {
-                dbInfo = {
-                    host: 'parsed from URL',
-                    port: 'parsed from URL',
-                    database: 'parsed from URL',
-                    user: 'parsed from URL'
-                };
-            }
-        } else {
-            dbInfo = {
-                host: process.env.DB_HOST || 'localhost',
-                port: process.env.DB_PORT || 5432,
-                database: process.env.DB_NAME || 'medivoy',
-                user: process.env.DB_USER || 'postgres'
-            };
-        }
+import routes from './routes/index.js';
+app.use('/', routes);
 
-        console.log(`   Host: ${dbInfo.host}:${dbInfo.port}`);
-        console.log(`   Database: ${dbInfo.database}`);
-        console.log(`   User: ${dbInfo.user}`);
-        return true;
-    } catch (error) {
-        const errorMessage = error && error.message ? error.message : 'Unknown connection error';
-        console.error(`❌ Unable to connect to PostgreSQL: ${errorMessage}`);
-        throw error;
-    }
-};
+// ═══════════════════════════════════════════════════════════════════════════════
+// 404 HANDLER
+// ═══════════════════════════════════════════════════════════════════════════════
 
-export const testConnectionWithRetry = async(maxRetries = 3, retryDelay = 5000) => {
-    let lastError = null;
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            console.log(`📡 Connecting to PostgreSQL... (Attempt ${attempt}/${maxRetries})`);
-            const result = await testConnection();
-            return result;
-        } catch (error) {
-            lastError = error;
-            if (attempt < maxRetries) {
-                console.log(`🔄 Retrying PostgreSQL in ${retryDelay / 1000}s...`);
-                await new Promise(resolve => setTimeout(resolve, retryDelay));
-            }
-        }
-    }
-    console.error(`❌ PostgreSQL failed after ${maxRetries} attempts`);
-    throw lastError;
-};
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Route not found',
+        path: req.path
+    });
+});
 
-// REMOVED sync functionality - Xata manages schema via dashboard
-export const syncDatabase = async() => {
-    console.log(`⚠️  Xata detected - schema managed via Xata dashboard`);
-    console.log(`⚠️  Sequelize sync disabled (not supported on Xata)`);
-    console.log(`✅ Using existing Xata schema`);
-    return true;
-};
+// ═══════════════════════════════════════════════════════════════════════════════
+// ERROR HANDLER
+// ═══════════════════════════════════════════════════════════════════════════════
 
-export const checkDatabaseHealth = async() => {
-    try {
-        const result = await sequelize.query('SELECT NOW() as current_time, version() as version', {
-            type: Sequelize.QueryTypes.SELECT
-        });
-        if (result && result.length > 0) {
-            const info = result[0];
-            console.log(`✅ Database health check passed`);
-            console.log(`   Current Time: ${info.current_time}`);
-            return { healthy: true, info: info };
-        }
-        return { healthy: false, error: 'No response from database' };
-    } catch (error) {
-        const errorMessage = error && error.message ? error.message : 'Unknown error';
-        console.error(`❌ Database health check failed: ${errorMessage}`);
-        return { healthy: false, error: errorMessage };
-    }
-};
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
 
-export const disconnectDatabase = async() => {
-    try {
-        await sequelize.close();
-        console.log(`✅ PostgreSQL disconnected successfully`);
-        return true;
-    } catch (error) {
-        const errorMessage = error && error.message ? error.message : 'Unknown error';
-        console.error(`❌ Database disconnect failed: ${errorMessage}`);
-        throw error;
-    }
-};
+    const statusCode = err.statusCode || err.status || 500;
+    const message = err.message || 'Internal Server Error';
 
-export const gracefulShutdown = async() => {
-    try {
-        console.log(`\n🔄 Initiating graceful database shutdown...`);
-        await sequelize.close();
-        console.log(`✅ Database connections closed successfully`);
-        return true;
-    } catch (error) {
-        const errorMessage = error && error.message ? error.message : 'Unknown error';
-        console.error(`❌ Error during graceful shutdown: ${errorMessage}`);
-        return false;
-    }
-};
+    res.status(statusCode).json({
+        success: false,
+        error: message,
+        ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    });
+});
 
-export { sequelize, Sequelize };
-export default sequelize;
+export default app;

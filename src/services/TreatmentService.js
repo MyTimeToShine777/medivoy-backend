@@ -8,18 +8,19 @@ class TreatmentService {
         try {
             const treatment = await prisma.treatment.create({
                 data: {
-                ...treatmentData,
+                    ...treatmentData
+                }
             });
 
             return {
                 success: true,
                 data: treatment,
-                message: 'Treatment created successfully',
+                message: 'Treatment created successfully'
             };
         } catch (error) {
             return {
                 success: false,
-                error: error.message,
+                error: error.message
             };
         }
     }
@@ -28,13 +29,13 @@ class TreatmentService {
     async getTreatmentById(treatmentId) {
         try {
             const treatment = await prisma.treatment.findUnique({
-                where: { treatmentId }, {
-                include: [
-                    { model: TreatmentCategory, as: 'category' },
-                    { model: TreatmentSubcategory, as: 'subcategory' },
-                    { model: Hospital, as: 'hospitals' },
-                    { model: Doctor, as: 'doctors' },
-                ],
+                where: { treatmentId },
+                include: {
+                    category: true,
+                    subcategory: true,
+                    hospitals: true,
+                    doctors: true
+                }
             });
 
             if (!treatment) {
@@ -97,7 +98,8 @@ class TreatmentService {
             }
             if (filters.minPrice && filters.maxPrice) {
                 where.cost = {
-                    { gte: filters.minPrice, lte: filters.maxPrice },
+                    gte: filters.minPrice,
+                    lte: filters.maxPrice
                 };
             }
             if (filters.minRating) {
@@ -108,14 +110,16 @@ class TreatmentService {
             if (filters.search) {
                 where.OR = [{
                         name: {
-                            contains: filters.search, mode: "insensitive"
+                            contains: filters.search,
+                            mode: "insensitive"
                         }
                     },
                     {
                         description: {
-                            contains: filters.search, mode: "insensitive"
+                            contains: filters.search,
+                            mode: "insensitive"
                         }
-                    },
+                    }
                 ];
             }
 
@@ -373,4 +377,5 @@ class TreatmentService {
     }
 }
 
+export { TreatmentService };
 export default new TreatmentService();
