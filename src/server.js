@@ -8,8 +8,7 @@ import boxen from 'boxen';
 dotenv.config();
 
 import app from './app.js';
-import { testConnection, syncDatabase, disconnectDatabase } from './config/database.js';
-import { initializeModels } from './models/index.js';
+import { testConnectionWithRetry as testConnection, syncDatabase, disconnectDatabase } from './config/prisma.js';
 import { cacheService } from './config/redis.js';
 import { mongoDBService } from './config/mongodb.js';
 
@@ -133,14 +132,9 @@ const initializeDatabases = async() => {
         results.postgresql.error = pgResult.error && pgResult.error.message ? pgResult.error.message : null;
 
         if (pgResult.success) {
-            log.info(`Initializing database models...`);
-            try {
-                initializeModels();
-                log.success('Database models initialized');
-            } catch (error) {
-                const errorMessage = error && error.message ? error.message : 'Unknown error';
-                log.error(`Model initialization failed: ${errorMessage}`);
-            }
+            // Models are now handled by Prisma Client
+            log.info(`Using Prisma Client for database models`);
+            log.success('Prisma Client ready');
 
             if (NODE_ENV === 'development' && process.env.DB_SYNC_ENABLED !== 'false') {
                 log.info('Syncing database schema...');
