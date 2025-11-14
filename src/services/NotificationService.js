@@ -270,14 +270,14 @@ class NotificationService {
                 where.isRead = filters.isRead;
             }
 
-            const notifications = await Notification.findAll({
+            const notifications = await prisma.notification.findMany({
                 where,
                 orderBy: { createdAt: 'desc' },
                 take: filters.limit || 20,
                 skip: filters.offset || 0,
             });
 
-            const total = await Notification.count({ where });
+            const total = await prisma.notification.count({ where });
 
             return {
                 success: true,

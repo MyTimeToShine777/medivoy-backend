@@ -80,7 +80,7 @@ export class TravelArrangementService {
         try {
             if (!bookingId) throw new AppError('Booking ID required', 400);
 
-            const flights = await Flight.findAll({
+            const flights = await prisma.flight.findMany({
                 where: { bookingId: bookingId },
                 orderBy: { departureDate: 'asc' }
             });
@@ -184,7 +184,7 @@ export class TravelArrangementService {
         try {
             if (!bookingId) throw new AppError('Booking ID required', 400);
 
-            const hotels = await Hotel.findAll({
+            const hotels = await prisma.hotel.findMany({
                 where: { bookingId: bookingId }
             });
 
@@ -311,7 +311,7 @@ export class TravelArrangementService {
         try {
             if (!bookingId) throw new AppError('Booking ID required', 400);
 
-            const transports = await Transportation.findAll({
+            const transports = await prisma.transportation.findMany({
                 where: { bookingId: bookingId },
                 orderBy: { pickupDate: 'asc' }
             });
@@ -337,9 +337,9 @@ export class TravelArrangementService {
                 throw new AppError('Unauthorized', 403);
             }
 
-            const flights = await Flight.findAll({ where: { bookingId: bookingId } });
-            const hotels = await Hotel.findAll({ where: { bookingId: bookingId } });
-            const transports = await Transportation.findAll({ where: { bookingId: bookingId } });
+            const flights = await prisma.flight.findMany({ where: { bookingId: bookingId } });
+            const hotels = await prisma.hotel.findMany({ where: { bookingId: bookingId } });
+            const transports = await prisma.transportation.findMany({ where: { bookingId: bookingId } });
 
             const itinerary = {
                 bookingId: bookingId,
@@ -365,9 +365,9 @@ export class TravelArrangementService {
         try {
             if (!bookingId) throw new AppError('Booking ID required', 400);
 
-            const flights = await Flight.findAll({ where: { bookingId: bookingId } });
-            const hotels = await Hotel.findAll({ where: { bookingId: bookingId } });
-            const transports = await Transportation.findAll({ where: { bookingId: bookingId } });
+            const flights = await prisma.flight.findMany({ where: { bookingId: bookingId } });
+            const hotels = await prisma.hotel.findMany({ where: { bookingId: bookingId } });
+            const transports = await prisma.transportation.findMany({ where: { bookingId: bookingId } });
 
             let summary = '=== TRAVEL SUMMARY ===\n\n';
 

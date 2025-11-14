@@ -45,9 +45,8 @@ export class SettingsService {
             // mismatches when the database uses snake_case column names.
             const settings = await prisma.settings.findMany({
                 where: where,
-                order: [
-                    ['setting_type', 'ASC'],
-                    ['setting_key', 'ASC']
+                orderBy: [
+                    { setting_type: 'asc' }, { setting_key: 'asc' }
                 ]
             });
 
@@ -107,7 +106,7 @@ export class SettingsService {
                 throw new AppError('No settings provided', 400);
             }
 
-            let settings = await Settings.findOne({
+            let settings = await prisma.settings.findFirst({
                 where: { settingType: settingType }
             });
 
@@ -248,7 +247,7 @@ export class SettingsService {
             const limit = filters.limit || 20;
             const offset = filters.offset || 0;
 
-            const backups = await Backup.findAll({
+            const backups = await prisma.backup.findMany({
                 where: where,
                 orderBy: { createdAt: 'desc' },
                 take: limit,
@@ -415,9 +414,9 @@ export class SettingsService {
     async getBackupStatistics() {
         try {
             const total = await prisma.backup.count();
-            const completed = await Backup.count({ where: { status: 'completed' } });
-            const failed = await Backup.count({ where: { status: 'failed' } });
-            const verified = await Backup.count({ where: { isVerified: true } });
+            const completed = await prisma.backup.count({ where: { status: 'completed' } });
+            const failed = await prisma.backup.count({ where: { status: 'failed' } });
+            const verified = await prisma.backup.count({ where: { isVerified: true } });
 
             // Calculate total backup size using Prisma aggregate
             const totalSizeResult = await prisma.backup.aggregate({

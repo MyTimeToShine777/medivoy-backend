@@ -101,7 +101,7 @@ export class ChatService {
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const chats = await Chat.findAll({
+            const chats = await prisma.chat.findMany({
                 where: {
                     OR: [
                         { userId1: userId },
@@ -121,7 +121,7 @@ export class ChatService {
                 skip: offset
             });
 
-            const total = await Chat.count({
+            const total = await prisma.chat.count({
                 where: {
                     OR: [
                         { userId1: userId },
@@ -196,7 +196,7 @@ export class ChatService {
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const messages = await ChatMessage.findAll({
+            const messages = await prisma.chatMessage.findMany({
                 where: { chatId: chatId },
                 include: {
                     Sender: {
@@ -208,7 +208,7 @@ export class ChatService {
                 skip: offset
             });
 
-            const total = await ChatMessage.count({ where: { chatId: chatId } });
+            const total = await prisma.chatMessage.count({ where: { chatId: chatId } });
 
             // Mark as read
             await ChatMessage.update({ isRead: true }, { where: { chatId: chatId, senderId: {

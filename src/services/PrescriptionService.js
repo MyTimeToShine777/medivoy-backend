@@ -99,7 +99,7 @@ class PrescriptionService {
                 where.isValid = filters.isValid;
             }
 
-            const prescriptions = await Prescription.findAll({
+            const prescriptions = await prisma.prescription.findMany({
                 where,
                 include: {
                     doctor: true,
@@ -110,7 +110,7 @@ class PrescriptionService {
                 skip: filters.offset || 0,
             });
 
-            const total = await Prescription.count({ where });
+            const total = await prisma.prescription.count({ where });
 
             return {
                 success: true,
@@ -287,11 +287,11 @@ class PrescriptionService {
                 },
             };
 
-            const totalPrescriptions = await Prescription.count({ where });
-            const issuedPrescriptions = await Prescription.count({
+            const totalPrescriptions = await prisma.prescription.count({ where });
+            const issuedPrescriptions = await prisma.prescription.count({
                 where: {...where, status: 'issued' },
             });
-            const dispensedPrescriptions = await Prescription.count({
+            const dispensedPrescriptions = await prisma.prescription.count({
                 where: {...where, status: 'dispensed' },
             });
 

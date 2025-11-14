@@ -242,7 +242,7 @@ export class ChatMessageService {
 
             
 
-            const count = await ChatMessage.count({
+            const count = await prisma.chatMessage.count({
                 where: {
                     conversationId,
                     receiverId: userId,

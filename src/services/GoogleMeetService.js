@@ -113,7 +113,7 @@ class GoogleMeetService {
     // ========== START VIDEO CALL ==========
     async startVideoCall(eventId) {
         try {
-            const videoCall = await VideoCall.findOne({
+            const videoCall = await prisma.videoCall.findFirst({
                 where: { googleEventId: eventId },
             });
 
@@ -134,7 +134,7 @@ class GoogleMeetService {
     // ========== END VIDEO CALL ==========
     async endVideoCall(eventId, duration, recordingUrl = null) {
         try {
-            const videoCall = await VideoCall.findOne({
+            const videoCall = await prisma.videoCall.findFirst({
                 where: { googleEventId: eventId },
             });
 
@@ -165,7 +165,7 @@ class GoogleMeetService {
                 eventId,
             });
 
-            const videoCall = await VideoCall.findOne({
+            const videoCall = await prisma.videoCall.findFirst({
                 where: { googleEventId: eventId },
             });
 
@@ -230,14 +230,14 @@ class GoogleMeetService {
                 ],
             };
 
-            const videoCalls = await VideoCall.findAll({
+            const videoCalls = await prisma.videoCall.findMany({
                 where,
                 orderBy: { createdAt: 'desc' },
                 take: filters.limit || 20,
                 skip: filters.offset || 0,
             });
 
-            const total = await VideoCall.count({ where });
+            const total = await prisma.videoCall.count({ where });
 
             return { success: true, data: videoCalls, total };
         } catch (error) {

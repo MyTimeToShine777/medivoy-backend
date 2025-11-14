@@ -161,7 +161,7 @@ export class RoleService {
                 throw new AppError('Role not found', 404);
             }
 
-            const usersWithRole = await User.count({ where: { roleId: roleId } });
+            const usersWithRole = await prisma.user.count({ where: { roleId: roleId } });
             if (usersWithRole > 0) {
                 throw new AppError('Cannot delete role with assigned users', 400);
             }
@@ -204,7 +204,7 @@ export class RoleService {
                 throw new AppError('Permission not found', 404);
             }
 
-            const existing = await RolePermission.findOne({
+            const existing = await prisma.rolePermission.findFirst({
                 where: { roleId: roleId, permissionId: permissionId },
                 transaction: transaction
             });
@@ -239,7 +239,7 @@ export class RoleService {
         try {
             if (!roleId || !permissionId) throw new AppError('Required params missing', 400);
 
-            const rolePermission = await RolePermission.findOne({
+            const rolePermission = await prisma.rolePermission.findFirst({
                 where: { roleId: roleId, permissionId: permissionId },
                 transaction: transaction
             });
@@ -269,7 +269,7 @@ export class RoleService {
         try {
             if (!roleId) throw new AppError('Role ID required', 400);
 
-            const permissions = await RolePermission.findAll({
+            const permissions = await prisma.rolePermission.findMany({
                 where: { roleId: roleId },
                 include: {
                     permission: {

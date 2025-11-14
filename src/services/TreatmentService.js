@@ -129,7 +129,7 @@ class TreatmentService {
                 skip: filters.offset || 0,
             });
 
-            const total = await Treatment.count({ where });
+            const total = await prisma.treatment.count({ where });
 
             return {
                 success: true,
@@ -229,7 +229,7 @@ class TreatmentService {
 
     async getCategories() {
         try {
-            const categories = await TreatmentCategory.findAll({
+            const categories = await prisma.treatmentCategory.findMany({
                 where: { isActive: true },
                 orderBy: { displayOrder: 'asc' },
             });
@@ -268,7 +268,7 @@ class TreatmentService {
 
     async getSubcategoriesByCategory(categoryId) {
         try {
-            const subcategories = await TreatmentSubcategory.findAll({
+            const subcategories = await prisma.treatmentSubcategory.findMany({
                 where: { categoryId, isActive: true },
                 orderBy: { displayOrder: 'asc' },
             });

@@ -119,7 +119,7 @@ export class AppointmentService {
         try {
             if (!appointmentId || !userId) throw new AppError('Required params missing', 400);
 
-            const appointment = await Appointment.findOne({
+            const appointment = await prisma.appointment.findFirst({
                 where: { appointmentId: appointmentId },
                 include: {
                     user: {
@@ -168,7 +168,7 @@ export class AppointmentService {
                     gte: filters.appointmentDate };
             }
 
-            const appointments = await Appointment.findAll({
+            const appointments = await prisma.appointment.findMany({
                 where: where,
                 include: {
                     doctor: {
@@ -183,7 +183,7 @@ export class AppointmentService {
                 skip: offset
             });
 
-            const total = await Appointment.count({ where: where });
+            const total = await prisma.appointment.count({ where: where });
 
             return {
                 success: true,
@@ -215,7 +215,7 @@ export class AppointmentService {
                 throw new AppError('Cannot reschedule this appointment', 400);
             }
 
-            const oldSlot = await AppointmentSlot.findOne({
+            const oldSlot = await prisma.appointmentSlot.findFirst({
                 where: {
                     doctorId: appointment.doctorId,
                     appointmentDate: appointment.appointmentDate,
@@ -231,7 +231,7 @@ export class AppointmentService {
             }
 
             // Find new slot
-            const newSlot = await AppointmentSlot.findOne({
+            const newSlot = await prisma.appointmentSlot.findFirst({
                 where: {
                     doctorId: appointment.doctorId,
                     appointmentDate: newData.appointmentDate,
@@ -488,7 +488,7 @@ export class AppointmentService {
         try {
             if (!doctorId || !date) throw new AppError('Required params missing', 400);
 
-            const slots = await AppointmentSlot.findAll({
+            const slots = await prisma.appointmentSlot.findMany({
                 where: {
                     doctorId: doctorId,
                     appointmentDate: date,

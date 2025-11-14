@@ -85,9 +85,8 @@ export class PermissionService {
 
             const permissions = await prisma.permission.findMany({
                 where: where,
-                order: [
-                    ['module', 'ASC'],
-                    ['action', 'ASC']
+                orderBy: [
+                    { module: 'asc' }, { action: 'asc' }
                 ],
                 take: limit,
                 skip: offset
@@ -146,7 +145,7 @@ export class PermissionService {
                 throw new AppError('Permission not found', 404);
             }
 
-            const rolesWithPermission = await RolePermission.count({
+            const rolesWithPermission = await prisma.rolePermission.count({
                 where: { permissionId: permissionId }
             });
 

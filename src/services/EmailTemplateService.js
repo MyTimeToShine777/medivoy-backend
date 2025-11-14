@@ -89,7 +89,7 @@ export class EmailTemplateService {
                 return { success: false, error: 'Template code required' };
             }
 
-            const template = await EmailTemplate.findOne({
+            const template = await prisma.emailTemplate.findFirst({
                 where: { templateCode: templateCode, isActive: true }
             });
 
@@ -125,7 +125,7 @@ export class EmailTemplateService {
                 skip: offset
             });
 
-            const total = await EmailTemplate.count({ where: where });
+            const total = await prisma.emailTemplate.count({ where: where });
 
             return {
                 success: true,
@@ -208,7 +208,7 @@ export class EmailTemplateService {
                 return { success: false, error: 'Template code required' };
             }
 
-            const template = await EmailTemplate.findOne({
+            const template = await prisma.emailTemplate.findFirst({
                 where: { templateCode: templateCode, isActive: true }
             });
 

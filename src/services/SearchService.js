@@ -35,7 +35,7 @@ export class SearchService {
                 return { success: true, data: cached.value, fromCache: true };
             }
 
-            const hospitals = await Hospital.findAll({
+            const hospitals = await prisma.hospital.findMany({
                 where: {
                     isActive: true,
                     OR: [
@@ -52,7 +52,7 @@ export class SearchService {
                 take: limit
             });
 
-            const doctors = await Doctor.findAll({
+            const doctors = await prisma.doctor.findMany({
                 where: {
                     isActive: true,
                     OR: [
@@ -71,7 +71,7 @@ export class SearchService {
                 take: limit
             });
 
-            const treatments = await Treatment.findAll({
+            const treatments = await prisma.treatment.findMany({
                 where: {
                     isActive: true,
                     OR: [
@@ -143,7 +143,7 @@ export class SearchService {
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const hospitals = await Hospital.findAll({
+            const hospitals = await prisma.hospital.findMany({
                 where: where,
                 include: {
                     city: {
@@ -158,7 +158,7 @@ export class SearchService {
                 skip: offset
             });
 
-            const total = await Hospital.count({ where: where });
+            const total = await prisma.hospital.count({ where: where });
 
             return {
                 success: true,
@@ -203,7 +203,7 @@ export class SearchService {
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const doctors = await Doctor.findAll({
+            const doctors = await prisma.doctor.findMany({
                 where: where,
                 include: {
                     hospital: {
@@ -213,15 +213,14 @@ export class SearchService {
                         select: { specializationName: true }
                     }
                 },
-                order: [
-                    ['averageRating', 'DESC'],
-                    ['experience', 'DESC']
+                orderBy: [
+                    { averageRating: 'desc' }, { experience: 'desc' }
                 ],
                 take: limit,
                 skip: offset
             });
 
-            const total = await Doctor.count({ where: where });
+            const total = await prisma.doctor.count({ where: where });
 
             return {
                 success: true,
@@ -267,14 +266,14 @@ export class SearchService {
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const treatments = await Treatment.findAll({
+            const treatments = await prisma.treatment.findMany({
                 where: where,
                 orderBy: { basePrice: 'asc' },
                 take: limit,
                 skip: offset
             });
 
-            const total = await Treatment.count({ where: where });
+            const total = await prisma.treatment.count({ where: where });
 
             return {
                 success: true,
@@ -317,7 +316,7 @@ export class SearchService {
             const limit = filters.limit ? Math.min(filters.limit, 100) : 20;
             const offset = filters.offset || 0;
 
-            const packages = await Package.findAll({
+            const packages = await prisma.package.findMany({
                 where: where,
                 include: {
                     treatment: true,
@@ -328,7 +327,7 @@ export class SearchService {
                 skip: offset
             });
 
-            const total = await Package.count({ where: where });
+            const total = await prisma.package.count({ where: where });
 
             return {
                 success: true,
@@ -388,7 +387,7 @@ export class SearchService {
             const suggestions = {};
 
             if (entityType === 'all' || entityType === 'hospitals') {
-                const hospitals = await Hospital.findAll({
+                const hospitals = await prisma.hospital.findMany({
                     where: {
                         isActive: true,
                         hospitalName: {
@@ -401,7 +400,7 @@ export class SearchService {
             }
 
             if (entityType === 'all' || entityType === 'doctors') {
-                const doctors = await Doctor.findAll({
+                const doctors = await prisma.doctor.findMany({
                     where: {
                         isActive: true,
                         OR: [
@@ -418,7 +417,7 @@ export class SearchService {
             }
 
             if (entityType === 'all' || entityType === 'treatments') {
-                const treatments = await Treatment.findAll({
+                const treatments = await prisma.treatment.findMany({
                     where: {
                         isActive: true,
                         treatmentName: {

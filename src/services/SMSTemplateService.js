@@ -92,7 +92,7 @@ export class SMSTemplateService {
                 return { success: false, error: 'Template code required' };
             }
 
-            const template = await SMSTemplate.findOne({
+            const template = await prisma.sMSTemplate.findFirst({
                 where: { templateCode: templateCode, isActive: true }
             });
 
@@ -128,7 +128,7 @@ export class SMSTemplateService {
                 skip: offset
             });
 
-            const total = await SMSTemplate.count({ where: where });
+            const total = await prisma.sMSTemplate.count({ where: where });
 
             return {
                 success: true,
@@ -186,7 +186,7 @@ export class SMSTemplateService {
                 return { success: false, error: 'Template code required' };
             }
 
-            const template = await SMSTemplate.findOne({
+            const template = await prisma.sMSTemplate.findFirst({
                 where: { templateCode: templateCode, isActive: true }
             });
 

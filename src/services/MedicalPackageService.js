@@ -125,9 +125,9 @@ export class MedicalPackageService {
                     treatment: true,
                     hospital: true
                 },
-                order: [
-                    [filters.sortBy || 'finalPrice', filters.sortOrder || 'ASC']
-                ],
+                orderBy: {
+                    [filters.sortBy || 'finalPrice']: (filters.sortOrder || 'ASC').toLowerCase()
+                },
                 take: limit,
                 skip: offset
             });

@@ -34,9 +34,9 @@ export class DoctorScheduleService {
 
             const schedules = await prisma.doctorSchedule.findMany({
                 where: { doctorId, isActive: true },
-                order: [
-                    dayOfWeek: 'asc',
-                    ['startTime', 'ASC']
+                orderBy: [
+                    { dayOfWeek: 'asc' },
+                    { startTime: 'asc' }
                 ]
             });
 

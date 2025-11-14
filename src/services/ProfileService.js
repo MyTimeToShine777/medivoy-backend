@@ -49,7 +49,7 @@ export class ProfileService {
 
             
 
-            const profile = await Profile.findOne({ where: { userId } });
+            const profile = await prisma.profile.findFirst({ where: { userId } });
 
             if (!profile) {
                 return { success: false, error: 'Profile not found' };
@@ -83,7 +83,7 @@ export class ProfileService {
             
 
             // Check if profile already exists
-            const existingProfile = await Profile.findOne({ where: { userId } });
+            const existingProfile = await prisma.profile.findFirst({ where: { userId } });
 
             if (existingProfile) {
                 return { success: false, error: 'Profile already exists for this user' };

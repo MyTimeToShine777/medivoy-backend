@@ -41,7 +41,7 @@ class PatientService {
     // ========== UPDATE PATIENT HEALTH INFO ==========
     async updateHealthInfo(userId, healthData) {
         try {
-            const patient = await Patient.findOne({ where: { userId } });
+            const patient = await prisma.patient.findFirst({ where: { userId } });
             if (!patient) return { success: false, error: 'Not found' };
 
             if (healthData.allergies) patient.allergies = healthData.allergies;
@@ -80,7 +80,7 @@ class PatientService {
     // ========== GET PATIENT CONSULTATIONS ==========
     async getPatientConsultations(userId) {
         try {
-            const consultations = await Consultation.findAll({
+            const consultations = await prisma.consultation.findMany({
                 where: { userId },
                 include: {
                     doctor: true

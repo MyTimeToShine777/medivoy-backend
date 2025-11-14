@@ -233,9 +233,8 @@ export class UserService {
 
             const addresses = await prisma.userAddress.findMany({
                 where: { userId: userId },
-                order: [
-                    ['isDefault', 'DESC'],
-                    ['createdAt', 'DESC']
+                orderBy: [
+                    { isDefault: 'desc' }, { createdAt: 'desc' }
                 ]
             });
 

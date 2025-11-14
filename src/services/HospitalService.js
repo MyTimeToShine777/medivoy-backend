@@ -216,7 +216,7 @@ export class HospitalService {
         try {
             if (!hospitalId) throw new AppError('Hospital ID required', 400);
 
-            const services = await HospService.findAll({
+            const services = await prisma.hospService.findMany({
                 where: { hospitalId: hospitalId, isAvailable: true },
                 orderBy: { serviceName: 'asc' }
             });
@@ -232,7 +232,7 @@ export class HospitalService {
         try {
             if (!serviceId || !hospitalId) throw new AppError('Required params missing', 400);
 
-            const service = await HospService.findOne({
+            const service = await prisma.hospService.findFirst({
                 where: { serviceId: serviceId, hospitalId: hospitalId },
                 transaction: transaction
             });
@@ -269,7 +269,7 @@ export class HospitalService {
             const limit = filters && filters.limit ? Math.min(filters.limit, 100) : 10;
             const offset = filters && filters.offset ? filters.offset : 0;
 
-            const doctors = await Doctor.findAll({
+            const doctors = await prisma.doctor.findMany({
                 where: { hospitalId: hospitalId, isActive: true },
                 include: {
                     specialization: {
@@ -281,7 +281,7 @@ export class HospitalService {
                 skip: offset
             });
 
-            const total = await Doctor.count({ where: { hospitalId: hospitalId, isActive: true } });
+            const total = await prisma.doctor.count({ where: { hospitalId: hospitalId, isActive: true } });
 
             return {
                 success: true,
@@ -300,8 +300,8 @@ export class HospitalService {
             const hospital = await prisma.hospital.findUnique({ where: { hospitalId: hospitalId } });
             if (!hospital) throw new AppError('Hospital not found', 404);
 
-            const totalDoctors = await Doctor.count({ where: { hospitalId: hospitalId, isActive: true } });
-            const totalServices = await HospService.count({ where: { hospitalId: hospitalId, isAvailable: true } });
+            const totalDoctors = await prisma.doctor.count({ where: { hospitalId: hospitalId, isActive: true } });
+            const totalServices = await prisma.hospService.count({ where: { hospitalId: hospitalId, isAvailable: true } });
 
             return {
                 success: true,

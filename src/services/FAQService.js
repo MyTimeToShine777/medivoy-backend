@@ -112,14 +112,14 @@ class FAQService {
                 where.category = filters.category;
             }
 
-            const faqs = await FAQ.findAll({
+            const faqs = await prisma.fAQ.findMany({
                 where,
                 orderBy: { viewCount: 'desc' },
                 take: filters.limit || 20,
                 skip: filters.offset || 0,
             });
 
-            const total = await FAQ.count({ where });
+            const total = await prisma.fAQ.count({ where });
 
             return { success: true, data: faqs, total };
         } catch (error) {
@@ -136,17 +136,16 @@ class FAQService {
                 isActive: true,
             };
 
-            const faqs = await FAQ.findAll({
+            const faqs = await prisma.fAQ.findMany({
                 where,
-                order: [
-                    ['priority', 'DESC'],
-                    ['viewCount', 'DESC']
+                orderBy: [
+                    { priority: 'desc' }, { viewCount: 'desc' }
                 ],
                 take: filters.limit || 50,
                 skip: filters.offset || 0,
             });
 
-            const total = await FAQ.count({ where });
+            const total = await prisma.fAQ.count({ where });
 
             return { success: true, data: faqs, total };
         } catch (error) {
@@ -268,10 +267,10 @@ class FAQService {
     // ========== GET FAQ STATISTICS ==========
     async getFAQStatistics() {
         try {
-            const totalFAQs = await FAQ.count();
-            const publishedFAQs = await FAQ.count({ where: { isPublished: true } });
+            const totalFAQs = await prisma.fAQ.count();
+            const publishedFAQs = await prisma.fAQ.count({ where: { isPublished: true } });
             const averageHelpful = await FAQ.avg('helpfulCount');
-            const topFAQs = await FAQ.findAll({
+            const topFAQs = await prisma.fAQ.findMany({
                 orderBy: { viewCount: 'desc' },
                 take: 10,
             });
@@ -294,7 +293,7 @@ class FAQService {
     // ========== GET CATEGORIES ==========
     async getCategories() {
         try {
-            const faqs = await FAQ.findAll({
+            const faqs = await prisma.fAQ.findMany({
                 select: { category: true },
                 group: ['category'],
                 raw: true,

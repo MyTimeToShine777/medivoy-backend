@@ -84,14 +84,14 @@ export class LaboratoryService {
                 };
             }
 
-            const tests = await LabTest.findAll({
+            const tests = await prisma.labTest.findMany({
                 where: where,
                 orderBy: { testName: 'asc' },
                 take: limit,
                 skip: offset
             });
 
-            const total = await LabTest.count({ where: where });
+            const total = await prisma.labTest.count({ where: where });
 
             return {
                 success: true,
@@ -179,7 +179,7 @@ export class LaboratoryService {
                 where.status = filters.status;
             }
 
-            const orders = await LabOrder.findAll({
+            const orders = await prisma.labOrder.findMany({
                 where: where,
                 include: {
                     labTest: {
@@ -191,7 +191,7 @@ export class LaboratoryService {
                 skip: offset
             });
 
-            const total = await LabOrder.count({ where: where });
+            const total = await prisma.labOrder.count({ where: where });
 
             return {
                 success: true,
@@ -261,7 +261,7 @@ export class LaboratoryService {
         try {
             if (!resultId || !userId) throw new AppError('Required params missing', 400);
 
-            const result = await LabResult.findOne({
+            const result = await prisma.labResult.findFirst({
                 where: { resultId: resultId },
                 include: {
                     labOrder: {
@@ -284,7 +284,7 @@ export class LaboratoryService {
         try {
             if (!resultId || !userId) throw new AppError('Required params missing', 400);
 
-            const result = await LabResult.findOne({
+            const result = await prisma.labResult.findFirst({
                 where: { resultId: resultId },
                 include: {
                     labOrder: {

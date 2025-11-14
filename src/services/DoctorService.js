@@ -278,7 +278,7 @@ class DoctorService {
     // ========== AVAILABILITY CHECK ==========
     async checkAvailability(doctorId, date, timeSlot) {
         try {
-            const schedule = await DoctorSchedule.findOne({
+            const schedule = await prisma.doctorSchedule.findFirst({
                 where: {
                     doctorId,
                     date,
@@ -295,7 +295,7 @@ class DoctorService {
             }
 
             // Check if slot is booked
-            const bookedSlot = await Appointment.findOne({
+            const bookedSlot = await prisma.appointment.findFirst({
                 where: {
                     doctorId,
                     appointmentDate: date,
@@ -363,7 +363,7 @@ class DoctorService {
 
     async updateDoctorRating(doctorId) {
         try {
-            const reviews = await Review.findAll({
+            const reviews = await prisma.review.findMany({
                 where: { doctorId },
             });
 
@@ -405,11 +405,11 @@ class DoctorService {
                 };
             }
 
-            const totalAppointments = await Appointment.count({
+            const totalAppointments = await prisma.appointment.count({
                 where: { doctorId },
             });
 
-            const completedAppointments = await Appointment.count({
+            const completedAppointments = await prisma.appointment.count({
                 where: {
                     doctorId,
                     status: 'completed',
