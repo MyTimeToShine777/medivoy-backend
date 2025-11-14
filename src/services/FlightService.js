@@ -92,7 +92,7 @@ export class FlightService {
 
     async cancelBooking(bookingId) {
         try {
-            const booking = await Booking.findByPk(bookingId);
+            const booking = await prisma.booking.findUnique({ where: { bookingId: bookingId } });
             if (!booking) return { success: false, error: 'Booking not found' };
             const flight = await prisma.flight.findUnique({ where: { flightId: booking.flightId } });
             await booking.destroy();

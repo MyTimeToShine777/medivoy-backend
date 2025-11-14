@@ -116,7 +116,7 @@ export class ConsultationService {
                 return { success: false, error: 'Consultation ID required' };
             }
 
-            const consultation = await Consultation.findByPk(consultationId, {
+            const consultation = await prisma.consultation.findUnique({ where: { consultationId: consultationId }, 
                 include: [
                     { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] },
                     { model: Patient, attributes: ['firstName', 'lastName', 'email'] }

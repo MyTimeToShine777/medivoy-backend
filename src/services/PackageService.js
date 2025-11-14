@@ -114,7 +114,7 @@ class PackageService {
     // ========== CALCULATE PACKAGE COST ==========
     async calculatePackageCost(packageId) {
         try {
-            const pkg = await Package.findByPk(packageId, {
+            const pkg = await prisma.package.findUnique({ where: { packageId: packageId }, 
                 include: [{ model: FeatureAddOn, as: 'addOns' }],
             });
 

@@ -201,7 +201,7 @@ export class RoleService {
                 throw new AppError('Role not found', 404);
             }
 
-            const permission = await Permission.findByPk(permissionId);
+            const permission = await prisma.permission.findUnique({ where: { permissionId: permissionId } });
             if (!permission) {
                 throw new AppError('Permission not found', 404);
             }

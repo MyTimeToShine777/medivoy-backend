@@ -179,7 +179,7 @@ export class PermissionService {
         try {
             if (!userId) throw new AppError('User ID required', 400);
 
-            const user = await User.findByPk(userId, {
+            const user = await prisma.user.findUnique({ where: { userId: userId }, 
                 include: [{
                     model: Role,
                     include: [{

@@ -116,14 +116,14 @@ export class LaboratoryService {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const user = await User.findByPk(userId);
+            const user = await prisma.user.findUnique({ where: { userId: userId } });
             if (!user) {
                 throw new AppError('User not found', 404);
             }
 
             const tests = [];
             for (const testId of orderData.testIds) {
-                const test = await LabTest.findByPk(testId);
+                const test = await prisma.labTest.findUnique({ where: { testId: testId } });
                 if (!test) {
                     throw new AppError('Lab test not found: ' + testId, 404);
                 }
@@ -212,7 +212,7 @@ export class LaboratoryService {
                 throw new AppError('Required parameters missing', 400);
             }
 
-            const order = await LabOrder.findByPk(orderId);
+            const order = await prisma.labOrder.findUnique({ where: { orderId: orderId } });
             if (!order) {
                 throw new AppError('Lab order not found', 404);
             }

@@ -336,7 +336,7 @@ class TreatmentService {
             }
 
             // Check if hospital offers this treatment
-            const hospital = await Hospital.findByPk(hospitalId);
+            const hospital = await prisma.hospital.findUnique({ where: { hospitalId: hospitalId } });
             if (!hospital) {
                 return {
                     success: false,

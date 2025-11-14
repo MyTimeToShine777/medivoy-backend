@@ -98,7 +98,7 @@ export class TravelArrangementService {
         try {
             if (!flightId || !userId) throw new AppError('Required params missing', 400);
 
-            const flight = await Flight.findByPk(flightId);
+            const flight = await prisma.flight.findUnique({ where: { flightId: flightId } });
             if (!flight) {
                 throw new AppError('Flight not found', 404);
             }
@@ -201,7 +201,7 @@ export class TravelArrangementService {
         try {
             if (!hotelId || !userId) throw new AppError('Required params missing', 400);
 
-            const hotel = await Hotel.findByPk(hotelId);
+            const hotel = await prisma.hotel.findUnique({ where: { hotelId: hotelId } });
             if (!hotel) {
                 throw new AppError('Hotel not found', 404);
             }
@@ -233,7 +233,7 @@ export class TravelArrangementService {
         try {
             if (!hotelId || !userId) throw new AppError('Required params missing', 400);
 
-            const hotel = await Hotel.findByPk(hotelId);
+            const hotel = await prisma.hotel.findUnique({ where: { hotelId: hotelId } });
             if (!hotel) {
                 throw new AppError('Hotel not found', 404);
             }
@@ -334,7 +334,7 @@ export class TravelArrangementService {
         try {
             if (!bookingId || !userId) throw new AppError('Required params missing', 400);
 
-            const booking = await Booking.findByPk(bookingId);
+            const booking = await prisma.booking.findUnique({ where: { bookingId: bookingId } });
             if (!booking) throw new AppError('Booking not found', 404);
 
             if (booking.userId !== userId && userId !== 'ADMIN') {
