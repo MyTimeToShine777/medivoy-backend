@@ -36,13 +36,11 @@ export class AnalyticsService {
             const refundedPayments = await prisma.payment.count({ where: { status: 'refunded' } });
 
             const totalReviews = await prisma.review.count({ where: { isPublished: true } });
-            const avgRating = await prisma.review.findMany({
+            const avgRatingResult = await prisma.review.aggregate({
                 where: { isPublished: true },
-                attributes: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('AVG', /* TODO: Check field name */ sequelize.col('rating')), 'avgRating']
-                ],
-                raw: true
+                _avg: { rating: true }
             });
+            const avgRating = avgRatingResult._avg.rating;
 
             const metrics = {
                 bookings: {
@@ -61,7 +59,7 @@ export class AnalyticsService {
                 },
                 reviews: {
                     total: totalReviews,
-                    averageRating: avgRating && avgRating[0] && avgRating[0].avgRating ? parseFloat(avgRating[0].avgRating).toFixed(2) : 0
+                    averageRating: avgRating ? parseFloat(avgRating).toFixed(2) : 0
                 },
                 users: {
                     total: totalUsers,
@@ -81,35 +79,48 @@ export class AnalyticsService {
         try {
             if (!startDate || !endDate) throw new AppError('Date range required', 400);
 
+            // Fetch all payments in the date range
             const payments = await prisma.payment.findMany({
                 where: {
                     status: 'completed',
                     createdAt: {
-                        { gte: [startDate, endDate] }
+                        gte: new Date(startDate),
+                        lte: new Date(endDate)
+                    }
                 },
-                attributes: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'date'],
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('SUM', /* TODO: Check field name */ sequelize.col('amount')), 'totalAmount'],
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('paymentId')), 'transactionCount']
-                ],
-                group: [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt'))],
-                order: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'ASC']
-                ],
-                raw: true
+                select: {
+                    createdAt: true,
+                    amount: true,
+                    paymentId: true
+                },
+                orderBy: {
+                    createdAt: 'asc'
+                }
             });
 
-            const totalRevenue = payments.reduce((sum, p) => sum + parseFloat(p.totalAmount || 0), 0);
-            const totalTransactions = payments.reduce((sum, p) => sum + p.transactionCount, 0);
+            // Group by date manually since Prisma doesn't support GROUP BY with raw SQL functions
+            const groupedByDate = payments.reduce((acc, payment) => {
+                const date = payment.createdAt.toISOString().split('T')[0];
+                if (!acc[date]) {
+                    acc[date] = { date, totalAmount: 0, transactionCount: 0 };
+                }
+                acc[date].totalAmount += parseFloat(payment.amount);
+                acc[date].transactionCount += 1;
+                return acc;
+            }, {});
+
+            const revenueData = Object.values(groupedByDate);
+            const totalRevenue = revenueData.reduce((sum, p) => sum + p.totalAmount, 0);
+            const totalTransactions = revenueData.reduce((sum, p) => sum + p.transactionCount, 0);
 
             return {
                 success: true,
-                data: payments,
+                data: revenueData,
                 summary: {
                     totalRevenue: totalRevenue.toFixed(2),
                     totalTransactions: totalTransactions,
-                    avgDailyRevenue: (totalRevenue / payments.length).toFixed(2),
-                    periodDays: payments.length
+                    avgDailyRevenue: revenueData.length > 0 ? (totalRevenue / revenueData.length).toFixed(2) : '0.00',
+                    periodDays: revenueData.length
                 }
             };
         } catch (error) {
@@ -121,21 +132,36 @@ export class AnalyticsService {
         try {
             if (!startDate || !endDate) throw new AppError('Date range required', 400);
 
-            const bookingTrends = await prisma.booking.findMany({
+            // Fetch all bookings in the date range
+            const bookings = await prisma.booking.findMany({
                 where: {
                     createdAt: {
-                        { gte: [startDate, endDate] }
+                        gte: new Date(startDate),
+                        lte: new Date(endDate)
+                    }
                 },
-                attributes: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'date'],
-                    'status', [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('bookingId')), 'count']
-                ],
-                group: [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'status'],
-                order: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'ASC']
-                ],
-                raw: true
+                select: {
+                    createdAt: true,
+                    status: true,
+                    bookingId: true
+                },
+                orderBy: {
+                    createdAt: 'asc'
+                }
             });
+
+            // Group by date and status manually
+            const groupedByDateStatus = bookings.reduce((acc, booking) => {
+                const date = booking.createdAt.toISOString().split('T')[0];
+                const key = `${date}_${booking.status}`;
+                if (!acc[key]) {
+                    acc[key] = { date, status: booking.status, count: 0 };
+                }
+                acc[key].count += 1;
+                return acc;
+            }, {});
+
+            const bookingTrends = Object.values(groupedByDateStatus);
 
             return {
                 success: true,
@@ -157,7 +183,9 @@ export class AnalyticsService {
 
             if (filters && filters.startDate && filters.endDate) {
                 where.createdAt = {
-                    { gte: [filters.startDate, filters.endDate] };
+                    gte: new Date(filters.startDate),
+                    lte: new Date(filters.endDate)
+                };
             }
 
             if (filters && filters.status) {
@@ -170,14 +198,20 @@ export class AnalyticsService {
 
             const bookings = await prisma.booking.findMany({
                 where: where,
-                include: [
-                    { model: User, attributes: ['firstName', 'lastName', 'email'] },
-                    { model: Treatment, attributes: ['treatmentName'] },
-                    { model: Hospital, attributes: ['hospitalName'] }
-                ],
-                order: [
-                    ['createdAt', 'DESC']
-                ]
+                include: {
+                    user: {
+                        select: { firstName: true, lastName: true, email: true }
+                    },
+                    treatment: {
+                        select: { treatmentName: true }
+                    },
+                    hospital: {
+                        select: { hospitalName: true }
+                    }
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                }
             });
 
             const report = {
@@ -207,11 +241,15 @@ export class AnalyticsService {
                 where: {
                     status: 'completed',
                     createdAt: {
-                        { gte: [startDate, endDate] }
+                        gte: new Date(startDate),
+                        lte: new Date(endDate)
+                    }
                 },
-                include: [
-                    { model: Booking, attributes: ['bookingId'] }
-                ]
+                include: {
+                    booking: {
+                        select: { bookingId: true }
+                    }
+                }
             });
 
             const byGateway = {};
@@ -263,9 +301,9 @@ export class AnalyticsService {
 
             const users = await prisma.user.findMany({
                 where: where,
-                order: [
-                    ['createdAt', 'DESC']
-                ]
+                orderBy: {
+                    createdAt: 'desc'
+                }
             });
 
             const report = {
@@ -288,42 +326,58 @@ export class AnalyticsService {
         try {
             if (!hospitalId) throw new AppError('Hospital ID required', 400);
 
+            const whereBase = {
+                hospitalId: hospitalId
+            };
+
+            if (startDate && endDate) {
+                whereBase.createdAt = {
+                    gte: new Date(startDate),
+                    lte: new Date(endDate)
+                };
+            }
+
             const bookings = await prisma.booking.count({
-                where: {
-                    hospitalId: hospitalId,
-                    createdAt: {
-                        { gte: [startDate, endDate] }
-                }
+                where: whereBase
             });
 
             const completedBookings = await prisma.booking.count({
                 where: {
-                    hospitalId: hospitalId,
-                    status: 'completed',
-                    createdAt: {
-                        { gte: [startDate, endDate] }
+                    ...whereBase,
+                    status: 'completed'
                 }
             });
 
-            const reviews = await prisma.review.findMany({
+            const reviewAggregation = await prisma.review.aggregate({
                 where: {
                     hospitalId: hospitalId,
                     isPublished: true
                 },
-                attributes: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('AVG', /* TODO: Check field name */ sequelize.col('rating')), 'avgRating'],
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('reviewId')), 'totalReviews']
-                ],
-                raw: true
-            });
-
-            const revenue = await Payment.sum('amount', {
-                where: {
-                    status: 'completed',
-                    createdAt: {
-                        { gte: [startDate, endDate] }
+                _avg: {
+                    rating: true
+                },
+                _count: {
+                    reviewId: true
                 }
             });
+
+            const revenueAggregation = await prisma.payment.aggregate({
+                where: {
+                    hospitalId: hospitalId,
+                    status: 'completed',
+                    ...(startDate && endDate ? {
+                        createdAt: {
+                            gte: new Date(startDate),
+                            lte: new Date(endDate)
+                        }
+                    } : {})
+                },
+                _sum: {
+                    amount: true
+                }
+            });
+
+            const revenue = revenueAggregation._sum.amount || 0;
 
             const report = {
                 reportType: 'Hospital Performance Report',
@@ -334,8 +388,8 @@ export class AnalyticsService {
                     totalBookings: bookings,
                     completedBookings: completedBookings,
                     completionRate: bookings > 0 ? ((completedBookings / bookings) * 100).toFixed(2) + '%' : '0%',
-                    averageRating: reviews[0] && reviews[0].avgRating ? parseFloat(reviews[0].avgRating).toFixed(2) : 0,
-                    totalReviews: reviews[0] ? reviews[0].totalReviews : 0,
+                    averageRating: reviewAggregation._avg.rating ? parseFloat(reviewAggregation._avg.rating).toFixed(2) : 0,
+                    totalReviews: reviewAggregation._count.reviewId || 0,
                     revenue: revenue || 0
                 }
             };
@@ -352,27 +406,28 @@ export class AnalyticsService {
 
     async getTopHospitals(limit) {
         try {
+            // Fetch all hospitals with their bookings
             const hospitals = await prisma.hospital.findMany({
-                attributes: {
-                    include: [
-                        [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('Bookings.bookingId')), 'bookingCount']
-                    ]
-                },
-                include: [{
-                    model: Booking,
-                    attributes: [],
-                    required: false
-                }],
-                group: ['Hospital.hospitalId'],
-                order: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('Bookings.bookingId')), 'DESC']
-                ],
-                limit: limit || 10,
-                raw: false,
-                subQuery: false
+                include: {
+                    bookings: {
+                        select: {
+                            bookingId: true
+                        }
+                    }
+                }
             });
 
-            return { success: true, hospitals: hospitals };
+            // Add booking count and sort
+            const hospitalsWithCount = hospitals.map(hospital => ({
+                ...hospital,
+                bookingCount: hospital.bookings ? hospital.bookings.length : 0
+            }));
+
+            hospitalsWithCount.sort((a, b) => b.bookingCount - a.bookingCount);
+
+            const topHospitals = hospitalsWithCount.slice(0, limit || 10);
+
+            return { success: true, hospitals: topHospitals };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
         }
@@ -380,27 +435,28 @@ export class AnalyticsService {
 
     async getTopDoctors(limit) {
         try {
+            // Fetch all doctors with their appointments
             const doctors = await prisma.doctor.findMany({
-                attributes: {
-                    include: [
-                        [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('Appointments.appointmentId')), 'appointmentCount']
-                    ]
-                },
-                include: [{
-                    model: Appointment,
-                    attributes: [],
-                    required: false
-                }],
-                group: ['Doctor.doctorId'],
-                order: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('Appointments.appointmentId')), 'DESC']
-                ],
-                limit: limit || 10,
-                raw: false,
-                subQuery: false
+                include: {
+                    appointments: {
+                        select: {
+                            appointmentId: true
+                        }
+                    }
+                }
             });
 
-            return { success: true, doctors: doctors };
+            // Add appointment count and sort
+            const doctorsWithCount = doctors.map(doctor => ({
+                ...doctor,
+                appointmentCount: doctor.appointments ? doctor.appointments.length : 0
+            }));
+
+            doctorsWithCount.sort((a, b) => b.appointmentCount - a.appointmentCount);
+
+            const topDoctors = doctorsWithCount.slice(0, limit || 10);
+
+            return { success: true, doctors: topDoctors };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
         }
@@ -416,10 +472,18 @@ export class AnalyticsService {
                 date.setMonth(date.getMonth() - i);
                 const monthKey = date.toISOString().substring(0, 7);
 
+                // Calculate first and last day of the month
+                const year = parseInt(monthKey.split('-')[0]);
+                const month = parseInt(monthKey.split('-')[1]);
+                const firstDay = new Date(year, month - 1, 1);
+                const lastDay = new Date(year, month, 0, 23, 59, 59, 999);
+
                 const newUsers = await prisma.user.count({
                     where: {
                         createdAt: {
-                            { gte: [new Date(monthKey + '-01'), new Date(monthKey + '-31')] }
+                            gte: firstDay,
+                            lte: lastDay
+                        }
                     }
                 });
 

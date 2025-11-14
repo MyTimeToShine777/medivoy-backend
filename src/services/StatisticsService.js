@@ -77,7 +77,9 @@ export class StatisticsService {
 
             const where = {
                 createdAt: {
-                    { gte: [startDate, endDate] }
+                    gte: new Date(startDate),
+                    lte: new Date(endDate)
+                }
             };
 
             const totalBookings = await prisma.booking.count({ where: where });
@@ -129,7 +131,9 @@ export class StatisticsService {
 
             const where = {
                 createdAt: {
-                    { gte: [startDate, endDate] }
+                    gte: new Date(startDate),
+                    lte: new Date(endDate)
+                }
             };
 
             const totalTransactions = await prisma.payment.count({ where: where });
@@ -147,15 +151,27 @@ export class StatisticsService {
 
             const avgTransactionValue = completedTransactions > 0 ? (totalRevenue / completedTransactions).toFixed(2) : 0;
 
-            const paymentsByGateway = await prisma.payment.findMany({
+            // Get payments and group by gateway manually
+            const payments = await prisma.payment.findMany({
                 where: where,
-                attributes: [
-                    'gateway', [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('paymentId')), 'count'],
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('SUM', /* TODO: Check field name */ sequelize.col('amount')), 'total']
-                ],
-                group: ['gateway'],
-                raw: true
+                select: {
+                    gateway: true,
+                    paymentId: true,
+                    amount: true
+                }
             });
+
+            const paymentsByGateway = payments.reduce((acc, payment) => {
+                const gateway = payment.gateway || 'unknown';
+                if (!acc[gateway]) {
+                    acc[gateway] = { gateway, count: 0, total: 0 };
+                }
+                acc[gateway].count += 1;
+                acc[gateway].total += parseFloat(payment.amount || 0);
+                return acc;
+            }, {});
+
+            const paymentsByGatewayArray = Object.values(paymentsByGateway);
 
             return {
                 success: true,
@@ -168,7 +184,7 @@ export class StatisticsService {
                     successRate: totalTransactions > 0 ? ((completedTransactions / totalTransactions) * 100).toFixed(2) + '%' : '0%',
                     totalRevenue: (totalRevenue || 0).toFixed(2),
                     avgTransactionValue: avgTransactionValue,
-                    paymentsByGateway: paymentsByGateway
+                    paymentsByGateway: paymentsByGatewayArray
                 }
             };
         } catch (error) {
@@ -292,12 +308,11 @@ export class StatisticsService {
                 where: { treatmentId: treatmentId, status: 'completed' }
             });
 
-            const avgRating = await prisma.review.findMany({
+            const avgRatingResult = await prisma.review.aggregate({
                 where: { treatmentId: treatmentId },
-                attributes: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('AVG', /* TODO: Check field name */ sequelize.col('rating')), 'avgRating']
-                ],
-                raw: true
+                _avg: {
+                    rating: true
+                }
             });
 
             return {
@@ -310,7 +325,7 @@ export class StatisticsService {
                     totalBookings: totalBookings,
                     completedBookings: completedBookings,
                     completionRate: totalBookings > 0 ? ((completedBookings / totalBookings) * 100).toFixed(2) + '%' : '0%',
-                    averageRating: avgRating && avgRating[0] ? parseFloat(avgRating[0].avgRating).toFixed(2) : 0
+                    averageRating: avgRatingResult._avg.rating ? parseFloat(avgRatingResult._avg.rating).toFixed(2) : 0
                 }
             };
         } catch (error) {
@@ -328,21 +343,36 @@ export class StatisticsService {
                 return { success: false, error: 'Date range required' };
             }
 
-            const dailyStats = await prisma.booking.findMany({
+            // Fetch all bookings and group manually
+            const bookings = await prisma.booking.findMany({
                 where: {
                     createdAt: {
-                        { gte: [startDate, endDate] }
+                        gte: new Date(startDate),
+                        lte: new Date(endDate)
+                    }
                 },
-                attributes: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'date'],
-                    'status', [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('bookingId')), 'count']
-                ],
-                group: [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'status'],
-                order: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('DATE', /* TODO: Check field name */ sequelize.col('createdAt')), 'ASC']
-                ],
-                raw: true
+                select: {
+                    createdAt: true,
+                    status: true,
+                    bookingId: true
+                },
+                orderBy: {
+                    createdAt: 'asc'
+                }
             });
+
+            // Group by date and status manually
+            const groupedStats = bookings.reduce((acc, booking) => {
+                const date = booking.createdAt.toISOString().split('T')[0];
+                const key = `${date}_${booking.status}`;
+                if (!acc[key]) {
+                    acc[key] = { date, status: booking.status, count: 0 };
+                }
+                acc[key].count += 1;
+                return acc;
+            }, {});
+
+            const dailyStats = Object.values(groupedStats);
 
             return { success: true, dailyStatistics: dailyStats };
         } catch (error) {
@@ -356,23 +386,39 @@ export class StatisticsService {
                 return { success: false, error: 'Year required' };
             }
 
-            const monthlyStats = await prisma.booking.findMany({
-                where: sequelize.where(
-                    /* TODO: Replace with Prisma aggregation */ sequelize.fn('YEAR', /* TODO: Check field name */ sequelize.col('createdAt')),
-                    Op.eq,
-                    year
-                ),
-                attributes: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('MONTH', /* TODO: Check field name */ sequelize.col('createdAt')), 'month'],
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('bookingId')), 'count'],
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('SUM', /* TODO: Check field name */ sequelize.col('totalPrice')), 'total']
-                ],
-                group: [/* TODO: Replace with Prisma aggregation */ sequelize.fn('MONTH', /* TODO: Check field name */ sequelize.col('createdAt'))],
-                order: [
-                    [/* TODO: Replace with Prisma aggregation */ sequelize.fn('MONTH', /* TODO: Check field name */ sequelize.col('createdAt')), 'ASC']
-                ],
-                raw: true
+            // Fetch all bookings for the given year
+            const startDate = new Date(`${year}-01-01`);
+            const endDate = new Date(`${year}-12-31T23:59:59.999Z`);
+
+            const bookings = await prisma.booking.findMany({
+                where: {
+                    createdAt: {
+                        gte: startDate,
+                        lte: endDate
+                    }
+                },
+                select: {
+                    createdAt: true,
+                    bookingId: true,
+                    totalPrice: true
+                },
+                orderBy: {
+                    createdAt: 'asc'
+                }
             });
+
+            // Group by month manually
+            const groupedByMonth = bookings.reduce((acc, booking) => {
+                const month = booking.createdAt.getMonth() + 1; // 1-12
+                if (!acc[month]) {
+                    acc[month] = { month, count: 0, total: 0 };
+                }
+                acc[month].count += 1;
+                acc[month].total += parseFloat(booking.totalPrice || 0);
+                return acc;
+            }, {});
+
+            const monthlyStats = Object.values(groupedByMonth).sort((a, b) => a.month - b.month);
 
             return { success: true, monthlyStatistics: monthlyStats };
         } catch (error) {
