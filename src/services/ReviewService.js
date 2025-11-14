@@ -127,7 +127,7 @@ export class ReviewService {
             return {
                 success: true,
                 reviews: reviews,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit },
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit },
                 stats: { avgRating: avgRating, totalReviews: total }
             };
         } catch (error) {
@@ -404,11 +404,9 @@ export class ReviewService {
                     { model: User, attributes: ['firstName', 'lastName'] },
                     { model: Doctor }
                 ],
-                order: [
-                    ['reviewedAt', 'DESC']
-                ],
-                limit: limit,
-                offset: offset,
+                orderBy: { reviewedAt: 'desc' },
+                take: limit,
+                skip: offset,
                 distinct: true
             });
 
@@ -418,7 +416,7 @@ export class ReviewService {
             return {
                 success: true,
                 reviews: reviews,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit },
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit },
                 stats: { avgRating: avgRating, totalReviews: total }
             };
         } catch (error) {

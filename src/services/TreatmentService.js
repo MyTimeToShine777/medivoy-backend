@@ -124,11 +124,9 @@ class TreatmentService {
                 include: [
                     { model: TreatmentCategory, as: 'category' },
                 ],
-                order: [
-                    ['averageRating', 'DESC']
-                ],
-                limit: filters.limit || 20,
-                offset: filters.offset || 0,
+                orderBy: { averageRating: 'desc' },
+                take: filters.limit || 20,
+                skip: filters.offset || 0,
             });
 
             const total = await Treatment.count({ where });
@@ -150,9 +148,7 @@ class TreatmentService {
         try {
             const treatments = await prisma.treatment.findMany({
                 where: { categoryId, isActive: true },
-                order: [
-                    ['name', 'ASC']
-                ],
+                orderBy: { name: 'asc' },
             });
 
             return {
@@ -171,10 +167,8 @@ class TreatmentService {
         try {
             const treatments = await prisma.treatment.findMany({
                 where: { isFeatured: true, isActive: true },
-                order: [
-                    ['displayOrder', 'ASC']
-                ],
-                limit: 10,
+                orderBy: { displayOrder: 'asc' },
+                take: 10,
             });
 
             return {
@@ -237,9 +231,7 @@ class TreatmentService {
         try {
             const categories = await TreatmentCategory.findAll({
                 where: { isActive: true },
-                order: [
-                    ['displayOrder', 'ASC']
-                ],
+                orderBy: { displayOrder: 'asc' },
             });
 
             return {
@@ -278,9 +270,7 @@ class TreatmentService {
         try {
             const subcategories = await TreatmentSubcategory.findAll({
                 where: { categoryId, isActive: true },
-                order: [
-                    ['displayOrder', 'ASC']
-                ],
+                orderBy: { displayOrder: 'asc' },
             });
 
             return {

@@ -347,8 +347,8 @@ class ValidationService {
 
         return {
             valid: errors.length === 0,
-            limit: validLimit,
-            offset: validOffset,
+            take: validLimit,
+            skip: validOffset,
             errors,
         };
     }

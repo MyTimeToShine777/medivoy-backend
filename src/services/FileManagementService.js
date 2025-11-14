@@ -116,7 +116,7 @@ export class FileManagementService {
             return {
                 success: true,
                 files: files,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             return { success: false, error: error.message };

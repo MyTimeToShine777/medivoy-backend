@@ -82,9 +82,7 @@ export class TravelArrangementService {
 
             const flights = await Flight.findAll({
                 where: { bookingId: bookingId },
-                order: [
-                    ['departureDate', 'ASC']
-                ]
+                orderBy: { departureDate: 'asc' }
             });
 
             return { success: true, flights: flights, total: flights.length };
@@ -315,9 +313,7 @@ export class TravelArrangementService {
 
             const transports = await Transportation.findAll({
                 where: { bookingId: bookingId },
-                order: [
-                    ['pickupDate', 'ASC']
-                ]
+                orderBy: { pickupDate: 'asc' }
             });
 
             return { success: true, transports: transports, total: transports.length };

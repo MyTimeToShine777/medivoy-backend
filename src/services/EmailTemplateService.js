@@ -120,11 +120,9 @@ export class EmailTemplateService {
 
             const templates = await prisma.emailTemplate.findMany({
                 where: where,
-                order: [
-                    ['templateName', 'ASC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { templateName: 'asc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await EmailTemplate.count({ where: where });
@@ -132,7 +130,7 @@ export class EmailTemplateService {
             return {
                 success: true,
                 templates: templates,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             return { success: false, error: error.message };

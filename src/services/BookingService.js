@@ -304,11 +304,9 @@ export class BookingService {
                     { model: Country, as: 'country', attributes: ['countryName'] },
                     { model: Package, as: 'package', attributes: ['packageName', 'basePrice'] }
                 ],
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: limit,
-                offset: offset,
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip: offset,
                 distinct: true
             });
 
@@ -321,7 +319,7 @@ export class BookingService {
                     total: total,
                     page: Math.floor(offset / limit) + 1,
                     pages: Math.ceil(total / limit),
-                    limit: limit
+                    take: limit
                 }
             };
         } catch (error) {
@@ -712,9 +710,7 @@ export class BookingService {
             const history = await prisma.bookingHistory.findMany({
                 where: { bookingId: bookingId },
                 include: [{ model: User, as: 'creator', attributes: ['firstName', 'lastName'] }],
-                order: [
-                    ['createdAt', 'ASC']
-                ]
+                orderBy: { createdAt: 'asc' }
             });
 
             return {

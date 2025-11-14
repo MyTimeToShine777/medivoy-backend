@@ -55,12 +55,14 @@ export class ConsultationService {
 
             const consultations = await prisma.consultation.findMany({
                 where: { patientId: patientId },
-                include: [
-                    { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] }
-                ],
-                order: [
-                    ['createdAt', 'DESC']
-                ]
+                include: {
+                    doctor: {
+                        select: { firstName: true, lastName: true, specialization: true }
+                    }
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                }
             });
 
             await cacheService.set(cacheKey, consultations, 86400);
@@ -116,11 +118,16 @@ export class ConsultationService {
                 return { success: false, error: 'Consultation ID required' };
             }
 
-            const consultation = await prisma.consultation.findUnique({ where: { consultationId: consultationId }, 
-                include: [
-                    { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] },
-                    { model: Patient, attributes: ['firstName', 'lastName', 'email'] }
-                ]
+            const consultation = await prisma.consultation.findUnique({
+                where: { consultationId: consultationId },
+                include: {
+                    doctor: {
+                        select: { firstName: true, lastName: true, specialization: true }
+                    },
+                    patient: {
+                        select: { firstName: true, lastName: true, email: true }
+                    }
+                }
             });
 
             if (!consultation) {

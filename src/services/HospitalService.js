@@ -109,11 +109,9 @@ export class HospitalService {
                     { model: City, attributes: ['cityName'] },
                     { model: Country, attributes: ['countryName'] }
                 ],
-                order: [
-                    ['hospitalName', 'ASC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { hospitalName: 'asc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await prisma.hospital.count({ where });
@@ -121,7 +119,7 @@ export class HospitalService {
             return {
                 success: true,
                 hospitals: hospitals,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -208,9 +206,7 @@ export class HospitalService {
 
             const services = await HospService.findAll({
                 where: { hospitalId: hospitalId, isAvailable: true },
-                order: [
-                    ['serviceName', 'ASC']
-                ]
+                orderBy: { serviceName: 'asc' }
             });
 
             return { success: true, services: services, total: services.length };
@@ -266,11 +262,9 @@ export class HospitalService {
                 include: [
                     { model: Specialization, attributes: ['specializationName'] }
                 ],
-                order: [
-                    ['firstName', 'ASC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { firstName: 'asc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await Doctor.count({ where: { hospitalId: hospitalId, isActive: true } });
@@ -278,7 +272,7 @@ export class HospitalService {
             return {
                 success: true,
                 doctors: doctors,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);

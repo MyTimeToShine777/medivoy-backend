@@ -63,7 +63,7 @@ export class FilterService {
             return {
                 success: true,
                 hospitals: hospitals,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit },
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit },
                 appliedFilters: filters
             };
         } catch (error) {
@@ -118,7 +118,7 @@ export class FilterService {
             return {
                 success: true,
                 doctors: doctors,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit },
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit },
                 appliedFilters: filters
             };
         } catch (error) {
@@ -163,7 +163,7 @@ export class FilterService {
             return {
                 success: true,
                 treatments: treatments,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit },
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit },
                 appliedFilters: filters
             };
         } catch (error) {
@@ -210,7 +210,7 @@ export class FilterService {
             return {
                 success: true,
                 packages: packages,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit },
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit },
                 appliedFilters: filters
             };
         } catch (error) {

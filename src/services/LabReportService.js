@@ -90,8 +90,8 @@ export class LabReportService {
 
             // Continue with offset equivalent
             const offset = skip;
-                limit: parseInt(limit),
-                offset: parseInt(offset)
+                take: parseInt(limit),
+                skip: parseInt(offset)
             });
 
             return {
@@ -100,7 +100,7 @@ export class LabReportService {
                 pagination: {
                     total,
                     page: parseInt(page),
-                    limit: parseInt(limit),
+                    take: parseInt(limit),
                     totalPages: Math.ceil(total / limit)
                 }
             };

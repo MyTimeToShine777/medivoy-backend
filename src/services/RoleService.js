@@ -102,11 +102,9 @@ export class RoleService {
                     through: { attributes: [] },
                     attributes: ['permissionName']
                 }],
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await prisma.role.count({ where });
@@ -114,7 +112,7 @@ export class RoleService {
             return {
                 success: true,
                 roles: roles,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);

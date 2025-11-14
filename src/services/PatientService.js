@@ -68,9 +68,7 @@ class PatientService {
         try {
             const records = await prisma.medicalRecord.findMany({
                 where: { userId },
-                order: [
-                    ['recordDate', 'DESC']
-                ],
+                orderBy: { recordDate: 'desc' },
             });
 
             return { success: true, data: records };
@@ -87,9 +85,7 @@ class PatientService {
                 include: [
                     { model: Doctor, as: 'doctor' },
                 ],
-                order: [
-                    ['consultationDate', 'DESC']
-                ],
+                orderBy: { consultationDate: 'desc' },
             });
 
             return { success: true, data: consultations };

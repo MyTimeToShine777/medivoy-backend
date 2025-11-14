@@ -125,8 +125,8 @@ export class MedicalPackageService {
                 order: [
                     [filters.sortBy || 'finalPrice', filters.sortOrder || 'ASC']
                 ],
-                limit: limit,
-                offset: offset
+                take: limit,
+                skip: offset
             });
 
             const total = await prisma.package.count({ where: where });
@@ -134,7 +134,7 @@ export class MedicalPackageService {
             return {
                 success: true,
                 packages: packages,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             return { success: false, error: error.message };
@@ -313,10 +313,8 @@ export class MedicalPackageService {
                     { model: Treatment },
                     { model: Hospital }
                 ],
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: limit
+                orderBy: { createdAt: 'desc' },
+                take: limit
             });
 
             return { success: true, packages: packages };
@@ -337,11 +335,9 @@ export class MedicalPackageService {
             const packages = await prisma.package.findMany({
                 where: { treatmentId: treatmentId, isActive: true },
                 include: [{ model: Hospital }],
-                order: [
-                    ['finalPrice', 'ASC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { finalPrice: 'asc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await prisma.package.count({ where: { treatmentId: treatmentId, isActive: true } });
@@ -349,7 +345,7 @@ export class MedicalPackageService {
             return {
                 success: true,
                 packages: packages,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             return { success: false, error: error.message };

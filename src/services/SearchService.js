@@ -46,7 +46,7 @@ export class SearchService {
                     ]
                 },
                 include: [{ model: City }, { model: Country }],
-                limit: limit
+                take: limit
             });
 
             const doctors = await Doctor.findAll({
@@ -62,7 +62,7 @@ export class SearchService {
                     ]
                 },
                 include: [{ model: Hospital }, { model: Specialization }],
-                limit: limit
+                take: limit
             });
 
             const treatments = await Treatment.findAll({
@@ -77,7 +77,7 @@ export class SearchService {
                                  searchTerm } }
                     ]
                 },
-                limit: limit
+                take: limit
             });
 
             const result = {
@@ -143,11 +143,9 @@ export class SearchService {
                     { model: City, attributes: ['cityName'] },
                     { model: Country, attributes: ['countryName'] }
                 ],
-                order: [
-                    ['averageRating', 'DESC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { averageRating: 'desc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await Hospital.count({ where: where });
@@ -155,7 +153,7 @@ export class SearchService {
             return {
                 success: true,
                 hospitals: hospitals,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             return { success: false, error: error.message };
@@ -205,8 +203,8 @@ export class SearchService {
                     ['averageRating', 'DESC'],
                     ['experience', 'DESC']
                 ],
-                limit: limit,
-                offset: offset
+                take: limit,
+                skip: offset
             });
 
             const total = await Doctor.count({ where: where });
@@ -214,7 +212,7 @@ export class SearchService {
             return {
                 success: true,
                 doctors: doctors,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             return { success: false, error: error.message };
@@ -257,11 +255,9 @@ export class SearchService {
 
             const treatments = await Treatment.findAll({
                 where: where,
-                order: [
-                    ['basePrice', 'ASC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { basePrice: 'asc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await Treatment.count({ where: where });
@@ -269,7 +265,7 @@ export class SearchService {
             return {
                 success: true,
                 treatments: treatments,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             return { success: false, error: error.message };
@@ -313,11 +309,9 @@ export class SearchService {
                     { model: Treatment },
                     { model: Hospital }
                 ],
-                order: [
-                    ['finalPrice', 'ASC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { finalPrice: 'asc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await Package.count({ where: where });
@@ -325,7 +319,7 @@ export class SearchService {
             return {
                 success: true,
                 packages: packages,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             return { success: false, error: error.message };
@@ -387,7 +381,7 @@ export class SearchService {
                              searchTerm }
                     },
                     attributes: ['hospitalId', 'hospitalName'],
-                    limit: 5
+                    take: 5
                 });
                 suggestions.hospitals = hospitals.map(h => ({ id: h.hospitalId, name: h.hospitalName }));
             }
@@ -404,7 +398,7 @@ export class SearchService {
                         ]
                     },
                     attributes: ['doctorId', 'firstName', 'lastName'],
-                    limit: 5
+                    take: 5
                 });
                 suggestions.doctors = doctors.map(d => ({ id: d.doctorId, name: d.firstName + ' ' + d.lastName }));
             }
@@ -417,7 +411,7 @@ export class SearchService {
                              searchTerm }
                     },
                     attributes: ['treatmentId', 'treatmentName'],
-                    limit: 5
+                    take: 5
                 });
                 suggestions.treatments = treatments.map(t => ({ id: t.treatmentId, name: t.treatmentName }));
             }

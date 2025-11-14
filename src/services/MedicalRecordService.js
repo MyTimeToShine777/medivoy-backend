@@ -46,11 +46,9 @@ class MedicalRecordService {
 
             const records = await prisma.medicalRecord.findMany({
                 where,
-                order: [
-                    ['recordDate', 'DESC']
-                ],
-                limit: filters.limit || 50,
-                offset: filters.offset || 0,
+                orderBy: { recordDate: 'desc' },
+                take: filters.limit || 50,
+                skip: filters.offset || 0,
             });
 
             return { success: true, data: records };

@@ -85,7 +85,7 @@ export class TranslationWorkerService {
                     language: language,
                     status: 'pending'
                 },
-                limit: batchSize,
+                take: batchSize,
                 transaction: transaction
             });
 

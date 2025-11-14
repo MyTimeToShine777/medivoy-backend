@@ -272,11 +272,9 @@ class NotificationService {
 
             const notifications = await Notification.findAll({
                 where,
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: filters.limit || 20,
-                offset: filters.offset || 0,
+                orderBy: { createdAt: 'desc' },
+                take: filters.limit || 20,
+                skip: filters.offset || 0,
             });
 
             const total = await Notification.count({ where });

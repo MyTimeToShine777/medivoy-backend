@@ -86,11 +86,9 @@ export class LaboratoryService {
 
             const tests = await LabTest.findAll({
                 where: where,
-                order: [
-                    ['testName', 'ASC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { testName: 'asc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await LabTest.count({ where: where });
@@ -98,7 +96,7 @@ export class LaboratoryService {
             return {
                 success: true,
                 tests: tests,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -186,11 +184,9 @@ export class LaboratoryService {
                 include: [
                     { model: LabTest, attributes: ['testName', 'testCode'] }
                 ],
-                order: [
-                    ['orderedAt', 'DESC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { orderedAt: 'desc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await LabOrder.count({ where: where });
@@ -198,7 +194,7 @@ export class LaboratoryService {
             return {
                 success: true,
                 orders: orders,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);

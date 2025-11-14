@@ -243,7 +243,7 @@ export class TransactionService {
                 pagination: {
                     total,
                     page: parseInt(page),
-                    limit: parseInt(limit),
+                    take: parseInt(limit),
                     totalPages: Math.ceil(total / limit)
                 }
             };

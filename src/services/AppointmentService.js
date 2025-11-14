@@ -166,11 +166,9 @@ export class AppointmentService {
                     { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] },
                     { model: Hospital, attributes: ['hospitalName'] }
                 ],
-                order: [
-                    ['appointmentDate', 'DESC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { appointmentDate: 'desc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await Appointment.count({ where: where });
@@ -178,7 +176,7 @@ export class AppointmentService {
             return {
                 success: true,
                 appointments: appointments,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -484,9 +482,7 @@ export class AppointmentService {
                     appointmentDate: date,
                     isAvailable: true
                 },
-                order: [
-                    ['startTime', 'ASC']
-                ]
+                orderBy: { startTime: 'asc' }
             });
 
             return { success: true, slots: slots, total: slots.length };

@@ -250,11 +250,9 @@ export class SettingsService {
 
             const backups = await Backup.findAll({
                 where: where,
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await prisma.backup.count({ where: where });

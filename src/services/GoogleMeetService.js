@@ -232,11 +232,9 @@ class GoogleMeetService {
 
             const videoCalls = await VideoCall.findAll({
                 where,
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: filters.limit || 20,
-                offset: filters.offset || 0,
+                orderBy: { createdAt: 'desc' },
+                take: filters.limit || 20,
+                skip: filters.offset || 0,
             });
 
             const total = await VideoCall.count({ where });

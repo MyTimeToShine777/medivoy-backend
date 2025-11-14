@@ -29,11 +29,11 @@ class DoctorService {
     async getDoctorById(doctorId) {
         try {
             const doctor = await prisma.doctor.findUnique({
-                where: { doctorId }, {
-                include: [
-                    { model: DoctorSchedule, as: 'schedules' },
-                    { model: Review, as: 'reviews' },
-                ],
+                where: { doctorId },
+                include: {
+                    schedules: true,
+                    reviews: true
+                }
             });
 
             if (!doctor) {
@@ -59,9 +59,9 @@ class DoctorService {
         try {
             const doctor = await prisma.doctor.findFirst({
                 where: { email },
-                include: [
-                    { model: Hospital, as: 'hospitals' },
-                ],
+                include: {
+                    hospitals: true
+                }
             });
 
             if (!doctor) {
@@ -120,17 +120,17 @@ class DoctorService {
 
             const doctors = await prisma.doctor.findMany({
                 where,
-                include: [
-                    { model: Hospital, as: 'hospital' },
-                ],
-                order: [
-                    ['averageRating', 'DESC']
-                ],
-                limit: filters.limit || 20,
-                offset: filters.offset || 0,
+                include: {
+                    hospital: true
+                },
+                orderBy: {
+                    averageRating: 'desc'
+                },
+                take: filters.limit || 20,
+                skip: filters.offset || 0
             });
 
-            const total = await Doctor.count({ where });
+            const total = await prisma.doctor.count({ where });
 
             return {
                 success: true,
@@ -154,9 +154,9 @@ class DoctorService {
 
             const doctors = await prisma.doctor.findMany({
                 where,
-                order: [
-                    ['averageRating', 'DESC']
-                ],
+                orderBy: {
+                    averageRating: 'desc'
+                }
             });
 
             return {
@@ -233,11 +233,11 @@ class DoctorService {
                 where.date = date;
             }
 
-            const schedules = await DoctorSchedule.findAll({
+            const schedules = await prisma.doctorSchedule.findMany({
                 where,
-                order: [
-                    ['startTime', 'ASC']
-                ],
+                orderBy: {
+                    startTime: 'asc'
+                }
             });
 
             return {
@@ -338,11 +338,11 @@ class DoctorService {
                 };
             }
 
-            const reviews = await Review.findAll({
+            const reviews = await prisma.review.findMany({
                 where: { doctorId },
-                order: [
-                    ['createdAt', 'DESC']
-                ],
+                orderBy: {
+                    createdAt: 'desc'
+                }
             });
 
             return {

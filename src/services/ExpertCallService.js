@@ -58,9 +58,7 @@ export class ExpertCallService {
                 include: [
                     { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] }
                 ],
-                order: [
-                    ['scheduledTime', 'DESC']
-                ]
+                orderBy: { scheduledTime: 'desc' }
             });
 
             await cacheService.set(cacheKey, calls, 86400);

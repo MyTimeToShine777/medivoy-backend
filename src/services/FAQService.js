@@ -114,11 +114,9 @@ class FAQService {
 
             const faqs = await FAQ.findAll({
                 where,
-                order: [
-                    ['viewCount', 'DESC']
-                ],
-                limit: filters.limit || 20,
-                offset: filters.offset || 0,
+                orderBy: { viewCount: 'desc' },
+                take: filters.limit || 20,
+                skip: filters.offset || 0,
             });
 
             const total = await FAQ.count({ where });
@@ -144,8 +142,8 @@ class FAQService {
                     ['priority', 'DESC'],
                     ['viewCount', 'DESC']
                 ],
-                limit: filters.limit || 50,
-                offset: filters.offset || 0,
+                take: filters.limit || 50,
+                skip: filters.offset || 0,
             });
 
             const total = await FAQ.count({ where });
@@ -274,10 +272,8 @@ class FAQService {
             const publishedFAQs = await FAQ.count({ where: { isPublished: true } });
             const averageHelpful = await FAQ.avg('helpfulCount');
             const topFAQs = await FAQ.findAll({
-                order: [
-                    ['viewCount', 'DESC']
-                ],
-                limit: 10,
+                orderBy: { viewCount: 'desc' },
+                take: 10,
             });
 
             return {

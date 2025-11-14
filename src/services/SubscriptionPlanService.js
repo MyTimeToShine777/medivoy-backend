@@ -34,9 +34,7 @@ class SubscriptionPlanService {
         try {
             const plans = await prisma.subscriptionPlan.findMany({
                 where: { isActive: true },
-                order: [
-                    ['amount', 'ASC']
-                ],
+                orderBy: { amount: 'asc' },
             });
 
             return { success: true, data: plans };

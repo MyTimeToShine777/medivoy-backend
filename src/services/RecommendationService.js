@@ -19,9 +19,7 @@ class RecommendationService {
                 // Return top-rated doctors if no booking history
                 const topDoctors = await prisma.doctor.findMany({
                     where: { isActive: true },
-                    order: [
-                        ['averageRating', 'DESC']
-                    ],
+                    orderBy: { averageRating: 'desc' },
                     limit,
                 });
 
@@ -42,9 +40,7 @@ class RecommendationService {
                     },
                     isActive: true,
                 },
-                order: [
-                    ['averageRating', 'DESC']
-                ],
+                orderBy: { averageRating: 'desc' },
                 limit,
             });
 
@@ -65,9 +61,7 @@ class RecommendationService {
             if (userBookings.length === 0) {
                 const topHospitals = await prisma.hospital.findMany({
                     where: { isActive: true },
-                    order: [
-                        ['averageRating', 'DESC']
-                    ],
+                    orderBy: { averageRating: 'desc' },
                     limit,
                 });
 
@@ -88,9 +82,7 @@ class RecommendationService {
                     },
                     isActive: true,
                 },
-                order: [
-                    ['averageRating', 'DESC']
-                ],
+                orderBy: { averageRating: 'desc' },
                 limit,
             });
 
@@ -111,9 +103,7 @@ class RecommendationService {
             if (userBookings.length === 0) {
                 const popularTreatments = await Treatment.findAll({
                     where: { isActive: true },
-                    order: [
-                        ['totalBookings', 'DESC']
-                    ],
+                    orderBy: { totalBookings: 'desc' },
                     limit,
                 });
 
@@ -133,9 +123,7 @@ class RecommendationService {
                     },
                     isActive: true,
                 },
-                order: [
-                    ['averageRating', 'DESC']
-                ],
+                orderBy: { averageRating: 'desc' },
                 limit,
             });
 

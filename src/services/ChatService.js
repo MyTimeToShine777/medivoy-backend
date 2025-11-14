@@ -108,11 +108,9 @@ export class ChatService {
                     { model: User, as: 'User1', attributes: ['userId', 'firstName', 'lastName'] },
                     { model: User, as: 'User2', attributes: ['userId', 'firstName', 'lastName'] }
                 ],
-                order: [
-                    ['updatedAt', 'DESC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { updatedAt: 'desc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await Chat.count({
@@ -127,7 +125,7 @@ export class ChatService {
             return {
                 success: true,
                 chats: chats,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             return { success: false, error: error.message };
@@ -193,11 +191,9 @@ export class ChatService {
             const messages = await ChatMessage.findAll({
                 where: { chatId: chatId },
                 include: [{ model: User, as: 'Sender', attributes: ['userId', 'firstName', 'lastName'] }],
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { createdAt: 'desc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await ChatMessage.count({ where: { chatId: chatId } });
@@ -209,7 +205,7 @@ export class ChatService {
             return {
                 success: true,
                 messages: messages,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             return { success: false, error: error.message };

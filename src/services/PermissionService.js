@@ -89,8 +89,8 @@ export class PermissionService {
                     ['module', 'ASC'],
                     ['action', 'ASC']
                 ],
-                limit: limit,
-                offset: offset
+                take: limit,
+                skip: offset
             });
 
             const total = await prisma.permission.count({ where });
@@ -98,7 +98,7 @@ export class PermissionService {
             return {
                 success: true,
                 permissions: permissions,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -244,9 +244,7 @@ export class PermissionService {
 
             const permissions = await prisma.permission.findMany({
                 where: { module: module, isActive: true },
-                order: [
-                    ['action', 'ASC']
-                ]
+                orderBy: { action: 'asc' }
             });
 
             return { success: true, permissions: permissions, total: permissions.length };

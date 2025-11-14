@@ -90,11 +90,9 @@ export class SpecializationService {
 
             const specializations = await prisma.specialization.findMany({
                 where: where,
-                order: [
-                    ['specializationName', 'ASC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { specializationName: 'asc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await Specialization.count({ where: where });
@@ -102,7 +100,7 @@ export class SpecializationService {
             return {
                 success: true,
                 specializations: specializations,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);
@@ -149,11 +147,9 @@ export class SpecializationService {
 
             const doctors = await Doctor.findAll({
                 where: { specializationId: specializationId, isActive: true },
-                order: [
-                    ['firstName', 'ASC']
-                ],
-                limit: limit,
-                offset: offset
+                orderBy: { firstName: 'asc' },
+                take: limit,
+                skip: offset
             });
 
             const total = await Doctor.count({ where: { specializationId: specializationId, isActive: true } });
@@ -161,7 +157,7 @@ export class SpecializationService {
             return {
                 success: true,
                 doctors: doctors,
-                pagination: { total: total, page: Math.floor(offset / limit) + 1, limit: limit }
+                pagination: { total: total, page: Math.floor(offset / limit) + 1, take: limit }
             };
         } catch (error) {
             throw this.errorHandlingService.handleError(error);

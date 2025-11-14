@@ -43,9 +43,7 @@ class InvoiceService {
         try {
             const invoices = await prisma.invoice.findMany({
                 where: { userId },
-                order: [
-                    ['createdAt', 'DESC']
-                ],
+                orderBy: { createdAt: 'desc' },
             });
 
             return { success: true, data: invoices };
