@@ -37,6 +37,12 @@ async function _getRedisClient(opts) {
     if (!redisMod) return null;
     // support createClient options via redisUrl
     const url = (opts && opts.redisUrl) || process.env.REDIS_URL || null;
+    
+    // Don't try to connect if no URL is provided
+    if (!url) {
+        return null;
+    }
+    
     const client = redisMod.createClient(url ? { url } : {});
     // connect on first use
     client.on && client.on('error', function(err) { console.error('redis client error', err && err.stack ? err.stack : err); });
