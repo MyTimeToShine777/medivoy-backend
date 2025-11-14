@@ -135,7 +135,7 @@ class InsuranceService {
     // ========== CLAIM PROCESSING ==========
     async createClaim(claimData) {
         try {
-            const insurance = await prisma.insurance.findUnique({ where: { insuranceId: claimData.insuranceId } });
+            const insurance = await Insurance.findByPk(claimData.insuranceId);
             if (!insurance) {
                 return {
                     success: false,
@@ -168,7 +168,7 @@ class InsuranceService {
 
     async approveClaim(insuranceId, approvalAmount) {
         try {
-            const insurance = await prisma.insurance.findUnique({ where: { insuranceId: insuranceId } });
+            const insurance = await Insurance.findByPk(insuranceId);
             if (!insurance) {
                 return {
                     success: false,
@@ -199,7 +199,7 @@ class InsuranceService {
 
     async rejectClaim(insuranceId, rejectionReason) {
         try {
-            const insurance = await prisma.insurance.findUnique({ where: { insuranceId: insuranceId } });
+            const insurance = await Insurance.findByPk(insuranceId);
             if (!insurance) {
                 return {
                     success: false,
@@ -227,7 +227,7 @@ class InsuranceService {
     // ========== INSURANCE COVERAGE CHECK ==========
     async getTreatmentCoverage(insuranceId, treatmentType) {
         try {
-            const insurance = await prisma.insurance.findUnique({ where: { insuranceId: insuranceId } });
+            const insurance = await Insurance.findByPk(insuranceId);
             if (!insurance) {
                 return {
                     success: false,

@@ -120,34 +120,11 @@ export class ConsultationService {
                 return { success: false, error: 'Consultation ID required' };
             }
 
-            const consultation = await prisma.consultations.findUnique({
-                where: { consultationId },
-                include: {
-                    doctors: {
-                        select: {
-                            doctorId: true,
-                            users: {
-                                select: {
-                                    firstName: true,
-                                    lastName: true
-                                }
-                            },
-                            primarySpecialization: true
-                        }
-                    },
-                    patients: {
-                        select: {
-                            patientId: true,
-                            users: {
-                                select: {
-                                    firstName: true,
-                                    lastName: true,
-                                    email: true
-                                }
-                            }
-                        }
-                    }
-                }
+            const consultation = await Consultation.findByPk(consultationId, {
+                include: [
+                    { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] },
+                    { model: Patient, attributes: ['firstName', 'lastName', 'email'] }
+                ]
             });
 
             if (!consultation) {

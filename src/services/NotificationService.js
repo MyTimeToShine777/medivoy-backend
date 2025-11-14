@@ -302,7 +302,7 @@ class NotificationService {
     // ========== MARK AS READ ==========
     async markAsRead(notificationId) {
         try {
-            const notification = await prisma.notifications.findUnique({ where: { notificationId: notificationId } });
+            const notification = await Notification.findByPk(notificationId);
             if (!notification) {
                 return {
                     success: false,

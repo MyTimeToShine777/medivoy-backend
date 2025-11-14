@@ -161,7 +161,7 @@ class FAQService {
     // ========== UPDATE FAQ ==========
     async updateFAQ(faqId, updateData) {
         try {
-            const faq = await prisma.faqs.findUnique({ where: { faqId: faqId } });
+            const faq = await FAQ.findByPk(faqId);
 
             if (!faq) {
                 return { success: false, error: 'FAQ not found' };
@@ -182,7 +182,7 @@ class FAQService {
     // ========== PUBLISH FAQ ==========
     async publishFAQ(faqId) {
         try {
-            const faq = await prisma.faqs.findUnique({ where: { faqId: faqId } });
+            const faq = await FAQ.findByPk(faqId);
 
             if (!faq) {
                 return { success: false, error: 'FAQ not found' };
@@ -201,7 +201,7 @@ class FAQService {
     // ========== UNPUBLISH FAQ ==========
     async unpublishFAQ(faqId) {
         try {
-            const faq = await prisma.faqs.findUnique({ where: { faqId: faqId } });
+            const faq = await FAQ.findByPk(faqId);
 
             if (!faq) {
                 return { success: false, error: 'FAQ not found' };
@@ -219,7 +219,7 @@ class FAQService {
     // ========== MARK AS HELPFUL ==========
     async markAsHelpful(faqId) {
         try {
-            const faq = await prisma.faqs.findUnique({ where: { faqId: faqId } });
+            const faq = await FAQ.findByPk(faqId);
 
             if (!faq) {
                 return { success: false, error: 'FAQ not found' };
@@ -237,7 +237,7 @@ class FAQService {
     // ========== MARK AS UNHELPFUL ==========
     async markAsUnhelpful(faqId) {
         try {
-            const faq = await prisma.faqs.findUnique({ where: { faqId: faqId } });
+            const faq = await FAQ.findByPk(faqId);
 
             if (!faq) {
                 return { success: false, error: 'FAQ not found' };
@@ -255,7 +255,7 @@ class FAQService {
     // ========== DELETE FAQ ==========
     async deleteFAQ(faqId) {
         try {
-            const faq = await prisma.faqs.findUnique({ where: { faqId: faqId } });
+            const faq = await FAQ.findByPk(faqId);
 
             if (!faq) {
                 return { success: false, error: 'FAQ not found' };

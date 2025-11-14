@@ -305,7 +305,7 @@ export class HospitalService {
         try {
             if (!hospitalId) throw new AppError('Hospital ID required', 400);
 
-            const hospital = await prisma.hospitals.findUnique({ where: { hospitalId: hospitalId } });
+            const hospital = await Hospital.findByPk(hospitalId);
             if (!hospital) throw new AppError('Hospital not found', 404);
 
             const totalDoctors = await Doctor.count({ where: { hospitalId: hospitalId, isActive: true } });
