@@ -171,9 +171,9 @@ class DoctorService {
 
             const doctors = await prisma.doctors.findMany({
                 where,
-                order: [
-                    ['averageRating', 'DESC']
-                ],
+                orderBy: {
+                    averageRating: 'desc'
+                }
             });
 
             return {
@@ -191,7 +191,7 @@ class DoctorService {
     // ========== UPDATE DOCTOR ==========
     async updateDoctor(doctorId, updateData) {
         try {
-            const doctor = await Doctor.findByPk(doctorId);
+            const doctor = await prisma.doctors.findUnique({ where: { doctorId } });
             if (!doctor) {
                 return {
                     success: false,
@@ -216,7 +216,7 @@ class DoctorService {
     // ========== DOCTOR SCHEDULE ==========
     async createSchedule(doctorId, scheduleData) {
         try {
-            const doctor = await Doctor.findByPk(doctorId);
+            const doctor = await prisma.doctors.findUnique({ where: { doctorId } });
             if (!doctor) {
                 return {
                     success: false,
@@ -347,7 +347,7 @@ class DoctorService {
     // ========== DOCTOR RATINGS & REVIEWS ==========
     async getDoctorRatings(doctorId) {
         try {
-            const doctor = await Doctor.findByPk(doctorId);
+            const doctor = await prisma.doctors.findUnique({ where: { doctorId } });
             if (!doctor) {
                 return {
                     success: false,
@@ -414,7 +414,7 @@ class DoctorService {
     // ========== DOCTOR STATISTICS ==========
     async getDoctorStats(doctorId) {
         try {
-            const doctor = await Doctor.findByPk(doctorId);
+            const doctor = await prisma.doctors.findUnique({ where: { doctorId } });
             if (!doctor) {
                 return {
                     success: false,

@@ -54,14 +54,25 @@ export class ExpertCallService {
             let cached = await cacheService.get(cacheKey);
             if (cached) return { success: true, data: cached };
 
-            const calls = await prisma.expertCall.findMany({
+            const calls = await prisma.expert_calls.findMany({
                 where: { userId: userId },
-                include: [
-                    { model: Doctor, attributes: ['firstName', 'lastName', 'specialization'] }
-                ],
-                order: [
-                    ['scheduledTime', 'DESC']
-                ]
+                include: {
+                    doctors: {
+                        select: {
+                            doctorId: true,
+                            users: {
+                                select: {
+                                    firstName: true,
+                                    lastName: true
+                                }
+                            },
+                            primarySpecialization: true
+                        }
+                    }
+                },
+                orderBy: {
+                    scheduledTime: 'desc'
+                }
             });
 
             await cacheService.set(cacheKey, calls, 86400);
