@@ -34,9 +34,9 @@ export class DoctorScheduleService {
 
             const schedules = await prisma.doctorSchedule.findMany({
                 where: { doctorId, isActive: true },
-                order: [
-                    dayOfWeek: 'asc',
-                    ['startTime', 'ASC']
+                orderBy: [
+                    { dayOfWeek: 'asc' },
+                    { startTime: 'asc' }
                 ]
             });
 
@@ -82,12 +82,11 @@ export class DoctorScheduleService {
             const updated = await prisma.doctorSchedule.update({
                 where: { scheduleId },
                 data: {
-                startTime: data.startTime || schedule.startTime,
-                endTime: data.endTime || schedule.endTime,
-                slotDuration: data.slotDuration || schedule.slotDuration,
-                isActive: data.isActive !== undefined ? data.isActive : schedule.isActive
+                    startTime: data.startTime || schedule.startTime,
+                    endTime: data.endTime || schedule.endTime,
+                    slotDuration: data.slotDuration || schedule.slotDuration,
+                    isActive: data.isActive !== undefined ? data.isActive : schedule.isActive
                 }
-            });
             });
 
             await cacheService.delete(`doctor_schedule_${schedule.doctorId}`);

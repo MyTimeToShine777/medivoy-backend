@@ -46,13 +46,15 @@ export class TranslationWorkerService {
             await Translation.bulkCreate(translationJobs);
 
             // Log the action
-            await prisma.translationLog.create({ data: {
-                logId: this._generateLogId(),
-                action: 'TRANSLATION_WORKER_TRIGGERED',
-                language: newLocale,
-                totalItems: defaultTranslations.length,
-                status: 'initiated',
-                createdAt: new Date()
+            await prisma.translationLog.create({ 
+                data: {
+                    logId: this._generateLogId(),
+                    action: 'TRANSLATION_WORKER_TRIGGERED',
+                    language: newLocale,
+                    totalItems: defaultTranslations.length,
+                    status: 'initiated',
+                    createdAt: new Date()
+                }
             });
 
             
@@ -107,13 +109,15 @@ export class TranslationWorkerService {
             }
 
             // Log completion
-            await prisma.translationLog.create({ data: {
-                logId: this._generateLogId(),
-                action: 'TRANSLATION_BATCH_COMPLETED',
-                language: language,
-                processedItems: pendingTranslations.length,
-                status: 'completed',
-                createdAt: new Date()
+            await prisma.translationLog.create({ 
+                data: {
+                    logId: this._generateLogId(),
+                    action: 'TRANSLATION_BATCH_COMPLETED',
+                    language: language,
+                    processedItems: pendingTranslations.length,
+                    status: 'completed',
+                    createdAt: new Date()
+                }
             });
 
             

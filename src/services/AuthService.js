@@ -40,19 +40,20 @@ class AuthService {
 
                                 if (!user) {
                                     user = await prisma.users.create({
-                                            data: {
-                                                firstName: profile.name.givenName || '',
-                                                lastName: profile.name.familyName || '',
-                                                email: profile.emails[0].value,
-                                                password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
-                                                authProvider: 'google',
-                                                authProviderId: profile.id,
-                                                profilePicture: profile.photos[0].value || null,
-                                                emailVerified: true,
-                                                status: 'active',
-                                            });
-                                    }
-                                    else if (!user.authProviderId) {
+                                        data: {
+                                            firstName: profile.name.givenName || '',
+                                            lastName: profile.name.familyName || '',
+                                            email: profile.emails[0].value,
+                                            password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
+                                            authProvider: 'google',
+                                            authProviderId: profile.id,
+                                            profilePicture: profile.photos[0].value || null,
+                                            emailVerified: true,
+                                            status: 'active',
+                                        }
+                                    });
+                                }
+                                else if (!user.authProviderId) {
                                         user.authProvider = 'google';
                                         user.authProviderId = profile.id;
                                         await user.save();
@@ -82,18 +83,19 @@ class AuthService {
 
                                     if (!user) {
                                         user = await prisma.users.create({
-                                                data: {
-                                                    firstName: profile.name.givenName || '',
-                                                    lastName: profile.name.familyName || '',
-                                                    email: profile.emails[0].value,
-                                                    password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
-                                                    authProvider: 'facebook',
-                                                    authProviderId: profile.id,
-                                                    profilePicture: profile.photos[0].value || null,
-                                                    emailVerified: true,
-                                                    status: 'active',
-                                                });
-                                        }
+                                            data: {
+                                                firstName: profile.name.givenName || '',
+                                                lastName: profile.name.familyName || '',
+                                                email: profile.emails[0].value,
+                                                password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
+                                                authProvider: 'facebook',
+                                                authProviderId: profile.id,
+                                                profilePicture: profile.photos[0].value || null,
+                                                emailVerified: true,
+                                                status: 'active',
+                                            }
+                                        });
+                                    }
                                         else if (!user.authProviderId) {
                                             user.authProvider = 'facebook';
                                             user.authProviderId = profile.id;
@@ -148,14 +150,15 @@ class AuthService {
                             const hashedPassword = await bcrypt.hash(signupData.password, 10);
 
                             const user = await prisma.users.create({
-                                    data: {
-                                        firstName: signupData.firstName,
-                                        lastName: signupData.lastName,
-                                        email: signupData.email,
-                                        password: hashedPassword,
-                                        authProvider: 'email',
-                                        status: 'active',
-                                    });
+                                data: {
+                                    firstName: signupData.firstName,
+                                    lastName: signupData.lastName,
+                                    email: signupData.email,
+                                    password: hashedPassword,
+                                    authProvider: 'email',
+                                    status: 'active',
+                                }
+                            });
 
                                 // Send verification email
                                 await this.sendVerificationEmail(user.email);
@@ -227,18 +230,19 @@ class AuthService {
 
                                     if (!user) {
                                         user = await prisma.users.create({
-                                                data: {
-                                                    firstName: profile.name.givenName || '',
-                                                    lastName: profile.name.familyName || '',
-                                                    email: profile.emails[0].value,
-                                                    password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
-                                                    authProvider: 'google',
-                                                    authProviderId: profile.id,
-                                                    profilePicture: profile.photos[0].value || null,
-                                                    emailVerified: true,
-                                                    status: 'active',
-                                                });
-                                        }
+                                            data: {
+                                                firstName: profile.name.givenName || '',
+                                                lastName: profile.name.familyName || '',
+                                                email: profile.emails[0].value,
+                                                password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
+                                                authProvider: 'google',
+                                                authProviderId: profile.id,
+                                                profilePicture: profile.photos[0].value || null,
+                                                emailVerified: true,
+                                                status: 'active',
+                                            }
+                                        });
+                                    }
                                         else if (!user.authProviderId) {
                                             user.authProvider = 'google';
                                             user.authProviderId = profile.id;
@@ -277,18 +281,19 @@ class AuthService {
 
                                             if (!user) {
                                                 user = await prisma.users.create({
-                                                        data: {
-                                                            firstName: profile.name.givenName || '',
-                                                            lastName: profile.name.familyName || '',
-                                                            email,
-                                                            password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
-                                                            authProvider: 'facebook',
-                                                            authProviderId: profile.id,
-                                                            profilePicture: profile.photos && profile.photos[0] ? profile.photos[0].value : null,
-                                                            emailVerified: true,
-                                                            status: 'active',
-                                                        });
-                                                }
+                                                    data: {
+                                                        firstName: profile.name.givenName || '',
+                                                        lastName: profile.name.familyName || '',
+                                                        email,
+                                                        password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10),
+                                                        authProvider: 'facebook',
+                                                        authProviderId: profile.id,
+                                                        profilePicture: profile.photos && profile.photos[0] ? profile.photos[0].value : null,
+                                                        emailVerified: true,
+                                                        status: 'active',
+                                                    }
+                                                });
+                                            }
                                                 else if (!user.authProviderId) {
                                                     user.authProvider = 'facebook';
                                                     user.authProviderId = profile.id;
@@ -420,11 +425,12 @@ class AuthService {
                                                     const hashedToken = await bcrypt.hash(resetToken, 10);
 
                                                     await prisma.passwordReset.create({
-                                                            data: {
-                                                                userId: user.userId,
-                                                                token: hashedToken,
-                                                                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-                                                            });
+                                                        data: {
+                                                            userId: user.userId,
+                                                            token: hashedToken,
+                                                            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                                                        }
+                                                    });
 
                                                         const resetLink = `${process.env.APP_URL}/auth/reset-password?token=${resetToken}`;
 
@@ -565,12 +571,13 @@ class AuthService {
                                                     );
 
                                                     await prisma.refreshToken.create({
-                                                            data: {
-                                                                userId: user.userId,
-                                                                token,
-                                                                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-                                                                status: 'active',
-                                                            });
+                                                        data: {
+                                                            userId: user.userId,
+                                                            token,
+                                                            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                                                            status: 'active',
+                                                        }
+                                                    });
 
                                                         return token;
                                                     }

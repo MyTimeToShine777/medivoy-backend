@@ -7,10 +7,11 @@ class SubscriptionPlanService {
     async createPlan(planData) {
         try {
             const plan = await prisma.subscriptionPlan.create({
-                    data: {
-                        ...planData,
-                        isActive: true,
-                    });
+                data: {
+                    ...planData,
+                    isActive: true,
+                }
+            });
 
                 return { success: true, data: plan };
             }

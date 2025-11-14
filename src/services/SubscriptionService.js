@@ -5,13 +5,14 @@ import prisma from '../config/prisma.js';
 class SubscriptionService {
     // ========== CREATE SUBSCRIPTION ==========
     async createSubscription(subscriptionData) {
-            try {
-                const subscription = await prisma.subscription.create({
-                        data: {
-                            subscriptionNumber: await this.generateSubscriptionNumber(),
-                            status: 'trial',
-                            ...subscriptionData,
-                        });
+        try {
+            const subscription = await prisma.subscription.create({
+                data: {
+                    subscriptionNumber: await this.generateSubscriptionNumber(),
+                    status: 'trial',
+                    ...subscriptionData,
+                }
+            });
 
                     return { success: true, data: subscription };
                 }
@@ -24,13 +25,8 @@ class SubscriptionService {
             async getSubscriptionById(subscriptionId) {
                 try {
                     const subscription = await prisma.subscription.findUnique({
-                            where: { subscriptionId },
-                            {
-                                include: [
-                                    { model: User, as: 'user' },
-                                    { model: SubscriptionPlan, as: 'plan' },
-                                ],
-                            });
+                        where: { subscriptionId }
+                    });
 
                         if (!subscription) return { success: false, error: 'Not found' };
                         return { success: true, data: subscription };
