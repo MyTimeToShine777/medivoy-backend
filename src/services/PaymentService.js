@@ -29,13 +29,14 @@ class PaymentService {
     // ========== GET PAYMENT ==========
     async getPaymentById(paymentId) {
         try {
-            const payment = await prisma.payment.findUnique({ where: { id: paymentId, {
-                include: [
-                    { model: Booking, as: 'booking' },
-                    { model: User, as: 'user' },
-                    { model: Invoice, as: 'invoice' },
-                ],
-            } } });
+            const payment = await prisma.payment.findUnique({
+                where: { id: paymentId },
+                include: {
+                    booking: true,
+                    user: true,
+                    invoice: true
+                }
+            });
 
             if (!payment) {
                 return {
@@ -95,12 +96,14 @@ class PaymentService {
 
             const payments = await prisma.payment.findMany({
                 where,
-                include: [{ model: Booking, as: 'booking' }],
-                order: [
-                    ['createdAt', 'DESC']
-                ],
-                limit: filters.limit || 20,
-                offset: filters.offset || 0,
+                include: {
+                    booking: true
+                },
+                orderBy: {
+                    createdAt: 'desc'
+                },
+                take: filters.limit || 20,
+                skip: filters.offset || 0,
             });
 
             const total = await prisma.payment.count({ where });
@@ -261,20 +264,41 @@ class PaymentService {
 
             if (filters.startDate && filters.endDate) {
                 where.completedAt = {
-                    { gte: [filters.startDate, filters.endDate],
+                    gte: new Date(filters.startDate),
+                    lte: new Date(filters.endDate)
                 };
             }
 
             const totalPayments = await prisma.payment.count({ where });
-            const totalAmount = await Payment.sum('amount', { where });
-            const averageAmount = await Payment.avg('amount', { where });
-
-            const paymentsByMethod = await prisma.payment.findMany({
+            
+            const aggregations = await prisma.payment.aggregate({
                 where,
-                attributes: ['method', [this./* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', this./* TODO: Check field name */ sequelize.col('paymentId')), 'count']],
-                group: ['method'],
-                raw: true,
+                _sum: { amount: true },
+                _avg: { amount: true }
             });
+            
+            const totalAmount = aggregations._sum.amount || 0;
+            const averageAmount = aggregations._avg.amount || 0;
+
+            // Group by method manually
+            const payments = await prisma.payment.findMany({
+                where,
+                select: {
+                    method: true,
+                    paymentId: true
+                }
+            });
+
+            const paymentsByMethod = payments.reduce((acc, payment) => {
+                const method = payment.method || 'unknown';
+                if (!acc[method]) {
+                    acc[method] = { method, count: 0 };
+                }
+                acc[method].count += 1;
+                return acc;
+            }, {});
+
+            const paymentsByMethodArray = Object.values(paymentsByMethod);
 
             return {
                 success: true,
@@ -282,7 +306,7 @@ class PaymentService {
                     totalPayments,
                     totalAmount,
                     averageAmount: averageAmount ? averageAmount.toFixed(2) : 0,
-                    paymentsByMethod,
+                    paymentsByMethod: paymentsByMethodArray,
                 },
             };
         } catch (error) {

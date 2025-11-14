@@ -141,17 +141,28 @@ export class TranslationWorkerService {
             console.log('🔄 Starting translation monitor CRON job...');
 
             // Get pending translation counts by language
-            const pendingByLanguage = await prisma.translation.findMany({
-                attributes: [
-                    'language', [/* TODO: Replace with Prisma aggregation */ sequelize.fn('COUNT', /* TODO: Check field name */ sequelize.col('translationId')), 'count']
-                ],
+            const translations = await prisma.translation.findMany({
                 where: { status: 'pending' },
-                group: ['language'],
-                raw: true
+                select: {
+                    language: true,
+                    translationId: true
+                }
             });
 
+            // Group by language manually
+            const pendingByLanguage = translations.reduce((acc, translation) => {
+                const lang = translation.language || 'unknown';
+                if (!acc[lang]) {
+                    acc[lang] = { language: lang, count: 0 };
+                }
+                acc[lang].count += 1;
+                return acc;
+            }, {});
+
+            const pendingByLanguageArray = Object.values(pendingByLanguage);
+
             // Process each language with pending translations
-            for (const item of pendingByLanguage) {
+            for (const item of pendingByLanguageArray) {
                 if (item.count > 0) {
                     console.log(`⏳ Found ${item.count} pending translations for ${item.language}`);
                     await this.processTranslationBatch(item.language, 50);

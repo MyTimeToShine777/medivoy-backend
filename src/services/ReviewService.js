@@ -412,7 +412,7 @@ export class ReviewService {
                 distinct: true
             });
 
-            const total = await Review.count({ where: where });
+            const total = await prisma.review.count({ where: where });
             const avgRating = await this._calculateAverageRating(null, 'medical', doctorId);
 
             return {
@@ -431,7 +431,7 @@ export class ReviewService {
         try {
             if (!reviewId || !adminUserId) throw new AppError('IDs required', 400);
 
-            const review = await Review.findByPk(reviewId, );
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
                 throw new AppError('Review not found', 404);
             }
@@ -460,7 +460,6 @@ export class ReviewService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Published', review: review };
         } catch (error) {
@@ -475,7 +474,7 @@ export class ReviewService {
                 throw new AppError('Required params missing', 400);
             }
 
-            const review = await Review.findByPk(reviewId, );
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
                 throw new AppError('Review not found', 404);
             }
@@ -500,7 +499,6 @@ export class ReviewService {
                 details: { reason: reason }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Rejected' };
         } catch (error) {
@@ -513,7 +511,7 @@ export class ReviewService {
         try {
             if (!reviewId || !userId) throw new AppError('IDs required', 400);
 
-            const review = await Review.findByPk(reviewId, );
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
                 throw new AppError('Review not found', 404);
             }
@@ -540,7 +538,6 @@ export class ReviewService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Updated', review: review };
         } catch (error) {
@@ -553,7 +550,7 @@ export class ReviewService {
         try {
             if (!reviewId || !userId) throw new AppError('IDs required', 400);
 
-            const review = await Review.findByPk(reviewId, );
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
                 throw new AppError('Review not found', 404);
             }
@@ -572,7 +569,6 @@ export class ReviewService {
                 details: {}
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Deleted' };
         } catch (error) {
@@ -589,7 +585,7 @@ export class ReviewService {
         try {
             if (!reviewId) throw new AppError('Review ID required', 400);
 
-            const review = await Review.findByPk(reviewId, );
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
                 throw new AppError('Review not found', 404);
             }
@@ -597,7 +593,6 @@ export class ReviewService {
             review.helpfulCount = (review.helpfulCount || 0) + 1;
             await review.save();
 
-            await transaction.commit();
 
             return { success: true, helpfulCount: review.helpfulCount };
         } catch (error) {
@@ -611,7 +606,7 @@ export class ReviewService {
             if (hospitalId) where.hospitalId = hospitalId;
             if (doctorId) where.doctorId = doctorId;
 
-            const total = await Review.count({ where: where });
+            const total = await prisma.review.count({ where: where });
             const avgRating = await this._calculateAverageRating(hospitalId, null, doctorId);
 
             return {
@@ -632,7 +627,7 @@ export class ReviewService {
         try {
             if (!reviewId || !reason) throw new AppError('Required params missing', 400);
 
-            const review = await Review.findByPk(reviewId, );
+            const review = await tx.review.findUnique({ where: { reviewId } });
             if (!review) {
                 throw new AppError('Review not found', 404);
             }
@@ -650,7 +645,6 @@ export class ReviewService {
                 details: { reason: reason }
             }, transaction);
 
-            await transaction.commit();
 
             return { success: true, message: 'Flagged' };
         } catch (error) {
@@ -681,15 +675,14 @@ export class ReviewService {
             if (reviewType) where.reviewType = reviewType;
             if (doctorId) where.doctorId = doctorId;
 
-            const result = await Review.findAll({
+            const result = await prisma.review.aggregate({
                 where: where,
-                attributes: [
-                    [sequelize.fn('AVG', sequelize.col('rating')), 'avg']
-                ],
-                raw: true
+                _avg: {
+                    rating: true
+                }
             });
 
-            return result && result.avg ? parseFloat(result.avg).toFixed(2) : 0;
+            return result._avg.rating ? parseFloat(result._avg.rating).toFixed(2) : 0;
         } catch (error) {
             return 0;
         }
