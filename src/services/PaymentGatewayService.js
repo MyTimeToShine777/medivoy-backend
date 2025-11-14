@@ -17,12 +17,24 @@ export class PaymentGatewayService {
         this.errorHandlingService = errorHandlingService;
         this.auditLogService = auditLogService;
 
-        this.razorpay = new Razorpay({
-            key_id: process.env.RAZORPAY_KEY_ID,
-            key_secret: process.env.RAZORPAY_KEY_SECRET
-        });
+        // Initialize Razorpay only if credentials are provided
+        if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+            this.razorpay = new Razorpay({
+                key_id: process.env.RAZORPAY_KEY_ID,
+                key_secret: process.env.RAZORPAY_KEY_SECRET
+            });
+        } else {
+            this.razorpay = null;
+            console.warn('Razorpay not configured - Razorpay payments will be disabled');
+        }
 
-        this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+        // Initialize Stripe only if credentials are provided
+        if (process.env.STRIPE_SECRET_KEY) {
+            this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+        } else {
+            this.stripe = null;
+            console.warn('Stripe not configured - Stripe payments will be disabled');
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════

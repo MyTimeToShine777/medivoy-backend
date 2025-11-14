@@ -7,11 +7,20 @@ import { environment } from './environment.js';
 // IMAGEKIT CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export const imagekit = new ImageKit({
-    publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
-    privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
-});
+let imagekit = null;
+
+// Initialize ImageKit only if credentials are provided
+if (process.env.IMAGEKIT_PUBLIC_KEY && process.env.IMAGEKIT_PRIVATE_KEY && process.env.IMAGEKIT_URL_ENDPOINT) {
+    imagekit = new ImageKit({
+        publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+        privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+        urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
+    });
+} else {
+    console.warn('ImageKit not configured in config - ImageKit features will be disabled');
+}
+
+export { imagekit };
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // IMAGEKIT SERVICE
