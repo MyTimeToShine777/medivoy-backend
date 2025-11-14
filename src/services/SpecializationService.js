@@ -157,7 +157,7 @@ export class SpecializationService {
             const limit = filters && filters.limit ? Math.min(filters.limit, 100) : 10;
             const offset = filters && filters.offset ? filters.offset : 0;
 
-            const doctors = await Doctor.findAll({
+            const doctors = await prisma.doctors.findMany({
                 where: { specializationId: specializationId, isActive: true },
                 order: [
                     ['firstName', 'ASC']
@@ -182,7 +182,7 @@ export class SpecializationService {
         try {
             if (!specializationId) throw new AppError('Specialization ID required', 400);
 
-            const specialization = await Specialization.findByPk(specializationId);
+            const specialization = await prisma.specializations.findUnique({ where: { specializationId: specializationId } });
             if (!specialization) throw new AppError('Specialization not found', 404);
 
             const doctorCount = await Doctor.count({ where: { specializationId: specializationId, isActive: true } });

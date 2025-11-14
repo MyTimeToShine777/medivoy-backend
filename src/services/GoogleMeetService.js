@@ -56,17 +56,18 @@ class GoogleMeetService {
             });
 
             const videoCall = await prisma.videoCall.create({
-                    data: {
-                        appointmentId: eventData.appointmentId,
-                        organizer: eventData.organizer,
-                        attendees: eventData.attendees,
-                        meetLink: response.data.conferenceData.entryPoints[0].uri,
-                        googleEventId: response.data.id,
-                        title: eventData.title,
-                        startTime: eventData.startTime,
-                        endTime: eventData.endTime,
-                        status: 'scheduled',
-                    });
+                data: {
+                    appointmentId: eventData.appointmentId,
+                    organizer: eventData.organizer,
+                    attendees: eventData.attendees,
+                    meetLink: response.data.conferenceData.entryPoints[0].uri,
+                    googleEventId: response.data.id,
+                    title: eventData.title,
+                    startTime: eventData.startTime,
+                    endTime: eventData.endTime,
+                    status: 'scheduled',
+                }
+            });
 
                 return {
                     success: true,

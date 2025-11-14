@@ -14,11 +14,15 @@ export class StorageService {
         this.errorHandlingService = errorHandlingService;
         this.auditLogService = auditLogService;
 
-        this.imagekit = new ImageKit({
-            publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
-            privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-            urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
-        });
+        // Initialize ImageKit only if credentials are provided
+        this.imagekit = null;
+        if (process.env.IMAGEKIT_PUBLIC_KEY && process.env.IMAGEKIT_PRIVATE_KEY && process.env.IMAGEKIT_URL_ENDPOINT) {
+            this.imagekit = new ImageKit({
+                publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+                privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+                urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
+            });
+        }
 
         this.maxFileSize = 50 * 1024 * 1024; // 50MB
         this.allowedMimeTypes = [
@@ -40,6 +44,10 @@ export class StorageService {
 
     async uploadFile(fileBuffer, fileData) {
         try {
+            if (!this.imagekit) {
+                return { success: false, error: 'ImageKit is not configured' };
+            }
+
             if (!fileBuffer || !fileData) {
                 return { success: false, error: 'File and metadata required' };
             }
@@ -84,6 +92,10 @@ export class StorageService {
 
     async uploadMultipleFiles(filesBuffer, folderPath) {
         try {
+            if (!this.imagekit) {
+                return { success: false, error: 'ImageKit is not configured' };
+            }
+
             if (!filesBuffer || !Array.isArray(filesBuffer) || filesBuffer.length === 0) {
                 return { success: false, error: 'Files array required' };
             }
@@ -153,6 +165,10 @@ export class StorageService {
 
     async deleteFile(fileUrl) {
         try {
+            if (!this.imagekit) {
+                return { success: false, error: 'ImageKit is not configured' };
+            }
+
             if (!fileUrl) {
                 return { success: false, error: 'File URL required' };
             }
@@ -173,6 +189,10 @@ export class StorageService {
 
     async deleteMultipleFiles(fileIds) {
         try {
+            if (!this.imagekit) {
+                return { success: false, error: 'ImageKit is not configured' };
+            }
+
             if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0) {
                 return { success: false, error: 'File IDs array required' };
             }
@@ -241,6 +261,10 @@ export class StorageService {
 
     async getFileMetadata(fileUrl) {
         try {
+            if (!this.imagekit) {
+                return { success: false, error: 'ImageKit is not configured' };
+            }
+
             if (!fileUrl) {
                 return { success: false, error: 'File URL required' };
             }
@@ -272,6 +296,10 @@ export class StorageService {
 
     async listFiles(folderPath = '/') {
         try {
+            if (!this.imagekit) {
+                return { success: false, error: 'ImageKit is not configured' };
+            }
+
             const files = await this.imagekit.listFiles({
                 path: folderPath
             });
@@ -292,6 +320,10 @@ export class StorageService {
 
     async generateSignedUrl(fileUrl, expirySeconds = 3600) {
         try {
+            if (!this.imagekit) {
+                return { success: false, error: 'ImageKit is not configured' };
+            }
+
             if (!fileUrl) {
                 return { success: false, error: 'File URL required' };
             }
@@ -313,6 +345,10 @@ export class StorageService {
 
     async getAuthenticationParameters() {
         try {
+            if (!this.imagekit) {
+                return { success: false, error: 'ImageKit is not configured' };
+            }
+
             const authParams = this.imagekit.getAuthenticationParameters();
 
             return {

@@ -277,7 +277,7 @@ export class HospitalService {
             const limit = filters && filters.limit ? Math.min(filters.limit, 100) : 10;
             const offset = filters && filters.offset ? filters.offset : 0;
 
-            const doctors = await Doctor.findAll({
+            const doctors = await prisma.doctors.findMany({
                 where: { hospitalId: hospitalId, isActive: true },
                 include: [
                     { model: Specialization, attributes: ['specializationName'] }
@@ -305,7 +305,7 @@ export class HospitalService {
         try {
             if (!hospitalId) throw new AppError('Hospital ID required', 400);
 
-            const hospital = await Hospital.findByPk(hospitalId);
+            const hospital = await prisma.hospitals.findUnique({ where: { hospitalId: hospitalId } });
             if (!hospital) throw new AppError('Hospital not found', 404);
 
             const totalDoctors = await Doctor.count({ where: { hospitalId: hospitalId, isActive: true } });

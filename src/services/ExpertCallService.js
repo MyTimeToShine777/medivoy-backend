@@ -20,13 +20,14 @@ export class ExpertCallService {
 
             const call = await prisma.expertCall.create({
                 data: {
-                userId: userId,
-                doctorId: doctorId,
-                scheduledTime: new Date(scheduledTime),
-                duration: duration || 30,
-                topic: topic || '',
-                status: 'scheduled',
-                createdAt: new Date()
+                    userId: userId,
+                    doctorId: doctorId,
+                    scheduledTime: new Date(scheduledTime),
+                    duration: duration || 30,
+                    topic: topic || '',
+                    status: 'scheduled',
+                    createdAt: new Date()
+                }
             });
 
             await cacheService.delete(`expert_calls_${userId}`);
@@ -89,9 +90,12 @@ export class ExpertCallService {
                 return { success: false, error: 'Call not found', code: 'NOT_FOUND' };
             }
 
-            await prisma.expertCall.update({ where: { callId }, data: {
-                status: 'in_progress',
-                startedAt: new Date()
+            await prisma.expertCall.update({ 
+                where: { callId }, 
+                data: {
+                    status: 'in_progress',
+                    startedAt: new Date()
+                }
             });
 
             await cacheService.delete(`expert_calls_${call.userId}`);
@@ -120,10 +124,13 @@ export class ExpertCallService {
                 return { success: false, error: 'Call not found', code: 'NOT_FOUND' };
             }
 
-            await prisma.expertCall.update({ where: { callId }, data: {
-                status: 'completed',
-                endedAt: new Date(),
-                notes: notes || ''
+            await prisma.expertCall.update({ 
+                where: { callId }, 
+                data: {
+                    status: 'completed',
+                    endedAt: new Date(),
+                    notes: notes || ''
+                }
             });
 
             await cacheService.delete(`expert_calls_${call.userId}`);
@@ -152,9 +159,12 @@ export class ExpertCallService {
                 return { success: false, error: 'Call not found', code: 'NOT_FOUND' };
             }
 
-            await prisma.expertCall.update({ where: { callId }, data: {
-                status: 'cancelled',
-                cancelledAt: new Date()
+            await prisma.expertCall.update({ 
+                where: { callId }, 
+                data: {
+                    status: 'cancelled',
+                    cancelledAt: new Date()
+                }
             });
 
             await cacheService.delete(`expert_calls_${call.userId}`);
@@ -208,9 +218,12 @@ export class ExpertCallService {
                 return { success: false, error: 'Call not found', code: 'NOT_FOUND' };
             }
 
-            await prisma.expertCall.update({ where: { callId }, data: {
-                scheduledTime: new Date(newScheduledTime),
-                rescheduledAt: new Date()
+            await prisma.expertCall.update({ 
+                where: { callId }, 
+                data: {
+                    scheduledTime: new Date(newScheduledTime),
+                    rescheduledAt: new Date()
+                }
             });
 
             await cacheService.delete(`expert_calls_${call.userId}`);

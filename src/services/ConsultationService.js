@@ -20,13 +20,14 @@ export class ConsultationService {
 
             const consultation = await prisma.consultations.create({
                 data: {
-                patientId: patientId,
-                doctorId: doctorId,
-                consultationType: consultationType,
-                symptoms: symptoms || '',
-                notes: notes || '',
-                status: 'pending',
-                createdAt: new Date()
+                    patientId: patientId,
+                    doctorId: doctorId,
+                    consultationType: consultationType,
+                    symptoms: symptoms || '',
+                    notes: notes || '',
+                    status: 'pending',
+                    createdAt: new Date()
+                }
             });
 
             await cacheService.delete(`consultations_${patientId}`);
@@ -89,11 +90,14 @@ export class ConsultationService {
                 return { success: false, error: 'Consultation not found', code: 'NOT_FOUND' };
             }
 
-            const updated = await prisma.consultations.update({ where: { consultationId }, data: {
-                diagnosis: diagnosis !== undefined ? diagnosis : consultation.diagnosis,
-                treatment: treatment !== undefined ? treatment : consultation.treatment,
-                status: status !== undefined ? status : consultation.status,
-                updatedAt: new Date()
+            const updated = await prisma.consultations.update({ 
+                where: { consultationId }, 
+                data: {
+                    diagnosis: diagnosis !== undefined ? diagnosis : consultation.diagnosis,
+                    treatment: treatment !== undefined ? treatment : consultation.treatment,
+                    status: status !== undefined ? status : consultation.status,
+                    updatedAt: new Date()
+                }
             });
 
             await cacheService.delete(`consultations_${consultation.patientId}`);

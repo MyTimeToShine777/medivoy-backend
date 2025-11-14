@@ -5,13 +5,14 @@ import prisma from '../config/prisma.js';
 class PaymentService {
     // ========== CREATE PAYMENT ==========
     async createPayment(paymentData) {
-            try {
-                const payment = await prisma.payments.create({
-                        data: {
-                            paymentNumber: await this.generatePaymentNumber(),
-                            status: 'pending',
-                            ...paymentData,
-                        });
+        try {
+            const payment = await prisma.payments.create({
+                data: {
+                    paymentNumber: await this.generatePaymentNumber(),
+                    status: 'pending',
+                    ...paymentData,
+                }
+            });
 
                     return {
                         success: true,
@@ -31,15 +32,8 @@ class PaymentService {
             // ========== GET PAYMENT ==========
             async getPaymentById(paymentId) {
                 try {
-                    const payment = await prisma.payments.findUnique({ where: { paymentId: paymentId,
-                            {
-                                include: [
-                                    { model: Booking, as: 'booking' },
-                                    { model: User, as: 'user' },
-                                    { model: Invoice, as: 'invoice' },
-                                ],
-                            }
-                        }
+                    const payment = await prisma.payments.findUnique({ 
+                        where: { paymentId: paymentId }
                     });
 
                     if (!payment) {
@@ -193,14 +187,15 @@ class PaymentService {
                         }
 
                         const refund = await prisma.refund.create({
-                                data: {
-                                    paymentId,
-                                    bookingId: payment.bookingId,
-                                    userId: payment.userId,
-                                    amount: refundAmount || payment.amount,
-                                    reason: reason || 'Customer requested refund',
-                                    status: 'initiated',
-                                });
+                            data: {
+                                paymentId,
+                                bookingId: payment.bookingId,
+                                userId: payment.userId,
+                                amount: refundAmount || payment.amount,
+                                reason: reason || 'Customer requested refund',
+                                status: 'initiated',
+                            }
+                        });
 
                             payment.refundedAmount = (payment.refundedAmount || 0) + refund.amount; payment.status = 'refunded'; await payment.save();
 
@@ -266,10 +261,10 @@ class PaymentService {
 
                             if (filters.startDate && filters.endDate) {
                                 where.completedAt = {
-                                    {
-                                        gte: [filters.startDate, filters.endDate],
-                                    };
-                                }
+                                    gte: filters.startDate,
+                                    lte: filters.endDate
+                                };
+                            }
 
                                 const totalPayments = await prisma.payments.count({ where });
                                 const totalAmount = await Payment.sum('amount', { where });

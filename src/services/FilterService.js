@@ -46,7 +46,7 @@ export class FilterService {
                         country: true
                     },
                     orderBy: {
-                        [filters.sortBy || 'averageRating']: filters.sortOrder ? .toLowerCase() || 'desc' },
+                        [filters.sortBy || 'averageRating']: filters.sortOrder?.toLowerCase() || 'desc' },
                     take: limit,
                     skip: offset
                 }),
@@ -108,7 +108,7 @@ export class FilterService {
                     },
                     orderBy: [
                         {
-                            [filters.sortBy || 'averageRating']: filters.sortOrder ? .toLowerCase() || 'desc' },
+                            [filters.sortBy || 'averageRating']: filters.sortOrder?.toLowerCase() || 'desc' },
                         { experience: 'desc' }
                     ],
                     take: limit,
@@ -156,7 +156,7 @@ export class FilterService {
                 prisma.treatments.findMany({
                     where,
                     orderBy: {
-                        [filters.sortBy || 'basePrice']: filters.sortOrder ? .toLowerCase() || 'asc' },
+                        [filters.sortBy || 'basePrice']: filters.sortOrder?.toLowerCase() || 'asc' },
                     take: limit,
                     skip: offset
                 }),
@@ -204,7 +204,7 @@ export class FilterService {
                         hospital: true
                     },
                     orderBy: {
-                        [filters.sortBy || 'finalPrice']: filters.sortOrder ? .toLowerCase() || 'asc' },
+                        [filters.sortBy || 'finalPrice']: filters.sortOrder?.toLowerCase() || 'asc' },
                     take: limit,
                     skip: offset
                 }),

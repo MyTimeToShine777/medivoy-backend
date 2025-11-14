@@ -85,7 +85,7 @@ class EnvironmentConfig {
     // ─────────────────────────────────────────────────────────────────────────────
 
     get REDIS_URL() {
-        return process.env.REDIS_URL || 'redis://localhost:6379/0';
+        return process.env.REDIS_URL || null;
     }
 
     get REDIS_DB() {

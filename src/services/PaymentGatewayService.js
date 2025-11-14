@@ -17,12 +17,20 @@ export class PaymentGatewayService {
         this.errorHandlingService = errorHandlingService;
         this.auditLogService = auditLogService;
 
-        this.razorpay = new Razorpay({
-            key_id: process.env.RAZORPAY_KEY_ID,
-            key_secret: process.env.RAZORPAY_KEY_SECRET
-        });
+        // Initialize Razorpay only if credentials are provided
+        this.razorpay = null;
+        if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+            this.razorpay = new Razorpay({
+                key_id: process.env.RAZORPAY_KEY_ID,
+                key_secret: process.env.RAZORPAY_KEY_SECRET
+            });
+        }
 
-        this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+        // Initialize Stripe only if credentials are provided
+        this.stripe = null;
+        if (process.env.STRIPE_SECRET_KEY) {
+            this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════════════
@@ -401,16 +409,24 @@ export class PaymentGatewayService {
         const razorpayCurrencies = ['INR', 'USD', 'GBP', 'EUR'];
         const stripeCurrencies = ['USD', 'EUR', 'GBP', 'AUD'];
 
-        if (razorpayCurrencies.includes(currency)) {
+        // Prefer Razorpay for supported currencies if configured
+        if (razorpayCurrencies.includes(currency) && this.razorpay) {
             return 'razorpay';
-        } else if (stripeCurrencies.includes(currency)) {
+        } else if (stripeCurrencies.includes(currency) && this.stripe) {
+            return 'stripe';
+        } else if (this.razorpay) {
+            return 'razorpay';
+        } else if (this.stripe) {
             return 'stripe';
         } else {
-            return 'razorpay';
+            throw new AppError('No payment gateway is configured', 500);
         }
     }
 
     async _createRazorpayOrder(paymentData, user) {
+        if (!this.razorpay) {
+            throw new AppError('Razorpay is not configured', 500);
+        }
         const order = await this.razorpay.orders.create({
             amount: paymentData.amount * 100,
             currency: paymentData.currency,
@@ -426,6 +442,9 @@ export class PaymentGatewayService {
     }
 
     async _createStripePaymentIntent(paymentData, user) {
+        if (!this.stripe) {
+            throw new AppError('Stripe is not configured', 500);
+        }
         const intent = await this.stripe.paymentIntents.create({
             amount: paymentData.amount * 100,
             currency: paymentData.currency.toLowerCase(),

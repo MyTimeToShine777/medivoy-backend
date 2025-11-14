@@ -191,7 +191,7 @@ class DoctorService {
     // ========== UPDATE DOCTOR ==========
     async updateDoctor(doctorId, updateData) {
         try {
-            const doctor = await Doctor.findByPk(doctorId);
+            const doctor = await prisma.doctors.findUnique({ where: { doctorId: doctorId } });
             if (!doctor) {
                 return {
                     success: false,
@@ -216,7 +216,7 @@ class DoctorService {
     // ========== DOCTOR SCHEDULE ==========
     async createSchedule(doctorId, scheduleData) {
         try {
-            const doctor = await Doctor.findByPk(doctorId);
+            const doctor = await prisma.doctors.findUnique({ where: { doctorId: doctorId } });
             if (!doctor) {
                 return {
                     success: false,
@@ -312,7 +312,7 @@ class DoctorService {
             }
 
             // Check if slot is booked
-            const bookedSlot = await Appointment.findOne({
+            const bookedSlot = await prisma.appointments.findFirst({
                 where: {
                     doctorId,
                     appointmentDate: date,
@@ -347,7 +347,7 @@ class DoctorService {
     // ========== DOCTOR RATINGS & REVIEWS ==========
     async getDoctorRatings(doctorId) {
         try {
-            const doctor = await Doctor.findByPk(doctorId);
+            const doctor = await prisma.doctors.findUnique({ where: { doctorId: doctorId } });
             if (!doctor) {
                 return {
                     success: false,
@@ -355,7 +355,7 @@ class DoctorService {
                 };
             }
 
-            const reviews = await Review.findAll({
+            const reviews = await prisma.reviews.findMany({
                 where: { doctorId },
                 order: [
                     ['createdAt', 'DESC']
@@ -380,7 +380,7 @@ class DoctorService {
 
     async updateDoctorRating(doctorId) {
         try {
-            const reviews = await Review.findAll({
+            const reviews = await prisma.reviews.findMany({
                 where: { doctorId },
             });
 
@@ -414,7 +414,7 @@ class DoctorService {
     // ========== DOCTOR STATISTICS ==========
     async getDoctorStats(doctorId) {
         try {
-            const doctor = await Doctor.findByPk(doctorId);
+            const doctor = await prisma.doctors.findUnique({ where: { doctorId: doctorId } });
             if (!doctor) {
                 return {
                     success: false,

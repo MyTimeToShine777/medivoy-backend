@@ -62,15 +62,16 @@ export class DeviceService {
                     data: {
                         userId,
                         name: deviceInfo.name,
-                    type: deviceInfo.type,
-                    browser: deviceInfo.browser,
-                    browserVersion: deviceInfo.browserVersion,
-                    os: deviceInfo.os,
-                    osVersion: deviceInfo.osVersion,
-                    userAgent,
-                    ipAddress,
-                    isActive: true,
-                    lastLoginAt: new Date()
+                        type: deviceInfo.type,
+                        browser: deviceInfo.browser,
+                        browserVersion: deviceInfo.browserVersion,
+                        os: deviceInfo.os,
+                        osVersion: deviceInfo.osVersion,
+                        userAgent,
+                        ipAddress,
+                        isActive: true,
+                        lastLoginAt: new Date()
+                    }
                 });
             }
 
